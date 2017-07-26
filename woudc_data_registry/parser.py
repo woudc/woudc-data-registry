@@ -49,7 +49,6 @@ import io
 import logging
 import sys
 
-import requests
 from six import StringIO as StringIO
 
 LOGGER = logging.getLogger(__name__)
@@ -147,7 +146,8 @@ class ExtendedCSV(object):
                 continue
             else:  # process row data
                 if table_name in self.metadata_tables.keys():
-                    self.extcsv[table_name]['_line_num'] = int(reader.line_num + 1)
+                    self.extcsv[table_name]['_line_num'] = \
+                        int(reader.line_num + 1)
                     for idx, val in enumerate(row):
                         field = self.extcsv[table_name]['_fields'][idx]
                         self.extcsv[table_name][field] = _get_value_type(field,
@@ -170,7 +170,8 @@ class ExtendedCSV(object):
                 errors.append({
                     'code': 'missing_table',
                     'locator': missing_table,
-                    'text': 'ERROR: {}: missing table {}'.format(ERROR_CODES['missing_table'], missing_table)
+                    'text': 'ERROR {}: {}'.format(ERROR_CODES['missing_table'],
+                                                  missing_table)
                 })
 
         for key, value in self.extcsv.items():
@@ -182,20 +183,28 @@ class ExtendedCSV(object):
                     errors.append({
                         'code': 'missing_data',
                         'locator': missing_data,
-                        'text': 'ERROR: {}: missing data {} (line number: {}'.format(ERROR_CODES['missing_data'], missing_data, value['_line_num'])
+                        'text': 'ERROR: {}: {} (line number: {})'.format(
+                            ERROR_CODES['missing_data'], value['_line_num'])
                     })
 
-        if self.extcsv['LOCATION']['Latitude'] > 90 or self.extcsv['LOCATION']['Latitude'] < -90:
+        if self.extcsv['LOCATION']['Longitude'] not in range(-90, 90):
             errors.append({
                 'code': 'invalid_data',
                 'locator': 'LOCATION.Latitude',
-                'text': 'ERROR: {}: Invalid Latitude: {} (line number: {}'.format(ERROR_CODES['invalid_data'], self.extcsv['LOCATION']['Latitude'], self.extcsv['LOCATION']['_line_num'])
+                'text': 'ERROR: {}: {} (line number: {})'.format(
+                    ERROR_CODES['invalid_data'],
+                    self.extcsv['LOCATION']['Latitude'],
+                    self.extcsv['LOCATION']['_line_num'])
             })
-        if self.extcsv['LOCATION']['Longitude'] > 180 or self.extcsv['LOCATION']['Longitude'] < -180:
+
+        if self.extcsv['LOCATION']['Longitude'] not in range(-180, 180):
             errors.append({
                 'code': 'invalid_data',
                 'locator': 'LOCATION.Longitude',
-                'text': 'ERROR: {}: Invalid Longitude: {} (line number: {}'.format(ERROR_CODES['invalid_data'], self.extcsv['LOCATION']['Longitude'], self.extcsv['LOCATION']['_line_num'])
+                'text': 'ERROR: {}: {} (line number: {})'.format(
+                    ERROR_CODES['invalid_data'],
+                    self.extcsv['LOCATION']['Longitude'],
+                    self.extcsv['LOCATION']['_line_num'])
             })
 
         return errors
@@ -207,5 +216,5 @@ if __name__ == '__main__':
         sys.exit(1)
 
     ecsv = ExtendedCSV(sys.argv[1])
-    print(ecsv.extcsv['LOCATION'])
+    print(ecsv.extcsv)
     print(ecsv.validate_metadata())

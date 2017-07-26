@@ -43,19 +43,22 @@
 #
 # =================================================================
 
-import click
+import os
 
-from woudc_data_registry.models import setup_models, teardown_models, insert
-
-__version__ = '0.1.dev0'
+from woudc_data_registry.util import str2bool
 
 
-@click.group()
-@click.version_option(version=__version__)
-def cli():
-    pass
+DEBUG = str2bool(os.getenv('DEBUG', False))
 
+DB_TYPE = os.getenv('DB_TYPE', 'postgresql')
+DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_PORT = int(os.getenv('DB_PORT', 5432))
+DB_USERNAME = os.getenv('DB_USERNAME', None)
+DB_PASSWORD = os.getenv('DB_PASSWORD', None)
+DB_NAME = os.getenv('DB_NAME', 'woudc-data-registry')
 
-cli.add_command(setup_models)
-cli.add_command(teardown_models)
-cli.add_command(insert)
+if None in [DB_USERNAME, DB_PASSWORD]:
+    raise EnvironmentError('System environment variables are not set!')
+
+DATABASE_URL = '{}://{}:{}@{}:{}/{}'.format(DB_TYPE, DB_USERNAME, DB_PASSWORD,
+                                            DB_HOST, DB_PORT, DB_NAME)

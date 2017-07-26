@@ -43,19 +43,29 @@
 #
 # =================================================================
 
-import click
 
-from woudc_data_registry.models import setup_models, teardown_models, insert
+def point2wkt(x, y, z=None, srid=4326):
+    """helper function to generate EWKT of point"""
 
-__version__ = '0.1.dev0'
+    if z is None:
+        point = 'SRID={};POINT({} {})'.format(srid, x, y)
+    else:
+        point = 'SRID={};POINTZ({} {} {})'.format(srid, x, y, z)
+
+    return point
 
 
-@click.group()
-@click.version_option(version=__version__)
-def cli():
-    pass
+def str2bool(value):
+    """
+    helper function to return Python boolean
+    type (source: https://stackoverflow.com/a/715468)
+    """
 
+    value2 = False
 
-cli.add_command(setup_models)
-cli.add_command(teardown_models)
-cli.add_command(insert)
+    if isinstance(value, bool):
+        value2 = value
+    else:
+        value2 = value.lower() in ('yes', 'true', 't', '1')
+
+    return value2

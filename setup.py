@@ -102,7 +102,6 @@ setup(
         'spectral',
         'stations',
         'instruments'
-
     ]),
     author='Meteorological Service of Canada',
     author_email='tom.kralidis@canada.ca',

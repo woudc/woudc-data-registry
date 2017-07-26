@@ -1,3 +1,4 @@
 alembic
+docutils
 flake8
 pypandoc
