@@ -1,0 +1,6 @@
+click
+geoalchemy2
+psycopg2
+requests
+six
+sqlalchemy
