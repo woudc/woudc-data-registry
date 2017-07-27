@@ -54,11 +54,4 @@ createdb:
 dropdb:
 	dropdb $(PG_FLAGS)
 
-
-refresh: dropdb createdb
-	python setup.py install
-	python setup.py install
-	woudc-data-registry create
-	woudc-data-registry insert
-
 .PHONY: createdb dropdb

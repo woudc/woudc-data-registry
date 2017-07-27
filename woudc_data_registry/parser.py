@@ -45,7 +45,6 @@
 
 import csv
 from datetime import datetime
-import io
 import logging
 import sys
 
@@ -58,14 +57,6 @@ ERROR_CODES = {
     'missing_data': 11000,
     'invalid_data': 12000,
 }
-
-
-def _read(filename, encoding='utf-8'):
-    """read file contents"""
-
-    LOGGER.debug('Reading file %s (encoding %s)', filename, encoding)
-    with io.open(filename, encoding=encoding) as fh:
-        return fh.read().strip()
 
 
 def _get_value_type(field, value):
@@ -120,7 +111,7 @@ class ExtendedCSV(object):
         }
 
         LOGGER.info('Reading into csv')
-        self._raw = _read(content)
+        self._raw = content
         reader = csv.reader(StringIO(self._raw))
 
         found_table = False
@@ -158,7 +149,7 @@ class ExtendedCSV(object):
             value.pop('_fields')
 
     def validate_metadata(self):
-        """validate_metadata core metadata fields"""
+        """validate core metadata tables and fields"""
 
         errors = []
 
@@ -166,6 +157,11 @@ class ExtendedCSV(object):
                               set(self.extcsv.keys()))
 
         if missing_tables:
+            if not list(set(self.metadata_tables) - set(missing_tables)):
+                msg = 'No core metadata tables found. Not an Extended CSV file'
+                LOGGER.error(msg)
+                raise NonStandardDataError(msg)
+
             for missing_table in missing_tables:
                 errors.append({
                     'code': 'missing_table',
@@ -173,6 +169,8 @@ class ExtendedCSV(object):
                     'text': 'ERROR {}: {}'.format(ERROR_CODES['missing_table'],
                                                   missing_table)
                 })
+            raise MetadataValidationError('Not an Extended CSV file',
+                                          errors)
 
         for key, value in self.extcsv.items():
             missing_datas = list(set(self.metadata_tables[key]) -
@@ -187,7 +185,7 @@ class ExtendedCSV(object):
                             ERROR_CODES['missing_data'], value['_line_num'])
                     })
 
-        if self.extcsv['LOCATION']['Longitude'] not in range(-90, 90):
+        if int(self.extcsv['LOCATION']['Latitude']) not in range(-90, 90):
             errors.append({
                 'code': 'invalid_data',
                 'locator': 'LOCATION.Latitude',
@@ -197,7 +195,7 @@ class ExtendedCSV(object):
                     self.extcsv['LOCATION']['_line_num'])
             })
 
-        if self.extcsv['LOCATION']['Longitude'] not in range(-180, 180):
+        if int(self.extcsv['LOCATION']['Longitude']) not in range(-180, 180):
             errors.append({
                 'code': 'invalid_data',
                 'locator': 'LOCATION.Longitude',
@@ -207,7 +205,23 @@ class ExtendedCSV(object):
                     self.extcsv['LOCATION']['_line_num'])
             })
 
-        return errors
+        if errors:
+            raise MetadataValidationError('Invalid metadata', errors)
+
+
+class NonStandardDataError(Exception):
+    """custom exception handler"""
+
+    pass
+
+
+class MetadataValidationError(Exception):
+    """custom exception handler"""
+
+    def __init__(self, message, errors):
+        """set error list/stack"""
+        super(MetadataValidationError, self).__init__(message)
+        self.errors = errors
 
 
 if __name__ == '__main__':
@@ -217,4 +231,7 @@ if __name__ == '__main__':
 
     ecsv = ExtendedCSV(sys.argv[1])
     print(ecsv.extcsv)
-    print(ecsv.validate_metadata())
+    try:
+        ecsv.validate_metadata()
+    except MetadataValidationError as mve:
+        print(mve.errors)

@@ -45,6 +45,8 @@
 
 from datetime import datetime
 import click
+import logging
+
 from geoalchemy2 import Geometry
 from sqlalchemy import (Column, create_engine, Date, DateTime, Integer, String,
                         Time, UnicodeText)
@@ -53,6 +55,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from woudc_data_registry import util
 
+LOGGER = logging.getLogger(__name__)
 base = declarative_base()
 
 
@@ -81,7 +84,7 @@ class DataRecord(base):
     instrument_name = Column(String, nullable=False)
     instrument_model = Column(String, nullable=False)
     instrument_number = Column(String, nullable=False)
-    location = Column(Geometry(srid=4326))
+    location = Column(Geometry(management=True, use_typemod=False, srid=4326))
     timestamp_utcoffset = Column(String, nullable=False)
     timestamp_date = Column(Date, nullable=False)
     timestamp_time = Column(Time)
@@ -98,6 +101,7 @@ class DataRecord(base):
     def __init__(self, ecsv):
         """serializer"""
 
+        LOGGER.debug('Serializing model')
         self.content_class = ecsv.extcsv['CONTENT']['Class']
         self.content_category = ecsv.extcsv['CONTENT']['Category']
         self.content_level = ecsv.extcsv['CONTENT']['Level']
@@ -166,36 +170,3 @@ def teardown_models(ctx):
         click.echo('Done')
     except (OperationalError, ProgrammingError) as err:
         click.echo('ERROR: {}'.format(err))
-
-
-@click.command()
-@click.pass_context
-def insert(ctx):
-    from sqlalchemy.exc import DataError
-    from sqlalchemy.orm import sessionmaker
-
-    from woudc_data_registry import config, parser
-
-    engine = create_engine(config.DATABASE_URL, echo=config.DEBUG)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    extcsv_ = parser.ExtendedCSV('/users/ec/dmsec/kralidist/woudc-data-registry/woudc-data-registry/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv')  # noqa
-    d1 = DataRecord(extcsv_)
-    d1.url = 'http://woudc.org/'
-
-    try:
-        session.add(d1)
-        session.commit()
-        session.close()
-    except DataError as err:
-        session.rollback()
-        click.echo('ERROR: {}'.format(err))
-
-#    elif subcommand == 'query':
-#        alldata = session.query(DataRecord).all()
-#        for somedata in alldata:
-#            if somedata.locationis not None:
-#                print(session.scalar(somedata.location.ST_AsText()))
-#                print(session.scalar(somedata.location.ST_Z()))
-#

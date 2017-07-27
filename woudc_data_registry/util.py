@@ -43,6 +43,11 @@
 #
 # =================================================================
 
+import logging
+import io
+
+LOGGER = logging.getLogger(__name__)
+
 
 def point2wkt(x, y, z=None, srid=4326):
     """helper function to generate EWKT of point"""
@@ -53,6 +58,14 @@ def point2wkt(x, y, z=None, srid=4326):
         point = 'SRID={};POINTZ({} {} {})'.format(srid, x, y, z)
 
     return point
+
+
+def read_file(filename, encoding='utf-8'):
+    """read file contents"""
+
+    LOGGER.debug('Reading file %s (encoding %s)', filename, encoding)
+    with io.open(filename, encoding=encoding) as fh:
+        return fh.read().strip()
 
 
 def str2bool(value):

@@ -14,9 +14,11 @@ install:
   - python setup.py install
 
 script:
+  - python setup.py test
   - find . -type f -name "*.py" | xargs flake8
   - python setup.py --long-description | rst2html5.py
 
 after_success:
   - coverage run --source woudc_data_registry setup.py test
   - coverage report -m
+  - python setup.py bdist_wheel

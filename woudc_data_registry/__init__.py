@@ -45,7 +45,8 @@
 
 import click
 
-from woudc_data_registry.models import setup_models, teardown_models, insert
+from woudc_data_registry.models import setup_models, teardown_models
+from woudc_data_registry.processing import process
 
 __version__ = '0.1.dev0'
 
@@ -58,4 +59,4 @@ def cli():
 
 cli.add_command(setup_models)
 cli.add_command(teardown_models)
-cli.add_command(insert)
+cli.add_command(process)
