@@ -46,7 +46,7 @@
 import click
 
 from woudc_data_registry.models import setup_models, teardown_models
-from woudc_data_registry.processing import process
+from woudc_data_registry.controller import ingest
 
 __version__ = '0.1.dev0'
 
@@ -59,4 +59,4 @@ def cli():
 
 cli.add_command(setup_models)
 cli.add_command(teardown_models)
-cli.add_command(process)
+cli.add_command(ingest)

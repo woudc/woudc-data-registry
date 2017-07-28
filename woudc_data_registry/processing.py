@@ -43,84 +43,100 @@
 #
 # =================================================================
 
+from datetime import datetime
 import logging
-import os
 
-import click
-
-from woudc_data_registry import config
-from woudc_data_registry.parser import ExtendedCSV, MetadataValidationError
-from woudc_data_registry.util import read_file
+from woudc_data_registry import registry
+from woudc_data_registry.parser import (ExtendedCSV, MetadataValidationError,
+                                        NonStandardDataError)
+from woudc_data_registry.util import is_text_file, read_file
 
 LOGGER = logging.getLogger(__name__)
 
 
-def process_data_record(data_record):
-    """process incoming data record"""
+class Process(object):
+    """
+    Generic processing definition
 
-    LOGGER.info('Parsing data record')
-    dr = ExtendedCSV(data_record)
+    - detect
+    - parse
+    - validate
+    - verify
+    - register
+    - index
+    """
 
-    LOGGER.info('Validating Extended CSV')
-    # validate Extended CSV
-    try:
-        dr.validate_metadata()
-    except MetadataValidationError as mve:
-        LOGGER.exception('Invalid Extended CSV')
-        LOGGER.exception(mve.errors)
+    def __init__(self):
+        """constructor"""
 
-    # verify:
-    # - Extended CSV core fields against registry
-    # - taxonomy/URI check
-    # - duplicate data submitted
-    # - new version of file
+        self.status = None
+        self.code = None
+        self.message = None
+        self.process_start = datetime.utcnow()
+        self.process_end = None
 
-    # register Extended CSV to registry
+    def process_data(self, infile, verify=False):
+        """process incoming data record"""
 
+        # detect incoming data file
 
-@click.command()
-@click.pass_context
-@click.option('--file', '-f', 'file_',
-              type=click.Path(exists=True, resolve_path=True),
-              help='Path to data record')
-@click.option('--directory', '-d', 'directory',
-              type=click.Path(exists=True, resolve_path=True,
-                              dir_okay=True, file_okay=False),
-              help='Path to directory of data records')
-def process(ctx, file_, directory):
-    """process a single data submission or directory of files"""
+        data_record = None
 
-    if file_ is not None and directory is not None:
-        msg = '--file and --directory are mutually exclusive'
-        raise click.ClickException(msg)
+        if not is_text_file(infile):
+            self.status = 'failed'
+            self.code = 'NonStandardDataError'
+            self.message = 'binary file detected'
+            LOGGER.error('Unknown file: {}'.format(self.message))
+            return False
 
-    if file_ is not None:
-        process_data_record(read_file(file_))
+        try:
+            data_record = read_file(infile)
+        except UnicodeDecodeError as err:
+            self.status = 'failed'
+            self.code = 'NonStandardDataError'
+            self.message = err
+            LOGGER.error('Unknown file: {}'.format(err))
+            return False
 
-    elif directory is not None:
-        for root, dirs, files in os.walk(directory):
-            for f in files:
-                file_contents = read_file(os.path.join(root, f))
-                process_data_record(file_contents)
+        LOGGER.info('Parsing data record')
+        dr = ExtendedCSV(data_record)
 
+        try:
+            LOGGER.info('Validating Extended CSV')
+            dr.validate_metadata()
+            LOGGER.info('Valid Extended CSV')
+        except NonStandardDataError as err:
+            self.status = 'failed'
+            self.code = 'NonStandardDataError'
+            self.message = err
+            LOGGER.error('Invalid Extended CSV: {}'.format(err))
+            return False
+        except MetadataValidationError as err:
+            self.status = 'failed'
+            self.code = 'MetadataValidationError'
+            self.message = err
+            LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
+            return False
 
-#    from sqlalchemy.exc import DataError
-#    from sqlalchemy.orm import sessionmaker
-#
-#    from woudc_data_registry import config, parser
-#
-#    engine = create_engine(config.DATABASE_URL, echo=config.DEBUG)
-#    Session = sessionmaker(bind=engine)
-#    session = Session()
-#
-#    extcsv_ = parser.ExtendedCSV('/users/ec/dmsec/kralidist/woudc-data-registry/woudc-data-registry/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv')  # noqa
-#    d1 = DataRecord(extcsv_)
-#    d1.url = 'http://woudc.org/'
-#
-#    try:
-#        session.add(d1)
-#        session.commit()
-#        session.close()
-#    except DataError as err:
-#        session.rollback()
-#        click.echo('ERROR: {}'.format(err))
+        # verify:
+        # - Extended CSV core fields against registry
+        # - taxonomy/URI check
+        # - duplicate data submitted
+        # - new version of file
+
+        if not verify:
+            LOGGER.info('Saving Extended CSV to registry')
+            self.process_end = datetime.utcnow()
+            registry.save_data_record(dr)
+
+        return True
+
+    def index_data(self):
+        """add data record to search index"""
+
+        raise NotImplementedError()
+
+    def unindex_data(self):
+        """remove data record from search index"""
+
+        raise NotImplementedError()

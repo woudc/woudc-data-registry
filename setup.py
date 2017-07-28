@@ -49,6 +49,7 @@ from setuptools import Command, find_packages, setup
 import re
 import sys
 
+
 class PyTest(Command):
     user_options = []
 
@@ -60,8 +61,10 @@ class PyTest(Command):
 
     def run(self):
         import subprocess
-        errno = subprocess.call([sys.executable, 'tests/run_tests.py'])
+        errno = subprocess.call([sys.executable,
+                                 'woudc_data_registry/tests/run_tests.py'])
         raise SystemExit(errno)
+
 
 def read(filename, encoding='utf-8'):
     """read file contents"""

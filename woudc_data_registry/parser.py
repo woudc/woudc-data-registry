@@ -110,7 +110,7 @@ class ExtendedCSV(object):
             'TIMESTAMP': ['UTCOffset', 'Date']
         }
 
-        LOGGER.info('Reading into csv')
+        LOGGER.debug('Reading into csv')
         self._raw = content
         reader = csv.reader(StringIO(self._raw))
 
@@ -159,7 +159,6 @@ class ExtendedCSV(object):
         if missing_tables:
             if not list(set(self.metadata_tables) - set(missing_tables)):
                 msg = 'No core metadata tables found. Not an Extended CSV file'
-                LOGGER.error(msg)
                 raise NonStandardDataError(msg)
 
             for missing_table in missing_tables:
@@ -181,8 +180,9 @@ class ExtendedCSV(object):
                     errors.append({
                         'code': 'missing_data',
                         'locator': missing_data,
-                        'text': 'ERROR: {}: {} (line number: {})'.format(
-                            ERROR_CODES['missing_data'], value['_line_num'])
+                        'text': 'ERROR: {}: (line number: {})'.format(
+                            ERROR_CODES['missing_data'],
+                            value['_line_num'])
                     })
 
         if int(self.extcsv['LOCATION']['Latitude']) not in range(-90, 90):
@@ -211,7 +211,6 @@ class ExtendedCSV(object):
 
 class NonStandardDataError(Exception):
     """custom exception handler"""
-
     pass
 
 

@@ -45,9 +45,8 @@
 
 from datetime import datetime
 import click
-import logging
 
-from geoalchemy2 import Geometry
+import geoalchemy2
 from sqlalchemy import (Column, create_engine, Date, DateTime, Integer, String,
                         Time, UnicodeText)
 from sqlalchemy.exc import OperationalError, ProgrammingError
@@ -55,8 +54,19 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from woudc_data_registry import util
 
-LOGGER = logging.getLogger(__name__)
 base = declarative_base()
+
+
+class Geometry(geoalchemy2.types.Geometry):
+    """
+    multi-geometry class workaround
+    TODO: remove when https://github.com/geoalchemy/geoalchemy2/issues/158
+          is fixed
+    """
+    def get_col_spec(self):
+        if self.geometry_type == 'GEOMETRY' and self.srid == 0:
+            return self.name
+        return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
 
 
 class DataRecord(base):
@@ -72,19 +82,24 @@ class DataRecord(base):
     content_category = Column(String, nullable=False)
     content_level = Column(String, nullable=False)
     content_form = Column(String, nullable=False)
+
     data_generation_date = Column(Date, nullable=False)
     data_generation_agency = Column(String, nullable=False)
     data_generation_version = Column(String, nullable=False)
     data_generation_scientific_authority = Column(String)
+
     platform_type = Column(String, default='STN', nullable=False)
     platform_id = Column(String, nullable=False)
     platform_name = Column(String, nullable=False)
     platform_country = Column(String, nullable=False)
     platform_gaw_id = Column(String)
+
     instrument_name = Column(String, nullable=False)
     instrument_model = Column(String, nullable=False)
     instrument_number = Column(String, nullable=False)
-    location = Column(Geometry(management=True, use_typemod=False, srid=4326))
+
+    location = Column(Geometry(srid=0))
+
     timestamp_utcoffset = Column(String, nullable=False)
     timestamp_date = Column(Date, nullable=False)
     timestamp_time = Column(Time)
@@ -101,7 +116,6 @@ class DataRecord(base):
     def __init__(self, ecsv):
         """serializer"""
 
-        LOGGER.debug('Serializing model')
         self.content_class = ecsv.extcsv['CONTENT']['Class']
         self.content_category = ecsv.extcsv['CONTENT']['Category']
         self.content_level = ecsv.extcsv['CONTENT']['Level']
@@ -111,14 +125,18 @@ class DataRecord(base):
         self.data_generation_agency = ecsv.extcsv['DATA_GENERATION']['Agency']
         self.data_generation_version = \
             ecsv.extcsv['DATA_GENERATION']['Version']
-        self.data_generation_scientific_authority = \
-            ecsv.extcsv['DATA_GENERATION']['ScientificAuthority']
+
+        if 'ScientificAuthority' in ecsv.extcsv['DATA_GENERATION']:
+            self.data_generation_scientific_authority = \
+                ecsv.extcsv['DATA_GENERATION']['ScientificAuthority']
 
         self.platform_type = ecsv.extcsv['PLATFORM']['Type']
         self.platform_id = ecsv.extcsv['PLATFORM']['ID']
         self.platform_name = ecsv.extcsv['PLATFORM']['Name']
         self.platform_country = ecsv.extcsv['PLATFORM']['Country']
-        self.platform_gaw_id = ecsv.extcsv['PLATFORM']['GAW_ID']
+
+        if 'GAW_ID' in ecsv.extcsv['PLATFORM']:
+            self.platform_gaw_id = ecsv.extcsv['PLATFORM']['GAW_ID']
 
         self.instrument_name = ecsv.extcsv['INSTRUMENT']['Name']
         self.instrument_model = ecsv.extcsv['INSTRUMENT']['Model']
@@ -126,11 +144,13 @@ class DataRecord(base):
 
         self.timestamp_utcoffset = ecsv.extcsv['TIMESTAMP']['UTCOffset']
         self.timestamp_date = ecsv.extcsv['TIMESTAMP']['Date']
-        self.timestamp_time = ecsv.extcsv['TIMESTAMP']['Time']
 
-        self.location = util.point2wkt(ecsv.extcsv['LOCATION']['Longitude'],
-                                       ecsv.extcsv['LOCATION']['Latitude'],
-                                       ecsv.extcsv['LOCATION']['Height'])
+        if 'Time' in ecsv.extcsv['TIMESTAMP']:
+            self.timestamp_time = ecsv.extcsv['TIMESTAMP']['Time']
+
+        self.location = util.point2ewkt(ecsv.extcsv['LOCATION']['Longitude'],
+                                        ecsv.extcsv['LOCATION']['Latitude'],
+                                        ecsv.extcsv['LOCATION']['Height'])
         self.extcsv = ecsv.extcsv
         self.raw = ecsv._raw
 

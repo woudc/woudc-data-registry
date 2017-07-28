@@ -44,58 +44,60 @@
 # =================================================================
 
 import logging
-import io
+import os
+
+import click
+
+from woudc_data_registry.processing import Process
 
 LOGGER = logging.getLogger(__name__)
 
 
-def point2ewkt(x, y, z=None, srid=4326):
-    """helper function to generate EWKT of point"""
+def orchestrate(file_, directory, verify=False):
+    """core workflow"""
 
-    if z is None:
-        point = 'SRID={};POINT({} {})'.format(srid, x, y)
-    else:
-        point = 'SRID={};POINTZ({} {} {})'.format(srid, x, y, z)
+    files_to_process = []
 
-    return point
+    if file_ is not None:
+        files_to_process = [file_]
+    elif directory is not None:
+        for root, dirs, files in os.walk(directory):
+            for f in files:
+                files_to_process.append(os.path.join(root, f))
 
+    for file_to_process in files_to_process:
+        click.echo('Processing filename: {}'.format(file_to_process))
+        p = Process()
+        result = p.process_data(file_to_process, verify=verify)
 
-def read_file(filename, encoding='utf-8'):
-    """read file contents"""
-
-    LOGGER.debug('Reading file %s (encoding %s)', filename, encoding)
-
-    with io.open(filename, encoding=encoding) as fh:
-        return fh.read().strip()
-
-
-def str2bool(value):
-    """
-    helper function to return Python boolean
-    type (source: https://stackoverflow.com/a/715468)
-    """
-
-    value2 = False
-
-    if isinstance(value, bool):
-        value2 = value
-    else:
-        value2 = value.lower() in ('yes', 'true', 't', '1')
-
-    return value2
+        if result:  # processed
+            if verify:
+                LOGGER.info('Verified but not ingested')
+            else:
+                LOGGER.info('Ingested successfully')
+        else:
+            LOGGER.info('Not ingested')
 
 
-def is_text_file(file_):
-    """detect if file is of type text"""
+@click.command()
+@click.pass_context
+@click.option('--file', '-f', 'file_',
+              type=click.Path(exists=True, resolve_path=True),
+              help='Path to data record')
+@click.option('--directory', '-d', 'directory',
+              type=click.Path(exists=True, resolve_path=True,
+                              dir_okay=True, file_okay=False),
+              help='Path to directory of data records')
+@click.option('--verify', is_flag=True)
+def ingest(ctx, file_, directory, verify):
+    """ingest a single data submission or directory of files"""
 
-    return not is_binary_string(open(file_, 'rb').read(1024))
+    if file_ is not None and directory is not None:
+        msg = '--file and --directory are mutually exclusive'
+        raise click.ClickException(msg)
 
+    if file_ is None and directory is None:
+        msg = 'One of --file or --directory is required'
+        raise click.ClickException(msg)
 
-def is_binary_string(string_):
-    """
-    detect if string is binary (https://stackoverflow.com/a/7392391)
-    """
-
-    textchars = (bytearray({7, 8, 9, 10, 12, 13, 27} |
-                 set(range(0x20, 0x100)) - {0x7f}))
-    return bool(string_.translate(None, textchars))
+    orchestrate(file_, directory, verify)

@@ -44,58 +44,30 @@
 # =================================================================
 
 import logging
-import io
+
+from sqlalchemy import create_engine
+from sqlalchemy.exc import DataError
+from sqlalchemy.orm import sessionmaker
+
+from woudc_data_registry import config, models
 
 LOGGER = logging.getLogger(__name__)
 
-
-def point2ewkt(x, y, z=None, srid=4326):
-    """helper function to generate EWKT of point"""
-
-    if z is None:
-        point = 'SRID={};POINT({} {})'.format(srid, x, y)
-    else:
-        point = 'SRID={};POINTZ({} {} {})'.format(srid, x, y, z)
-
-    return point
+engine = create_engine(config.DATABASE_URL, echo=config.DEBUG)
+Session = sessionmaker(bind=engine)
+session = Session()
 
 
-def read_file(filename, encoding='utf-8'):
-    """read file contents"""
+def save_data_record(record):
+    """save data record to registry"""
 
-    LOGGER.debug('Reading file %s (encoding %s)', filename, encoding)
+    d1 = models.DataRecord(record)
+    d1.url = 'http://woudc.org/'
 
-    with io.open(filename, encoding=encoding) as fh:
-        return fh.read().strip()
-
-
-def str2bool(value):
-    """
-    helper function to return Python boolean
-    type (source: https://stackoverflow.com/a/715468)
-    """
-
-    value2 = False
-
-    if isinstance(value, bool):
-        value2 = value
-    else:
-        value2 = value.lower() in ('yes', 'true', 't', '1')
-
-    return value2
-
-
-def is_text_file(file_):
-    """detect if file is of type text"""
-
-    return not is_binary_string(open(file_, 'rb').read(1024))
-
-
-def is_binary_string(string_):
-    """
-    detect if string is binary (https://stackoverflow.com/a/7392391)
-    """
-
-    textchars = (bytearray({7, 8, 9, 10, 12, 13, 27} |
-                 set(range(0x20, 0x100)) - {0x7f}))
-    return bool(string_.translate(None, textchars))
+    try:
+        session.add(d1)
+        session.commit()
+        session.close()
+    except DataError as err:
+        print(err)
+        session.rollback()

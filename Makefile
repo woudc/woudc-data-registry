@@ -47,6 +47,14 @@ include $(ENVFILE)
 
 PG_FLAGS=-h $(DB_HOST) -p $(DB_PORT) $(DB_NAME) -U $(DB_USERNAME)
 
+clean:
+	rm -fr .pybuild
+	rm -f debian/files
+	rm -f debian/woudc-data-registry.postinst.debhelper
+	rm -f debian/woudc-data-registry.prerm.debhelper
+	rm -f debian/woudc-data-registry.substvars
+	rm -fr debian/woudc-data-registry
+
 createdb:
 	createdb $(PG_FLAGS) -E UTF8
 	psql $(PG_FLAGS) -c "create extension postgis;"

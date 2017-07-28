@@ -1,0 +1,17 @@
+Source: woudc-data-registry
+Section: python
+Priority: optional
+Maintainer: WOUDC <ec.woudc.ec@canada.ca>
+Build-Depends: debhelper (>= 9), python3, python3-setuptools
+Standards-Version: 3.9.5
+X-Python-Version: >= 3.4
+Vcs-Git: https://github.com/woudc/woudc-data-registry.git
+
+Package: woudc-data-registry
+Architecture: all
+Depends: python3-click, python-geoalchemy2, python3-psycopg2, python3-requests, python3-six, python3-sqlalchemy
+Homepage: http://woudc.org
+Description: WOUDC Data Registry is a platform that manages Ozone and
+ Ultraviolet Radiation data in support of the World Ozone and Ultraviolet
+ Radiation Data Centre (WOUDC), one of six World Data Centres as part of the
+ Global Atmosphere Watch programme of the WMO.

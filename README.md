@@ -36,6 +36,7 @@ python setup.py install
 # set system environment variables
 cp default.env foo.env
 vi foo.env  # edit database connection parameters, etc.
+. foo.env
 
 # create database
 make ENVFILE=foo.env createdb
@@ -54,6 +55,23 @@ woudc-data-registry setup_models
 
 # drop database
 make ENVFILE=foo.env dropdb
+
+```
+
+### Running woudc-data-registry
+
+```bash
+# ingest directory of files (walks directory recursively)
+woudc-data-registry ingest -d /path/to/dir
+
+# ingest single file
+woudc-data-registry ingest -f foo.dat
+
+# verify directory of files (walks directory recursively)
+woudc-data-registry ingest -d /path/to/dir --verify
+
+# verify single file
+woudc-data-registry ingest -f foo.dat --verify
 
 ```
 
