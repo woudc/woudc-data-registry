@@ -1,5 +1,16 @@
 language: python
 
+env:
+  global:
+    - DEBUG=True
+    - DB_TYPE=postgresql
+    - DB_HOST=localhost
+    - DB_PORT=5432
+    - DB_NAME=woudc-data-registry
+    - DB_USERNAME=postgres
+    - DB_PASSWORD=postgres
+    - PGPASSWORD=postgres
+
 addons:
   apt:
     packages:
@@ -10,6 +21,7 @@ python:
 
 install:
   - pip install -r requirements-dev.txt
+  - pip install coveralls
   - python setup.py build
   - python setup.py install
 
@@ -19,6 +31,8 @@ script:
   - python setup.py --long-description | rst2html5.py
 
 after_success:
-  - coverage run --source woudc_data_registry setup.py test
+  - coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.run_tests
   - coverage report -m
+  - coveralls
   - python setup.py bdist_wheel
+  - debuild -b -uc -us

@@ -65,8 +65,13 @@ def read_file(filename, encoding='utf-8'):
 
     LOGGER.debug('Reading file %s (encoding %s)', filename, encoding)
 
-    with io.open(filename, encoding=encoding) as fh:
-        return fh.read().strip()
+    try:
+        with io.open(filename, encoding=encoding) as fh:
+            return fh.read().strip()
+    except UnicodeDecodeError as err:
+        LOGGER.warning('utf-8 decoding failed.  Trying latin-1')
+        with io.open(filename, encoding='latin-1') as fh:
+            return fh.read().strip()
 
 
 def str2bool(value):
@@ -88,13 +93,19 @@ def str2bool(value):
 def is_text_file(file_):
     """detect if file is of type text"""
 
-    return not is_binary_string(open(file_, 'rb').read(1024))
+    with open(file_, 'rb') as ff:
+        data = ff.read(1024)
+
+    return not is_binary_string(data)
 
 
 def is_binary_string(string_):
     """
     detect if string is binary (https://stackoverflow.com/a/7392391)
     """
+
+    if isinstance(string_, str):
+        string_ = bytes(string_, 'utf-8')
 
     textchars = (bytearray({7, 8, 9, 10, 12, 13, 27} |
                  set(range(0x20, 0x100)) - {0x7f}))

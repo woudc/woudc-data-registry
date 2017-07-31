@@ -1,5 +1,8 @@
 # WOUDC Data Registry
 
+[![Build Status](https://travis-ci.org/woudc/woudc-data-registry.png)](https://travis-ci.org/woudc/woudc-data-registry)
+[![Coverage Status](https://coveralls.io/repos/github/woudc/woudc-data-registry/badge.svg?branch=master)](https://coveralls.io/github/woudc/woudc-data-registry?branch=master)
+
 ## Overview
 
 WOUDC Data Registry is a platform that manages Ozone and Ultraviolet
@@ -39,10 +42,10 @@ vi foo.env  # edit database connection parameters, etc.
 . foo.env
 
 # create database
-make ENVFILE=foo.env createdb
+make ENV=foo.env createdb
 
 # drop database
-make ENVFILE=foo.env dropdb
+make ENV=foo.env dropdb
 
 # initialize models (database tables)
 woudc-data-registry setup_models
@@ -54,7 +57,7 @@ woudc-data-registry teardown_models
 woudc-data-registry setup_models
 
 # drop database
-make ENVFILE=foo.env dropdb
+make ENV=foo.env dropdb
 
 ```
 
@@ -76,7 +79,22 @@ woudc-data-registry ingest -f foo.dat --verify
 ```
 
 ### Running Tests
-TODO
+
+```bash
+# install dev requirements
+pip install -r requirements-dev.txt
+
+# run tests like this:
+cd woudc_data_registry/tests
+python run_tests.py
+
+# or this:
+python setup.py test
+
+# measure code coverage
+coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.run_tests
+coverage report -m
+```
 
 ### Code Conventions
 

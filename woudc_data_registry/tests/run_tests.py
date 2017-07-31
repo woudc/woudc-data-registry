@@ -83,18 +83,28 @@ class UtilTest(unittest.TestCase):
 
         self.assertIsInstance(contents, str)
 
-        with self.assertRaises(UnicodeDecodeError):
-            contents = util.read_file(resolve_test_data_path(
-                'data/wmo_acronym_vertical_sm.jpg'))
+        contents = util.read_file(resolve_test_data_path(
+            'data/wmo_acronym_vertical_sm.jpg'))
 
-    def test_is_test_file(self):
+        self.assertIsInstance(contents, str)
+
+        with self.assertRaises(FileNotFoundError):
+            contents = util.read_file('404file.dat')
+
+    def test_is_binary_string(self):
+        """test if the string is binary"""
+
+        self.assertFalse(util.is_binary_string('foo'))
+        self.assertFalse(util.is_binary_string(b'foo'))
+
+    def test_is_text_file(self):
         """test if file is text-based"""
 
         res = resolve_test_data_path('data/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv')
-        self.assertTrue(res, True)
+        self.assertTrue(util.is_text_file(res))
 
         res = resolve_test_data_path('data/wmo_acronym_vertical_sm.jpg')
-        self.assertTrue(res, False)
+        self.assertFalse(util.is_text_file(res))
 
     def test_point2ewkt(self):
         """test point WKT creation"""

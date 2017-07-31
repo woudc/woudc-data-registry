@@ -43,12 +43,16 @@
 #
 # =================================================================
 
-include $(ENVFILE)
+include $(ENV)
 
 PG_FLAGS=-h $(DB_HOST) -p $(DB_PORT) $(DB_NAME) -U $(DB_USERNAME)
 
 clean:
+	find . -type d -name __pycache__ -exec rm -fr {} +
+	rm -fr *.egg-info
 	rm -fr .pybuild
+	rm -fr build
+	rm -fr dist
 	rm -f debian/files
 	rm -f debian/woudc-data-registry.postinst.debhelper
 	rm -f debian/woudc-data-registry.prerm.debhelper
@@ -62,4 +66,7 @@ createdb:
 dropdb:
 	dropdb $(PG_FLAGS)
 
-.PHONY: createdb dropdb
+package:
+	python setup.py sdist bdist_wheel
+
+.PHONY: clean createdb dropdb package
