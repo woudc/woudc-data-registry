@@ -43,10 +43,12 @@
 #
 # =================================================================
 
+from datetime import datetime
 import os
 import unittest
 
 from woudc_data_registry import util
+from woudc_data_registry import parser
 
 
 def resolve_test_data_path(test_data_file):
@@ -70,6 +72,89 @@ class DataRegistryTest(unittest.TestCase):
         """stub"""
 
         self.assertTrue(1 == 1, 'Expected equality')
+
+
+class ParserTest(unittest.TestCase):
+    """Test suite for parser.py"""
+
+    def test_get_value_type(self):
+        """test value typing"""
+
+        self.assertIsNone(parser._get_value_type('test', ''))
+        self.assertIsInstance(parser._get_value_type('test', 'foo'), str)
+        self.assertIsInstance(parser._get_value_type('test', '1'), int)
+        self.assertIsInstance(parser._get_value_type('test', '022'), str)
+        self.assertIsInstance(parser._get_value_type('test', '1.0'), float)
+        self.assertIsInstance(parser._get_value_type('test', '1.0-1'), str)
+        self.assertIsInstance(parser._get_value_type('date', '2011-11-11'),
+                              datetime)
+        self.assertIsInstance(parser._get_value_type('time', '11:11:11'),
+                              datetime)
+
+    def test_ecsv(self):
+        """test Extended CSV handling"""
+
+        # good file
+        contents = util.read_file(resolve_test_data_path(
+            'data/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+
+        self.assertEqual(ecsv.metadata_tables.keys(), ecsv.extcsv.keys())
+        ecsv.validate_metadata()
+
+        # bad file (not an ecsv)
+        contents = util.read_file(resolve_test_data_path(
+            'data/not-an-ecsv.dat'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+
+        with self.assertRaises(parser.NonStandardDataError):
+            ecsv.validate_metadata()
+
+        # bad file (missing table)
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-missing-location-table.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+
+        with self.assertRaises(parser.MetadataValidationError):
+            ecsv.validate_metadata()
+
+        # bad file (missing data)
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-missing-location-height.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+
+        self.assertEqual(ecsv.metadata_tables.keys(), ecsv.extcsv.keys())
+
+        with self.assertRaises(parser.MetadataValidationError):
+            ecsv.validate_metadata()
+
+        # bad file (invalid location latitude)
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-invalid-location-latitude.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+
+        with self.assertRaises(parser.MetadataValidationError):
+            ecsv.validate_metadata()
+
+        # bad file (invalid location longitude)
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-invalid-location-longitude.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+
+        with self.assertRaises(parser.MetadataValidationError):
+            ecsv.validate_metadata()
 
 
 class UtilTest(unittest.TestCase):
