@@ -48,6 +48,7 @@ import os
 import unittest
 
 from woudc_data_registry import parser, processing, util
+from woudc_data_registry.parser import DOMAINS
 
 
 def resolve_test_data_path(test_data_file):
@@ -79,8 +80,8 @@ class ParserTest(unittest.TestCase):
     def test_get_value_type(self):
         """test value typing"""
 
-        self.assertIsNone(parser._get_value_type('test', ''))
-        self.assertIsInstance(parser._get_value_type('test', 'foo'), str)
+        self.assertIsNone(parser._get_value_type('TEst', ''))
+        self.assertIsInstance(parser._get_value_type('TEST', 'foo'), str)
         self.assertIsInstance(parser._get_value_type('test', '1'), int)
         self.assertIsInstance(parser._get_value_type('test', '022'), str)
         self.assertIsInstance(parser._get_value_type('test', '1.0'), float)
@@ -100,7 +101,7 @@ class ParserTest(unittest.TestCase):
         ecsv = parser.ExtendedCSV(contents)
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
 
-        self.assertEqual(ecsv.metadata_tables.keys(), ecsv.extcsv.keys())
+        self.assertEqual(DOMAINS['metadata_tables'].keys(), ecsv.extcsv.keys())
         ecsv.validate_metadata()
 
         # bad file (not an ecsv)
@@ -123,14 +124,26 @@ class ParserTest(unittest.TestCase):
         with self.assertRaises(parser.MetadataValidationError):
             ecsv.validate_metadata()
 
-        # bad file (missing data)
+        # bad file (missing data - LOCATION.Height)
         contents = util.read_file(resolve_test_data_path(
             'data/ecsv-missing-location-height.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
 
-        self.assertEqual(ecsv.metadata_tables.keys(), ecsv.extcsv.keys())
+        self.assertEqual(DOMAINS['metadata_tables'].keys(), ecsv.extcsv.keys())
+
+        with self.assertRaises(parser.MetadataValidationError):
+            ecsv.validate_metadata()
+
+        # bad file (invalid data - CONTENT.Category)
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-invalid-content-category.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+
+        self.assertEqual(DOMAINS['metadata_tables'].keys(), ecsv.extcsv.keys())
 
         with self.assertRaises(parser.MetadataValidationError):
             ecsv.validate_metadata()
@@ -156,7 +169,7 @@ class ParserTest(unittest.TestCase):
             ecsv.validate_metadata()
 
 
-class ParserTest(unittest.TestCase):
+class ProcessingTest(unittest.TestCase):
     """Test suite for processing.py"""
 
     def test_process(self):
@@ -178,12 +191,12 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(p.message, 'binary file detected')
 
         result = p.process_data(resolve_test_data_path(
-            'data/f.csv'))
+            'data/euc-jp.dat'))
 
         self.assertFalse(result)
         self.assertEqual(p.status, 'failed')
         self.assertEqual(p.code, 'NonStandardDataError')
-        #self.assertEqual(p.message, 'binary file detected')
+        # self.assertEqual(p.message, 'binary file detected')
 
 
 class UtilTest(unittest.TestCase):

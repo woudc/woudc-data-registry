@@ -47,8 +47,8 @@ from datetime import datetime
 import click
 
 import geoalchemy2
-from sqlalchemy import (Column, create_engine, Date, DateTime, Integer, String,
-                        Time, UnicodeText)
+from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime, Enum,
+                        Integer, String, Time, UnicodeText)
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -69,6 +69,42 @@ class Geometry(geoalchemy2.types.Geometry):
         return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
 
 
+class Contributor(base):
+    """Data Registry Contributor"""
+
+    __tablename__ = 'contributor'
+
+    wmo_region_enum = Enum('I', 'II', 'III', 'IV', 'V', 'VI',
+                           name='wmo_region')
+
+    identifier = Column(Integer, primary_key=True, autoincrement=True)
+    acronym = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    country = Column(String, nullable=False)
+    wmo_region = Column(wmo_region_enum, nullable=False)
+    url = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    active = Column(Boolean, nullable=False, default=True)
+
+    last_validated_datetime = Column(DateTime, nullable=False,
+                                     default=datetime.utcnow())
+
+    location = Column(Geometry('POINT', srid=4326), nullable=False)
+
+    def __init__(self, dict_):
+        """serializer"""
+
+        self.acronym = dict_['acronym']
+        self.name = dict_['name']
+        self.country = dict_['country']
+        self.wmo_region = dict_['wmo_region']
+        self.url = dict_['url']
+        self.email = dict_['email']
+
+        self.location = util.point2ewkt(dict_['location']['longitude'],
+                                        dict_['location']['latitude'])
+
+
 class DataRecord(base):
     """Data Registry Data Record"""
 
@@ -86,30 +122,40 @@ class DataRecord(base):
     data_generation_date = Column(Date, nullable=False)
     data_generation_agency = Column(String, nullable=False)
     data_generation_version = Column(String, nullable=False)
-    data_generation_scientific_authority = Column(String)
+    data_generation_scientific_authority = Column(String, nullable=True)
 
     platform_type = Column(String, default='STN', nullable=False)
     platform_id = Column(String, nullable=False)
     platform_name = Column(String, nullable=False)
     platform_country = Column(String, nullable=False)
-    platform_gaw_id = Column(String)
+    platform_gaw_id = Column(String, nullable=True)
 
     instrument_name = Column(String, nullable=False)
     instrument_model = Column(String, nullable=False)
     instrument_number = Column(String, nullable=False)
 
-    location = Column(Geometry(srid=0))
+    location = Column(Geometry(srid=0), nullable=False)
 
     timestamp_utcoffset = Column(String, nullable=False)
     timestamp_date = Column(Date, nullable=False)
-    timestamp_time = Column(Time)
+    timestamp_time = Column(Time, nullable=True)
 
     # data management fields
 
-    insert_datetime = Column(DateTime, nullable=False,
-                             default=datetime.utcnow())
+    published = Column(Boolean, nullable=False, default=False)
+
+    received_datetime = Column(DateTime, nullable=False,
+                               default=datetime.utcnow())
+
+    inserted_datetime = Column(DateTime, nullable=False,
+                               default=datetime.utcnow())
+
     processed_datetime = Column(DateTime, nullable=False,
                                 default=datetime.utcnow())
+
+    published_datetime = Column(DateTime, nullable=False,
+                                default=datetime.utcnow())
+
     raw = Column(UnicodeText, nullable=False)
     url = Column(String, nullable=False)
 
@@ -151,6 +197,7 @@ class DataRecord(base):
         self.location = util.point2ewkt(ecsv.extcsv['LOCATION']['Longitude'],
                                         ecsv.extcsv['LOCATION']['Latitude'],
                                         ecsv.extcsv['LOCATION']['Height'])
+
         self.extcsv = ecsv.extcsv
         self.raw = ecsv._raw
 

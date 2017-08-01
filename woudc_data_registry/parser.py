@@ -58,6 +58,29 @@ ERROR_CODES = {
     'invalid_data': 12000,
 }
 
+DOMAINS = {
+    'datasets': {
+        'Broad-band',
+        'Lidar',
+        'Multi-band',
+        'OzoneSonde',
+        'RocketSonde',
+        'Spectral',
+        'SurfaceOzone',
+        'TotalOzoneObs',
+        'TotalOzone',
+        'UmkehrN14',
+    },
+    'metadata_tables': {
+        'CONTENT': ['Class', 'Category', 'Level', 'Form'],
+        'DATA_GENERATION': ['Date', 'Agency', 'Version'],
+        'PLATFORM': ['Type', 'ID', 'Name', 'Country'],
+        'INSTRUMENT': ['Name', 'Model', 'Number'],
+        'LOCATION': ['Latitude', 'Longitude', 'Height'],
+        'TIMESTAMP': ['UTCOffset', 'Date']
+    }
+}
+
 
 def _get_value_type(field, value):
     """derive true type from data value"""
@@ -101,15 +124,6 @@ class ExtendedCSV(object):
         self.extcsv = {}
         self._raw = None
 
-        self.metadata_tables = {
-            'CONTENT': ['Class', 'Category', 'Level', 'Form'],
-            'DATA_GENERATION': ['Date', 'Agency', 'Version'],
-            'PLATFORM': ['Type', 'ID', 'Name', 'Country'],
-            'INSTRUMENT': ['Name', 'Model', 'Number'],
-            'LOCATION': ['Latitude', 'Longitude', 'Height'],
-            'TIMESTAMP': ['UTCOffset', 'Date']
-        }
-
         LOGGER.debug('Reading into csv')
         self._raw = content
         reader = csv.reader(StringIO(self._raw))
@@ -121,7 +135,7 @@ class ExtendedCSV(object):
         for row in reader:
             if len(row) == 1 and row[0].startswith('#'):  # table name
                     table_name = row[0].replace('#', '')
-                    if table_name in self.metadata_tables.keys():
+                    if table_name in DOMAINS['metadata_tables'].keys():
                         found_table = True
                         LOGGER.debug('Found new table %s', table_name)
                         self.extcsv[table_name] = {}
@@ -136,7 +150,7 @@ class ExtendedCSV(object):
                 LOGGER.debug('Found blank line')
                 continue
             else:  # process row data
-                if table_name in self.metadata_tables.keys():
+                if table_name in DOMAINS['metadata_tables'].keys():
                     self.extcsv[table_name]['_line_num'] = \
                         int(reader.line_num + 1)
                     for idx, val in enumerate(row):
@@ -153,11 +167,11 @@ class ExtendedCSV(object):
 
         errors = []
 
-        missing_tables = list(set(self.metadata_tables) -
+        missing_tables = list(set(DOMAINS['metadata_tables']) -
                               set(self.extcsv.keys()))
 
         if missing_tables:
-            if not list(set(self.metadata_tables) - set(missing_tables)):
+            if not list(set(DOMAINS['metadata_tables']) - set(missing_tables)):
                 msg = 'No core metadata tables found. Not an Extended CSV file'
                 raise NonStandardDataError(msg)
 
@@ -172,7 +186,7 @@ class ExtendedCSV(object):
                                           errors)
 
         for key, value in self.extcsv.items():
-            missing_datas = list(set(self.metadata_tables[key]) -
+            missing_datas = list(set(DOMAINS['metadata_tables'][key]) -
                                  set(value.keys()))
 
             if missing_datas:
@@ -202,6 +216,16 @@ class ExtendedCSV(object):
                 'text': 'ERROR: {}: {} (line number: {})'.format(
                     ERROR_CODES['invalid_data'],
                     self.extcsv['LOCATION']['Longitude'],
+                    self.extcsv['LOCATION']['_line_num'])
+            })
+
+        if self.extcsv['CONTENT']['Category'] not in DOMAINS['datasets']:
+            errors.append({
+                'code': 'invalid_data',
+                'locator': 'CONTENT.Category',
+                'text': 'ERROR: {}: {} (line number: {})'.format(
+                    ERROR_CODES['invalid_data'],
+                    self.extcsv['CONTENT']['Category'],
                     self.extcsv['LOCATION']['_line_num'])
             })
 

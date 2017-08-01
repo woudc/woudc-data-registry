@@ -82,6 +82,7 @@ class Process(object):
 
         data_record = None
 
+        LOGGER.info('Detecting file')
         if not is_text_file(infile):
             self.status = 'failed'
             self.code = 'NonStandardDataError'
@@ -118,6 +119,7 @@ class Process(object):
             LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
             return False
 
+        LOGGER.info('Verifying data record against registry')
         # verify:
         # - Extended CSV core fields against registry
         # - taxonomy/URI check

@@ -59,6 +59,10 @@ clean:
 	rm -f debian/woudc-data-registry.substvars
 	rm -fr debian/woudc-data-registry
 
+coverage:
+	coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.run_tests
+	coverage report -m
+
 createdb:
 	createdb $(PG_FLAGS) -E UTF8
 	psql $(PG_FLAGS) -c "create extension postgis;"
@@ -69,4 +73,7 @@ dropdb:
 package:
 	python setup.py sdist bdist_wheel
 
-.PHONY: clean createdb dropdb package
+test:
+	python setup.py test
+
+.PHONY: clean coverage createdb dropdb package test
