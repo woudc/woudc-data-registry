@@ -47,8 +47,7 @@ from datetime import datetime
 import os
 import unittest
 
-from woudc_data_registry import util
-from woudc_data_registry import parser
+from woudc_data_registry import parser, processing, util
 
 
 def resolve_test_data_path(test_data_file):
@@ -155,6 +154,36 @@ class ParserTest(unittest.TestCase):
 
         with self.assertRaises(parser.MetadataValidationError):
             ecsv.validate_metadata()
+
+
+class ParserTest(unittest.TestCase):
+    """Test suite for processing.py"""
+
+    def test_process(self):
+        """test value typing"""
+
+        p = processing.Process()
+        self.assertIsNone(p.status)
+        self.assertIsNone(p.code)
+        self.assertIsNone(p.message)
+        self.assertIsInstance(p.process_start, datetime)
+        self.assertIsNone(p.process_end)
+
+        result = p.process_data(resolve_test_data_path(
+            'data/wmo_acronym_vertical_sm.jpg'))
+
+        self.assertFalse(result)
+        self.assertEqual(p.status, 'failed')
+        self.assertEqual(p.code, 'NonStandardDataError')
+        self.assertEqual(p.message, 'binary file detected')
+
+        result = p.process_data(resolve_test_data_path(
+            'data/f.csv'))
+
+        self.assertFalse(result)
+        self.assertEqual(p.status, 'failed')
+        self.assertEqual(p.code, 'NonStandardDataError')
+        #self.assertEqual(p.message, 'binary file detected')
 
 
 class UtilTest(unittest.TestCase):

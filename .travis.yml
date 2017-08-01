@@ -1,5 +1,8 @@
 language: python
 
+python:
+  - "3.4"
+
 env:
   global:
     - DEBUG=True
@@ -15,9 +18,10 @@ addons:
   apt:
     packages:
       - pandoc
+  postgresql: "9.3"
 
-python:
-  - "3.4"
+services:
+  - postgresql
 
 install:
   - pip install -r requirements-dev.txt

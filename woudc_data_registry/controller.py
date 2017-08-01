@@ -43,14 +43,11 @@
 #
 # =================================================================
 
-import logging
 import os
 
 import click
 
 from woudc_data_registry.processing import Process
-
-LOGGER = logging.getLogger(__name__)
 
 
 def orchestrate(file_, directory, verify=False):
@@ -72,11 +69,11 @@ def orchestrate(file_, directory, verify=False):
 
         if result:  # processed
             if verify:
-                LOGGER.info('Verified but not ingested')
+                click.echo('Verified but not ingested')
             else:
-                LOGGER.info('Ingested successfully')
+                click.echo('Ingested successfully')
         else:
-            LOGGER.info('Not ingested')
+            click.echo('Not ingested')
 
 
 @click.command()
