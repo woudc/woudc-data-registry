@@ -47,14 +47,14 @@ make ENV=foo.env createdb
 # drop database
 make ENV=foo.env dropdb
 
-# initialize models (database tables)
-woudc-data-registry setup_models
+# initialize model (database tables)
+woudc-data-registry model setup
 
 # cleanups
 
-# re-initialize models (database tables)
-woudc-data-registry teardown_models
-woudc-data-registry setup_models
+# re-initialize model (database tables)
+woudc-data-registry model teardown
+woudc-data-registry model setup
 
 # drop database
 make ENV=foo.env dropdb
@@ -65,16 +65,16 @@ make ENV=foo.env dropdb
 
 ```bash
 # ingest directory of files (walks directory recursively)
-woudc-data-registry ingest -d /path/to/dir
+woudc-data-registry data ingest -d /path/to/dir
 
 # ingest single file
-woudc-data-registry ingest -f foo.dat
+woudc-data-registry data ingest -f foo.dat
 
 # verify directory of files (walks directory recursively)
-woudc-data-registry ingest -d /path/to/dir --verify
+woudc-data-registry data ingest -d /path/to/dir --verify
 
 # verify single file
-woudc-data-registry ingest -f foo.dat --verify
+woudc-data-registry data ingest -f foo.dat --verify
 
 ```
 

@@ -76,6 +76,11 @@ def orchestrate(file_, directory, verify=False):
             click.echo('Not ingested')
 
 
+@click.group()
+def data():
+    pass
+
+
 @click.command()
 @click.pass_context
 @click.option('--file', '-f', 'file_',
@@ -98,3 +103,6 @@ def ingest(ctx, file_, directory, verify):
         raise click.ClickException(msg)
 
     orchestrate(file_, directory, verify)
+
+
+data.add_command(ingest)

@@ -47,6 +47,18 @@ include $(ENV)
 
 PG_FLAGS=-h $(DB_HOST) -p $(DB_PORT) $(DB_NAME) -U $(DB_USERNAME)
 
+help:
+	@echo
+	@echo "make targets:"
+	@echo
+	@echo " createdb: create PostgreSQL/PostGIS database"
+	@echo " dropdb: drop PostgreSQL/PostGIS database"
+	@echo " test: run tests"
+	@echo " coverage: run code coverage"
+	@echo " package: create Python wheel"
+	@echo " clean: remove transitory files"
+	@echo
+
 clean:
 	find . -type d -name __pycache__ -exec rm -fr {} +
 	rm -fr *.egg-info
@@ -76,4 +88,4 @@ package:
 test:
 	python setup.py test
 
-.PHONY: clean coverage createdb dropdb package test
+.PHONY: clean coverage createdb dropdb help package test

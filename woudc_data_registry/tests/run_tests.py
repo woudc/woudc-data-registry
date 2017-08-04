@@ -104,6 +104,18 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(DOMAINS['metadata_tables'].keys(), ecsv.extcsv.keys())
         ecsv.validate_metadata()
 
+        # good file, test special characters
+        contents = util.read_file(resolve_test_data_path(
+            'data/Brewer229_Daily_SEP2016.493'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+
+        self.assertEqual(DOMAINS['metadata_tables'].keys(), ecsv.extcsv.keys())
+        ecsv.validate_metadata()
+
+        self.assertEqual(ecsv.extcsv['PLATFORM']['Name'], 'Río Gallegos')
+
         # bad file (not an ecsv)
         contents = util.read_file(resolve_test_data_path(
             'data/not-an-ecsv.dat'))

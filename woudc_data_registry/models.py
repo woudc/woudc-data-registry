@@ -78,7 +78,7 @@ class Contributor(base):
                            name='wmo_region')
 
     identifier = Column(Integer, primary_key=True, autoincrement=True)
-    acronym = Column(String, nullable=False)
+    acronym = Column(String, nullable=False, unique=True)
     name = Column(String, nullable=False)
     country = Column(String, nullable=False)
     wmo_region = Column(wmo_region_enum, nullable=False)
@@ -205,9 +205,14 @@ class DataRecord(base):
         return 'DataRecord(%r, %r)' % (self.identifier, self.url)
 
 
+@click.group()
+def model():
+    pass
+
+
 @click.command()
 @click.pass_context
-def setup_models(ctx):
+def setup(ctx):
     """create models"""
 
     from woudc_data_registry import config
@@ -224,7 +229,7 @@ def setup_models(ctx):
 
 @click.command()
 @click.pass_context
-def teardown_models(ctx):
+def teardown(ctx):
     """delete models"""
 
     from woudc_data_registry import config
@@ -237,3 +242,15 @@ def teardown_models(ctx):
         click.echo('Done')
     except (OperationalError, ProgrammingError) as err:
         click.echo('ERROR: {}'.format(err))
+
+@click.command()
+@click.pass_context
+def init_metadata(ctx):
+    """add core metadata"""
+
+    pass
+
+
+model.add_command(setup)
+model.add_command(teardown)
+model.add_command(init_metadata)

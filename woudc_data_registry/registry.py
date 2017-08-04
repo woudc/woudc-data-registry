@@ -61,6 +61,7 @@ session = Session()
 def save_data_record(record):
     """save data record to registry"""
 
+    print(models)
     d1 = models.DataRecord(record)
     d1.url = 'http://woudc.org/'
 
