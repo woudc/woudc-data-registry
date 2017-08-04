@@ -76,7 +76,7 @@ coverage:
 	coverage report -m
 
 createdb:
-	createdb $(PG_FLAGS) -E UTF8
+	createdb $(PG_FLAGS) -E UTF8 --template=template0
 	psql $(PG_FLAGS) -c "create extension postgis;"
 
 dropdb:

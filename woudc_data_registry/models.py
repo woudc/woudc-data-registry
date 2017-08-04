@@ -243,6 +243,7 @@ def teardown(ctx):
     except (OperationalError, ProgrammingError) as err:
         click.echo('ERROR: {}'.format(err))
 
+
 @click.command()
 @click.pass_context
 def init_metadata(ctx):
