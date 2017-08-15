@@ -47,6 +47,7 @@ from datetime import datetime
 import logging
 
 from woudc_data_registry import registry
+from woudc_data_registry.models import DataRecord
 from woudc_data_registry.parser import (ExtendedCSV, MetadataValidationError,
                                         NonStandardDataError)
 from woudc_data_registry.util import is_text_file, read_file
@@ -80,7 +81,8 @@ class Process(object):
 
         # detect incoming data file
 
-        data_record = None
+        data = None
+        self.data_record = None
 
         LOGGER.info('Detecting file')
         if not is_text_file(infile):
@@ -91,7 +93,7 @@ class Process(object):
             return False
 
         try:
-            data_record = read_file(infile)
+            data = read_file(infile)
         except UnicodeDecodeError as err:
             self.status = 'failed'
             self.code = 'NonStandardDataError'
@@ -100,11 +102,11 @@ class Process(object):
             return False
 
         LOGGER.info('Parsing data record')
-        dr = ExtendedCSV(data_record)
+        ecsv = ExtendedCSV(data)
 
         try:
             LOGGER.info('Validating Extended CSV')
-            dr.validate_metadata()
+            ecsv.validate_metadata()
             LOGGER.info('Valid Extended CSV')
         except NonStandardDataError as err:
             self.status = 'failed'
@@ -126,17 +128,30 @@ class Process(object):
         # - duplicate data submitted
         # - new version of file
 
-        if not verify:
-            LOGGER.info('Saving Extended CSV to registry')
-            self.process_end = datetime.utcnow()
-            registry.save_data_record(dr)
+        LOGGER.info('Data record is valid and verified')
+
+        if verify:  # do not save or index
+            return True
+         
+        LOGGER.info('Saving data record CSV to registry')
+
+        self.data_record = DataRecord(ecsv)
+        self.data_record.url = 'http://woudc.org/'
+        self.process_end = datetime.utcnow()
+        print(self.data_record)
+        registry.save_data_record(self.data_record)
 
         return True
 
-    def index_data(self):
+    def index_data(self, data_record=None):
         """add data record to search index"""
 
-        raise NotImplementedError()
+        if data_record is None:
+            print('no data record')
+            return False
+
+        print('tom')
+        #print(data_record)
 
     def unindex_data(self):
         """remove data record from search index"""

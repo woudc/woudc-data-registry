@@ -72,6 +72,7 @@ def orchestrate(file_, directory, verify=False):
                 click.echo('Verified but not ingested')
             else:
                 click.echo('Ingested successfully')
+                p.index_data(p.data_record)
         else:
             click.echo('Not ingested')
 

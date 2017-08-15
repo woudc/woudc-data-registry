@@ -49,7 +49,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import DataError
 from sqlalchemy.orm import sessionmaker
 
-from woudc_data_registry import config, models
+from woudc_data_registry import config
 
 LOGGER = logging.getLogger(__name__)
 
@@ -58,16 +58,13 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 
-def save_data_record(record):
+def save_data_record(data_record):
     """save data record to registry"""
 
-    d1 = models.DataRecord(record)
-    d1.url = 'http://woudc.org/'
-
     try:
-        session.add(d1)
+        session.add(data_record)
         session.commit()
         session.close()
     except DataError as err:
-        print(err)
+        LOGGER.error('Failed to save to registry: {}'.format(err))
         session.rollback()
