@@ -56,6 +56,8 @@ DB_PORT = int(os.getenv('DB_PORT', 5432))
 DB_USERNAME = os.getenv('DB_USERNAME', None)
 DB_PASSWORD = os.getenv('DB_PASSWORD', None)
 DB_NAME = os.getenv('DB_NAME', 'woudc-data-registry')
+SEARCH_TYPE = os.getenv('SEARCH_TYPE', 'elasticsearch')
+SEARCH_URL = os.getenv('SEARCH_URL', 'elasticsearch')
 
 if None in [DB_USERNAME, DB_PASSWORD]:
     raise EnvironmentError('System environment variables are not set!')

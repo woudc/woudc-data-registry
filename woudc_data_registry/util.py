@@ -43,6 +43,7 @@
 #
 # =================================================================
 
+from datetime import date, datetime
 import logging
 import io
 
@@ -85,7 +86,7 @@ def str2bool(value):
     if isinstance(value, bool):
         value2 = value
     else:
-        value2 = value.lower() in ('yes', 'true', 't', '1')
+        value2 = value.lower() in ('yes', 'true', 't', '1', 'on')
 
     return value2
 
@@ -110,3 +111,16 @@ def is_binary_string(string_):
     textchars = (bytearray({7, 8, 9, 10, 12, 13, 27} |
                  set(range(0x20, 0x100)) - {0x7f}))
     return bool(string_.translate(None, textchars))
+
+
+def json_serial(obj):
+    """
+    helper function to convert to JSON non-default
+    types (source: https://stackoverflow.com/a/22238613)
+    """
+
+    if isinstance(obj, (datetime, date)):
+        serial = obj.isoformat()
+        return serial
+
+    raise TypeError('{} type {} not serializable'.format(obj, type(obj)))

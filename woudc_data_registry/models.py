@@ -156,8 +156,12 @@ class DataRecord(base):
     published_datetime = Column(DateTime, nullable=False,
                                 default=datetime.utcnow())
 
+    ingest_filepath = Column(String, nullable=False)
+    filename = Column(String, nullable=False)
+
     raw = Column(UnicodeText, nullable=False)
     url = Column(String, nullable=False)
+    urn = Column(String, nullable=False)
 
     def __init__(self, ecsv):
         """serializer"""
@@ -200,6 +204,26 @@ class DataRecord(base):
 
         self.extcsv = ecsv.extcsv
         self.raw = ecsv._raw
+        self.urn = self.get_urn()
+
+    def get_urn(self):
+        """generate data record URN"""
+
+        urn_tokens = [
+            'urn',
+            self.content_class,
+            self.content_category,
+            self.data_generation_agency,
+            self.platform_type,
+            self.platform_id,
+            self.instrument_name,
+            self.instrument_model,
+            self.instrument_number,
+            self.data_generation_date.strftime('%Y-%m-%d'),
+            self.data_generation_version,
+        ]
+
+        return ':'.join(map(str, urn_tokens)).lower()
 
     def __repr__(self):
         return 'DataRecord(%r, %r)' % (self.identifier, self.url)

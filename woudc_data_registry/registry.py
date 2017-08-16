@@ -50,12 +50,21 @@ from sqlalchemy.exc import DataError
 from sqlalchemy.orm import sessionmaker
 
 from woudc_data_registry import config
+from woudc_data_registry.models import DataRecord
 
 LOGGER = logging.getLogger(__name__)
 
 engine = create_engine(config.DATABASE_URL, echo=config.DEBUG)
-Session = sessionmaker(bind=engine)
+Session = sessionmaker(bind=engine, expire_on_commit=False)
 session = Session()
+
+
+def get_data_record(data_record):
+    """get a data record from the registry"""
+
+    data_record_ = session.query(DataRecord).first()
+    print('QUERY', data_record_)
+    return data_record_
 
 
 def save_data_record(data_record):
@@ -63,6 +72,7 @@ def save_data_record(data_record):
 
     try:
         session.add(data_record)
+        # session.merge(data_record)
         session.commit()
         session.close()
     except DataError as err:

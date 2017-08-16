@@ -45,8 +45,9 @@
 
 from datetime import datetime
 import logging
+import os
 
-from woudc_data_registry import registry
+from woudc_data_registry import registry, search
 from woudc_data_registry.models import DataRecord
 from woudc_data_registry.parser import (ExtendedCSV, MetadataValidationError,
                                         NonStandardDataError)
@@ -121,6 +122,12 @@ class Process(object):
             LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
             return False
 
+        self.data_record = DataRecord(ecsv)
+        self.data_record.url = 'http://woudc.org/'
+        self.data_record.ingest_filepath = infile
+        self.data_record.filename = os.path.basename(infile)
+        self.process_end = datetime.utcnow()
+
         LOGGER.info('Verifying data record against registry')
         # verify:
         # - Extended CSV core fields against registry
@@ -128,17 +135,15 @@ class Process(object):
         # - duplicate data submitted
         # - new version of file
 
+        registry.get_data_record(self.data_record)
+
         LOGGER.info('Data record is valid and verified')
 
         if verify:  # do not save or index
             return True
-         
+
         LOGGER.info('Saving data record CSV to registry')
 
-        self.data_record = DataRecord(ecsv)
-        self.data_record.url = 'http://woudc.org/'
-        self.process_end = datetime.utcnow()
-        print(self.data_record)
         registry.save_data_record(self.data_record)
 
         return True
@@ -147,11 +152,18 @@ class Process(object):
         """add data record to search index"""
 
         if data_record is None:
-            print('no data record')
+            LOGGER.warning('no data record')
             return False
 
-        print('tom')
-        #print(data_record)
+        data = data_record.__dict__
+
+        LOGGER.debug('removing internal / unwanted fields')
+        data.pop('_sa_instance_state', None)
+        data.pop('extcsv', None)
+
+        search_engine = search.SearchIndex()
+
+        return search_engine.index_data_record(data)
 
     def unindex_data(self):
         """remove data record from search index"""

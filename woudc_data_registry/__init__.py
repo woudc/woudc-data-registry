@@ -45,8 +45,9 @@
 
 import click
 
-from woudc_data_registry.models import model
 from woudc_data_registry.controller import data
+from woudc_data_registry.models import model
+from woudc_data_registry.search import search
 
 __version__ = '0.1.dev0'
 
@@ -59,3 +60,4 @@ def cli():
 
 cli.add_command(model)
 cli.add_command(data)
+cli.add_command(search)

@@ -50,11 +50,18 @@ make ENV=foo.env dropdb
 # initialize model (database tables)
 woudc-data-registry model setup
 
+# initialize search engine
+woudc-data-registry search create_index
+
 # cleanups
 
 # re-initialize model (database tables)
 woudc-data-registry model teardown
 woudc-data-registry model setup
+
+# re-initialize search engine
+woudc-data-registry search delete_index
+woudc-data-registry search create_index
 
 # drop database
 make ENV=foo.env dropdb
