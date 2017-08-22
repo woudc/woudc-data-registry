@@ -92,7 +92,7 @@ def _get_value_type(field, value):
         return None
 
     if field2 == 'date':
-        value2 = datetime.strptime(value, '%Y-%m-%d')
+        value2 = datetime.strptime(value, '%Y-%m-%d').date()
     elif field2 == 'time':
         value2 = datetime.strptime(value, '%H:%M:%S')
     else:

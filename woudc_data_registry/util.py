@@ -61,6 +61,25 @@ def point2ewkt(x, y, z=None, srid=4326):
     return point
 
 
+def point2geojsongeometry(x, y, z=None):
+    """helper function to generate GeoJSON geometry of point"""
+
+    coordinates = []
+
+    geometry = {
+        'type': 'Point'
+    }
+
+    if z is None:
+        coordinates = [x, y]
+    else:
+        coordinates = [x, y, z]
+
+    geometry['coordinates'] = coordinates
+
+    return geometry
+
+
 def read_file(filename, encoding='utf-8'):
     """read file contents"""
 

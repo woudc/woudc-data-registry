@@ -59,12 +59,25 @@ Session = sessionmaker(bind=engine, expire_on_commit=False)
 session = Session()
 
 
-def get_data_record(data_record):
+def is_value_in_domain(value, domain):
+    """checks if a given value is in a data record domain"""
+
+    field = getattr(DataRecord, domain)
+
+    values = [v[0] for v in session.query(field).distinct()]
+
+    return str(value) in values
+
+
+def get_data_record_by_field(data_record, by):
     """get a data record from the registry"""
 
-    data_record_ = session.query(DataRecord).first()
-    print('QUERY', data_record_)
-    return data_record_
+    field = getattr(DataRecord, by)
+    value = getattr(data_record, by)
+
+    results = session.query(DataRecord).filter(field == value).all()
+
+    return results
 
 
 def save_data_record(data_record):

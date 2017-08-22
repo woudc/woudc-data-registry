@@ -44,8 +44,9 @@
 # =================================================================
 
 from datetime import datetime
-import click
+import logging
 
+import click
 import geoalchemy2
 from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime, Enum,
                         Integer, String, Time, UnicodeText)
@@ -55,6 +56,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from woudc_data_registry import util
 
 base = declarative_base()
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Geometry(geoalchemy2.types.Geometry):
@@ -224,6 +227,54 @@ class DataRecord(base):
         ]
 
         return ':'.join(map(str, urn_tokens)).lower()
+
+    def get_waf_url(self, baseurl):
+        """generate WAF URL"""
+
+        datasetdirname = '{}_{}_{}'.format(self.content_category,
+                                           self.content_level,
+                                           self.content_form)
+
+        url_tokens = [
+            baseurl.rstrip('/'),
+            'Archive-NewFormat',
+            datasetdirname,
+            'stn{}'.format(self.platform_id),
+            self.instrument_name.lower(),
+            self.timestamp_date.strftime('%Y'),
+            self.filename
+        ]
+
+        return '/'.join(url_tokens)
+
+    def to_geojson_dict(self):
+        """return dict as a GeoJSON representation"""
+
+        data = self.__dict__
+
+        fields_to_remove = [
+            '_sa_instance_state',
+            'extcsv',
+            'location',
+            'ingest_filepath',
+        ]
+
+        geometry = util.point2geojsongeometry(
+            data['extcsv']['LOCATION']['Longitude'],
+            data['extcsv']['LOCATION']['Latitude'],
+            data['extcsv']['LOCATION']['Height'])
+
+        LOGGER.debug('removing internal / unwanted fields')
+        for field_to_remove in fields_to_remove:
+            data.pop(field_to_remove, None)
+
+        feature = {
+            'type': 'Feature',
+            'geometry': geometry,
+            'properties': data
+        }
+
+        return feature
 
     def __repr__(self):
         return 'DataRecord(%r, %r)' % (self.identifier, self.url)

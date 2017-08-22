@@ -85,29 +85,57 @@ class SearchIndex(object):
     def index_data_record(self, data):
         """index or update a document"""
 
-        url = '{}/data_record/{}'.format(self.url, data['identifier'])
-        data_ = json.dumps(data, default=json_serial)
+        url = '{}/data_record/_search'.format(self.url)
+        identifier = data['properties']['identifier']
 
-        result = requests.get(url)
+        query = {
+            'query': {
+                'match': {
+                    'properties.urn': data['properties']['urn']
+                }
+            },
+            '_source': {
+                'excludes': ['properties.raw']
+            }
+        }
 
-        if result.ok:  # exists, update
+        result = requests.post(url, data=json.dumps(query)).json()
+
+        if result['hits']['total'] > 0:  # exists, update
             print('UPDATE')
             LOGGER.debug('existing record, updating')
-            url = '{}/data_record/{}/_update'.format(self.url,
-                                                     data['identifier'])
+            url = '{}/data_record/{}/_update'.format(self.url, identifier)
+
+            print(url)
+            data_ = json.dumps({'doc': data}, default=json_serial)
+
             result = requests.post(url, data=data_)
         else:  # index new
             print('INSERT')
             LOGGER.debug('new record, indexing')
+            data_ = json.dumps(data, default=json_serial)
+            url = '{}/data_record/{}'.format(self.url, identifier)
             result = requests.put(url, headers=self.headers, data=data_)
 
+        print(result)
         if not result.ok:
-            raise SearchIndexError(
-                result.json()['error']['reason'])
+            raise SearchIndexError(result.json()['error']['reason'])
+
         return True
 
-    def unindex_record(self):
-        pass
+    def unindex_data_record(self, data):
+        """delete document from index"""
+
+        identifier = data['properties']['identifier']
+
+        url = '{}/data_record/{}'.format(self.url, identifier)
+
+        result = requests.delete(url)
+        print(result.text)
+
+        if result.status_code == 404:
+            raise SearchIndexError('Data record {} does not exist'.format(
+                identifier))
 
 
 class SearchIndexError(Exception):

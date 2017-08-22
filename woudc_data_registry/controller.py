@@ -72,7 +72,6 @@ def orchestrate(file_, directory, verify=False):
                 click.echo('Verified but not ingested')
             else:
                 click.echo('Ingested successfully')
-                p.index_data(p.data_record)
         else:
             click.echo('Not ingested')
 
@@ -91,7 +90,7 @@ def data():
               type=click.Path(exists=True, resolve_path=True,
                               dir_okay=True, file_okay=False),
               help='Path to directory of data records')
-@click.option('--verify', is_flag=True)
+@click.option('--verify', is_flag=True, help='Verify file only')
 def ingest(ctx, file_, directory, verify):
     """ingest a single data submission or directory of files"""
 

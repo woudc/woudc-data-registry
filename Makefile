@@ -82,6 +82,9 @@ createdb:
 dropdb:
 	dropdb $(PG_FLAGS)
 
+flake8:
+	flake8 woudc_data_registry
+
 package:
 	python setup.py sdist bdist_wheel
 
@@ -96,4 +99,4 @@ teardown:
 test:
 	python setup.py test
 
-.PHONY: clean coverage createdb dropdb help package setup teardown test
+.PHONY: clean coverage createdb dropdb flake8 help package setup teardown test

@@ -47,7 +47,7 @@ from datetime import datetime
 import logging
 import os
 
-from woudc_data_registry import registry, search
+from woudc_data_registry import config, registry, search
 from woudc_data_registry.models import DataRecord
 from woudc_data_registry.parser import (ExtendedCSV, MetadataValidationError,
                                         NonStandardDataError)
@@ -84,6 +84,7 @@ class Process(object):
 
         data = None
         self.data_record = None
+        self.search_engine = search.SearchIndex()
 
         LOGGER.info('Detecting file')
         if not is_text_file(infile):
@@ -122,50 +123,68 @@ class Process(object):
             LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
             return False
 
+        LOGGER.info('Data is valid Extended CSV')
+
         self.data_record = DataRecord(ecsv)
-        self.data_record.url = 'http://woudc.org/'
         self.data_record.ingest_filepath = infile
         self.data_record.filename = os.path.basename(infile)
+        self.data_record.url = self.data_record.get_waf_url(config.WAF_URL)
         self.process_end = datetime.utcnow()
 
-        LOGGER.info('Verifying data record against registry')
-        # verify:
-        # - Extended CSV core fields against registry
-        # - taxonomy/URI check
-        # - duplicate data submitted
-        # - new version of file
+        LOGGER.debug('Verifying if URN already exists')
+        results = registry.get_data_record_by_field(self.data_record, 'urn')
 
-        registry.get_data_record(self.data_record)
+        if results:
+            msg = 'Data exists'
+            self.status = 'failed'
+            self.code = 'ProcessingError'
+            self.message = msg
+            LOGGER.error(msg)
+            # return False
+
+        LOGGER.info('Verifying data record against registry core fields')
+
+        domains_to_check = [
+            'content_category',
+            'data_generation_agency',
+            'platform_type',
+            'platform_id',
+            'platform_name',
+            'platform_country',
+            'instrument_name',
+            'instrument_model'
+        ]
+
+        for domain_to_check in domains_to_check:
+            value = getattr(self.data_record, domain_to_check)
+
+            if not registry.is_value_in_domain(value, domain_to_check):
+                msg = 'value {} not in domain {}'.format(value,
+                                                         domain_to_check)
+                LOGGER.error(msg)
+                # raise ProcessingError(msg)
+
+        # TODO: validate station
+        # TODO: validate instrument
+
+        # TODO: duplicate data submitted
+        # TODO: check new version of file
 
         LOGGER.info('Data record is valid and verified')
 
         if verify:  # do not save or index
+            LOGGER.debug('Verification mode detected. NOT saving to registry')
             return True
 
         LOGGER.info('Saving data record CSV to registry')
-
         registry.save_data_record(self.data_record)
+
+        LOGGER.info('Indexing data record search engine')
+        self.search_engine.index_data_record(self.data_record.to_geojson_dict())
 
         return True
 
-    def index_data(self, data_record=None):
-        """add data record to search index"""
 
-        if data_record is None:
-            LOGGER.warning('no data record')
-            return False
-
-        data = data_record.__dict__
-
-        LOGGER.debug('removing internal / unwanted fields')
-        data.pop('_sa_instance_state', None)
-        data.pop('extcsv', None)
-
-        search_engine = search.SearchIndex()
-
-        return search_engine.index_data_record(data)
-
-    def unindex_data(self):
-        """remove data record from search index"""
-
-        raise NotImplementedError()
+class ProcessingError(Exception):
+    """custom exception handler"""
+    pass
