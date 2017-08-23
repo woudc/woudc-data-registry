@@ -53,7 +53,7 @@ LOGGER = logging.getLogger(__name__)
 def point2ewkt(x, y, z=None, srid=4326):
     """helper function to generate EWKT of point"""
 
-    if z is None:
+    if z is None or int(z) == 0:
         point = 'SRID={};POINT({} {})'.format(srid, x, y)
     else:
         point = 'SRID={};POINTZ({} {} {})'.format(srid, x, y, z)
@@ -70,7 +70,7 @@ def point2geojsongeometry(x, y, z=None):
         'type': 'Point'
     }
 
-    if z is None:
+    if z is None or int(z) == 0:
         coordinates = [x, y]
     else:
         coordinates = [x, y, z]

@@ -251,6 +251,9 @@ class UtilTest(unittest.TestCase):
         point = util.point2ewkt(-75, 45, 111, srid=4269)
         self.assertEqual(point, 'SRID=4269;POINTZ(-75 45 111)')
 
+        point = util.point2ewkt(-75, 45, 0, srid=4269)
+        self.assertEqual(point, 'SRID=4269;POINT(-75 45)')
+
     def test_point2geojsongeometry(self):
         """test point GeoJSON geometry creation"""
 
@@ -267,6 +270,11 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(point['coordinates'][0], -75)
         self.assertEqual(point['coordinates'][1], 45)
         self.assertEqual(point['coordinates'][2], 333)
+
+        point = util.point2geojsongeometry(-75, 45, 0)
+        self.assertEqual(len(point['coordinates']), 2)
+        self.assertEqual(point['coordinates'][0], -75)
+        self.assertEqual(point['coordinates'][1], 45)
 
     def test_str2bool(self):
         """test boolean evaluation"""

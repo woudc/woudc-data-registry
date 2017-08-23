@@ -50,44 +50,45 @@ from sqlalchemy.exc import DataError
 from sqlalchemy.orm import sessionmaker
 
 from woudc_data_registry import config
-from woudc_data_registry.models import DataRecord
 
 LOGGER = logging.getLogger(__name__)
 
-engine = create_engine(config.DATABASE_URL, echo=config.DEBUG)
-Session = sessionmaker(bind=engine, expire_on_commit=False)
-session = Session()
 
+class Registry(object):
+    """registry"""
 
-def is_value_in_domain(value, domain):
-    """checks if a given value is in a data record domain"""
+    def __init__(self):
+        """constructor"""
 
-    field = getattr(DataRecord, domain)
+        engine = create_engine(config.DATABASE_URL, echo=config.DEBUG)
+        Session = sessionmaker(bind=engine, expire_on_commit=False)
+        self.session = Session()
 
-    values = [v[0] for v in session.query(field).distinct()]
+    def query_distinct(self, domain):
+        """queries for distinct values"""
 
-    return str(value) in values
+        values = [v[0] for v in self.session.query(domain).distinct()]
 
+        return values
 
-def get_data_record_by_field(data_record, by):
-    """get a data record from the registry"""
+    def query_by_field(self, obj, obj_instance, by):
+        """query data by field"""
 
-    field = getattr(DataRecord, by)
-    value = getattr(data_record, by)
+        field = getattr(obj, by)
+        value = getattr(obj_instance, by)
 
-    results = session.query(DataRecord).filter(field == value).all()
+        results = self.session.query(obj).filter(field == value).all()
 
-    return results
+        return results
 
+    def save(self, obj):
+        """helper function to save object to registry"""
 
-def save_data_record(data_record):
-    """save data record to registry"""
-
-    try:
-        session.add(data_record)
-        # session.merge(data_record)
-        session.commit()
-        session.close()
-    except DataError as err:
-        LOGGER.error('Failed to save to registry: {}'.format(err))
-        session.rollback()
+        try:
+            self.session.add(obj)
+            # self.session.merge(obj)
+            self.session.commit()
+            self.session.close()
+        except DataError as err:
+            LOGGER.error('Failed to save to registry: {}'.format(err))
+            self.session.rollback()

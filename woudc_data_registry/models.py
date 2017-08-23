@@ -47,17 +47,20 @@ from datetime import datetime
 import logging
 
 import click
+import csv
 import geoalchemy2
-from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime, Enum,
-                        Integer, String, Time, UnicodeText)
+from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
+                        Enum, Integer, String, Time, UnicodeText)
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 
-from woudc_data_registry import util
+from woudc_data_registry import registry, util
 
 base = declarative_base()
 
 LOGGER = logging.getLogger(__name__)
+
+WMO_REGION_ENUM = Enum('I', 'II', 'III', 'IV', 'V', 'VI', name='wmo_region')
 
 
 class Geometry(geoalchemy2.types.Geometry):
@@ -77,16 +80,14 @@ class Contributor(base):
 
     __tablename__ = 'contributor'
 
-    wmo_region_enum = Enum('I', 'II', 'III', 'IV', 'V', 'VI',
-                           name='wmo_region')
-
     identifier = Column(Integer, primary_key=True, autoincrement=True)
     acronym = Column(String, nullable=False, unique=True)
     name = Column(String, nullable=False)
     country = Column(String, nullable=False)
-    wmo_region = Column(wmo_region_enum, nullable=False)
+    wmo_region = Column(WMO_REGION_ENUM, nullable=False)
     url = Column(String, nullable=False)
     email = Column(String, nullable=False)
+    ftp_username = Column(String, nullable=False)
     active = Column(Boolean, nullable=False, default=True)
 
     last_validated_datetime = Column(DateTime, nullable=False,
@@ -103,9 +104,22 @@ class Contributor(base):
         self.wmo_region = dict_['wmo_region']
         self.url = dict_['url']
         self.email = dict_['email']
+        self.ftp_username = dict_['ftp_username']
+        self.location = util.point2ewkt(dict_['x'], dict_['y'])
 
-        self.location = util.point2ewkt(dict_['location']['longitude'],
-                                        dict_['location']['latitude'])
+
+class Dataset(base):
+    """Data Registry Dataset"""
+
+    __tablename__ = 'dataset'
+
+    identifier = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    slug = Column(String, nullable=False)
+
+    def __init__(self, dict_):
+        self.name = dict_['name']
+        self.slug = dict_['slug']
 
 
 class DataRecord(base):
@@ -280,8 +294,41 @@ class DataRecord(base):
         return 'DataRecord(%r, %r)' % (self.identifier, self.url)
 
 
+class Station(base):
+    """Data Registry Station"""
+
+    __tablename__ = 'station'
+
+    platform_type_enum = Enum('STN', 'SHP', name='type')
+
+    identifier = Column(Integer, primary_key=True, autoincrement=True)
+    platform_identifier = Column(String, nullable=False, unique=True)
+    name = Column(String, nullable=False)
+    platform_type = Column(platform_type_enum, nullable=False)
+    gaw_id = Column(String, nullable=True)
+    country = Column(String, nullable=False)
+    wmo_region = Column(WMO_REGION_ENUM, nullable=False)
+    active = Column(Boolean, nullable=False, default=True)
+
+    last_validated_datetime = Column(DateTime, nullable=False,
+                                     default=datetime.utcnow())
+
+    location = Column(Geometry('POINT', srid=4326), nullable=False)
+
+    def __init__(self, dict_):
+        """serializer"""
+
+        self.platform_identifier = dict_['platform_identifier']
+        self.name = dict_['name']
+        self.platform_type = dict_['platform_type']
+        self.gaw_id = dict_['gaw_id']
+        self.country = dict_['country']
+        self.wmo_region = dict_['wmo_region']
+        self.location = util.point2ewkt(dict_['x'], dict_['y'], dict_['z'])
+
+
 @click.group()
-def model():
+def manage():
     pass
 
 
@@ -321,12 +368,50 @@ def teardown(ctx):
 
 @click.command()
 @click.pass_context
-def init_metadata(ctx):
-    """add core metadata"""
+@click.option('--contributors', '-c',
+              type=click.Path(exists=True, resolve_path=True),
+              help='Path to contributors CSV')
+@click.option('--stations', '-s',
+              type=click.Path(exists=True, resolve_path=True),
+              help='Path to stations CSV')
+@click.option('--instruments', '-i',
+              type=click.Path(exists=True, resolve_path=True),
+              help='Path to instruments CSV')
+@click.option('--datasets', '-d',
+              type=click.Path(exists=True, resolve_path=True),
+              help='Path to datasets CSV')
+def init(ctx, contributors, stations, instruments, datasets):
+    """initialize core system metadata"""
 
-    pass
+    if None in [contributors, stations, instruments, datasets]:
+        raise click.ClickException('Missing required metadata')
+
+    registry_ = registry.Registry()
+
+    click.echo('Loading contributors metadata')
+    with open(contributors) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            contributor = Contributor(row)
+            registry_.save(contributor)
+
+    # load stations CSV
+    click.echo('Loading stations metadata')
+    with open(stations) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            station = Station(row)
+            registry_.save(station)
+    # load instruments CSV
+
+    click.echo('Loading datasets metadata')
+    with open(datasets) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            dataset = Dataset(row)
+            registry_.save(dataset)
 
 
-model.add_command(setup)
-model.add_command(teardown)
-model.add_command(init_metadata)
+manage.add_command(setup)
+manage.add_command(teardown)
+manage.add_command(init)

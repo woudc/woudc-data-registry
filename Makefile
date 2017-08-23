@@ -89,11 +89,11 @@ package:
 	python setup.py sdist bdist_wheel
 
 setup:
-	woudc-data-registry model setup
+	woudc-data-registry manage setup
 	woudc-data-registry search create_index
 
 teardown:
-	woudc-data-registry model teardown
+	woudc-data-registry manage teardown
 	woudc-data-registry search delete_index
 
 test:

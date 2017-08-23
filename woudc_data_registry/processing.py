@@ -48,7 +48,7 @@ import logging
 import os
 
 from woudc_data_registry import config, registry, search
-from woudc_data_registry.models import DataRecord
+from woudc_data_registry.models import Contributor, DataRecord, Dataset
 from woudc_data_registry.parser import (ExtendedCSV, MetadataValidationError,
                                         NonStandardDataError)
 from woudc_data_registry.util import is_text_file, read_file
@@ -76,6 +76,7 @@ class Process(object):
         self.message = None
         self.process_start = datetime.utcnow()
         self.process_end = None
+        self.registry = registry.Registry()
 
     def process_data(self, infile, verify=False):
         """process incoming data record"""
@@ -132,7 +133,8 @@ class Process(object):
         self.process_end = datetime.utcnow()
 
         LOGGER.debug('Verifying if URN already exists')
-        results = registry.get_data_record_by_field(self.data_record, 'urn')
+        results = self.registry.query_by_field(DataRecord,
+                                               self.data_record, 'urn')
 
         if results:
             msg = 'Data exists'
@@ -141,8 +143,6 @@ class Process(object):
             self.message = msg
             LOGGER.error(msg)
             # return False
-
-        LOGGER.info('Verifying data record against registry core fields')
 
         domains_to_check = [
             'content_category',
@@ -157,12 +157,34 @@ class Process(object):
 
         for domain_to_check in domains_to_check:
             value = getattr(self.data_record, domain_to_check)
+            domain = getattr(DataRecord, domain_to_check)
 
-            if not registry.is_value_in_domain(value, domain_to_check):
+            if value not in self.registry.query_distinct(domain):
                 msg = 'value {} not in domain {}'.format(value,
                                                          domain_to_check)
                 LOGGER.error(msg)
                 # raise ProcessingError(msg)
+
+        LOGGER.info('Verifying data record against core metadata fields')
+
+        LOGGER.debug('Validating dataset')
+        datasets = self.registry.query_distinct(Dataset.name)
+
+        if self.data_record.content_category not in datasets:
+            msg = 'Dataset {} not found in registry'.format(
+                self.data_record.content_category)
+            LOGGER.error(msg)
+            raise ProcessingError(msg)
+
+        LOGGER.debug('Validating contributor')
+        contributors = self.registry.query_distinct(
+            Contributor.acronym)
+
+        if self.data_record.data_generation_agency not in contributors:
+            msg = 'Contributor {} not found in registry'.format(
+                self.data_record.data_generation_agency)
+            LOGGER.error(msg)
+            raise ProcessingError(msg)
 
         # TODO: validate station
         # TODO: validate instrument
@@ -177,10 +199,11 @@ class Process(object):
             return True
 
         LOGGER.info('Saving data record CSV to registry')
-        registry.save_data_record(self.data_record)
+        self.registry.save(self.data_record)
 
         LOGGER.info('Indexing data record search engine')
-        self.search_engine.index_data_record(self.data_record.to_geojson_dict())
+        self.search_engine.index_data_record(
+            self.data_record.to_geojson_dict())
 
         return True
 
