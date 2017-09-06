@@ -53,6 +53,8 @@ help:
 	@echo
 	@echo " createdb: create PostgreSQL/PostGIS database"
 	@echo " dropdb: drop PostgreSQL/PostGIS database"
+	@echo " setup: create models and search index"
+	@echo " teardown: delete models and search index"
 	@echo " test: run tests"
 	@echo " coverage: run code coverage"
 	@echo " package: create Python wheel"

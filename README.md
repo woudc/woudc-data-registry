@@ -15,8 +15,9 @@ the [Global Atmosphere Watch](http://www.wmo.int/gaw) programme of the
 ## Installation
 
 ### Requirements
-- Python 3 and above
+- [Python](https://www.python.org) 3 and above
 - [virtualenv](https://virtualenv.pypa.io/)
+- [Elasticsearch](https://www.elastic.co/products/elasticsearch) (5.5.0 and above)
 
 ### Dependencies
 Dependencies are listed in [requirements.txt](requirements.txt). Dependencies
@@ -48,16 +49,19 @@ make ENV=foo.env createdb
 make ENV=foo.env dropdb
 
 # initialize model (database tables)
-woudc-data-registry model setup
+woudc-data-registry manage setup
 
 # initialize search engine
 woudc-data-registry search create_index
 
+# load core metadata
+woudc-data-registry manage init
+
 # cleanups
 
 # re-initialize model (database tables)
-woudc-data-registry model teardown
-woudc-data-registry model setup
+woudc-data-registry manage teardown
+woudc-data-registry manage setup
 
 # re-initialize search engine
 woudc-data-registry search delete_index
