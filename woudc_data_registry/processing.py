@@ -46,6 +46,7 @@
 from datetime import datetime
 import logging
 import os
+import shutil
 
 from woudc_data_registry import config, registry, search
 from woudc_data_registry.models import Contributor, DataRecord, Dataset
@@ -129,7 +130,8 @@ class Process(object):
         self.data_record = DataRecord(ecsv)
         self.data_record.ingest_filepath = infile
         self.data_record.filename = os.path.basename(infile)
-        self.data_record.url = self.data_record.get_waf_url(config.WAF_URL)
+        self.data_record.url = self.data_record.get_waf_path(
+            config.WAF_BASEURL)
         self.process_end = datetime.utcnow()
 
         LOGGER.debug('Verifying if URN already exists')
@@ -200,6 +202,11 @@ class Process(object):
 
         LOGGER.info('Saving data record CSV to registry')
         self.registry.save(self.data_record)
+
+        LOGGER.info('Saving data record CSV to WAF')
+        waf_filepath = self.data_record.get_waf_path(config.WAF_BASEDIR)
+        os.makedirs(os.path.dirname(waf_filepath), exist_ok=True)
+        shutil.copy2(self.data_record.ingest_filepath, waf_filepath)
 
         LOGGER.info('Indexing data record search engine')
         self.search_engine.index_data_record(
