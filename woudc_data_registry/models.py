@@ -50,7 +50,8 @@ import click
 import csv
 import geoalchemy2
 from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
-                        Enum, Integer, String, Time, UnicodeText)
+                        Enum, ForeignKey, Integer, String, Time, UnicodeText,
+                        UniqueConstraint)
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -75,13 +76,34 @@ class Geometry(geoalchemy2.types.Geometry):
         return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
 
 
+class Country(base):
+    """Data Registry Country"""
+
+    __tablename__ = 'countries'
+
+    identifier = Column(String, nullable=False, primary_key=True)
+    name = Column(String, nullable=False)
+    wmo_region = Column(String, nullable=False)
+    wmo_membership = Column(Date, nullable=True)
+    url = Column(String, nullable=True)
+
+    def __init__(self, dict_):
+        self.identifier = dict_['identifier']
+        self.name = dict_['name']
+        self.wmo_region = dict_['wmo_region']
+        self.wmo_region_since = dict_['wmo_membership']
+        self.url = dict_['url']
+
+
 class Contributor(base):
     """Data Registry Contributor"""
 
-    __tablename__ = 'contributor'
+    __tablename__ = 'contributors'
+    __table_args__ = (UniqueConstraint('acronym', 'project'),)
 
     identifier = Column(Integer, primary_key=True, autoincrement=True)
-    acronym = Column(String, nullable=False, unique=True)
+    acronym = Column(String, nullable=False)
+    project = Column(String, nullable=False, default='WOUDC')
     name = Column(String, nullable=False)
     country = Column(String, nullable=False)
     wmo_region = Column(WMO_REGION_ENUM, nullable=False)
@@ -99,6 +121,7 @@ class Contributor(base):
         """serializer"""
 
         self.acronym = dict_['acronym']
+        self.project = dict_['project']
         self.name = dict_['name']
         self.country = dict_['country']
         self.wmo_region = dict_['wmo_region']
@@ -111,7 +134,7 @@ class Contributor(base):
 class Dataset(base):
     """Data Registry Dataset"""
 
-    __tablename__ = 'dataset'
+    __tablename__ = 'datasets'
 
     identifier = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
@@ -122,10 +145,49 @@ class Dataset(base):
         self.slug = dict_['slug']
 
 
+class Station(base):
+    """Data Registry Station"""
+
+    __tablename__ = 'stations'
+
+    stn_type_enum = Enum('STN', 'SHP', name='type')
+
+    identifier = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    stn_identifier = Column(String, nullable=False, unique=True)
+    stn_type = Column(stn_type_enum, nullable=False)
+    gaw_id = Column(String, nullable=True)
+    country = Column(String, nullable=False)
+    wmo_region = Column(WMO_REGION_ENUM, nullable=False)
+    active = Column(Boolean, nullable=False, default=True)
+    active_start_date = Column(Date, nullable=False)
+    active_end_date = Column(Date, nullable=True)
+
+    last_validated_datetime = Column(DateTime, nullable=False,
+                                     default=datetime.utcnow())
+
+    location = Column(Geometry('POINT', srid=4326), nullable=False)
+
+    def __init__(self, dict_):
+        """serializer"""
+
+        self.stn_identifier = dict_['stn_identifier']
+        self.name = dict_['name']
+        self.stn_type = dict_['stn_type']
+        self.gaw_id = dict_['gaw_id']
+        self.country = dict_['country']
+        self.wmo_region = dict_['wmo_region']
+        self.active_start_datetime = dict_['active_start_datetime']
+        self.active_end_datetime = dict_['active_end_datetime']
+        self.location = util.point2ewkt(dict_['x'], dict_['y'], dict_['z'])
+
+
+datetime.strptime(value, '%Y-%m-%d').date()
+
 class DataRecord(base):
     """Data Registry Data Record"""
 
-    __tablename__ = 'data_record'
+    __tablename__ = 'data_records'
 
     identifier = Column(Integer, primary_key=True, autoincrement=True)
 
@@ -242,7 +304,7 @@ class DataRecord(base):
 
         return ':'.join(map(str, urn_tokens)).lower()
 
-    def get_waf_url(self, baseurl):
+    def get_waf_path(self, basepath):
         """generate WAF URL"""
 
         datasetdirname = '{}_{}_{}'.format(self.content_category,
@@ -250,7 +312,7 @@ class DataRecord(base):
                                            self.content_form)
 
         url_tokens = [
-            baseurl.rstrip('/'),
+            basepath.rstrip('/'),
             'Archive-NewFormat',
             datasetdirname,
             'stn{}'.format(self.platform_id),
@@ -294,38 +356,6 @@ class DataRecord(base):
         return 'DataRecord(%r, %r)' % (self.identifier, self.url)
 
 
-class Station(base):
-    """Data Registry Station"""
-
-    __tablename__ = 'station'
-
-    platform_type_enum = Enum('STN', 'SHP', name='type')
-
-    identifier = Column(Integer, primary_key=True, autoincrement=True)
-    platform_identifier = Column(String, nullable=False, unique=True)
-    name = Column(String, nullable=False)
-    platform_type = Column(platform_type_enum, nullable=False)
-    gaw_id = Column(String, nullable=True)
-    country = Column(String, nullable=False)
-    wmo_region = Column(WMO_REGION_ENUM, nullable=False)
-    active = Column(Boolean, nullable=False, default=True)
-
-    last_validated_datetime = Column(DateTime, nullable=False,
-                                     default=datetime.utcnow())
-
-    location = Column(Geometry('POINT', srid=4326), nullable=False)
-
-    def __init__(self, dict_):
-        """serializer"""
-
-        self.platform_identifier = dict_['platform_identifier']
-        self.name = dict_['name']
-        self.platform_type = dict_['platform_type']
-        self.gaw_id = dict_['gaw_id']
-        self.country = dict_['country']
-        self.wmo_region = dict_['wmo_region']
-        self.location = util.point2ewkt(dict_['x'], dict_['y'], dict_['z'])
-
 
 @click.group()
 def manage():
@@ -368,25 +398,30 @@ def teardown(ctx):
 
 @click.command()
 @click.pass_context
-@click.option('--contributors', '-c',
+@click.option('--datadir', '-d',
               type=click.Path(exists=True, resolve_path=True),
-              help='Path to contributors CSV')
-@click.option('--stations', '-s',
-              type=click.Path(exists=True, resolve_path=True),
-              help='Path to stations CSV')
-@click.option('--instruments', '-i',
-              type=click.Path(exists=True, resolve_path=True),
-              help='Path to instruments CSV')
-@click.option('--datasets', '-d',
-              type=click.Path(exists=True, resolve_path=True),
-              help='Path to datasets CSV')
-def init(ctx, contributors, stations, instruments, datasets):
+              help='Path to core metadata files')
+def init(ctx, datadir):
     """initialize core system metadata"""
 
-    if None in [contributors, stations, instruments, datasets]:
-        raise click.ClickException('Missing required metadata')
+    import os
+
+    if datadir is None:
+        raise click.ClickException('Missing required data directory')
+
+    countries = os.path.join(datadir, 'countries.csv')
+    contributors = os.path.join(datadir, 'contributors.csv')
+    stations = os.path.join(datadir, 'stations.csv')
+    datasets = os.path.join(datadir, 'datasets.csv')
 
     registry_ = registry.Registry()
+
+    click.echo('Loading countries metadata')
+    with open(countries) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            country = Country(row)
+            registry_.save(country)
 
     click.echo('Loading contributors metadata')
     with open(contributors) as csvfile:
