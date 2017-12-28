@@ -74,7 +74,7 @@ clean:
 	rm -fr debian/woudc-data-registry
 
 coverage:
-	coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.run_tests
+	coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_data_registry
 	coverage report -m
 
 createdb:

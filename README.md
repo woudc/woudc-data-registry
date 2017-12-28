@@ -97,13 +97,13 @@ pip install -r requirements-dev.txt
 
 # run tests like this:
 cd woudc_data_registry/tests
-python run_tests.py
+python test_data_registry.py
 
 # or this:
 python setup.py test
 
 # measure code coverage
-coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.run_tests
+coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_data_registry
 coverage report -m
 ```
 
