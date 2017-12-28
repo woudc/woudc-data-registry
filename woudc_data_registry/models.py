@@ -54,6 +54,7 @@ from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
                         UniqueConstraint)
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
 from woudc_data_registry import registry, util
 
@@ -82,7 +83,7 @@ class Country(base):
     __tablename__ = 'countries'
 
     identifier = Column(String, nullable=False, primary_key=True)
-    name = Column(String, nullable=False)
+    name = Column(String, nullable=False, unique=True)
     wmo_region = Column(String, nullable=False)
     wmo_membership = Column(Date, nullable=True)
     url = Column(String, nullable=True)
@@ -94,18 +95,22 @@ class Country(base):
         self.wmo_region_since = dict_['wmo_membership']
         self.url = dict_['url']
 
+    def __repr__(self):
+        return 'Country (%r, %r)' % (self.identifier, self.name)
+
 
 class Contributor(base):
     """Data Registry Contributor"""
 
     __tablename__ = 'contributors'
-    __table_args__ = (UniqueConstraint('acronym', 'project'),)
+    # __table_args__ = (UniqueConstraint('acronym', 'project'),)
 
-    identifier = Column(Integer, primary_key=True, autoincrement=True)
-    acronym = Column(String, nullable=False)
-    project = Column(String, nullable=False, default='WOUDC')
+    identifier = Column(String, primary_key=True)
     name = Column(String, nullable=False)
-    country = Column(String, nullable=False)
+    acronym = Column(String, nullable=False)
+    country_id = Column(String, ForeignKey('countries.identifier'),
+                        nullable=False)
+    # project_id = Column(String
     wmo_region = Column(WMO_REGION_ENUM, nullable=False)
     url = Column(String, nullable=False)
     email = Column(String, nullable=False)
@@ -117,18 +122,24 @@ class Contributor(base):
 
     location = Column(Geometry('POINT', srid=4326), nullable=False)
 
+    # relationships
+    country = relationship('Country', backref=__tablename__)
+
     def __init__(self, dict_):
         """serializer"""
 
-        self.acronym = dict_['acronym']
-        self.project = dict_['project']
+        self.identifier = dict_['identifier']
         self.name = dict_['name']
-        self.country = dict_['country']
+        self.acronym = dict_['acronym']
+        self.country_id = dict_['country_id']
         self.wmo_region = dict_['wmo_region']
         self.url = dict_['url']
         self.email = dict_['email']
         self.ftp_username = dict_['ftp_username']
         self.location = util.point2ewkt(dict_['x'], dict_['y'])
+
+    def __repr__(self):
+        return 'Contributor (%r, %r)' % (self.identifier, self.name)
 
 
 class Dataset(base):
@@ -149,15 +160,20 @@ class Station(base):
     """Data Registry Station"""
 
     __tablename__ = 'stations'
+    __table_args__ = (UniqueConstraint('active_start_date', 'active_end_date',
+                      'contributor_id', 'stn_identifier'),)
 
     stn_type_enum = Enum('STN', 'SHP', name='type')
 
     identifier = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
-    stn_identifier = Column(String, nullable=False, unique=True)
+    contributor_id = Column(String, ForeignKey('contributors.identifier'),
+                            nullable=False)
+    stn_identifier = Column(String, nullable=False)
     stn_type = Column(stn_type_enum, nullable=False)
     gaw_id = Column(String, nullable=True)
-    country = Column(String, nullable=False)
+    country_id = Column(String, ForeignKey('countries.identifier'),
+                        nullable=False)
     wmo_region = Column(WMO_REGION_ENUM, nullable=False)
     active = Column(Boolean, nullable=False, default=True)
     active_start_date = Column(Date, nullable=False)
@@ -166,7 +182,12 @@ class Station(base):
     last_validated_datetime = Column(DateTime, nullable=False,
                                      default=datetime.utcnow())
 
-    location = Column(Geometry('POINT', srid=4326), nullable=False)
+    # location = Column(Geometry('POINT', srid=4326), nullable=False)
+    location = Column(Geometry(srid=0), nullable=False)
+
+    # relationships
+    country = relationship('Country', backref=__tablename__)
+    contributor = relationship('Contributor', backref=__tablename__)
 
     def __init__(self, dict_):
         """serializer"""
@@ -175,14 +196,16 @@ class Station(base):
         self.name = dict_['name']
         self.stn_type = dict_['stn_type']
         self.gaw_id = dict_['gaw_id']
-        self.country = dict_['country']
+        self.country_id = dict_['country_id']
+        self.contributor_id = dict_['contributor_id']
         self.wmo_region = dict_['wmo_region']
-        self.active_start_datetime = dict_['active_start_datetime']
-        self.active_end_datetime = dict_['active_end_datetime']
+        self.active_start_date = dict_['active_start_date']
+        self.active_end_datet = dict_['active_end_date']
         self.location = util.point2ewkt(dict_['x'], dict_['y'], dict_['z'])
 
+    def __repr__(self):
+        return 'Station (%r, %r)' % (self.stn_identifier, self.name)
 
-datetime.strptime(value, '%Y-%m-%d').date()
 
 class DataRecord(base):
     """Data Registry Data Record"""
@@ -356,7 +379,6 @@ class DataRecord(base):
         return 'DataRecord(%r, %r)' % (self.identifier, self.url)
 
 
-
 @click.group()
 def manage():
     pass
@@ -423,6 +445,13 @@ def init(ctx, datadir):
             country = Country(row)
             registry_.save(country)
 
+    click.echo('Loading datasets metadata')
+    with open(datasets) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            dataset = Dataset(row)
+            registry_.save(dataset)
+
     click.echo('Loading contributors metadata')
     with open(contributors) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -438,13 +467,6 @@ def init(ctx, datadir):
             station = Station(row)
             registry_.save(station)
     # load instruments CSV
-
-    click.echo('Loading datasets metadata')
-    with open(datasets) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            dataset = Dataset(row)
-            registry_.save(dataset)
 
 
 manage.add_command(setup)

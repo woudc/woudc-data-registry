@@ -44,7 +44,7 @@
 # =================================================================
 
 import csv
-from datetime import datetime
+from datetime import datetime, time
 import logging
 import sys
 
@@ -94,12 +94,13 @@ def _get_value_type(field, value):
     if field2 == 'date':
         value2 = datetime.strptime(value, '%Y-%m-%d').date()
     elif field2 == 'time':
-        value2 = datetime.strptime(value, '%H:%M:%S')
+        hour, minute, second = [int(v) for v in value.split(':')]
+        value2 = time(hour, minute, second)
     else:
         try:
             if '.' in value:  # float?
                 value2 = float(value)
-            elif value.startswith('0'):
+            elif len(value) > 1 and value.startswith('0'):
                 value2 = value
             else:  # int?
                 value2 = int(value)
