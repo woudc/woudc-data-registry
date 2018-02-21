@@ -58,7 +58,7 @@ DB_PASSWORD = os.getenv('DB_PASSWORD', None)
 DB_NAME = os.getenv('DB_NAME', 'woudc-data-registry')
 SEARCH_TYPE = os.getenv('SEARCH_TYPE', 'elasticsearch')
 SEARCH_URL = os.getenv('SEARCH_URL', 'elasticsearch')
-WAF_BASEURL = os.getenv('WAF_BASEURL', 'http://woudc.org/archive')
+WAF_BASEURL = os.getenv('WAF_BASEURL', 'https://woudc.org/archive')
 WAF_BASEDIR = os.getenv('WAF_BASEDIR', None)
 
 if None in [DB_USERNAME, DB_PASSWORD, SEARCH_TYPE, SEARCH_URL, WAF_BASEDIR]:

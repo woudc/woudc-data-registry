@@ -10,7 +10,7 @@ Vcs-Git: https://github.com/woudc/woudc-data-registry.git
 Package: woudc-data-registry
 Architecture: all
 Depends: elasticsearch (>=5.5.0), postgis, postgresql, python3-click, python-geoalchemy2, python3-psycopg2, python3-requests, python3-six, python3-sqlalchemy
-Homepage: http://woudc.org
+Homepage: https://woudc.org
 Description: WOUDC Data Registry is a platform that manages Ozone and
  Ultraviolet Radiation data in support of the World Ozone and Ultraviolet
  Radiation Data Centre (WOUDC), one of six World Data Centres as part of the
