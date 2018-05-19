@@ -128,7 +128,7 @@ class Contributor(base):
     def __init__(self, dict_):
         """serializer"""
 
-        self.identifier = dict_['identifier']
+        self.identifier = dict_['acronym']
         self.name = dict_['name']
         self.acronym = dict_['acronym']
         self.country_id = dict_['country_id']

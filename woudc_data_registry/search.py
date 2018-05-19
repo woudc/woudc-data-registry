@@ -102,22 +102,18 @@ class SearchIndex(object):
         result = requests.post(url, data=json.dumps(query)).json()
 
         if result['hits']['total'] > 0:  # exists, update
-            print('UPDATE')
-            LOGGER.debug('existing record, updating')
+            LOGGER.info('existing record, updating')
             url = '{}/data_record/{}/_update'.format(self.url, identifier)
 
-            print(url)
             data_ = json.dumps({'doc': data}, default=json_serial)
 
             result = requests.post(url, data=data_)
         else:  # index new
-            print('INSERT')
-            LOGGER.debug('new record, indexing')
+            LOGGER.info('new record, indexing')
             data_ = json.dumps(data, default=json_serial)
             url = '{}/data_record/{}'.format(self.url, identifier)
             result = requests.put(url, headers=self.headers, data=data_)
 
-        print(result)
         if not result.ok:
             raise SearchIndexError(result.json()['error']['reason'])
 
@@ -131,7 +127,6 @@ class SearchIndex(object):
         url = '{}/data_record/{}'.format(self.url, identifier)
 
         result = requests.delete(url)
-        print(result.text)
 
         if result.status_code == 404:
             raise SearchIndexError('Data record {} does not exist'.format(

@@ -43,7 +43,7 @@
 #
 # =================================================================
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 import os
 import unittest
 
@@ -79,8 +79,7 @@ class ParserTest(unittest.TestCase):
         self.assertIsInstance(parser._get_value_type('test', '1.0-1'), str)
         self.assertIsInstance(parser._get_value_type('date', '2011-11-11'),
                               date)
-        self.assertIsInstance(parser._get_value_type('time', '11:11:11'),
-                              datetime)
+        self.assertIsInstance(parser._get_value_type('time', '11:11:11'), time)
 
     def test_ecsv(self):
         """test Extended CSV handling"""
