@@ -138,10 +138,10 @@ class ExtendedCSV(object):
                     table_name = row[0].replace('#', '')
                     if table_name in DOMAINS['metadata_tables'].keys():
                         found_table = True
-                        LOGGER.debug('Found new table %s', table_name)
+                        LOGGER.debug('Found new table {}'.format(table_name))
                         self.extcsv[table_name] = {}
             elif found_table:  # fetch header line
-                LOGGER.debug('Found new table header %s', table_name)
+                LOGGER.debug('Found new table header {}'.format(table_name))
                 self.extcsv[table_name]['_fields'] = row
                 found_table = False
             elif len(row) > 0 and row[0].startswith('*'):  # comment
@@ -162,6 +162,18 @@ class ExtendedCSV(object):
         # delete transient fieldlist
         for key, value in self.extcsv.items():
             value.pop('_fields')
+
+    @property
+    def filename(self):
+        """generate WOUDC filename convention"""
+
+        f = '{}.{}.{}.{}.{}.csv'.format(
+                self.extcsv['TIMESTAMP']['Date'],
+                self.extcsv['INSTRUMENT']['Name'],
+                self.extcsv['INSTRUMENT']['Model'],
+                self.extcsv['INSTRUMENT']['Number'],
+                self.extcsv['DATA_GENERATION']['Agency'])
+        return f
 
     def validate_metadata(self):
         """validate core metadata tables and fields"""
@@ -253,8 +265,8 @@ if __name__ == '__main__':
         print('Usage: {} <file>'.format(sys.argv[0]))
         sys.exit(1)
 
-    ecsv = ExtendedCSV(sys.argv[1])
-    print(ecsv.extcsv)
+    with open(sys.argv[1]) as fh:
+        ecsv = ExtendedCSV(fh.read())
     try:
         ecsv.validate_metadata()
     except MetadataValidationError as mve:

@@ -45,8 +45,11 @@
 
 import json
 import logging
+from urllib.parse import urlparse
 
 import click
+from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import NotFoundError, RequestError
 import requests
 
 from woudc_data_registry import config
@@ -61,26 +64,44 @@ class SearchIndex(object):
     def __init__(self):
         """constructor"""
 
-        self.type = config.SEARCH_TYPE
+        self.type = config.WDR_SEARCH_TYPE
+        self.index_name = 'woudc-data-registry'
+        self.type_name = 'FeatureCollection'
+        self.url = urlparse(config.WDR_SEARCH_URL)
 
-        self.url = '{}/woudc-data-registry'.format(
-            config.SEARCH_URL.rstrip('/'))
+        #self.url = '{}/{}'.format(
+        #    config.WDR_SEARCH_URL.rstrip('/'), self.index_name)
+
+        LOGGER.debug('Connecting to ES')
+        self.connection = Elasticsearch([{'host': self.url.hostname,
+                                        'port': self.url.port}])
 
         self.headers = {'Content-Type': 'application/json'}
 
-    def create_index(self):
-        result = requests.put(self.url)
-        if not result.ok:
-            raise SearchIndexError(
-                result.json()['error']['reason'])
-        return True
+    def create(self):
+        settings = {
+            'mappings': {
+                'FeatureCollection': {
+                    'properties': {
+                        'geometry': {
+                            'type': 'geo_shape'
+                        }
+                    }
+                }
+            }
+        }
 
-    def delete_index(self):
-        result = requests.delete(self.url)
-        if not result.ok:
-            raise SearchIndexError(
-                result.json()['error']['reason'])
-        return True
+        try:
+            self.connection.indices.create(index=self.index_name, body=settings)
+        except RequestError as err:
+            LOGGER.error(err)
+            raise SearchIndexError(err)
+
+    def delete(self):
+        try:
+            self.connection.indices.delete(self.index_name)
+        except NotFoundError as err:
+            raise SearchIndexError(err)
 
     def index_data_record(self, data):
         """index or update a document"""
@@ -99,7 +120,7 @@ class SearchIndex(object):
             }
         }
 
-        result = requests.post(url, data=json.dumps(query)).json()
+        result = self.connection.search(index=self.index_name, body=query)
 
         if result['hits']['total'] > 0:  # exists, update
             LOGGER.info('existing record, updating')
@@ -143,25 +164,25 @@ def search():
     pass
 
 
-@click.command()
+@click.command('create-index')
 @click.pass_context
 def create_index(ctx):
     """create search index"""
 
     click.echo('Creating index')
     es = SearchIndex()
-    es.create_index()
+    es.create()
     click.echo('Done')
 
 
-@click.command()
+@click.command('delete-index')
 @click.pass_context
 def delete_index(ctx):
     """delete search index"""
 
     click.echo('Deleting index')
     es = SearchIndex()
-    es.delete_index()
+    es.delete()
     click.echo('Done')
 
 

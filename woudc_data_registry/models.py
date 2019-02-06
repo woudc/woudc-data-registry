@@ -74,7 +74,7 @@ class Geometry(geoalchemy2.types.Geometry):
     def get_col_spec(self):
         if self.geometry_type == 'GEOMETRY' and self.srid == 0:
             return self.name
-        return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
+        return '{}({}, {})'.format(self.name, self.geometry_type, self.srid)
 
 
 class Country(base):
@@ -96,21 +96,21 @@ class Country(base):
         self.url = dict_['url']
 
     def __repr__(self):
-        return 'Country (%r, %r)' % (self.identifier, self.name)
+        return 'Country ({}, {})'.format(self.identifier, self.name)
 
 
 class Contributor(base):
     """Data Registry Contributor"""
 
     __tablename__ = 'contributors'
-    # __table_args__ = (UniqueConstraint('acronym', 'project'),)
+    __table_args__ = (UniqueConstraint('acronym', 'project'),)
 
     identifier = Column(String, primary_key=True)
     name = Column(String, nullable=False)
     acronym = Column(String, nullable=False)
     country_id = Column(String, ForeignKey('countries.identifier'),
                         nullable=False)
-    # project_id = Column(String
+    project = Column(String, nullable=False, default='WOUDC')
     wmo_region = Column(WMO_REGION_ENUM, nullable=False)
     url = Column(String, nullable=False)
     email = Column(String, nullable=False)
@@ -132,14 +132,19 @@ class Contributor(base):
         self.name = dict_['name']
         self.acronym = dict_['acronym']
         self.country_id = dict_['country_id']
+        self.project = dict_['project']
         self.wmo_region = dict_['wmo_region']
         self.url = dict_['url']
         self.email = dict_['email']
         self.ftp_username = dict_['ftp_username']
         self.location = util.point2ewkt(dict_['x'], dict_['y'])
 
+        if self.identifier != 'WOUDC':
+            self.identifier = '{}.{}'.format(self.identifier, self.project)
+        print(self.identifier)
+
     def __repr__(self):
-        return 'Contributor (%r, %r)' % (self.identifier, self.name)
+        return 'Contributor ({}, {})'.format(self.identifier, self.name)
 
 
 class Dataset(base):
@@ -204,7 +209,7 @@ class Station(base):
         self.location = util.point2ewkt(dict_['x'], dict_['y'], dict_['z'])
 
     def __repr__(self):
-        return 'Station (%r, %r)' % (self.stn_identifier, self.name)
+        return 'Station ({}, {})'.format(self.stn_identifier, self.name)
 
 
 class DataRecord(base):
@@ -376,7 +381,7 @@ class DataRecord(base):
         return feature
 
     def __repr__(self):
-        return 'DataRecord(%r, %r)' % (self.identifier, self.url)
+        return 'DataRecord({}, {})'.format(self.identifier, self.url)
 
 
 @click.group()
@@ -391,7 +396,7 @@ def setup(ctx):
 
     from woudc_data_registry import config
 
-    engine = create_engine(config.DATABASE_URL, echo=config.DEBUG)
+    engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DEBUG)
 
     try:
         click.echo('Generating models')
@@ -408,7 +413,7 @@ def teardown(ctx):
 
     from woudc_data_registry import config
 
-    engine = create_engine(config.DATABASE_URL, echo=config.DEBUG)
+    engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DEBUG)
 
     try:
         click.echo('Deleting models')

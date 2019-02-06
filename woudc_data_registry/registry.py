@@ -60,7 +60,7 @@ class Registry(object):
     def __init__(self):
         """constructor"""
 
-        engine = create_engine(config.DATABASE_URL, echo=config.DEBUG)
+        engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DEBUG)
         Session = sessionmaker(bind=engine, expire_on_commit=False)
         self.session = Session()
 

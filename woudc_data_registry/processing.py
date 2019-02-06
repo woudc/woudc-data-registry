@@ -79,7 +79,7 @@ class Process(object):
         self.process_end = None
         self.registry = registry.Registry()
 
-    def process_data(self, infile, verify=False):
+    def process_data(self, infile, verify_only=False):
         """process incoming data record"""
 
         # detect incoming data file
@@ -131,7 +131,7 @@ class Process(object):
         self.data_record.ingest_filepath = infile
         self.data_record.filename = os.path.basename(infile)
         self.data_record.url = self.data_record.get_waf_path(
-            config.WAF_BASEURL)
+            config.WDR_WAF_BASEURL)
         self.process_end = datetime.utcnow()
 
         LOGGER.debug('Verifying if URN already exists')
@@ -196,7 +196,7 @@ class Process(object):
 
         LOGGER.info('Data record is valid and verified')
 
-        if verify:  # do not save or index
+        if verify_only:  # do not save or index
             LOGGER.debug('Verification mode detected. NOT saving to registry')
             return True
 
@@ -204,7 +204,7 @@ class Process(object):
         self.registry.save(self.data_record)
 
         LOGGER.info('Saving data record CSV to WAF')
-        waf_filepath = self.data_record.get_waf_path(config.WAF_BASEDIR)
+        waf_filepath = self.data_record.get_waf_path(config.WDR_WAF_BASEDIR)
         os.makedirs(os.path.dirname(waf_filepath), exist_ok=True)
         shutil.copy2(self.data_record.ingest_filepath, waf_filepath)
 
