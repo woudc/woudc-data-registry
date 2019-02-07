@@ -209,9 +209,9 @@ class ExtendedCSV(object):
                     'text': 'ERROR {}: {}'.format(ERROR_CODES['missing_table'],
                                                   missing_table)
                 })
+            msg = 'Not an Extended CSV file'
             LOGGER.exception(msg)
-            raise MetadataValidationError('Not an Extended CSV file',
-                                          errors)
+            raise MetadataValidationError(msg, errors)
 
         for key, value in self.extcsv.items():
             missing_datas = list(set(DOMAINS['metadata_tables'][key]) -
