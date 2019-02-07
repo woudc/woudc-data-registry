@@ -166,13 +166,21 @@ class ExtendedCSV(object):
     def gen_woudc_filename(self):
         """generate WOUDC filename convention"""
 
+        timestamp = self.extcsv['TIMESTAMP']['Date'].strftime('%Y%m%d')
+        instrument_name = self.extcsv['INSTRUMENT']['Name']
+        instrument_model = self.extcsv['INSTRUMENT']['Model']
+
+        if 'Number' in self.extcsv['INSTRUMENT']:
+            instrument_number = self.extcsv['INSTRUMENT']['Number']
+        else:
+            instrument_number = 'na'
+
+        agency = self.extcsv['DATA_GENERATION']['Agency']
+
         try:
-            f = '{}.{}.{}.{}.{}.csv'.format(
-                    self.extcsv['TIMESTAMP']['Date'].strftime('%Y%m%d'),
-                    self.extcsv['INSTRUMENT']['Name'],
-                    self.extcsv['INSTRUMENT']['Model'],
-                    self.extcsv['INSTRUMENT']['Number'],
-                    self.extcsv['DATA_GENERATION']['Agency'])
+            f = '{}.{}.{}.{}.{}.csv'.format(timestamp, instrument_name,
+                                            instrument_model,
+                                            instrument_number, agency)
         except KeyError as err:
             msg = 'Filename cannot be generated: {}'.format(err)
             LOGGER.exception(msg)
