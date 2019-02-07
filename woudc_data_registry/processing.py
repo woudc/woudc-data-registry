@@ -175,7 +175,7 @@ class Process(object):
         if self.data_record.content_category not in datasets:
             msg = 'Dataset {} not found in registry'.format(
                 self.data_record.content_category)
-            LOGGER.error(msg)
+            LOGGER.exception(msg)
             raise ProcessingError(msg)
 
         LOGGER.debug('Validating contributor')
@@ -185,7 +185,7 @@ class Process(object):
         if self.data_record.data_generation_agency not in contributors:
             msg = 'Contributor {} not found in registry'.format(
                 self.data_record.data_generation_agency)
-            LOGGER.error(msg)
+            LOGGER.exception(msg)
             raise ProcessingError(msg)
 
         # TODO: validate station

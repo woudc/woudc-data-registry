@@ -69,7 +69,7 @@ class SearchIndex(object):
         self.type_name = 'FeatureCollection'
         self.url = urlparse(config.WDR_SEARCH_URL)
 
-        #self.url = '{}/{}'.format(
+        # self.url = '{}/{}'.format(
         #    config.WDR_SEARCH_URL.rstrip('/'), self.index_name)
 
         LOGGER.debug('Connecting to ES')
@@ -92,15 +92,17 @@ class SearchIndex(object):
         }
 
         try:
-            self.connection.indices.create(index=self.index_name, body=settings)
+            self.connection.indices.create(index=self.index_name,
+                                           body=settings)
         except RequestError as err:
-            LOGGER.error(err)
+            LOGGER.exception(err)
             raise SearchIndexError(err)
 
     def delete(self):
         try:
             self.connection.indices.delete(self.index_name)
         except NotFoundError as err:
+            LOGGER.exception(err)
             raise SearchIndexError(err)
 
     def index_data_record(self, data):
@@ -136,7 +138,9 @@ class SearchIndex(object):
             result = requests.put(url, headers=self.headers, data=data_)
 
         if not result.ok:
-            raise SearchIndexError(result.json()['error']['reason'])
+            msg = result.json()['error']['reason']
+            LOGGER.exception(msg)
+            raise SearchIndexError(msg)
 
         return True
 
@@ -150,8 +154,9 @@ class SearchIndex(object):
         result = requests.delete(url)
 
         if result.status_code == 404:
-            raise SearchIndexError('Data record {} does not exist'.format(
-                identifier))
+            msg = 'Data record {} does not exist'.format(identifier)
+            LOGGER.exception(msg)
+            raise SearchIndexError(msg)
 
 
 class SearchIndexError(Exception):

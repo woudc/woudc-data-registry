@@ -163,16 +163,21 @@ class ExtendedCSV(object):
         for key, value in self.extcsv.items():
             value.pop('_fields')
 
-    @property
-    def filename(self):
+    def gen_woudc_filename(self):
         """generate WOUDC filename convention"""
 
-        f = '{}.{}.{}.{}.{}.csv'.format(
-                self.extcsv['TIMESTAMP']['Date'],
-                self.extcsv['INSTRUMENT']['Name'],
-                self.extcsv['INSTRUMENT']['Model'],
-                self.extcsv['INSTRUMENT']['Number'],
-                self.extcsv['DATA_GENERATION']['Agency'])
+        try:
+            f = '{}.{}.{}.{}.{}.csv'.format(
+                    self.extcsv['TIMESTAMP']['Date'].strftime('%Y%m%d'),
+                    self.extcsv['INSTRUMENT']['Name'],
+                    self.extcsv['INSTRUMENT']['Model'],
+                    self.extcsv['INSTRUMENT']['Number'],
+                    self.extcsv['DATA_GENERATION']['Agency'])
+        except KeyError as err:
+            msg = 'Filename cannot be generated: {}'.format(err)
+            LOGGER.exception(msg)
+            raise MetadataValidationError(err)
+
         return f
 
     def validate_metadata(self):
@@ -186,6 +191,7 @@ class ExtendedCSV(object):
         if missing_tables:
             if not list(set(DOMAINS['metadata_tables']) - set(missing_tables)):
                 msg = 'No core metadata tables found. Not an Extended CSV file'
+                LOGGER.exception(msg)
                 raise NonStandardDataError(msg)
 
             for missing_table in missing_tables:
@@ -195,6 +201,7 @@ class ExtendedCSV(object):
                     'text': 'ERROR {}: {}'.format(ERROR_CODES['missing_table'],
                                                   missing_table)
                 })
+            LOGGER.exception(msg)
             raise MetadataValidationError('Not an Extended CSV file',
                                           errors)
 
@@ -243,6 +250,7 @@ class ExtendedCSV(object):
             })
 
         if errors:
+            LOGGER.exception(errors)
             raise MetadataValidationError('Invalid metadata', errors)
 
 
@@ -269,5 +277,5 @@ if __name__ == '__main__':
         ecsv = ExtendedCSV(fh.read())
     try:
         ecsv.validate_metadata()
-    except MetadataValidationError as mve:
-        print(mve.errors)
+    except MetadataValidationError as err:
+        print(err.errors)

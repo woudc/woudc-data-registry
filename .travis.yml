@@ -5,14 +5,18 @@ python:
 
 env:
   global:
-    - DEBUG=True
-    - DB_TYPE=postgresql
-    - DB_HOST=localhost
-    - DB_PORT=5432
-    - DB_NAME=woudc-data-registry
-    - DB_USERNAME=postgres
-    - DB_PASSWORD=postgres
+    - WDR_DEBUG=True
+    - WDR_DB_TYPE=postgresql
+    - WDR_DB_HOST=localhost
+    - WDR_DB_PORT=5432
+    - WDR_DB_NAME=woudc-data-registry
+    - WDR_DB_USERNAME=postgres
+    - WDR_DB_PASSWORD=postgres
     - PGPASSWORD=postgres
+    - WDR_SEARCH_TYPE=elasticsearch
+    - WDR_SEARCH_URL=http://localhost:9200/
+    - WDR_WAF_BASEURL=https://woudc.org/archive/
+    - WDR_WAF_BASEDIR=/tmp
 
 addons:
   apt:

@@ -43,9 +43,12 @@
 #
 # =================================================================
 
+import logging
 import os
 
 from woudc_data_registry.util import str2bool
+
+LOGGER = logging.getLogger(__name__)
 
 
 WDR_DEBUG = str2bool(os.getenv('WDR_DEBUG', False))
@@ -63,7 +66,9 @@ WDR_WAF_BASEDIR = os.getenv('WDR_WAF_BASEDIR', None)
 
 if None in [WDR_DB_USERNAME, WDR_DB_PASSWORD, WDR_SEARCH_TYPE,
             WDR_SEARCH_URL, WDR_WAF_BASEDIR]:
-    raise EnvironmentError('System environment variables are not set!')
+    msg = 'System environment variables are not set!'
+    LOGGER.exception(msg)
+    raise EnvironmentError(msg)
 
 WDR_DATABASE_URL = '{}://{}:{}@{}:{}/{}'.format(WDR_DB_TYPE, WDR_DB_USERNAME,
                                                 WDR_DB_PASSWORD, WDR_DB_HOST,

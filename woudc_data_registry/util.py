@@ -142,4 +142,6 @@ def json_serial(obj):
         serial = obj.isoformat()
         return serial
 
-    raise TypeError('{} type {} not serializable'.format(obj, type(obj)))
+    msg = '{} type {} not serializable'.format(obj, type(obj))
+    LOGGER.exception(msg)
+    raise TypeError(msg)
