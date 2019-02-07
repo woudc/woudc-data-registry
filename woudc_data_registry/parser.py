@@ -115,7 +115,7 @@ class ExtendedCSV(object):
 
     minimal WOUDC Extended CSV parser
 
-    http://guide.woudc.org/en/#chapter-3-standard-data-format
+    https://guide.woudc.org/en/#chapter-3-standard-data-format
 
     """
 
