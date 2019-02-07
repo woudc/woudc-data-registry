@@ -105,7 +105,7 @@ def _get_value_type(field, value):
             else:  # int?
                 value2 = int(value)
         except ValueError:  # string (default)?
-                value2 = value
+            value2 = value
 
     return value2
 
@@ -135,11 +135,11 @@ class ExtendedCSV(object):
         LOGGER.debug('Parsing object model')
         for row in reader:
             if len(row) == 1 and row[0].startswith('#'):  # table name
-                    table_name = row[0].replace('#', '')
-                    if table_name in DOMAINS['metadata_tables'].keys():
-                        found_table = True
-                        LOGGER.debug('Found new table {}'.format(table_name))
-                        self.extcsv[table_name] = {}
+                table_name = row[0].replace('#', '')
+                if table_name in DOMAINS['metadata_tables'].keys():
+                    found_table = True
+                    LOGGER.debug('Found new table {}'.format(table_name))
+                    self.extcsv[table_name] = {}
             elif found_table:  # fetch header line
                 LOGGER.debug('Found new table header {}'.format(table_name))
                 self.extcsv[table_name]['_fields'] = row

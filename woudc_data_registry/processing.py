@@ -135,8 +135,8 @@ class Process(object):
         self.process_end = datetime.utcnow()
 
         LOGGER.debug('Verifying if URN already exists')
-        results = self.registry.query_by_field(DataRecord, self.data_record,
-                                               'urn')
+        results = self.registry.query_by_field(
+            DataRecord, self.data_record, 'urn')
 
         if results:
             msg = 'Data exists'

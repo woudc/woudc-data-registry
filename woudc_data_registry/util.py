@@ -89,7 +89,8 @@ def read_file(filename, encoding='utf-8'):
         with io.open(filename, encoding=encoding) as fh:
             return fh.read().strip()
     except UnicodeDecodeError as err:
-        LOGGER.warning('utf-8 decoding failed.  Trying latin-1')
+        LOGGER.warning('utf-8 decoding failed: {}'.format(err))
+        LOGGER.info('Trying latin-1')
         with io.open(filename, encoding='latin-1') as fh:
             return fh.read().strip()
 
