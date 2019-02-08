@@ -185,9 +185,11 @@ class ExtendedCSV(object):
                                         instrument_model,
                                         instrument_number, agency)
         if ' ' in f:
-            msg = 'filename contains spaces: {}'.format(f)
-            LOGGER.error(msg)
-            raise MetadataValidationError(msg, [])
+            LOGGER.warning('filename contains spaces: {}'.format(f))
+            f_slug = f.replace(' ', '-')
+            LOGGER.info('filename {} renamed to {}'.format(f, f_slug))
+            f = f_slug
+
         return f
 
     def validate_metadata(self):
