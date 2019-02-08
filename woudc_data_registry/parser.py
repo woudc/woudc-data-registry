@@ -172,20 +172,22 @@ class ExtendedCSV(object):
 
         if 'Number' in self.extcsv['INSTRUMENT']:
             instrument_number = self.extcsv['INSTRUMENT']['Number']
+            if self.extcsv['INSTRUMENT']['Number'] is None:
+                instrument_number = 'na'
+            else:
+                instrument_number = self.extcsv['INSTRUMENT']['Number']
         else:
             instrument_number = 'na'
 
         agency = self.extcsv['DATA_GENERATION']['Agency']
 
-        try:
-            f = '{}.{}.{}.{}.{}.csv'.format(timestamp, instrument_name,
-                                            instrument_model,
-                                            instrument_number, agency)
-        except KeyError as err:
-            msg = 'Filename cannot be generated: {}'.format(err)
-            LOGGER.exception(msg)
-            raise MetadataValidationError(err)
-
+        f = '{}.{}.{}.{}.{}.csv'.format(timestamp, instrument_name,
+                                        instrument_model,
+                                        instrument_number, agency)
+        if ' ' in f:
+            msg = 'filename contains spaces: {}'.format(f)
+            LOGGER.error(msg)
+            raise MetadataValidationError(msg, [])
         return f
 
     def validate_metadata(self):
@@ -199,7 +201,7 @@ class ExtendedCSV(object):
         if missing_tables:
             if not list(set(DOMAINS['metadata_tables']) - set(missing_tables)):
                 msg = 'No core metadata tables found. Not an Extended CSV file'
-                LOGGER.exception(msg)
+                LOGGER.error(msg)
                 raise NonStandardDataError(msg)
 
             for missing_table in missing_tables:
@@ -210,7 +212,7 @@ class ExtendedCSV(object):
                                                   missing_table)
                 })
             msg = 'Not an Extended CSV file'
-            LOGGER.exception(msg)
+            LOGGER.error(msg)
             raise MetadataValidationError(msg, errors)
 
         for key, value in self.extcsv.items():
@@ -258,7 +260,7 @@ class ExtendedCSV(object):
             })
 
         if errors:
-            LOGGER.exception(errors)
+            LOGGER.error(errors)
             raise MetadataValidationError('Invalid metadata', errors)
 
 

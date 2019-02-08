@@ -95,14 +95,14 @@ class SearchIndex(object):
             self.connection.indices.create(index=self.index_name,
                                            body=settings)
         except RequestError as err:
-            LOGGER.exception(err)
+            LOGGER.error(err)
             raise SearchIndexError(err)
 
     def delete(self):
         try:
             self.connection.indices.delete(self.index_name)
         except NotFoundError as err:
-            LOGGER.exception(err)
+            LOGGER.error(err)
             raise SearchIndexError(err)
 
     def index_data_record(self, data):
@@ -139,7 +139,7 @@ class SearchIndex(object):
 
         if not result.ok:
             msg = result.json()['error']['reason']
-            LOGGER.exception(msg)
+            LOGGER.error(msg)
             raise SearchIndexError(msg)
 
         return True
@@ -155,7 +155,7 @@ class SearchIndex(object):
 
         if result.status_code == 404:
             msg = 'Data record {} does not exist'.format(identifier)
-            LOGGER.exception(msg)
+            LOGGER.error(msg)
             raise SearchIndexError(msg)
 
 

@@ -69,18 +69,19 @@ def orchestrate(file_, directory, verify_only=False):
             for f in files:
                 files_to_process.append(os.path.join(root, f))
 
-    for file_to_process in files_to_process:
-        click.echo('Processing filename: {}'.format(file_to_process))
-        p = Process()
-        result = p.process_data(file_to_process, verify_only=verify_only)
+    with click.progressbar(files_to_process, label='Processing files') as run_:
+        for file_to_process in run_:
+            click.echo('Processing filename: {}'.format(file_to_process))
+            p = Process()
+            result = p.process_data(file_to_process, verify_only=verify_only)
 
-        if result:  # processed
-            if verify_only:
-                click.echo('Verified but not ingested')
+            if result:  # processed
+                if verify_only:
+                    click.echo('Verified but not ingested')
+                else:
+                    click.echo('Ingested successfully')
             else:
-                click.echo('Ingested successfully')
-        else:
-            click.echo('Not ingested')
+                click.echo('Not ingested')
 
 
 @click.group()

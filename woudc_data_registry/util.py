@@ -144,5 +144,5 @@ def json_serial(obj):
         return serial
 
     msg = '{} type {} not serializable'.format(obj, type(obj))
-    LOGGER.exception(msg)
+    LOGGER.error(msg)
     raise TypeError(msg)

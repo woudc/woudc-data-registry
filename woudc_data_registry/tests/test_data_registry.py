@@ -90,6 +90,26 @@ class ParserTest(unittest.TestCase):
 
         ecsv = parser.ExtendedCSV(contents)
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
+        self.assertEqual('20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv',
+                         ecsv.gen_woudc_filename())
+
+        # good file, missing instrument number
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-missing-instrument-number.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+        self.assertEqual('20111130.Brewer.MKIII.na.RMDA.csv',
+                         ecsv.gen_woudc_filename())
+
+        # good file, space in instrument name
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-space-in-instrument-name.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+        with self.assertRaises(parser.MetadataValidationError):
+            ecsv.gen_woudc_filename()
 
         self.assertEqual(DOMAINS['metadata_tables'].keys(), ecsv.extcsv.keys())
         ecsv.validate_metadata()

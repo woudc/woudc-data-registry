@@ -61,13 +61,13 @@ WDR_DB_PASSWORD = os.getenv('WDR_DB_PASSWORD', None)
 WDR_DB_NAME = os.getenv('WDR_DB_NAME', 'woudc-data-registry')
 WDR_SEARCH_TYPE = os.getenv('WDR_SEARCH_TYPE', 'elasticsearch')
 WDR_SEARCH_URL = os.getenv('WDR_SEARCH_URL', 'elasticsearch')
-WDR_WAF_BASEURL = os.getenv('WDR_WAF_BASEURL', 'https://woudc.org/archive')
 WDR_WAF_BASEDIR = os.getenv('WDR_WAF_BASEDIR', None)
+WDR_WAF_BASEURL = os.getenv('WDR_WAF_BASEURL', 'https://woudc.org/archive')
 
 if None in [WDR_DB_USERNAME, WDR_DB_PASSWORD, WDR_SEARCH_TYPE,
-            WDR_SEARCH_URL, WDR_WAF_BASEDIR]:
+            WDR_SEARCH_URL, WDR_WAF_BASEDIR, WDR_WAF_BASEURL]:
     msg = 'System environment variables are not set!'
-    LOGGER.exception(msg)
+    LOGGER.error(msg)
     raise EnvironmentError(msg)
 
 WDR_DATABASE_URL = '{}://{}:{}@{}:{}/{}'.format(WDR_DB_TYPE, WDR_DB_USERNAME,
