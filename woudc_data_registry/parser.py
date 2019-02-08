@@ -44,7 +44,7 @@
 # =================================================================
 
 import csv
-from datetime import datetime
+from datetime import datetime, time
 import logging
 import sys
 
@@ -92,19 +92,20 @@ def _get_value_type(field, value):
         return None
 
     if field2 == 'date':
-        value2 = datetime.strptime(value, '%Y-%m-%d')
+        value2 = datetime.strptime(value, '%Y-%m-%d').date()
     elif field2 == 'time':
-        value2 = datetime.strptime(value, '%H:%M:%S')
+        hour, minute, second = [int(v) for v in value.split(':')]
+        value2 = time(hour, minute, second)
     else:
         try:
             if '.' in value:  # float?
                 value2 = float(value)
-            elif value.startswith('0'):
+            elif len(value) > 1 and value.startswith('0'):
                 value2 = value
             else:  # int?
                 value2 = int(value)
         except ValueError:  # string (default)?
-                value2 = value
+            value2 = value
 
     return value2
 
@@ -114,7 +115,7 @@ class ExtendedCSV(object):
 
     minimal WOUDC Extended CSV parser
 
-    http://guide.woudc.org/en/#chapter-3-standard-data-format
+    https://guide.woudc.org/en/#chapter-3-standard-data-format
 
     """
 
@@ -134,13 +135,13 @@ class ExtendedCSV(object):
         LOGGER.debug('Parsing object model')
         for row in reader:
             if len(row) == 1 and row[0].startswith('#'):  # table name
-                    table_name = row[0].replace('#', '')
-                    if table_name in DOMAINS['metadata_tables'].keys():
-                        found_table = True
-                        LOGGER.debug('Found new table %s', table_name)
-                        self.extcsv[table_name] = {}
+                table_name = row[0].replace('#', '')
+                if table_name in DOMAINS['metadata_tables'].keys():
+                    found_table = True
+                    LOGGER.debug('Found new table {}'.format(table_name))
+                    self.extcsv[table_name] = {}
             elif found_table:  # fetch header line
-                LOGGER.debug('Found new table header %s', table_name)
+                LOGGER.debug('Found new table header {}'.format(table_name))
                 self.extcsv[table_name]['_fields'] = row
                 found_table = False
             elif len(row) > 0 and row[0].startswith('*'):  # comment
@@ -162,6 +163,33 @@ class ExtendedCSV(object):
         for key, value in self.extcsv.items():
             value.pop('_fields')
 
+    def gen_woudc_filename(self):
+        """generate WOUDC filename convention"""
+
+        timestamp = self.extcsv['TIMESTAMP']['Date'].strftime('%Y%m%d')
+        instrument_name = self.extcsv['INSTRUMENT']['Name']
+        instrument_model = self.extcsv['INSTRUMENT']['Model']
+
+        if 'Number' in self.extcsv['INSTRUMENT']:
+            instrument_number = self.extcsv['INSTRUMENT']['Number']
+            if self.extcsv['INSTRUMENT']['Number'] is None:
+                instrument_number = 'na'
+            else:
+                instrument_number = self.extcsv['INSTRUMENT']['Number']
+        else:
+            instrument_number = 'na'
+
+        agency = self.extcsv['DATA_GENERATION']['Agency']
+
+        f = '{}.{}.{}.{}.{}.csv'.format(timestamp, instrument_name,
+                                        instrument_model,
+                                        instrument_number, agency)
+        if ' ' in f:
+            msg = 'filename contains spaces: {}'.format(f)
+            LOGGER.error(msg)
+            raise MetadataValidationError(msg, [])
+        return f
+
     def validate_metadata(self):
         """validate core metadata tables and fields"""
 
@@ -173,6 +201,7 @@ class ExtendedCSV(object):
         if missing_tables:
             if not list(set(DOMAINS['metadata_tables']) - set(missing_tables)):
                 msg = 'No core metadata tables found. Not an Extended CSV file'
+                LOGGER.error(msg)
                 raise NonStandardDataError(msg)
 
             for missing_table in missing_tables:
@@ -182,8 +211,9 @@ class ExtendedCSV(object):
                     'text': 'ERROR {}: {}'.format(ERROR_CODES['missing_table'],
                                                   missing_table)
                 })
-            raise MetadataValidationError('Not an Extended CSV file',
-                                          errors)
+            msg = 'Not an Extended CSV file'
+            LOGGER.error(msg)
+            raise MetadataValidationError(msg, errors)
 
         for key, value in self.extcsv.items():
             missing_datas = list(set(DOMAINS['metadata_tables'][key]) -
@@ -230,6 +260,7 @@ class ExtendedCSV(object):
             })
 
         if errors:
+            LOGGER.error(errors)
             raise MetadataValidationError('Invalid metadata', errors)
 
 
@@ -252,9 +283,9 @@ if __name__ == '__main__':
         print('Usage: {} <file>'.format(sys.argv[0]))
         sys.exit(1)
 
-    ecsv = ExtendedCSV(sys.argv[1])
-    print(ecsv.extcsv)
+    with open(sys.argv[1]) as fh:
+        ecsv = ExtendedCSV(fh.read())
     try:
         ecsv.validate_metadata()
-    except MetadataValidationError as mve:
-        print(mve.errors)
+    except MetadataValidationError as err:
+        print(err.errors)

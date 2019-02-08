@@ -44,17 +44,25 @@
 # =================================================================
 
 from datetime import datetime
-import click
+import logging
 
+import click
+import csv
 import geoalchemy2
-from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime, Enum,
-                        Integer, String, Time, UnicodeText)
+from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
+                        Enum, ForeignKey, Integer, String, Time, UnicodeText,
+                        UniqueConstraint)
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
-from woudc_data_registry import util
+from woudc_data_registry import registry, util
 
 base = declarative_base()
+
+LOGGER = logging.getLogger(__name__)
+
+WMO_REGION_ENUM = Enum('I', 'II', 'III', 'IV', 'V', 'VI', name='wmo_region')
 
 
 class Geometry(geoalchemy2.types.Geometry):
@@ -66,24 +74,47 @@ class Geometry(geoalchemy2.types.Geometry):
     def get_col_spec(self):
         if self.geometry_type == 'GEOMETRY' and self.srid == 0:
             return self.name
-        return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
+        return '{}({}, {})'.format(self.name, self.geometry_type, self.srid)
+
+
+class Country(base):
+    """Data Registry Country"""
+
+    __tablename__ = 'countries'
+
+    identifier = Column(String, nullable=False, primary_key=True)
+    name = Column(String, nullable=False, unique=True)
+    wmo_region = Column(String, nullable=False)
+    wmo_membership = Column(Date, nullable=True)
+    url = Column(String, nullable=True)
+
+    def __init__(self, dict_):
+        self.identifier = dict_['identifier']
+        self.name = dict_['name']
+        self.wmo_region = dict_['wmo_region']
+        self.wmo_region_since = dict_['wmo_membership']
+        self.url = dict_['url']
+
+    def __repr__(self):
+        return 'Country ({}, {})'.format(self.identifier, self.name)
 
 
 class Contributor(base):
     """Data Registry Contributor"""
 
-    __tablename__ = 'contributor'
+    __tablename__ = 'contributors'
+    __table_args__ = (UniqueConstraint('acronym', 'project'),)
 
-    wmo_region_enum = Enum('I', 'II', 'III', 'IV', 'V', 'VI',
-                           name='wmo_region')
-
-    identifier = Column(Integer, primary_key=True, autoincrement=True)
-    acronym = Column(String, nullable=False, unique=True)
+    identifier = Column(String, primary_key=True)
     name = Column(String, nullable=False)
-    country = Column(String, nullable=False)
-    wmo_region = Column(wmo_region_enum, nullable=False)
+    acronym = Column(String, nullable=False)
+    country_id = Column(String, ForeignKey('countries.identifier'),
+                        nullable=False)
+    project = Column(String, nullable=False, default='WOUDC')
+    wmo_region = Column(WMO_REGION_ENUM, nullable=False)
     url = Column(String, nullable=False)
     email = Column(String, nullable=False)
+    ftp_username = Column(String, nullable=False)
     active = Column(Boolean, nullable=False, default=True)
 
     last_validated_datetime = Column(DateTime, nullable=False,
@@ -91,24 +122,100 @@ class Contributor(base):
 
     location = Column(Geometry('POINT', srid=4326), nullable=False)
 
+    # relationships
+    country = relationship('Country', backref=__tablename__)
+
     def __init__(self, dict_):
         """serializer"""
 
-        self.acronym = dict_['acronym']
+        self.identifier = dict_['acronym']
         self.name = dict_['name']
-        self.country = dict_['country']
+        self.acronym = dict_['acronym']
+        self.country_id = dict_['country_id']
+        self.project = dict_['project']
         self.wmo_region = dict_['wmo_region']
         self.url = dict_['url']
         self.email = dict_['email']
+        self.ftp_username = dict_['ftp_username']
+        self.location = util.point2ewkt(dict_['x'], dict_['y'])
 
-        self.location = util.point2ewkt(dict_['location']['longitude'],
-                                        dict_['location']['latitude'])
+        if self.identifier != 'WOUDC':
+            self.identifier = '{}.{}'.format(self.identifier, self.project)
+        print(self.identifier)
+
+    def __repr__(self):
+        return 'Contributor ({}, {})'.format(self.identifier, self.name)
+
+
+class Dataset(base):
+    """Data Registry Dataset"""
+
+    __tablename__ = 'datasets'
+
+    identifier = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    slug = Column(String, nullable=False)
+
+    def __init__(self, dict_):
+        self.name = dict_['name']
+        self.slug = dict_['slug']
+
+
+class Station(base):
+    """Data Registry Station"""
+
+    __tablename__ = 'stations'
+    __table_args__ = (UniqueConstraint('active_start_date', 'active_end_date',
+                      'contributor_id', 'stn_identifier'),)
+
+    stn_type_enum = Enum('STN', 'SHP', name='type')
+
+    identifier = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    contributor_id = Column(String, ForeignKey('contributors.identifier'),
+                            nullable=False)
+    stn_identifier = Column(String, nullable=False)
+    stn_type = Column(stn_type_enum, nullable=False)
+    gaw_id = Column(String, nullable=True)
+    country_id = Column(String, ForeignKey('countries.identifier'),
+                        nullable=False)
+    wmo_region = Column(WMO_REGION_ENUM, nullable=False)
+    active = Column(Boolean, nullable=False, default=True)
+    active_start_date = Column(Date, nullable=False)
+    active_end_date = Column(Date, nullable=True)
+
+    last_validated_datetime = Column(DateTime, nullable=False,
+                                     default=datetime.utcnow())
+
+    # location = Column(Geometry('POINT', srid=4326), nullable=False)
+    location = Column(Geometry(srid=0), nullable=False)
+
+    # relationships
+    country = relationship('Country', backref=__tablename__)
+    contributor = relationship('Contributor', backref=__tablename__)
+
+    def __init__(self, dict_):
+        """serializer"""
+
+        self.stn_identifier = dict_['stn_identifier']
+        self.name = dict_['name']
+        self.stn_type = dict_['stn_type']
+        self.gaw_id = dict_['gaw_id']
+        self.country_id = dict_['country_id']
+        self.contributor_id = dict_['contributor_id']
+        self.wmo_region = dict_['wmo_region']
+        self.active_start_date = dict_['active_start_date']
+        self.active_end_datet = dict_['active_end_date']
+        self.location = util.point2ewkt(dict_['x'], dict_['y'], dict_['z'])
+
+    def __repr__(self):
+        return 'Station ({}, {})'.format(self.stn_identifier, self.name)
 
 
 class DataRecord(base):
     """Data Registry Data Record"""
 
-    __tablename__ = 'data_record'
+    __tablename__ = 'data_records'
 
     identifier = Column(Integer, primary_key=True, autoincrement=True)
 
@@ -156,8 +263,12 @@ class DataRecord(base):
     published_datetime = Column(DateTime, nullable=False,
                                 default=datetime.utcnow())
 
+    ingest_filepath = Column(String, nullable=False)
+    filename = Column(String, nullable=False)
+
     raw = Column(UnicodeText, nullable=False)
     url = Column(String, nullable=False)
+    urn = Column(String, nullable=False)
 
     def __init__(self, ecsv):
         """serializer"""
@@ -200,13 +311,81 @@ class DataRecord(base):
 
         self.extcsv = ecsv.extcsv
         self.raw = ecsv._raw
+        self.urn = self.get_urn()
+
+    def get_urn(self):
+        """generate data record URN"""
+
+        urn_tokens = [
+            'urn',
+            self.content_class,
+            self.content_category,
+            self.data_generation_agency,
+            self.platform_type,
+            self.platform_id,
+            self.instrument_name,
+            self.instrument_model,
+            self.instrument_number,
+            self.data_generation_date.strftime('%Y-%m-%d'),
+            self.data_generation_version,
+        ]
+
+        return ':'.join(map(str, urn_tokens)).lower()
+
+    def get_waf_path(self, basepath):
+        """generate WAF URL"""
+
+        datasetdirname = '{}_{}_{}'.format(self.content_category,
+                                           self.content_level,
+                                           self.content_form)
+
+        url_tokens = [
+            basepath.rstrip('/'),
+            'Archive-NewFormat',
+            datasetdirname,
+            'stn{}'.format(self.platform_id),
+            self.instrument_name.lower(),
+            self.timestamp_date.strftime('%Y'),
+            self.filename
+        ]
+
+        return '/'.join(url_tokens)
+
+    def to_geojson_dict(self):
+        """return dict as a GeoJSON representation"""
+
+        data = self.__dict__
+
+        fields_to_remove = [
+            '_sa_instance_state',
+            'extcsv',
+            'location',
+            'ingest_filepath',
+        ]
+
+        geometry = util.point2geojsongeometry(
+            data['extcsv']['LOCATION']['Longitude'],
+            data['extcsv']['LOCATION']['Latitude'],
+            data['extcsv']['LOCATION']['Height'])
+
+        LOGGER.debug('removing internal / unwanted fields')
+        for field_to_remove in fields_to_remove:
+            data.pop(field_to_remove, None)
+
+        feature = {
+            'type': 'Feature',
+            'geometry': geometry,
+            'properties': data
+        }
+
+        return feature
 
     def __repr__(self):
-        return 'DataRecord(%r, %r)' % (self.identifier, self.url)
+        return 'DataRecord({}, {})'.format(self.identifier, self.url)
 
 
 @click.group()
-def model():
+def manage():
     pass
 
 
@@ -217,7 +396,7 @@ def setup(ctx):
 
     from woudc_data_registry import config
 
-    engine = create_engine(config.DATABASE_URL, echo=config.DEBUG)
+    engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DEBUG)
 
     try:
         click.echo('Generating models')
@@ -234,7 +413,7 @@ def teardown(ctx):
 
     from woudc_data_registry import config
 
-    engine = create_engine(config.DATABASE_URL, echo=config.DEBUG)
+    engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DEBUG)
 
     try:
         click.echo('Deleting models')
@@ -246,12 +425,55 @@ def teardown(ctx):
 
 @click.command()
 @click.pass_context
-def init_metadata(ctx):
-    """add core metadata"""
+@click.option('--datadir', '-d',
+              type=click.Path(exists=True, resolve_path=True),
+              help='Path to core metadata files')
+def init(ctx, datadir):
+    """initialize core system metadata"""
 
-    pass
+    import os
+
+    if datadir is None:
+        raise click.ClickException('Missing required data directory')
+
+    countries = os.path.join(datadir, 'countries.csv')
+    contributors = os.path.join(datadir, 'contributors.csv')
+    stations = os.path.join(datadir, 'stations.csv')
+    datasets = os.path.join(datadir, 'datasets.csv')
+
+    registry_ = registry.Registry()
+
+    click.echo('Loading countries metadata')
+    with open(countries) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            country = Country(row)
+            registry_.save(country)
+
+    click.echo('Loading datasets metadata')
+    with open(datasets) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            dataset = Dataset(row)
+            registry_.save(dataset)
+
+    click.echo('Loading contributors metadata')
+    with open(contributors) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            contributor = Contributor(row)
+            registry_.save(contributor)
+
+    # load stations CSV
+    click.echo('Loading stations metadata')
+    with open(stations) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            station = Station(row)
+            registry_.save(station)
+    # load instruments CSV
 
 
-model.add_command(setup)
-model.add_command(teardown)
-model.add_command(init_metadata)
+manage.add_command(setup)
+manage.add_command(teardown)
+manage.add_command(init)

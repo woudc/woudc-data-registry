@@ -7,7 +7,7 @@
 
 WOUDC Data Registry is a platform that manages Ozone and Ultraviolet
 Radiation data in support of the [World Ozone and Ultraviolet Radiation Data
-Centre (WOUDC)](http://woudc.org), one of six World Data Centres as part of
+Centre (WOUDC)](https://woudc.org), one of six World Data Centres as part of
 the [Global Atmosphere Watch](http://www.wmo.int/gaw) programme of the
 [WMO](http://www.wmo.int).
 
@@ -15,8 +15,9 @@ the [Global Atmosphere Watch](http://www.wmo.int/gaw) programme of the
 ## Installation
 
 ### Requirements
-- Python 3 and above
+- [Python](https://www.python.org) 3 and above
 - [virtualenv](https://virtualenv.pypa.io/)
+- [Elasticsearch](https://www.elastic.co/products/elasticsearch) (5.5.0 and above)
 
 ### Dependencies
 Dependencies are listed in [requirements.txt](requirements.txt). Dependencies
@@ -48,13 +49,23 @@ make ENV=foo.env createdb
 make ENV=foo.env dropdb
 
 # initialize model (database tables)
-woudc-data-registry model setup
+woudc-data-registry manage setup
+
+# initialize search engine
+woudc-data-registry search create_index
+
+# load core metadata
+woudc-data-registry manage init
 
 # cleanups
 
 # re-initialize model (database tables)
-woudc-data-registry model teardown
-woudc-data-registry model setup
+woudc-data-registry manage teardown
+woudc-data-registry manage setup
+
+# re-initialize search engine
+woudc-data-registry search delete_index
+woudc-data-registry search create_index
 
 # drop database
 make ENV=foo.env dropdb
@@ -86,13 +97,13 @@ pip install -r requirements-dev.txt
 
 # run tests like this:
 cd woudc_data_registry/tests
-python run_tests.py
+python test_data_registry.py
 
 # or this:
 python setup.py test
 
 # measure code coverage
-coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.run_tests
+coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_data_registry
 coverage report -m
 ```
 

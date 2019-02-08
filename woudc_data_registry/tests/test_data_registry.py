@@ -43,7 +43,7 @@
 #
 # =================================================================
 
-from datetime import datetime
+from datetime import date, datetime, time
 import os
 import unittest
 
@@ -65,15 +65,6 @@ def resolve_test_data_path(test_data_file):
             return path
 
 
-class DataRegistryTest(unittest.TestCase):
-    """Test suite for data registry"""
-
-    def test_test(self):
-        """stub"""
-
-        self.assertTrue(1 == 1, 'Expected equality')
-
-
 class ParserTest(unittest.TestCase):
     """Test suite for parser.py"""
 
@@ -87,9 +78,8 @@ class ParserTest(unittest.TestCase):
         self.assertIsInstance(parser._get_value_type('test', '1.0'), float)
         self.assertIsInstance(parser._get_value_type('test', '1.0-1'), str)
         self.assertIsInstance(parser._get_value_type('date', '2011-11-11'),
-                              datetime)
-        self.assertIsInstance(parser._get_value_type('time', '11:11:11'),
-                              datetime)
+                              date)
+        self.assertIsInstance(parser._get_value_type('time', '11:11:11'), time)
 
     def test_ecsv(self):
         """test Extended CSV handling"""
@@ -100,6 +90,26 @@ class ParserTest(unittest.TestCase):
 
         ecsv = parser.ExtendedCSV(contents)
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
+        self.assertEqual('20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv',
+                         ecsv.gen_woudc_filename())
+
+        # good file, missing instrument number
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-missing-instrument-number.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+        self.assertEqual('20111130.Brewer.MKIII.na.RMDA.csv',
+                         ecsv.gen_woudc_filename())
+
+        # good file, space in instrument name
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-space-in-instrument-name.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+        with self.assertRaises(parser.MetadataValidationError):
+            ecsv.gen_woudc_filename()
 
         self.assertEqual(DOMAINS['metadata_tables'].keys(), ecsv.extcsv.keys())
         ecsv.validate_metadata()
@@ -260,6 +270,31 @@ class UtilTest(unittest.TestCase):
         point = util.point2ewkt(-75, 45, 111, srid=4269)
         self.assertEqual(point, 'SRID=4269;POINTZ(-75 45 111)')
 
+        point = util.point2ewkt(-75, 45, 0, srid=4269)
+        self.assertEqual(point, 'SRID=4269;POINT(-75 45)')
+
+    def test_point2geojsongeometry(self):
+        """test point GeoJSON geometry creation"""
+
+        point = util.point2geojsongeometry(-75, 45)
+        self.assertIsInstance(point, dict)
+        self.assertEqual(point['type'], 'Point')
+        self.assertIsInstance(point['coordinates'], list)
+        self.assertEqual(len(point['coordinates']), 2)
+        self.assertEqual(point['coordinates'][0], -75)
+        self.assertEqual(point['coordinates'][1], 45)
+
+        point = util.point2geojsongeometry(-75, 45, 333)
+        self.assertEqual(len(point['coordinates']), 3)
+        self.assertEqual(point['coordinates'][0], -75)
+        self.assertEqual(point['coordinates'][1], 45)
+        self.assertEqual(point['coordinates'][2], 333)
+
+        point = util.point2geojsongeometry(-75, 45, 0)
+        self.assertEqual(len(point['coordinates']), 2)
+        self.assertEqual(point['coordinates'][0], -75)
+        self.assertEqual(point['coordinates'][1], 45)
+
     def test_str2bool(self):
         """test boolean evaluation"""
 
@@ -269,6 +304,16 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(util.str2bool('0'), False)
         self.assertEqual(util.str2bool('true'), True)
         self.assertEqual(util.str2bool('false'), False)
+
+    def test_json_serial(self):
+        """test JSON serialization"""
+
+        value = datetime.now()
+
+        self.assertIsInstance(util.json_serial(value), str)
+
+        with self.assertRaises(TypeError):
+            util.json_serial('non_datetime_value')
 
 
 if __name__ == '__main__':

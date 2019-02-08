@@ -50,8 +50,15 @@ import click
 from woudc_data_registry.processing import Process
 
 
-def orchestrate(file_, directory, verify=False):
-    """core workflow"""
+def orchestrate(file_, directory, verify_only=False):
+    """
+    core orchestation workflow
+
+    :param file_: file to process
+    :param directory: directory to process (recursive)
+    :param verify_only: whether to verify the file for correctness without
+                        processing
+    """
 
     files_to_process = []
 
@@ -62,18 +69,19 @@ def orchestrate(file_, directory, verify=False):
             for f in files:
                 files_to_process.append(os.path.join(root, f))
 
-    for file_to_process in files_to_process:
-        click.echo('Processing filename: {}'.format(file_to_process))
-        p = Process()
-        result = p.process_data(file_to_process, verify=verify)
+    with click.progressbar(files_to_process, label='Processing files') as run_:
+        for file_to_process in run_:
+            click.echo('Processing filename: {}'.format(file_to_process))
+            p = Process()
+            result = p.process_data(file_to_process, verify_only=verify_only)
 
-        if result:  # processed
-            if verify:
-                click.echo('Verified but not ingested')
+            if result:  # processed
+                if verify_only:
+                    click.echo('Verified but not ingested')
+                else:
+                    click.echo('Ingested successfully')
             else:
-                click.echo('Ingested successfully')
-        else:
-            click.echo('Not ingested')
+                click.echo('Not ingested')
 
 
 @click.group()
@@ -90,8 +98,9 @@ def data():
               type=click.Path(exists=True, resolve_path=True,
                               dir_okay=True, file_okay=False),
               help='Path to directory of data records')
-@click.option('--verify', is_flag=True)
-def ingest(ctx, file_, directory, verify):
+@click.option('--verify-only', '-vo', 'verify_only', is_flag=True,
+              help='Verify file only')
+def ingest(ctx, file_, directory, verify_only):
     """ingest a single data submission or directory of files"""
 
     if file_ is not None and directory is not None:
@@ -102,7 +111,7 @@ def ingest(ctx, file_, directory, verify):
         msg = 'One of --file or --directory is required'
         raise click.ClickException(msg)
 
-    orchestrate(file_, directory, verify)
+    orchestrate(file_, directory, verify_only)
 
 
 data.add_command(ingest)

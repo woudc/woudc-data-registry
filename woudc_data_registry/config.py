@@ -43,22 +43,33 @@
 #
 # =================================================================
 
+import logging
 import os
 
 from woudc_data_registry.util import str2bool
 
+LOGGER = logging.getLogger(__name__)
 
-DEBUG = str2bool(os.getenv('DEBUG', False))
 
-DB_TYPE = os.getenv('DB_TYPE', 'postgresql')
-DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_PORT = int(os.getenv('DB_PORT', 5432))
-DB_USERNAME = os.getenv('DB_USERNAME', None)
-DB_PASSWORD = os.getenv('DB_PASSWORD', None)
-DB_NAME = os.getenv('DB_NAME', 'woudc-data-registry')
+WDR_DEBUG = str2bool(os.getenv('WDR_DEBUG', False))
 
-if None in [DB_USERNAME, DB_PASSWORD]:
-    raise EnvironmentError('System environment variables are not set!')
+WDR_DB_TYPE = os.getenv('WDR_DB_TYPE', 'postgresql')
+WDR_DB_HOST = os.getenv('WDR_DB_HOST', 'localhost')
+WDR_DB_PORT = int(os.getenv('WDR_DB_PORT', 5432))
+WDR_DB_USERNAME = os.getenv('WDR_DB_USERNAME', None)
+WDR_DB_PASSWORD = os.getenv('WDR_DB_PASSWORD', None)
+WDR_DB_NAME = os.getenv('WDR_DB_NAME', 'woudc-data-registry')
+WDR_SEARCH_TYPE = os.getenv('WDR_SEARCH_TYPE', 'elasticsearch')
+WDR_SEARCH_URL = os.getenv('WDR_SEARCH_URL', 'elasticsearch')
+WDR_WAF_BASEDIR = os.getenv('WDR_WAF_BASEDIR', None)
+WDR_WAF_BASEURL = os.getenv('WDR_WAF_BASEURL', 'https://woudc.org/archive')
 
-DATABASE_URL = '{}://{}:{}@{}:{}/{}'.format(DB_TYPE, DB_USERNAME, DB_PASSWORD,
-                                            DB_HOST, DB_PORT, DB_NAME)
+if None in [WDR_DB_USERNAME, WDR_DB_PASSWORD, WDR_SEARCH_TYPE,
+            WDR_SEARCH_URL, WDR_WAF_BASEDIR, WDR_WAF_BASEURL]:
+    msg = 'System environment variables are not set!'
+    LOGGER.error(msg)
+    raise EnvironmentError(msg)
+
+WDR_DATABASE_URL = '{}://{}:{}@{}:{}/{}'.format(WDR_DB_TYPE, WDR_DB_USERNAME,
+                                                WDR_DB_PASSWORD, WDR_DB_HOST,
+                                                WDR_DB_PORT, WDR_DB_NAME)

@@ -49,25 +49,46 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import DataError
 from sqlalchemy.orm import sessionmaker
 
-from woudc_data_registry import config, models
+from woudc_data_registry import config
 
 LOGGER = logging.getLogger(__name__)
 
-engine = create_engine(config.DATABASE_URL, echo=config.DEBUG)
-Session = sessionmaker(bind=engine)
-session = Session()
 
+class Registry(object):
+    """registry"""
 
-def save_data_record(record):
-    """save data record to registry"""
+    def __init__(self):
+        """constructor"""
 
-    d1 = models.DataRecord(record)
-    d1.url = 'http://woudc.org/'
+        engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DEBUG)
+        Session = sessionmaker(bind=engine, expire_on_commit=False)
+        self.session = Session()
 
-    try:
-        session.add(d1)
-        session.commit()
-        session.close()
-    except DataError as err:
-        print(err)
-        session.rollback()
+    def query_distinct(self, domain):
+        """queries for distinct values"""
+
+        values = [v[0] for v in self.session.query(domain).distinct()]
+
+        return values
+
+    def query_by_field(self, obj, obj_instance, by):
+        """query data by field"""
+
+        field = getattr(obj, by)
+        value = getattr(obj_instance, by)
+
+        results = self.session.query(obj).filter(field == value).all()
+
+        return results
+
+    def save(self, obj):
+        """helper function to save object to registry"""
+
+        try:
+            self.session.add(obj)
+            # self.session.merge(obj)
+            self.session.commit()
+            self.session.close()
+        except DataError as err:
+            LOGGER.error('Failed to save to registry: {}'.format(err))
+            self.session.rollback()

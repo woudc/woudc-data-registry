@@ -43,6 +43,7 @@
 #
 # =================================================================
 
+from datetime import date, datetime
 import logging
 import io
 
@@ -52,12 +53,31 @@ LOGGER = logging.getLogger(__name__)
 def point2ewkt(x, y, z=None, srid=4326):
     """helper function to generate EWKT of point"""
 
-    if z is None:
+    if z is None or int(z) == 0:
         point = 'SRID={};POINT({} {})'.format(srid, x, y)
     else:
         point = 'SRID={};POINTZ({} {} {})'.format(srid, x, y, z)
 
     return point
+
+
+def point2geojsongeometry(x, y, z=None):
+    """helper function to generate GeoJSON geometry of point"""
+
+    coordinates = []
+
+    geometry = {
+        'type': 'Point'
+    }
+
+    if z is None or int(z) == 0:
+        coordinates = [x, y]
+    else:
+        coordinates = [x, y, z]
+
+    geometry['coordinates'] = coordinates
+
+    return geometry
 
 
 def read_file(filename, encoding='utf-8'):
@@ -69,7 +89,8 @@ def read_file(filename, encoding='utf-8'):
         with io.open(filename, encoding=encoding) as fh:
             return fh.read().strip()
     except UnicodeDecodeError as err:
-        LOGGER.warning('utf-8 decoding failed.  Trying latin-1')
+        LOGGER.warning('utf-8 decoding failed: {}'.format(err))
+        LOGGER.info('Trying latin-1')
         with io.open(filename, encoding='latin-1') as fh:
             return fh.read().strip()
 
@@ -85,7 +106,7 @@ def str2bool(value):
     if isinstance(value, bool):
         value2 = value
     else:
-        value2 = value.lower() in ('yes', 'true', 't', '1')
+        value2 = value.lower() in ('yes', 'true', 't', '1', 'on')
 
     return value2
 
@@ -110,3 +131,18 @@ def is_binary_string(string_):
     textchars = (bytearray({7, 8, 9, 10, 12, 13, 27} |
                  set(range(0x20, 0x100)) - {0x7f}))
     return bool(string_.translate(None, textchars))
+
+
+def json_serial(obj):
+    """
+    helper function to convert to JSON non-default
+    types (source: https://stackoverflow.com/a/22238613)
+    """
+
+    if isinstance(obj, (datetime, date)):
+        serial = obj.isoformat()
+        return serial
+
+    msg = '{} type {} not serializable'.format(obj, type(obj))
+    LOGGER.error(msg)
+    raise TypeError(msg)

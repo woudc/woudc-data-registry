@@ -45,8 +45,11 @@
 
 from datetime import datetime
 import logging
+import os
+import shutil
 
-from woudc_data_registry import registry
+from woudc_data_registry import config, registry, search
+from woudc_data_registry.models import Contributor, DataRecord, Dataset
 from woudc_data_registry.parser import (ExtendedCSV, MetadataValidationError,
                                         NonStandardDataError)
 from woudc_data_registry.util import is_text_file, read_file
@@ -74,13 +77,16 @@ class Process(object):
         self.message = None
         self.process_start = datetime.utcnow()
         self.process_end = None
+        self.registry = registry.Registry()
 
-    def process_data(self, infile, verify=False):
+    def process_data(self, infile, verify_only=False):
         """process incoming data record"""
 
         # detect incoming data file
 
-        data_record = None
+        data = None
+        self.data_record = None
+        self.search_engine = search.SearchIndex()
 
         LOGGER.info('Detecting file')
         if not is_text_file(infile):
@@ -91,7 +97,7 @@ class Process(object):
             return False
 
         try:
-            data_record = read_file(infile)
+            data = read_file(infile)
         except UnicodeDecodeError as err:
             self.status = 'failed'
             self.code = 'NonStandardDataError'
@@ -100,11 +106,11 @@ class Process(object):
             return False
 
         LOGGER.info('Parsing data record')
-        dr = ExtendedCSV(data_record)
+        ecsv = ExtendedCSV(data)
 
         try:
             LOGGER.info('Validating Extended CSV')
-            dr.validate_metadata()
+            ecsv.validate_metadata()
             LOGGER.info('Valid Extended CSV')
         except NonStandardDataError as err:
             self.status = 'failed'
@@ -119,26 +125,96 @@ class Process(object):
             LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
             return False
 
-        LOGGER.info('Verifying data record against registry')
-        # verify:
-        # - Extended CSV core fields against registry
-        # - taxonomy/URI check
-        # - duplicate data submitted
-        # - new version of file
+        LOGGER.info('Data is valid Extended CSV')
 
-        if not verify:
-            LOGGER.info('Saving Extended CSV to registry')
-            self.process_end = datetime.utcnow()
-            registry.save_data_record(dr)
+        self.data_record = DataRecord(ecsv)
+        self.data_record.ingest_filepath = infile
+        self.data_record.filename = os.path.basename(infile)
+        self.data_record.url = self.data_record.get_waf_path(
+            config.WDR_WAF_BASEURL)
+        self.process_end = datetime.utcnow()
+
+        LOGGER.debug('Verifying if URN already exists')
+        results = self.registry.query_by_field(
+            DataRecord, self.data_record, 'urn')
+
+        if results:
+            msg = 'Data exists'
+            self.status = 'failed'
+            self.code = 'ProcessingError'
+            self.message = msg
+            LOGGER.error(msg)
+            # return False
+
+        domains_to_check = [
+            'content_category',
+            'data_generation_agency',
+            'platform_type',
+            'platform_id',
+            'platform_name',
+            'platform_country',
+            'instrument_name',
+            'instrument_model'
+        ]
+
+        for domain_to_check in domains_to_check:
+            value = getattr(self.data_record, domain_to_check)
+            domain = getattr(DataRecord, domain_to_check)
+
+            if value not in self.registry.query_distinct(domain):
+                msg = 'value {} not in domain {}'.format(value,
+                                                         domain_to_check)
+                LOGGER.error(msg)
+                # raise ProcessingError(msg)
+
+        LOGGER.info('Verifying data record against core metadata fields')
+
+        LOGGER.debug('Validating dataset')
+        datasets = self.registry.query_distinct(Dataset.name)
+
+        if self.data_record.content_category not in datasets:
+            msg = 'Dataset {} not found in registry'.format(
+                self.data_record.content_category)
+            LOGGER.error(msg)
+            raise ProcessingError(msg)
+
+        LOGGER.debug('Validating contributor')
+        contributors = self.registry.query_distinct(
+            Contributor.acronym)
+
+        if self.data_record.data_generation_agency not in contributors:
+            msg = 'Contributor {} not found in registry'.format(
+                self.data_record.data_generation_agency)
+            LOGGER.error(msg)
+            raise ProcessingError(msg)
+
+        # TODO: validate station
+        # TODO: validate instrument
+
+        # TODO: duplicate data submitted
+        # TODO: check new version of file
+
+        LOGGER.info('Data record is valid and verified')
+
+        if verify_only:  # do not save or index
+            LOGGER.debug('Verification mode detected. NOT saving to registry')
+            return True
+
+        LOGGER.info('Saving data record CSV to registry')
+        self.registry.save(self.data_record)
+
+        LOGGER.info('Saving data record CSV to WAF')
+        waf_filepath = self.data_record.get_waf_path(config.WDR_WAF_BASEDIR)
+        os.makedirs(os.path.dirname(waf_filepath), exist_ok=True)
+        shutil.copy2(self.data_record.ingest_filepath, waf_filepath)
+
+        LOGGER.info('Indexing data record search engine')
+        self.search_engine.index_data_record(
+            self.data_record.to_geojson_dict())
 
         return True
 
-    def index_data(self):
-        """add data record to search index"""
 
-        raise NotImplementedError()
-
-    def unindex_data(self):
-        """remove data record from search index"""
-
-        raise NotImplementedError()
+class ProcessingError(Exception):
+    """custom exception handler"""
+    pass

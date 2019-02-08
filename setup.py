@@ -62,7 +62,7 @@ class PyTest(Command):
     def run(self):
         import subprocess
         errno = subprocess.call([sys.executable,
-                                 'woudc_data_registry/tests/run_tests.py'])
+                                 'woudc_data_registry/tests/test_data_registry.py'])  # noqa
         raise SystemExit(errno)
 
 
