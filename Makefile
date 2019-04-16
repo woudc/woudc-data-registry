@@ -45,7 +45,7 @@
 
 include $(ENV)
 
-PG_FLAGS=-h $(DB_HOST) -p $(DB_PORT) $(DB_NAME) -U $(DB_USERNAME)
+PG_FLAGS=-h $(WDR_DB_HOST) -p $(WDR_DB_PORT) $(WDR_DB_NAME) -U $(WDR_DB_USERNAME) -W
 
 help:
 	@echo

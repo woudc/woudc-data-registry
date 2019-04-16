@@ -241,7 +241,7 @@ class DataRecord(base):
     instrument_model = Column(String, nullable=False)
     instrument_number = Column(String, nullable=False)
 
-    location = Column(Geometry(srid=0), nullable=False)
+    location = Column(Geometry(geometry_type='POINT', srid=4326), nullable=False)
 
     timestamp_utcoffset = Column(String, nullable=False)
     timestamp_date = Column(Date, nullable=False)
@@ -400,7 +400,7 @@ def setup(ctx):
 
     try:
         click.echo('Generating models')
-        base.metadata.create_all(engine, checkfirst=False)
+        base.metadata.create_all(engine, checkfirst=True)
         click.echo('Done')
     except (OperationalError, ProgrammingError) as err:
         click.echo('ERROR: {}'.format(err))
@@ -417,7 +417,7 @@ def teardown(ctx):
 
     try:
         click.echo('Deleting models')
-        base.metadata.drop_all(engine, checkfirst=False)
+        base.metadata.drop_all(engine, checkfirst=True)
         click.echo('Done')
     except (OperationalError, ProgrammingError) as err:
         click.echo('ERROR: {}'.format(err))
