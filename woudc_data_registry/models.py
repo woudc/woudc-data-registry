@@ -49,6 +49,7 @@ import logging
 import click
 import csv
 import geoalchemy2
+import json
 from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
                         Enum, ForeignKey, Integer, String, Time, UnicodeText,
                         UniqueConstraint)
@@ -82,17 +83,17 @@ class Country(base):
 
     __tablename__ = 'countries'
 
-    identifier = Column(String, nullable=False, primary_key=True)
+    id = Column(String, nullable=False, primary_key=True)
     name = Column(String, nullable=False, unique=True)
     wmo_region = Column(String, nullable=False)
     wmo_membership = Column(Date, nullable=True)
     url = Column(String, nullable=True)
 
     def __init__(self, dict_):
-        self.identifier = dict_['identifier']
+        self.id = dict_['id']
         self.name = dict_['name']
         self.wmo_region = dict_['wmo_region']
-        self.wmo_region_since = dict_['wmo_membership']
+        self.wmo_membership = dict_['wmo_membership']
         self.url = dict_['url']
 
     def __repr__(self):
@@ -108,7 +109,7 @@ class Contributor(base):
     identifier = Column(String, primary_key=True)
     name = Column(String, nullable=False)
     acronym = Column(String, nullable=False)
-    country_id = Column(String, ForeignKey('countries.identifier'),
+    country_id = Column(String, ForeignKey('countries.id'),
                         nullable=False)
     project = Column(String, nullable=False, default='WOUDC')
     wmo_region = Column(WMO_REGION_ENUM, nullable=False)
@@ -165,21 +166,19 @@ class Station(base):
     """Data Registry Station"""
 
     __tablename__ = 'stations'
-    __table_args__ = (UniqueConstraint('active_start_date', 'active_end_date',
-                      'contributor_id', 'stn_identifier'),)
+    __table_args__ = (UniqueConstraint('contributor_id', 'identifier'),)
 
     stn_type_enum = Enum('STN', 'SHP', name='type')
 
-    identifier = Column(Integer, primary_key=True, autoincrement=True)
+    identifier = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     contributor_id = Column(String, ForeignKey('contributors.identifier'),
-                            nullable=False)
-    stn_identifier = Column(String, nullable=False)
+                            nullable=True)
     stn_type = Column(stn_type_enum, nullable=False)
     gaw_id = Column(String, nullable=True)
-    country_id = Column(String, ForeignKey('countries.identifier'),
-                        nullable=False)
-    wmo_region = Column(WMO_REGION_ENUM, nullable=False)
+    country_id = Column(String, ForeignKey('countries.id'),
+                        nullable=True)
+    wmo_region = Column(WMO_REGION_ENUM, nullable=True)
     active = Column(Boolean, nullable=False, default=True)
     active_start_date = Column(Date, nullable=False)
     active_end_date = Column(Date, nullable=True)
@@ -197,7 +196,6 @@ class Station(base):
     def __init__(self, dict_):
         """serializer"""
 
-        self.stn_identifier = dict_['stn_identifier']
         self.name = dict_['name']
         self.stn_type = dict_['stn_type']
         self.gaw_id = dict_['gaw_id']
@@ -241,7 +239,8 @@ class DataRecord(base):
     instrument_model = Column(String, nullable=False)
     instrument_number = Column(String, nullable=False)
 
-    location = Column(Geometry(geometry_type='POINT', srid=4326), nullable=False)
+    location = Column(Geometry(geometry_type='POINT', srid=4326),
+                      nullable=False)
 
     timestamp_utcoffset = Column(String, nullable=False)
     timestamp_date = Column(Date, nullable=False)
@@ -436,7 +435,7 @@ def init(ctx, datadir):
     if datadir is None:
         raise click.ClickException('Missing required data directory')
 
-    countries = os.path.join(datadir, 'countries.csv')
+    countries = os.path.join(datadir, 'countries.json')
     contributors = os.path.join(datadir, 'contributors.csv')
     stations = os.path.join(datadir, 'stations.csv')
     datasets = os.path.join(datadir, 'datasets.csv')
@@ -444,33 +443,37 @@ def init(ctx, datadir):
     registry_ = registry.Registry()
 
     click.echo('Loading countries metadata')
-    with open(countries) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            country = Country(row)
+    with open(countries) as jsonfile:
+        countries_data = json.loads(jsonfile.read())['countries']
+        for row in countries_data:
+            country_data = countries_data[row]
+            country_data['name'] = country_data.pop('country_name')
+            country_data['wmo_region'] = country_data.pop('wmo_region_id')
+            country_data['url'] = country_data.pop('link')
+            country = Country(country_data)
             registry_.save(country)
 
-    click.echo('Loading datasets metadata')
-    with open(datasets) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            dataset = Dataset(row)
-            registry_.save(dataset)
+    # click.echo('Loading datasets metadata')
+    # with open(datasets) as csvfile:
+        # reader = csv.DictReader(csvfile)
+        # for row in reader:
+            # dataset = Dataset(row)
+            # registry_.save(dataset)
 
-    click.echo('Loading contributors metadata')
-    with open(contributors) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            contributor = Contributor(row)
-            registry_.save(contributor)
+    # click.echo('Loading contributors metadata')
+    # with open(contributors) as csvfile:
+        # reader = csv.DictReader(csvfile)
+        # for row in reader:
+            # contributor = Contributor(row)
+            # registry_.save(contributor)
 
     # load stations CSV
-    click.echo('Loading stations metadata')
-    with open(stations) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            station = Station(row)
-            registry_.save(station)
+    # click.echo('Loading stations metadata')
+    # with open(stations) as csvfile:
+        # reader = csv.DictReader(csvfile)
+        # for row in reader:
+            # station = Station(row)
+            # registry_.save(station)
     # load instruments CSV
 
 
