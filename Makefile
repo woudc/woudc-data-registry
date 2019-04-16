@@ -92,11 +92,11 @@ package:
 
 setup:
 	woudc-data-registry manage setup
-	woudc-data-registry search create_index
+	woudc-data-registry search create-index
 
 teardown:
 	woudc-data-registry manage teardown
-	woudc-data-registry search delete_index
+	woudc-data-registry search delete-index
 
 test:
 	python setup.py test

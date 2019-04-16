@@ -109,7 +109,6 @@ class ParserTest(unittest.TestCase):
         self.assertEqual('20111130.Brewer-foo.MKIII.na.RMDA.csv',
                          ecsv.gen_woudc_filename())
 
-
         ecsv = parser.ExtendedCSV(contents)
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
 

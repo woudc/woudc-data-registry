@@ -27,7 +27,7 @@ are automatically installed during woudc-data-registry installation.
 
 ```bash
 # setup virtualenv
-virtualenv --system-site-packages -p python3 woudc-data-registry
+python3 -m venv --system-site-packages woudc-data-registry
 cd woudc-data-registry
 source bin/activate
 
@@ -52,7 +52,7 @@ make ENV=foo.env dropdb
 woudc-data-registry manage setup
 
 # initialize search engine
-woudc-data-registry search create_index
+woudc-data-registry search create-index
 
 # load core metadata
 woudc-data-registry manage init
@@ -64,8 +64,8 @@ woudc-data-registry manage teardown
 woudc-data-registry manage setup
 
 # re-initialize search engine
-woudc-data-registry search delete_index
-woudc-data-registry search create_index
+woudc-data-registry search delete-index
+woudc-data-registry search create-index
 
 # drop database
 make ENV=foo.env dropdb
