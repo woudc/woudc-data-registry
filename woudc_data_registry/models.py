@@ -93,7 +93,7 @@ class Country(base):
     country_name = Column(String, nullable=False, unique=True)
     french_name = Column(String, nullable=False, unique=True)
     wmo_region_id = Column(WMO_REGION_ENUM, nullable=False)
-    regional_involvement = Column(WMO_REGION_ENUM, nullable=False)
+    regional_involvement = Column(String, nullable=False)
     wmo_membership = Column(Date, nullable=False)
     link = Column(String, nullable=False)
 
@@ -114,11 +114,10 @@ class Contributor(base):
     """Data Registry Contributor"""
 
     __tablename__ = 'contributors'
-    __table_args__ = (UniqueConstraint('acronym', 'project'),)
+    __table_args__ = (UniqueConstraint('identifier', 'project'),)
 
     identifier = Column(String, primary_key=True)
     name = Column(String, nullable=False)
-    acronym = Column(String, nullable=False)
     country_id = Column(String, ForeignKey('countries.identifier'),
                         nullable=False)
     project = Column(String, nullable=False, default='WOUDC')
@@ -126,11 +125,6 @@ class Contributor(base):
     url = Column(String, nullable=False)
     email = Column(String, nullable=False)
     ftp_username = Column(String, nullable=False)
-    active = Column(Boolean, nullable=False, default=True)
-
-    last_validated_datetime = Column(DateTime, nullable=False,
-                                     default=datetime.utcnow())
-
     location = Column(Geometry('POINT', srid=4326), nullable=False)
 
     # relationships
@@ -139,20 +133,14 @@ class Contributor(base):
     def __init__(self, dict_):
         """serializer"""
 
-        self.identifier = dict_['acronym']
+        self.identifier = dict_['identifier']
         self.name = dict_['name']
-        self.acronym = dict_['acronym']
         self.country_id = dict_['country_id']
-        self.project = dict_['project']
         self.wmo_region = dict_['wmo_region']
         self.url = dict_['url']
         self.email = dict_['email']
         self.ftp_username = dict_['ftp_username']
         self.location = util.point2ewkt(dict_['x'], dict_['y'])
-
-        if self.identifier != 'WOUDC':
-            self.identifier = '{}.{}'.format(self.identifier, self.project)
-        print(self.identifier)
 
     def __repr__(self):
         return 'Contributor ({}, {})'.format(self.identifier, self.name)
@@ -163,13 +151,10 @@ class Dataset(base):
 
     __tablename__ = 'datasets'
 
-    identifier = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String, nullable=False)
-    slug = Column(String, nullable=False)
+    identifier = Column(String, primary_key=True)
 
     def __init__(self, dict_):
-        self.name = dict_['name']
-        self.slug = dict_['slug']
+        self.identifier = dict_['identifier']
 
 
 class Station(base):
@@ -475,6 +460,17 @@ def init(ctx, datadir):
         'link': 'https://www.wmo.int/pages/prog/www/Antarctica/Purpose.html'
     }
     country = Country(antarctica)
+    registry_.save(country)
+    taiwan = {
+        'id': 'TWN',
+        'country_name': 'Taiwan',
+        'french_name': 'Taïwan',
+        'wmo_region_id': 'II',
+        'regional_involvement': 'II',
+        'wmo_membership': '1970-01-01',
+        'link': 'http://www.cwb.gov.tw/eng/index.htm'
+    }
+    country = Country(taiwan)
     registry_.save(country)
 
     click.echo('Loading datasets metadata')
