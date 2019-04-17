@@ -49,7 +49,8 @@ from urllib.parse import urlparse
 
 import click
 from elasticsearch import Elasticsearch
-from elasticsearch.exceptions import NotFoundError, RequestError
+from elasticsearch.exceptions import (ConnectionError, NotFoundError,
+                                      RequestError)
 import requests
 
 from woudc_data_registry import config
@@ -94,7 +95,7 @@ class SearchIndex(object):
         try:
             self.connection.indices.create(index=self.index_name,
                                            body=settings)
-        except RequestError as err:
+        except (ConnectionError, RequestError) as err:
             LOGGER.error(err)
             raise SearchIndexError(err)
 

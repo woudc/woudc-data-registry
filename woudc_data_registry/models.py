@@ -63,7 +63,8 @@ base = declarative_base()
 
 LOGGER = logging.getLogger(__name__)
 
-WMO_REGION_ENUM = Enum('I', 'II', 'III', 'IV', 'V', 'VI', name='wmo_region')
+WMO_REGION_ENUM = Enum('I', 'II', 'III', 'IV', 'V', 'VI', 'Antarctica',
+                       name='wmo_region')
 
 
 class Geometry(geoalchemy2.types.Geometry):
@@ -79,17 +80,22 @@ class Geometry(geoalchemy2.types.Geometry):
 
 
 class Country(base):
-    """Data Registry Country"""
+    """
+    Data Registry Country
+
+    https://www.wmo.int/cpdb/data/membersandterritories.json
+
+    """
 
     __tablename__ = 'countries'
 
     identifier = Column(String, nullable=False, primary_key=True)
     country_name = Column(String, nullable=False, unique=True)
     french_name = Column(String, nullable=False, unique=True)
-    wmo_region_id = Column(String, nullable=False)
-    regional_involvement = Column(String, nullable=False)
-    wmo_membership = Column(Date, nullable=True)
-    link = Column(String, nullable=True)
+    wmo_region_id = Column(WMO_REGION_ENUM, nullable=False)
+    regional_involvement = Column(WMO_REGION_ENUM, nullable=False)
+    wmo_membership = Column(Date, nullable=False)
+    link = Column(String, nullable=False)
 
     def __init__(self, dict_):
         self.identifier = dict_['id']
@@ -101,7 +107,7 @@ class Country(base):
         self.link = dict_['link']
 
     def __repr__(self):
-        return 'Country ({}, {})'.format(self.identifier, self.name)
+        return 'Country ({}, {})'.format(self.identifier, self.country_name)
 
 
 class Contributor(base):
@@ -175,7 +181,7 @@ class Station(base):
 
     stn_type_enum = Enum('STN', 'SHP', name='type')
 
-    identifier = Column(Integer, primary_key=True)
+    identifier = Column(String, primary_key=True)
     name = Column(String, nullable=False)
     contributor_id = Column(String, ForeignKey('contributors.identifier'),
                             nullable=True)
@@ -201,6 +207,7 @@ class Station(base):
     def __init__(self, dict_):
         """serializer"""
 
+        self.identifier = dict_['identifier']
         self.name = dict_['name']
         self.stn_type = dict_['stn_type']
         self.gaw_id = dict_['gaw_id']
@@ -212,7 +219,7 @@ class Station(base):
         self.location = util.point2ewkt(dict_['x'], dict_['y'], dict_['z'])
 
     def __repr__(self):
-        return 'Station ({}, {})'.format(self.stn_identifier, self.name)
+        return 'Station ({}, {})'.format(self.identifier, self.name)
 
 
 class DataRecord(base):
@@ -440,7 +447,7 @@ def init(ctx, datadir):
     if datadir is None:
         raise click.ClickException('Missing required data directory')
 
-    countries = os.path.join(datadir, 'countries.json')
+    countries = os.path.join(datadir, 'wmo-countries.json')
     contributors = os.path.join(datadir, 'contributors.csv')
     stations = os.path.join(datadir, 'stations.csv')
     datasets = os.path.join(datadir, 'datasets.csv')
@@ -456,6 +463,19 @@ def init(ctx, datadir):
                 continue
             country = Country(country_data)
             registry_.save(country)
+    # Antarctica is not a recognized country per se but is
+    # provided in WOUDC
+    antarctica = {
+        'id': 'ATA',
+        'country_name': 'Antarctica',
+        'french_name': 'Antarctique',
+        'wmo_region_id': 'Antarctica',
+        'regional_involvement': 'Antarctica',
+        'wmo_membership': '1970-01-01',
+        'link': 'https://www.wmo.int/pages/prog/www/Antarctica/Purpose.html'
+    }
+    country = Country(antarctica)
+    registry_.save(country)
 
     click.echo('Loading datasets metadata')
     with open(datasets) as csvfile:

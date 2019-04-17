@@ -54,6 +54,7 @@ help:
 	@echo " createdb: create PostgreSQL/PostGIS database"
 	@echo " dropdb: drop PostgreSQL/PostGIS database"
 	@echo " setup: create models and search index"
+	@echo " setup_data: download core metadata
 	@echo " teardown: delete models and search index"
 	@echo " test: run tests"
 	@echo " coverage: run code coverage"
@@ -72,6 +73,7 @@ clean:
 	rm -f debian/woudc-data-registry.prerm.debhelper
 	rm -f debian/woudc-data-registry.substvars
 	rm -fr debian/woudc-data-registry
+	@echo "NOT removing data/"
 
 coverage:
 	coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_data_registry
@@ -94,6 +96,10 @@ setup:
 	woudc-data-registry manage setup
 	woudc-data-registry search create-index
 
+setup_data:
+	mkdir -p data
+	curl -o data/wmo-countries.json https://www.wmo.int/cpdb/data/membersandterritories.json
+
 teardown:
 	woudc-data-registry manage teardown
 	woudc-data-registry search delete-index
@@ -101,4 +107,4 @@ teardown:
 test:
 	python setup.py test
 
-.PHONY: clean coverage createdb dropdb flake8 help package setup teardown test
+.PHONY: clean coverage createdb dropdb flake8 help package setup setup_data teardown test

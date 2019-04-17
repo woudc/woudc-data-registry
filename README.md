@@ -55,7 +55,11 @@ woudc-data-registry manage setup
 woudc-data-registry search create-index
 
 # load core metadata
-woudc-data-registry manage init
+
+# fetch WMO country list
+mkdir data
+curl -o data/wmo-countries.json https://www.wmo.int/cpdb/data/membersandterritories.json
+woudc-data-registry manage init -d data/
 
 # cleanups
 
