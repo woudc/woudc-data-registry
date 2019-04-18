@@ -43,24 +43,53 @@
 #
 # =================================================================
 
+import json
 import click
 
-from woudc_data_registry.controller import data
-from woudc_data_registry.epicentre import contributor, dataset
-from woudc_data_registry.models import manage
-from woudc_data_registry.search import search
-
-__version__ = '0.1.dev0'
+from woudc_data_registry import registry
+from woudc_data_registry.models import Contributor, Dataset
 
 
 @click.group()
-@click.version_option(version=__version__)
-def cli():
+def contributor():
     pass
 
 
-cli.add_command(manage)
-cli.add_command(data)
-cli.add_command(search)
-cli.add_command(contributor)
-cli.add_command(dataset)
+@click.group()
+def dataset():
+    pass
+
+
+@click.command('list')
+@click.pass_context
+def list_contributors(ctx):
+    r = registry.Registry()
+    res = r.session.query(Contributor)
+    for r in res:
+        click.echo('{} - {}'.format(r.identifier, r.name))
+
+
+@click.command('show')
+@click.pass_context
+@click.argument('identifier', required=True)
+def show_contributor(ctx, identifier):
+    r = registry.Registry()
+
+    res = r.session.query(Contributor).filter(
+        Contributor.identifier == identifier)
+
+    click.echo(json.dumps(res[0].__geo_interface__, indent=4))
+
+
+@click.command('list')
+@click.pass_context
+def list_datasets(ctx):
+    r = registry.Registry()
+    res = r.session.query(Dataset)
+    for r in res:
+        click.echo(r.identifier)
+
+
+contributor.add_command(list_contributors)
+contributor.add_command(show_contributor)
+dataset.add_command(list_datasets)
