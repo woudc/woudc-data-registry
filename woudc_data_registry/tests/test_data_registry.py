@@ -256,24 +256,6 @@ class UtilTest(unittest.TestCase):
         res = resolve_test_data_path('data/wmo_acronym_vertical_sm.jpg')
         self.assertFalse(util.is_text_file(res))
 
-    def test_point2ewkt(self):
-        """test point WKT creation"""
-
-        point = util.point2ewkt(-75, 45)
-        self.assertEqual(point, 'SRID=4326;POINT(-75 45)')
-
-        point = util.point2ewkt(-75, 45, 333)
-        self.assertEqual(point, 'SRID=4326;POINTZ(-75 45 333)')
-
-        point = util.point2ewkt(-75, 45, srid=4269)
-        self.assertEqual(point, 'SRID=4269;POINT(-75 45)')
-
-        point = util.point2ewkt(-75, 45, 111, srid=4269)
-        self.assertEqual(point, 'SRID=4269;POINTZ(-75 45 111)')
-
-        point = util.point2ewkt(-75, 45, 0, srid=4269)
-        self.assertEqual(point, 'SRID=4269;POINT(-75 45)')
-
     def test_point2geojsongeometry(self):
         """test point GeoJSON geometry creation"""
 
