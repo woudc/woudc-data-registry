@@ -50,17 +50,6 @@ import io
 LOGGER = logging.getLogger(__name__)
 
 
-def point2ewkt(x, y, z=None, srid=4326):
-    """helper function to generate EWKT of point"""
-
-    if z is None or int(z) == 0:
-        point = 'SRID={};POINT({} {})'.format(srid, x, y)
-    else:
-        point = 'SRID={};POINTZ({} {} {})'.format(srid, x, y, z)
-
-    return point
-
-
 def point2geojsongeometry(x, y, z=None):
     """helper function to generate GeoJSON geometry of point"""
 

@@ -51,8 +51,8 @@ help:
 	@echo
 	@echo "make targets:"
 	@echo
-	@echo " createdb: create PostgreSQL/PostGIS database"
-	@echo " dropdb: drop PostgreSQL/PostGIS database"
+	@echo " createdb: create PostgreSQL database"
+	@echo " dropdb: drop PostgreSQL database"
 	@echo " setup: create models and search index"
 	@echo " setup_data: download core metadata
 	@echo " teardown: delete models and search index"
@@ -81,7 +81,6 @@ coverage:
 
 createdb:
 	createdb $(PG_FLAGS) -E UTF8
-	psql $(PG_FLAGS) -c "create extension postgis;"
 
 dropdb:
 	dropdb $(PG_FLAGS)

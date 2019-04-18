@@ -48,17 +48,16 @@ import logging
 
 import click
 import csv
-# from geoalchemy2.shape import to_shape
-from geoalchemy2.types import Geometry
 import json
-from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
+from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime, Float,
                         Enum, ForeignKey, Integer, String, Time, UnicodeText,
                         UniqueConstraint)
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-from woudc_data_registry import registry, util
+from woudc_data_registry import registry
+from woudc_data_registry.util import point2geojsongeometry
 
 base = declarative_base()
 
@@ -139,7 +138,8 @@ class Contributor(base):
 
     last_validated_datetime = Column(DateTime, nullable=False,
                                      default=datetime.utcnow())
-    location = Column(Geometry('POINT', srid=4326), nullable=False)
+    x = Column(Float, nullable=False)
+    y = Column(Float, nullable=False)
 
     # relationships
     country = relationship('Country', backref=__tablename__)
@@ -154,14 +154,15 @@ class Contributor(base):
         self.url = dict_['url']
         self.email = dict_['email']
         self.ftp_username = dict_['ftp_username']
-        self.location = util.point2ewkt(dict_['x'], dict_['y'])
+        self.x = dict_['x']
+        self.y = dict_['y']
 
     @property
     def __geo_interface__(self):
         return {
             'id': self.identifier,
             'type': 'Feature',
-            # 'geometry': to_shape(self.location).__geo_interface__,
+            'geometry': point2geojsongeometry(self.x, self.y),
             'properties': {
                 'name': self.name,
                 'country_id': self.country_id,
@@ -222,8 +223,9 @@ class Station(base):
     last_validated_datetime = Column(DateTime, nullable=False,
                                      default=datetime.utcnow())
 
-    # location = Column(Geometry('POINT', srid=4326), nullable=False)
-    location = Column(Geometry(srid=0), nullable=False)
+    x = Column(Float, nullable=False)
+    y = Column(Float, nullable=False)
+    z = Column(Float, nullable=True)
 
     # relationships
     country = relationship('Country', backref=__tablename__)
@@ -240,8 +242,32 @@ class Station(base):
         self.contributor_id = dict_['contributor_id']
         self.wmo_region = dict_['wmo_region']
         self.active_start_date = dict_['active_start_date']
-        self.active_end_datet = dict_['active_end_date']
-        self.location = util.point2ewkt(dict_['x'], dict_['y'], dict_['z'])
+        self.active_end_date = dict_['active_end_date']
+        self.x = dict_['x']
+        self.y = dict_['y']
+        self.z = dict_['z']
+
+    def __geo_interface__(self):
+        coordinates = [self.x, self.y]
+
+        if self.z is not None:
+            coordinates.append(self.z)
+
+        return {
+            'id': self.identifier,
+            'type': 'Feature',
+            'geometry': point2geojsongeometry(self.x, self.y, self.z),
+            'properties': {
+                'name': self.name,
+                'stn_type': self.stn_type,
+                'gaw_id': self.gaw_id,
+                'country': self.country.country_name,
+                # TODO: allow for contributor 1..n
+                'wmo_region': self.wmo_region,
+                'active_start_date': self.active_start_date,
+                'active_end_date': self.active_end_date
+            }
+        }
 
     def __repr__(self):
         return 'Station ({}, {})'.format(self.identifier, self.name)
@@ -276,8 +302,9 @@ class DataRecord(base):
     instrument_model = Column(String, nullable=False)
     instrument_number = Column(String, nullable=False)
 
-    location = Column(Geometry(geometry_type='POINT', srid=4326),
-                      nullable=False)
+    x = Column(Float, nullable=False)
+    y = Column(Float, nullable=False)
+    z = Column(Float, nullable=True)
 
     timestamp_utcoffset = Column(String, nullable=False)
     timestamp_date = Column(Date, nullable=False)
@@ -341,9 +368,9 @@ class DataRecord(base):
         if 'Time' in ecsv.extcsv['TIMESTAMP']:
             self.timestamp_time = ecsv.extcsv['TIMESTAMP']['Time']
 
-        self.location = util.point2ewkt(ecsv.extcsv['LOCATION']['Longitude'],
-                                        ecsv.extcsv['LOCATION']['Latitude'],
-                                        ecsv.extcsv['LOCATION']['Height'])
+        self.x = csv.extcsv['LOCATION']['Longitude']
+        self.y = csv.extcsv['LOCATION']['Latitude']
+        self.z = csv.extcsv['LOCATION']['Height']
 
         self.extcsv = ecsv.extcsv
         self.raw = ecsv._raw
@@ -386,35 +413,6 @@ class DataRecord(base):
         ]
 
         return '/'.join(url_tokens)
-
-    def to_geojson_dict(self):
-        """return dict as a GeoJSON representation"""
-
-        data = self.__dict__
-
-        fields_to_remove = [
-            '_sa_instance_state',
-            'extcsv',
-            'location',
-            'ingest_filepath',
-        ]
-
-        geometry = util.point2geojsongeometry(
-            data['extcsv']['LOCATION']['Longitude'],
-            data['extcsv']['LOCATION']['Latitude'],
-            data['extcsv']['LOCATION']['Height'])
-
-        LOGGER.debug('removing internal / unwanted fields')
-        for field_to_remove in fields_to_remove:
-            data.pop(field_to_remove, None)
-
-        feature = {
-            'type': 'Feature',
-            'geometry': geometry,
-            'properties': data
-        }
-
-        return feature
 
     def __repr__(self):
         return 'DataRecord({}, {})'.format(self.identifier, self.url)
