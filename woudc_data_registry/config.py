@@ -70,6 +70,12 @@ if None in [WDR_DB_USERNAME, WDR_DB_PASSWORD, WDR_SEARCH_TYPE,
     LOGGER.error(msg)
     raise EnvironmentError(msg)
 
-WDR_DATABASE_URL = '{}://{}:{}@{}:{}/{}'.format(WDR_DB_TYPE, WDR_DB_USERNAME,
-                                                WDR_DB_PASSWORD, WDR_DB_HOST,
-                                                WDR_DB_PORT, WDR_DB_NAME)
+if WDR_DB_TYPE == 'sqlite':
+    WDR_DATABASE_URL = '{}:///{}'.format(WDR_DB_TYPE, WDR_DB_NAME)
+else:
+    WDR_DATABASE_URL = '{}://{}:{}@{}:{}/{}'.format(WDR_DB_TYPE,
+                                                    WDR_DB_USERNAME,
+                                                    WDR_DB_PASSWORD,
+                                                    WDR_DB_HOST,
+                                                    WDR_DB_PORT,
+                                                    WDR_DB_NAME)
