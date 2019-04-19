@@ -1,6 +1,4 @@
 click
 elasticsearch
-psycopg2
 requests
-six
 sqlalchemy

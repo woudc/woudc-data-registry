@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2017 Government of Canada
+# Copyright (c) 2019 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -80,7 +80,14 @@ class Process(object):
         self.registry = registry.Registry()
 
     def process_data(self, infile, verify_only=False):
-        """process incoming data record"""
+        """
+        process incoming data record
+
+        :param infile: incoming filepath
+        :param verify_only: perform verification only (no ingest)
+
+        :returns: `bool` of processing result
+        """
 
         # detect incoming data file
 
@@ -88,6 +95,7 @@ class Process(object):
         self.data_record = None
         self.search_engine = search.SearchIndex()
 
+        LOGGER.info('Processing file {}'.format(infile))
         LOGGER.info('Detecting file')
         if not is_text_file(infile):
             self.status = 'failed'
@@ -136,7 +144,7 @@ class Process(object):
 
         LOGGER.debug('Verifying if URN already exists')
         results = self.registry.query_by_field(
-            DataRecord, self.data_record, 'urn')
+            DataRecord, self.data_record, 'identifier')
 
         if results:
             msg = 'Data exists'
@@ -146,31 +154,31 @@ class Process(object):
             LOGGER.error(msg)
             # return False
 
-        domains_to_check = [
-            'content_category',
-            'data_generation_agency',
-            'platform_type',
-            'platform_id',
-            'platform_name',
-            'platform_country',
-            'instrument_name',
-            'instrument_model'
-        ]
+#        domains_to_check = [
+#            'content_category',
+#            'data_generation_agency',
+#            'platform_type',
+#            'platform_id',
+#            'platform_name',
+#            'platform_country',
+#            'instrument_name',
+#            'instrument_model'
+#        ]
 
-        for domain_to_check in domains_to_check:
-            value = getattr(self.data_record, domain_to_check)
-            domain = getattr(DataRecord, domain_to_check)
-
-            if value not in self.registry.query_distinct(domain):
-                msg = 'value {} not in domain {}'.format(value,
-                                                         domain_to_check)
-                LOGGER.error(msg)
-                # raise ProcessingError(msg)
+#        for domain_to_check in domains_to_check:
+#            value = getattr(self.data_record, domain_to_check)
+#            domain = getattr(DataRecord, domain_to_check)
+#
+#            if value not in self.registry.query_distinct(domain):
+#                msg = 'value {} not in domain {}'.format(value,
+#                                                         domain_to_check)
+#                LOGGER.error(msg)
+#                # raise ProcessingError(msg)
 
         LOGGER.info('Verifying data record against core metadata fields')
 
         LOGGER.debug('Validating dataset')
-        datasets = self.registry.query_distinct(Dataset.name)
+        datasets = self.registry.query_distinct(Dataset.identifier)
 
         if self.data_record.content_category not in datasets:
             msg = 'Dataset {} not found in registry'.format(
@@ -180,7 +188,7 @@ class Process(object):
 
         LOGGER.debug('Validating contributor')
         contributors = self.registry.query_distinct(
-            Contributor.acronym)
+            Contributor.identifier)
 
         if self.data_record.data_generation_agency not in contributors:
             msg = 'Contributor {} not found in registry'.format(
@@ -210,7 +218,7 @@ class Process(object):
 
         LOGGER.info('Indexing data record search engine')
         self.search_engine.index_data_record(
-            self.data_record.to_geojson_dict())
+            self.data_record.__geo_interface__)
 
         return True
 

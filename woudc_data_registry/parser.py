@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2017 Government of Canada
+# Copyright (c) 2019 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -48,7 +48,7 @@ from datetime import datetime, time
 import logging
 import sys
 
-from six import StringIO as StringIO
+from io import StringIO
 
 LOGGER = logging.getLogger(__name__)
 
@@ -83,7 +83,14 @@ DOMAINS = {
 
 
 def _get_value_type(field, value):
-    """derive true type from data value"""
+    """
+    derive true type from data value
+
+    :param field: fieldname of value
+    :param value: value to be evaluated
+
+    :returns: value with appropriate typing
+    """
 
     field2 = field.lower()
     value2 = None
@@ -120,7 +127,13 @@ class ExtendedCSV(object):
     """
 
     def __init__(self, content):
-        """read WOUDC Extended CSV file"""
+        """
+        read WOUDC Extended CSV file
+
+        :param content: buffer of Extended CSV data
+
+        :returns: `woudc_data_registry.parser.ExtendedCSV`
+        """
 
         self.extcsv = {}
         self._raw = None

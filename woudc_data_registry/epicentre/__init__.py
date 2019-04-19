@@ -43,53 +43,43 @@
 #
 # =================================================================
 
-import json
+import logging
+
 import click
 
 from woudc_data_registry import registry
-from woudc_data_registry.models import Contributor, Dataset
+from woudc_data_registry.models import Dataset
+
+LOGGER = logging.getLogger(__name__)
+REGISTRY = registry.Registry()
 
 
-@click.group()
-def contributor():
-    pass
+def get_datasets():
+    """
+    Get all registered datasets
+
+    :returns: `list` of registered datasets
+    """
+
+    LOGGER.debug('Query for all datasets')
+    res = REGISTRY.session.query(Dataset)
+
+    return [r.identifier for r in res]
 
 
 @click.group()
 def dataset():
+    """Dataset management"""
     pass
-
-
-@click.command('list')
-@click.pass_context
-def list_contributors(ctx):
-    r = registry.Registry()
-    res = r.session.query(Contributor)
-    for r in res:
-        click.echo('{} - {}'.format(r.identifier, r.name))
-
-
-@click.command('show')
-@click.pass_context
-@click.argument('identifier', required=True)
-def show_contributor(ctx, identifier):
-    r = registry.Registry()
-
-    res = r.session.query(Contributor).filter(
-        Contributor.identifier == identifier)
-
-    click.echo(json.dumps(res[0].__geo_interface__, indent=4))
 
 
 @click.command('list')
 @click.pass_context
 def list_datasets(ctx):
-    r = registry.Registry()
-    res = r.session.query(Dataset)
-    for r in res:
-        click.echo(r.identifier)
+    """List all registered datasets"""
+
+    for r in get_datasets():
+        click.echo(r)
 
 
-contributor.add_command(list_contributors)
-contributor.add_command(show_contributor)
 dataset.add_command(list_datasets)

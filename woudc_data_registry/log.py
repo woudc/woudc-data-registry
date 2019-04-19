@@ -44,48 +44,42 @@
 # =================================================================
 
 import logging
-import os
-
-from woudc_data_registry.util import str2bool
+import sys
 
 LOGGER = logging.getLogger(__name__)
 
-WDR_LOGGING_LOGLEVEL = os.getenv('WDR_LOGGING_LOGLEVEL', 'ERROR')
-WDR_LOGGING_LOGFILE = os.getenv('WDR_LOGGING_LOGFILE', None)
 
-WDR_DB_DEBUG = str2bool(os.getenv('WDR_DB_DEBUG', False))
-WDR_DB_TYPE = os.getenv('WDR_DB_TYPE', None)
-WDR_DB_HOST = os.getenv('WDR_DB_HOST', None)
-WDR_DB_PORT = int(os.getenv('WDR_DB_PORT', 5432))
-WDR_DB_USERNAME = os.getenv('WDR_DB_USERNAME', None)
-WDR_DB_PASSWORD = os.getenv('WDR_DB_PASSWORD', None)
-WDR_DB_NAME = os.getenv('WDR_DB_NAME', None)
-WDR_SEARCH_TYPE = os.getenv('WDR_SEARCH_TYPE', 'elasticsearch')
-WDR_SEARCH_URL = os.getenv('WDR_SEARCH_URL', None)
-WDR_WAF_BASEDIR = os.getenv('WDR_WAF_BASEDIR', None)
-WDR_WAF_BASEURL = os.getenv('WDR_WAF_BASEURL', 'https://woudc.org/archive')
+def setup_logger(loglevel, logfile=None):
+    """
+    Setup configuration
 
-if WDR_DB_TYPE is None:
-    msg = 'WDR_DB_TYPE is not set!'
-    LOGGER.error(msg)
-    raise EnvironmentError(msg)
+    :param loglevel: logging level
+    :param logfile: logfile location
 
-if WDR_DB_TYPE == 'sqlite':
-    if WDR_DB_NAME is None:
-        msg = 'WDR_DB_NAME e is not set!'
-        LOGGER.error(msg)
-        raise EnvironmentError(msg)
-    WDR_DATABASE_URL = '{}:///{}'.format(WDR_DB_TYPE, WDR_DB_NAME)
-else:
-    if None in [WDR_DB_USERNAME, WDR_DB_PASSWORD, WDR_SEARCH_TYPE,
-                WDR_SEARCH_URL, WDR_WAF_BASEDIR, WDR_WAF_BASEURL]:
-        msg = 'System environment variables are not set!'
-        LOGGER.error(msg)
-        raise EnvironmentError(msg)
+    :returns: void (creates logging instance)
+    """
 
-    WDR_DATABASE_URL = '{}://{}:{}@{}:{}/{}'.format(WDR_DB_TYPE,
-                                                    WDR_DB_USERNAME,
-                                                    WDR_DB_PASSWORD,
-                                                    WDR_DB_HOST,
-                                                    WDR_DB_PORT,
-                                                    WDR_DB_NAME)
+    log_format = \
+        '[%(asctime)s] %(levelname)s - %(message)s'
+    date_format = '%Y-%m-%dT%H:%M:%SZ'
+
+    loglevels = {
+        'CRITICAL': logging.CRITICAL,
+        'ERROR': logging.ERROR,
+        'WARNING': logging.WARNING,
+        'INFO': logging.INFO,
+        'DEBUG': logging.DEBUG,
+        'NOTSET': logging.NOTSET,
+    }
+
+    loglevel = loglevels[loglevel]
+
+    if logfile is not None:
+        if logfile == 'stdout':
+            logging.basicConfig(level=loglevel, datefmt=date_format,
+                                format=log_format, stream=sys.stdout)
+        else:
+            logging.basicConfig(level=loglevel, datefmt=date_format,
+                                format=log_format, filename=logfile)
+
+    LOGGER.debug('Logging initialized')

@@ -49,22 +49,23 @@ import logging
 import click
 import csv
 import json
-from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime, Float,
-                        Enum, ForeignKey, Integer, String, Time, UnicodeText,
+from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
+                        Float, Enum, ForeignKey, Integer, String, Time,
                         UniqueConstraint)
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
 from woudc_data_registry import registry
+from woudc_data_registry.search import search
 from woudc_data_registry.util import point2geojsongeometry
 
 base = declarative_base()
 
 LOGGER = logging.getLogger(__name__)
 
-WMO_REGION_ENUM = Enum('I', 'II', 'III', 'IV', 'V', 'VI', 'Antarctica',
-                       name='wmo_region')
+WMO_REGION_ENUM = Enum('I', 'II', 'III', 'IV', 'V', 'VI', 'the Antarctic',
+                       name='wmo_region_id')
 
 
 class Country(base):
@@ -94,7 +95,8 @@ class Country(base):
         self.link = dict_['link']
 
         if 'wmo_membership' in dict_:
-            wmo_membership_ = dict_['wmo_membership']
+            wmo_membership_ = datetime.strptime(
+                dict_['wmo_membership'], '%Y-%m-%d').date()
         else:
             wmo_membership_ = None
 
@@ -130,12 +132,12 @@ class Contributor(base):
     country_id = Column(String, ForeignKey('countries.identifier'),
                         nullable=False)
     project = Column(String, nullable=False, default='WOUDC')
-    wmo_region = Column(WMO_REGION_ENUM, nullable=False)
+    wmo_region_id = Column(WMO_REGION_ENUM, nullable=False)
     url = Column(String, nullable=False)
     email = Column(String, nullable=False)
     ftp_username = Column(String, nullable=False)
-    active = Column(Boolean, nullable=False, default=True)
 
+    active = Column(Boolean, nullable=False, default=True)
     last_validated_datetime = Column(DateTime, nullable=False,
                                      default=datetime.utcnow())
     x = Column(Float, nullable=False)
@@ -150,10 +152,11 @@ class Contributor(base):
         self.identifier = dict_['identifier']
         self.name = dict_['name']
         self.country_id = dict_['country_id']
-        self.wmo_region = dict_['wmo_region']
+        self.wmo_region_id = dict_['wmo_region_id']
         self.url = dict_['url']
         self.email = dict_['email']
         self.ftp_username = dict_['ftp_username']
+        self.last_validated_datetime = datetime.utcnow()
         self.x = dict_['x']
         self.y = dict_['y']
 
@@ -166,10 +169,12 @@ class Contributor(base):
             'properties': {
                 'name': self.name,
                 'country_id': self.country_id,
-                'wmo_region': self.wmo_region,
+                'wmo_region_id': self.wmo_region_id,
                 'url': self.url,
                 'email': self.email,
-                'ftp_username': self.ftp_username
+                'ftp_username': self.ftp_username,
+                'active': self.active,
+                'last_validated_datetime': self.last_validated_datetime
             }
         }
 
@@ -207,15 +212,16 @@ class Station(base):
 
     stn_type_enum = Enum('STN', 'SHP', name='type')
 
-    identifier = Column(String, primary_key=True)
+    __id = Column(Integer, primary_key=True, autoincrement=True)
+    identifier = Column(String)
     name = Column(String, nullable=False)
     contributor_id = Column(String, ForeignKey('contributors.identifier'),
                             nullable=True)
-    stn_type = Column(stn_type_enum, nullable=False)
+    # stn_type = Column(stn_type_enum, nullable=False)
     gaw_id = Column(String, nullable=True)
     country_id = Column(String, ForeignKey('countries.identifier'),
                         nullable=False)
-    wmo_region = Column(WMO_REGION_ENUM, nullable=True)
+    wmo_region_id = Column(WMO_REGION_ENUM, nullable=False)
     active = Column(Boolean, nullable=False, default=True)
     active_start_date = Column(Date, nullable=False)
     active_end_date = Column(Date, nullable=True)
@@ -236,34 +242,40 @@ class Station(base):
 
         self.identifier = dict_['identifier']
         self.name = dict_['name']
-        self.stn_type = dict_['stn_type']
-        self.gaw_id = dict_['gaw_id']
+        # self.stn_type = dict_['stn_type']
+        if dict_['gaw_id'] != '':
+            self.gaw_id = dict_['gaw_id']
         self.country_id = dict_['country_id']
         self.contributor_id = dict_['contributor_id']
-        self.wmo_region = dict_['wmo_region']
-        self.active_start_date = dict_['active_start_date']
-        self.active_end_date = dict_['active_end_date']
+        self.wmo_region_id = dict_['wmo_region_id']
+        self.last_validated_datetime = datetime.utcnow()
+
+        self.active_start_date = datetime.strptime(
+            dict_['active_start_date'], '%Y-%m-%d').date()
+
+        if dict_['active_end_date']:
+            self.active_end_date = datetime.strptime(
+                dict_['active_end_date'], '%Y-%m-%d').date()
+
         self.x = dict_['x']
         self.y = dict_['y']
         self.z = dict_['z']
 
+    @property
     def __geo_interface__(self):
-        coordinates = [self.x, self.y]
-
-        if self.z is not None:
-            coordinates.append(self.z)
-
         return {
             'id': self.identifier,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
                 'name': self.name,
-                'stn_type': self.stn_type,
+                # 'stn_type': self.stn_type,
                 'gaw_id': self.gaw_id,
                 'country': self.country.country_name,
                 # TODO: allow for contributor 1..n
-                'wmo_region': self.wmo_region,
+                'wmo_region_id': self.wmo_region_id,
+                'active': self.active,
+                'last_validated_datetime': self.last_validated_datetime,
                 'active_start_date': self.active_start_date,
                 'active_end_date': self.active_end_date
             }
@@ -278,7 +290,7 @@ class DataRecord(base):
 
     __tablename__ = 'data_records'
 
-    identifier = Column(Integer, primary_key=True, autoincrement=True)
+    identifier = Column(String, primary_key=True)
 
     # Extended CSV core fields
 
@@ -329,9 +341,8 @@ class DataRecord(base):
     ingest_filepath = Column(String, nullable=False)
     filename = Column(String, nullable=False)
 
-    raw = Column(UnicodeText, nullable=False)
     url = Column(String, nullable=False)
-    urn = Column(String, nullable=False)
+    urn = Column(String, nullable=False, unique=True)
 
     def __init__(self, ecsv):
         """serializer"""
@@ -368,13 +379,15 @@ class DataRecord(base):
         if 'Time' in ecsv.extcsv['TIMESTAMP']:
             self.timestamp_time = ecsv.extcsv['TIMESTAMP']['Time']
 
-        self.x = csv.extcsv['LOCATION']['Longitude']
-        self.y = csv.extcsv['LOCATION']['Latitude']
-        self.z = csv.extcsv['LOCATION']['Height']
+        self.x = ecsv.extcsv['LOCATION']['Longitude']
+        self.y = ecsv.extcsv['LOCATION']['Latitude']
+        self.z = ecsv.extcsv['LOCATION']['Height']
 
         self.extcsv = ecsv.extcsv
-        self.raw = ecsv._raw
-        self.urn = self.get_urn()
+
+        self.identifier = self.urn = self.get_urn()
+        self.filename = "TODO"
+        self.url = self.get_waf_path('https://woudc.org/archive')
 
     def get_urn(self):
         """generate data record URN"""
@@ -384,13 +397,14 @@ class DataRecord(base):
             self.content_class,
             self.content_category,
             self.data_generation_agency,
+            self.data_generation_date.strftime('%Y-%m-%d'),
+            self.data_generation_version,
             self.platform_type,
             self.platform_id,
             self.instrument_name,
             self.instrument_model,
             self.instrument_number,
-            self.data_generation_date.strftime('%Y-%m-%d'),
-            self.data_generation_version,
+            self.timestamp_date
         ]
 
         return ':'.join(map(str, urn_tokens)).lower()
@@ -406,7 +420,7 @@ class DataRecord(base):
             basepath.rstrip('/'),
             'Archive-NewFormat',
             datasetdirname,
-            'stn{}'.format(self.platform_id),
+            '{}{}'.format(self.platform_type.lower(), self.platform_id),
             self.instrument_name.lower(),
             self.timestamp_date.strftime('%Y'),
             self.filename
@@ -414,12 +428,57 @@ class DataRecord(base):
 
         return '/'.join(url_tokens)
 
+    @property
+    def __geo_interface__(self):
+        return {
+            'id': self.identifier,
+            'type': 'Feature',
+            'geometry': point2geojsongeometry(self.x, self.y, self.z),
+            'properties': {
+                'urn': self.urn,
+                'content_class': self.content_class,
+                'content_category': self.content_category,
+                'content_level': self.content_level,
+                'content_form': self.content_form,
+
+                'data_generation_date': self.data_generation_date,
+                'data_generation_agency': self.data_generation_agency,
+                'data_generation_version': self.data_generation_version,
+                'data_generation_scientific_authority': self.data_generation_scientific_authority,  # noqa
+
+                'platform_type': self.platform_type,
+                'platform_id': self.platform_id,
+                'platform_name': self.platform_name,
+                'platform_country': self.platform_country,
+                'platform_gaw_id': self.platform_gaw_id,
+
+                'instrument_name': self.instrument_name,
+                'instrument_model': self.instrument_model,
+                'instrument_number': self.instrument_number,
+
+                'timestamp_utcoffset': self.timestamp_utcoffset,
+                'timestamp_date': self.timestamp_date,
+                'timestamp_time': self.timestamp_time,
+
+                'published': self.published,
+                'received_datetime': self.received_datetime,
+                'inserted_datetime': self.inserted_datetime,
+                'processed_datetime': self.processed_datetime,
+                'published_datetime': self.published_datetime,
+
+                'ingest_filepath': self.ingest_filepath,
+                'filename': self.filename,
+                'url': self.url
+            }
+        }
+
     def __repr__(self):
         return 'DataRecord({}, {})'.format(self.identifier, self.url)
 
 
 @click.group()
-def manage():
+def admin():
+    """System administration"""
     pass
 
 
@@ -430,7 +489,7 @@ def setup(ctx):
 
     from woudc_data_registry import config
 
-    engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DEBUG)
+    engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DB_DEBUG)
 
     try:
         click.echo('Generating models')
@@ -447,7 +506,7 @@ def teardown(ctx):
 
     from woudc_data_registry import config
 
-    engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DEBUG)
+    engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DB_DEBUG)
 
     try:
         click.echo('Deleting models')
@@ -492,7 +551,7 @@ def init(ctx, datadir):
         'id': 'ATA',
         'country_name': 'Antarctica',
         'french_name': 'Antarctique',
-        'wmo_region_id': 'Antarctica',
+        'wmo_region_id': 'the Antarctic',
         'regional_involvement': 'Antarctica',
         'link': 'https://www.wmo.int/pages/prog/www/Antarctica/Purpose.html'
     }
@@ -533,6 +592,7 @@ def init(ctx, datadir):
     # load instruments CSV
 
 
-manage.add_command(setup)
-manage.add_command(teardown)
-manage.add_command(init)
+admin.add_command(setup)
+admin.add_command(teardown)
+admin.add_command(init)
+admin.add_command(search)

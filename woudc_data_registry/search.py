@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2017 Government of Canada
+# Copyright (c) 2019 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -45,18 +45,22 @@
 
 import json
 import logging
-from urllib.parse import urlparse
 
 import click
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import (ConnectionError, NotFoundError,
                                       RequestError)
-import requests
-
 from woudc_data_registry import config
 from woudc_data_registry.util import json_serial
 
 LOGGER = logging.getLogger(__name__)
+
+INDEXES = {
+    'contributor': 'woudc-data-registry.contributor',
+    'station': 'woudc-data-registry.station',
+    'instrument': 'woudc-data-registry.instrument',
+    'data_record': 'woudc-data-registry.data_record'
+}
 
 
 class SearchIndex(object):
@@ -66,20 +70,15 @@ class SearchIndex(object):
         """constructor"""
 
         self.type = config.WDR_SEARCH_TYPE
-        self.index_name = 'woudc-data-registry'
-        self.type_name = 'FeatureCollection'
-        self.url = urlparse(config.WDR_SEARCH_URL)
+        self.url = config.WDR_SEARCH_URL
 
-        # self.url = '{}/{}'.format(
-        #    config.WDR_SEARCH_URL.rstrip('/'), self.index_name)
-
-        LOGGER.debug('Connecting to ES')
-        self.connection = Elasticsearch([{'host': self.url.hostname,
-                                        'port': self.url.port}])
+        LOGGER.debug('Connecting to Elasticsearch')
+        self.connection = Elasticsearch([self.url])
 
         self.headers = {'Content-Type': 'application/json'}
 
     def create(self):
+        """create search indexes"""
         settings = {
             'mappings': {
                 'FeatureCollection': {
@@ -89,75 +88,87 @@ class SearchIndex(object):
                         }
                     }
                 }
+            },
+            'settings': {
+                'index': {
+                    'number_of_shards': 1,
+                    'number_of_replicas': 0
+                }
             }
         }
 
-        try:
-            self.connection.indices.create(index=self.index_name,
-                                           body=settings)
-        except (ConnectionError, RequestError) as err:
-            LOGGER.error(err)
-            raise SearchIndexError(err)
+        for key, value in INDEXES.items():
+            try:
+                self.connection.indices.create(index=value, body=settings)
+            except (ConnectionError, RequestError) as err:
+                LOGGER.error(err)
+                raise SearchIndexError(err)
 
     def delete(self):
-        try:
-            self.connection.indices.delete(self.index_name)
-        except NotFoundError as err:
-            LOGGER.error(err)
-            raise SearchIndexError(err)
+        """delete search indexes"""
+        for key, value in INDEXES.items():
+            try:
+                self.connection.indices.delete(value)
+            except NotFoundError as err:
+                LOGGER.error(err)
+                raise SearchIndexError(err)
 
     def index_data_record(self, data):
-        """index or update a document"""
+        """
+        index or update a document
 
-        url = '{}/data_record/_search'.format(self.url)
-        identifier = data['properties']['identifier']
+        :param data: `dict` of GeoJSON representation
 
-        query = {
-            'query': {
-                'match': {
-                    'properties.urn': data['properties']['urn']
-                }
-            },
-            '_source': {
-                'excludes': ['properties.raw']
-            }
-        }
+        :returns: `bool` status of indexing result
+        """
 
-        result = self.connection.search(index=self.index_name, body=query)
+        identifier = data['id']
 
-        if result['hits']['total'] > 0:  # exists, update
-            LOGGER.info('existing record, updating')
-            url = '{}/data_record/{}/_update'.format(self.url, identifier)
-
+        try:
+            result = self.connection.get(index=INDEXES['data_record'],
+                                         doc_type='FeatureCollection',
+                                         id=identifier)
+            LOGGER.debug('existing record, updating')
             data_ = json.dumps({'doc': data}, default=json_serial)
-
-            result = requests.post(url, data=data_)
-        else:  # index new
+            result = self.connection.update(index=INDEXES['data_record'],
+                                            doc_type='FeatureCollection',
+                                            id=identifier, body=data_)
+            LOGGER.debug('Result: {}'.format(result))
+        except NotFoundError as err:  # index new
+            LOGGER.debug(err)
             LOGGER.info('new record, indexing')
             data_ = json.dumps(data, default=json_serial)
-            url = '{}/data_record/{}'.format(self.url, identifier)
-            result = requests.put(url, headers=self.headers, data=data_)
-
-        if not result.ok:
-            msg = result.json()['error']['reason']
-            LOGGER.error(msg)
-            raise SearchIndexError(msg)
+            LOGGER.debug('indexing {}'.format(identifier))
+            try:
+                result = self.connection.index(index=INDEXES['data_record'],
+                                               doc_type='FeatureCollection',
+                                               id=identifier, body=data_)
+                LOGGER.debug('Result: {}'.format(result))
+            except RequestError as err:
+                LOGGER.error(err)
+                raise SearchIndexError(err)
 
         return True
 
-    def unindex_data_record(self, data):
-        """delete document from index"""
+    def unindex_data_record(self, identifier):
+        """
+        delete document from index
 
-        identifier = data['properties']['identifier']
+        :param identifier: identifier of data record
 
-        url = '{}/data_record/{}'.format(self.url, identifier)
+        :returns: `bool` status of un-indexing result
+        """
 
-        result = requests.delete(url)
+        result = self.connection.delete(index=INDEXES['data_record'],
+                                        doc_type='FeatureCollection',
+                                        id=identifier)
 
         if result.status_code == 404:
             msg = 'Data record {} does not exist'.format(identifier)
             LOGGER.error(msg)
             raise SearchIndexError(msg)
+
+        return True
 
 
 class SearchIndexError(Exception):
@@ -167,6 +178,7 @@ class SearchIndexError(Exception):
 
 @click.group()
 def search():
+    """Search"""
     pass
 
 
