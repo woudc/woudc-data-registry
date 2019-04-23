@@ -49,7 +49,8 @@ import os
 import shutil
 
 from woudc_data_registry import config, registry, search
-from woudc_data_registry.models import Contributor, DataRecord, Dataset
+from woudc_data_registry.models import (Contributor, DataRecord, Dataset,
+                                        Project)
 from woudc_data_registry.parser import (ExtendedCSV, MetadataValidationError,
                                         NonStandardDataError)
 from woudc_data_registry.util import is_text_file, read_file
@@ -183,6 +184,15 @@ class Process(object):
         if self.data_record.content_category not in datasets:
             msg = 'Dataset {} not found in registry'.format(
                 self.data_record.content_category)
+            LOGGER.error(msg)
+            raise ProcessingError(msg)
+
+        LOGGER.debug('Validating project')
+        projects = self.registry.query_distinct(Project.identifier)
+
+        if self.data_record.content_class not in projects:
+            msg = 'Project {} not found in registry'.format(
+                self.data_record.content_class)
             LOGGER.error(msg)
             raise ProcessingError(msg)
 

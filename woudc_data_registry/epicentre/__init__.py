@@ -48,7 +48,7 @@ import logging
 import click
 
 from woudc_data_registry import registry
-from woudc_data_registry.models import Dataset
+from woudc_data_registry.models import Dataset, Project
 
 LOGGER = logging.getLogger(__name__)
 REGISTRY = registry.Registry()
@@ -63,6 +63,19 @@ def get_datasets():
 
     LOGGER.debug('Query for all datasets')
     res = REGISTRY.session.query(Dataset)
+
+    return [r.identifier for r in res]
+
+
+def get_projects():
+    """
+    Get all registered projects
+
+    :returns: `list` of registered projects
+    """
+
+    LOGGER.debug('Query for all projects')
+    res = REGISTRY.session.query(Project)
 
     return [r.identifier for r in res]
 
@@ -82,4 +95,20 @@ def list_datasets(ctx):
         click.echo(r)
 
 
+@click.group()
+def project():
+    """Project management"""
+    pass
+
+
+@click.command('list')
+@click.pass_context
+def list_projects(ctx):
+    """List all registered projects"""
+
+    for r in get_projects():
+        click.echo(r)
+
+
 dataset.add_command(list_datasets)
+project.add_command(list_projects)

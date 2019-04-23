@@ -203,6 +203,27 @@ class Dataset(base):
         return 'Dataset ({})'.format(self.identifier)
 
 
+class Project(base):
+    """Data Registry Project"""
+
+    __tablename__ = 'projects'
+
+    identifier = Column(String, primary_key=True)
+
+    def __init__(self, dict_):
+        self.identifier = dict_['identifier']
+
+    @property
+    def __geo_interface__(self):
+        return {
+            'id': self.identifier,
+            'type': 'Feature'
+        }
+
+    def __repr__(self):
+        return 'Project ({})'.format(self.identifier)
+
+
 class Station(base):
     """Data Registry Station"""
 
@@ -322,6 +343,8 @@ class DataRecord(base):
     timestamp_date = Column(Date, nullable=False)
     timestamp_time = Column(Time, nullable=True)
 
+    number_of_observations = Column(Integer, nullable=True)
+
     # data management fields
 
     published = Column(Boolean, nullable=False, default=False)
@@ -388,6 +411,8 @@ class DataRecord(base):
         self.identifier = self.urn = self.get_urn()
         self.filename = "TODO"
         self.url = self.get_waf_path('https://woudc.org/archive')
+
+        self.number_of_observations = ecsv.number_of_observations
 
     def get_urn(self):
         """generate data record URN"""
@@ -466,6 +491,8 @@ class DataRecord(base):
                 'processed_datetime': self.processed_datetime,
                 'published_datetime': self.published_datetime,
 
+                'number_of_observations': self.number_of_observations,
+
                 'ingest_filepath': self.ingest_filepath,
                 'filename': self.filename,
                 'url': self.url
@@ -533,6 +560,7 @@ def init(ctx, datadir):
     contributors = os.path.join(datadir, 'contributors.csv')
     stations = os.path.join(datadir, 'stations.csv')
     datasets = os.path.join(datadir, 'datasets.csv')
+    projects = os.path.join(datadir, 'projects.csv')
 
     registry_ = registry.Registry()
 
@@ -575,6 +603,13 @@ def init(ctx, datadir):
             dataset = Dataset(row)
             registry_.save(dataset)
 
+    click.echo('Loading projects metadata')
+    with open(projects) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            project = Project(row)
+            registry_.save(project)
+
     click.echo('Loading contributors metadata')
     with open(contributors) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -582,7 +617,6 @@ def init(ctx, datadir):
             contributor = Contributor(row)
             registry_.save(contributor)
 
-    # load stations CSV
     click.echo('Loading stations metadata')
     with open(stations) as csvfile:
         reader = csv.DictReader(csvfile)

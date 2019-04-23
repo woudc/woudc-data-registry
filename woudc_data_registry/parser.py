@@ -136,6 +136,7 @@ class ExtendedCSV(object):
         """
 
         self.extcsv = {}
+        self.number_of_observations = 0
         self._raw = None
 
         LOGGER.debug('Reading into csv')
