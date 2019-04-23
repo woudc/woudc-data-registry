@@ -89,6 +89,12 @@ eval "$(_WOUDC_DATA_REGISTRY_COMPLETE=source woudc-data-registry)"
 #### Core Metadata Management
 
 ```bash
+# list all projects
+woudc-data-registry project list
+
+# list all datasets
+woudc-data-registry dataset list
+
 # list all contributors
 woudc-data-registry contributor list
 
