@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2017 Government of Canada
+# Copyright (c) 2019 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -58,6 +58,8 @@ def orchestrate(file_, directory, verify_only=False):
     :param directory: directory to process (recursive)
     :param verify_only: whether to verify the file for correctness without
                         processing
+
+    :returns: void
     """
 
     files_to_process = []
@@ -73,19 +75,24 @@ def orchestrate(file_, directory, verify_only=False):
         for file_to_process in run_:
             click.echo('Processing filename: {}'.format(file_to_process))
             p = Process()
-            result = p.process_data(file_to_process, verify_only=verify_only)
+            try:
+                result = p.process_data(file_to_process,
+                                        verify_only=verify_only)
 
-            if result:  # processed
-                if verify_only:
-                    click.echo('Verified but not ingested')
+                if result:  # processed
+                    if verify_only:
+                        click.echo('Verified but not ingested')
+                    else:
+                        click.echo('Ingested successfully')
                 else:
-                    click.echo('Ingested successfully')
-            else:
-                click.echo('Not ingested')
+                    click.echo('Not ingested')
+            except Exception as err:
+                click.echo('Processing failed: {}'.format(err))
 
 
 @click.group()
 def data():
+    """Data processing"""
     pass
 
 
@@ -98,9 +105,7 @@ def data():
               type=click.Path(exists=True, resolve_path=True,
                               dir_okay=True, file_okay=False),
               help='Path to directory of data records')
-@click.option('--verify-only', '-vo', 'verify_only', is_flag=True,
-              help='Verify file only')
-def ingest(ctx, file_, directory, verify_only):
+def ingest(ctx, file_, directory):
     """ingest a single data submission or directory of files"""
 
     if file_ is not None and directory is not None:
@@ -111,7 +116,31 @@ def ingest(ctx, file_, directory, verify_only):
         msg = 'One of --file or --directory is required'
         raise click.ClickException(msg)
 
-    orchestrate(file_, directory, verify_only)
+    orchestrate(file_, directory)
+
+
+@click.command()
+@click.pass_context
+@click.option('--file', '-f', 'file_',
+              type=click.Path(exists=True, resolve_path=True),
+              help='Path to data record')
+@click.option('--directory', '-d', 'directory',
+              type=click.Path(exists=True, resolve_path=True,
+                              dir_okay=True, file_okay=False),
+              help='Path to directory of data records')
+def verify(ctx, file_, directory):
+    """verify a single data submission or directory of files"""
+
+    if file_ is not None and directory is not None:
+        msg = '--file and --directory are mutually exclusive'
+        raise click.ClickException(msg)
+
+    if file_ is None and directory is None:
+        msg = 'One of --file or --directory is required'
+        raise click.ClickException(msg)
+
+    orchestrate(file_, directory, verify_only=True)
 
 
 data.add_command(ingest)
+data.add_command(verify)

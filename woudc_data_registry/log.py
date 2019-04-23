@@ -43,53 +43,43 @@
 #
 # =================================================================
 
-import json
-import click
+import logging
+import sys
 
-from woudc_data_registry import registry
-from woudc_data_registry.models import Contributor, Dataset
-
-
-@click.group()
-def contributor():
-    pass
+LOGGER = logging.getLogger(__name__)
 
 
-@click.group()
-def dataset():
-    pass
+def setup_logger(loglevel, logfile=None):
+    """
+    Setup configuration
 
+    :param loglevel: logging level
+    :param logfile: logfile location
 
-@click.command('list')
-@click.pass_context
-def list_contributors(ctx):
-    r = registry.Registry()
-    res = r.session.query(Contributor)
-    for r in res:
-        click.echo('{} - {}'.format(r.identifier, r.name))
+    :returns: void (creates logging instance)
+    """
 
+    log_format = \
+        '[%(asctime)s] %(levelname)s - %(message)s'
+    date_format = '%Y-%m-%dT%H:%M:%SZ'
 
-@click.command('show')
-@click.pass_context
-@click.argument('identifier', required=True)
-def show_contributor(ctx, identifier):
-    r = registry.Registry()
+    loglevels = {
+        'CRITICAL': logging.CRITICAL,
+        'ERROR': logging.ERROR,
+        'WARNING': logging.WARNING,
+        'INFO': logging.INFO,
+        'DEBUG': logging.DEBUG,
+        'NOTSET': logging.NOTSET,
+    }
 
-    res = r.session.query(Contributor).filter(
-        Contributor.identifier == identifier)
+    loglevel = loglevels[loglevel]
 
-    click.echo(json.dumps(res[0].__geo_interface__, indent=4))
+    if logfile is not None:
+        if logfile == 'stdout':
+            logging.basicConfig(level=loglevel, datefmt=date_format,
+                                format=log_format, stream=sys.stdout)
+        else:
+            logging.basicConfig(level=loglevel, datefmt=date_format,
+                                format=log_format, filename=logfile)
 
-
-@click.command('list')
-@click.pass_context
-def list_datasets(ctx):
-    r = registry.Registry()
-    res = r.session.query(Dataset)
-    for r in res:
-        click.echo(r.identifier)
-
-
-contributor.add_command(list_contributors)
-contributor.add_command(show_contributor)
-dataset.add_command(list_datasets)
+    LOGGER.debug('Logging initialized')

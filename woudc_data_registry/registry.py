@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2017 Government of Canada
+# Copyright (c) 2019 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -60,33 +60,59 @@ class Registry(object):
     def __init__(self):
         """constructor"""
 
-        engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DEBUG)
+        LOGGER.debug('Creating SQLAlchemy connection')
+        engine = create_engine(config.WDR_DATABASE_URL,
+                               echo=config.WDR_DB_DEBUG)
         Session = sessionmaker(bind=engine, expire_on_commit=False)
         self.session = Session()
 
     def query_distinct(self, domain):
-        """queries for distinct values"""
+        """
+        queries for distinct values
 
+        :param domain: domain to be queried
+
+        :returns: list of distinct values
+        """
+
+        LOGGER.debug('Querying distinct values for {}'.format(domain))
         values = [v[0] for v in self.session.query(domain).distinct()]
 
         return values
 
     def query_by_field(self, obj, obj_instance, by):
-        """query data by field"""
+        """
+        query data by field
+
+        :param obj: object (field) to be queried
+        :param obj_instance: object instance to be queried
+        :param by: value to be queried
+
+        :returns: query results
+        """
 
         field = getattr(obj, by)
         value = getattr(obj_instance, by)
 
+        LOGGER.debug('Querying for {}={}'.format(field, value))
         results = self.session.query(obj).filter(field == value).all()
 
         return results
 
-    def save(self, obj):
-        """helper function to save object to registry"""
+    def save(self, obj=None):
+        """
+        helper function to save object to registry
+
+        :param obj: object to save (defualt None)
+
+        :returns: void
+        """
 
         try:
-            self.session.add(obj)
-            # self.session.merge(obj)
+            LOGGER.debug('Saving')
+            if obj is not None:
+                self.session.add(obj)
+                # self.session.merge(obj)
             self.session.commit()
             self.session.close()
         except DataError as err:

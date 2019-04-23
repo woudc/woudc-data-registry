@@ -44,48 +44,71 @@
 # =================================================================
 
 import logging
-import os
 
-from woudc_data_registry.util import str2bool
+import click
+
+from woudc_data_registry import registry
+from woudc_data_registry.models import Dataset, Project
 
 LOGGER = logging.getLogger(__name__)
+REGISTRY = registry.Registry()
 
-WDR_LOGGING_LOGLEVEL = os.getenv('WDR_LOGGING_LOGLEVEL', 'ERROR')
-WDR_LOGGING_LOGFILE = os.getenv('WDR_LOGGING_LOGFILE', None)
 
-WDR_DB_DEBUG = str2bool(os.getenv('WDR_DB_DEBUG', False))
-WDR_DB_TYPE = os.getenv('WDR_DB_TYPE', None)
-WDR_DB_HOST = os.getenv('WDR_DB_HOST', None)
-WDR_DB_PORT = int(os.getenv('WDR_DB_PORT', 5432))
-WDR_DB_USERNAME = os.getenv('WDR_DB_USERNAME', None)
-WDR_DB_PASSWORD = os.getenv('WDR_DB_PASSWORD', None)
-WDR_DB_NAME = os.getenv('WDR_DB_NAME', None)
-WDR_SEARCH_TYPE = os.getenv('WDR_SEARCH_TYPE', 'elasticsearch')
-WDR_SEARCH_URL = os.getenv('WDR_SEARCH_URL', None)
-WDR_WAF_BASEDIR = os.getenv('WDR_WAF_BASEDIR', None)
-WDR_WAF_BASEURL = os.getenv('WDR_WAF_BASEURL', 'https://woudc.org/archive')
+def get_datasets():
+    """
+    Get all registered datasets
 
-if WDR_DB_TYPE is None:
-    msg = 'WDR_DB_TYPE is not set!'
-    LOGGER.error(msg)
-    raise EnvironmentError(msg)
+    :returns: `list` of registered datasets
+    """
 
-if WDR_DB_TYPE == 'sqlite':
-    if WDR_DB_NAME is None:
-        msg = 'WDR_DB_NAME e is not set!'
-        LOGGER.error(msg)
-        raise EnvironmentError(msg)
-    WDR_DATABASE_URL = '{}:///{}'.format(WDR_DB_TYPE, WDR_DB_NAME)
-else:
-    if None in [WDR_DB_USERNAME, WDR_DB_PASSWORD, WDR_SEARCH_TYPE,
-                WDR_SEARCH_URL, WDR_WAF_BASEDIR, WDR_WAF_BASEURL]:
-        msg = 'System environment variables are not set!'
-        LOGGER.error(msg)
-        raise EnvironmentError(msg)
+    LOGGER.debug('Query for all datasets')
+    res = REGISTRY.session.query(Dataset)
 
-    WDR_DATABASE_URL = '{}://{}:{}@{}:{}/{}'.format(WDR_DB_TYPE,
-                                                    WDR_DB_USERNAME,
-                                                    WDR_DB_PASSWORD,
-                                                    WDR_DB_HOST,
-                                                    WDR_DB_PORT,
-                                                    WDR_DB_NAME)
+    return [r.identifier for r in res]
+
+
+def get_projects():
+    """
+    Get all registered projects
+
+    :returns: `list` of registered projects
+    """
+
+    LOGGER.debug('Query for all projects')
+    res = REGISTRY.session.query(Project)
+
+    return [r.identifier for r in res]
+
+
+@click.group()
+def dataset():
+    """Dataset management"""
+    pass
+
+
+@click.command('list')
+@click.pass_context
+def list_datasets(ctx):
+    """List all registered datasets"""
+
+    for r in get_datasets():
+        click.echo(r)
+
+
+@click.group()
+def project():
+    """Project management"""
+    pass
+
+
+@click.command('list')
+@click.pass_context
+def list_projects(ctx):
+    """List all registered projects"""
+
+    for r in get_projects():
+        click.echo(r)
+
+
+dataset.add_command(list_datasets)
+project.add_command(list_projects)

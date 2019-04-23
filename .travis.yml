@@ -5,7 +5,9 @@ python:
 
 env:
   global:
-    - WDR_DEBUG=True
+    - WDR_LOGGING_LOGLEVEL=ERROR
+    - WDR_LOGGING_LOGFILE=/tmp/woudc-data-registry.log
+    - WDR_DB_DEBUG=False
     - WDR_DB_TYPE=postgresql
     - WDR_DB_HOST=localhost
     - WDR_DB_PORT=5432
@@ -29,6 +31,7 @@ services:
 
 install:
   - pip install -r requirements-dev.txt
+  - pip install -r requirements-pg.txt
   - pip install coveralls
   - python setup.py build
   - python setup.py install

@@ -46,11 +46,15 @@
 import click
 
 from woudc_data_registry.controller import data
-from woudc_data_registry.epicentre import contributor, dataset
-from woudc_data_registry.models import manage
-from woudc_data_registry.search import search
+from woudc_data_registry import config, epicentre
+from woudc_data_registry.epicentre.contributor import contributor
+from woudc_data_registry.epicentre.station import station
+from woudc_data_registry.models import admin
+from woudc_data_registry.log import setup_logger
 
 __version__ = '0.1.dev0'
+
+setup_logger(config.WDR_LOGGING_LOGLEVEL, config.WDR_LOGGING_LOGFILE)
 
 
 @click.group()
@@ -59,8 +63,9 @@ def cli():
     pass
 
 
-cli.add_command(manage)
+cli.add_command(admin)
 cli.add_command(data)
-cli.add_command(search)
 cli.add_command(contributor)
-cli.add_command(dataset)
+cli.add_command(station)
+cli.add_command(epicentre.dataset)
+cli.add_command(epicentre.project)

@@ -100,3 +100,6 @@ ENV/
 
 # debian artifacts
 .pybuild
+
+# SQLite databases
+*.db

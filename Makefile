@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2017 Government of Canada
+# Copyright (c) 2019 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -88,22 +88,25 @@ dropdb:
 flake8:
 	flake8 woudc_data_registry
 
+init:
+	woudc-data-registry admin init -d $(DATA)
+
 package:
 	python setup.py sdist bdist_wheel
 
 setup:
-	woudc-data-registry manage setup
-	woudc-data-registry search create-index
+	woudc-data-registry admin setup
+	woudc-data-registry admin search create-index
 
 setup_data:
 	mkdir -p data
 	curl -o data/wmo-countries.json https://www.wmo.int/cpdb/data/membersandterritories.json
 
 teardown:
-	woudc-data-registry manage teardown
-	woudc-data-registry search delete-index
+	woudc-data-registry admin teardown
+	woudc-data-registry admin search delete-index
 
 test:
 	python setup.py test
 
-.PHONY: clean coverage createdb dropdb flake8 help package setup setup_data teardown test
+.PHONY: clean coverage createdb dropdb flake8 help init package setup setup_data teardown test

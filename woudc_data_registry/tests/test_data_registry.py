@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2017 Government of Canada
+# Copyright (c) 2019 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -297,6 +297,13 @@ class UtilTest(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             util.json_serial('non_datetime_value')
+
+    def test_is_plural(self):
+        """test plural evaluation"""
+
+        self.assertTrue(util.is_plural(0))
+        self.assertFalse(util.is_plural(1))
+        self.assertTrue(util.is_plural(2))
 
 
 if __name__ == '__main__':
