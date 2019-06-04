@@ -65,7 +65,7 @@ base = declarative_base()
 LOGGER = logging.getLogger(__name__)
 
 WMO_REGION_ENUM = Enum('I', 'II', 'III', 'IV', 'V', 'VI', 'the Antarctic',
-                       name='wmo_region_id')
+                       'International Waters', name='wmo_region_id')
 
 
 class Country(base):
@@ -125,7 +125,7 @@ class Contributor(base):
     """Data Registry Contributor"""
 
     __tablename__ = 'contributors'
-    __table_args__ = (UniqueConstraint('identifier', 'project'),)
+    __table_args__ = (UniqueConstraint('identifier'),)
 
     identifier = Column(String, primary_key=True)
     name = Column(String, nullable=False)
@@ -152,6 +152,7 @@ class Contributor(base):
         self.identifier = dict_['identifier']
         self.name = dict_['name']
         self.country_id = dict_['country_id']
+        self.project = dict_['project']
         self.wmo_region_id = dict_['wmo_region_id']
         self.url = dict_['url']
         self.email = dict_['email']
@@ -203,6 +204,55 @@ class Dataset(base):
         return 'Dataset ({})'.format(self.identifier)
 
 
+class Instrument(base):
+    """Data Registry Instrument"""
+
+    __tablename__ = 'instruments'
+
+    identifier = Column(String, primary_key=True)
+    station_id = Column(String, ForeignKey('stations.identifier'),
+                        nullable=False)
+    dataset_id = Column(String, ForeignKey('datasets.identifier'),
+                        nullable=False)
+    name = Column(String, nullable=False)
+    model = Column(String, nullable=False)
+    serial = Column(String, nullable=False)
+    x = Column(Float, nullable=False)
+    y = Column(Float, nullable=False)
+    z = Column(Float, nullable=False)
+
+    station = relationship('Station', backref=__tablename__)
+    dataset = relationship('Dataset', backref=__tablename__)
+
+    def __init__(self, dict_):
+        self.identifier = dict_['identifier']
+        self.station_id = dict_['station_id']
+        self.dataset_id = dict_['dataset_id']
+        self.name = dict_['name']
+        self.model = dict_['model']
+        self.serial = dict_['serial']
+        self.x = dict_['x']
+        self.y = dict_['y']
+        self.z = dict_['z']
+
+    @property
+    def __geo_interface__(self):
+        return {
+            'id': self.identifier,
+            'type': 'Feature',
+            'geometry': point2geojsongeometry(self.x, self.y, self.z),
+            'properties': {
+                'station_id': self.station_id,
+                'name': self.name,
+                'model': self.model,
+                'serial': self.serial,
+            }
+        }
+
+    def __repr__(self):
+        return 'Instrument ({})'.format(self.identifier)
+
+
 class Project(base):
     """Data Registry Project"""
 
@@ -228,35 +278,28 @@ class Station(base):
     """Data Registry Station"""
 
     __tablename__ = 'stations'
-    __table_args__ = (UniqueConstraint('active_start_date', 'active_end_date',
-                      'contributor_id', 'identifier'),)
+    __table_args__ = (UniqueConstraint('identifier'),)
 
     stn_type_enum = Enum('STN', 'SHP', name='type')
 
-    __id = Column(Integer, primary_key=True, autoincrement=True)
-    identifier = Column(String)
+    identifier = Column(String, primary_key=True)
     name = Column(String, nullable=False)
-    contributor_id = Column(String, ForeignKey('contributors.identifier'),
-                            nullable=True)
     # stn_type = Column(stn_type_enum, nullable=False)
     gaw_id = Column(String, nullable=True)
     country_id = Column(String, ForeignKey('countries.identifier'),
                         nullable=False)
     wmo_region_id = Column(WMO_REGION_ENUM, nullable=False)
     active = Column(Boolean, nullable=False, default=True)
-    active_start_date = Column(Date, nullable=False)
-    active_end_date = Column(Date, nullable=True)
 
     last_validated_datetime = Column(DateTime, nullable=False,
                                      default=datetime.utcnow())
 
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
-    z = Column(Float, nullable=True)
+    z = Column(Float, nullable=False)
 
     # relationships
     country = relationship('Country', backref=__tablename__)
-    contributor = relationship('Contributor', backref=__tablename__)
 
     def __init__(self, dict_):
         """serializer"""
@@ -267,16 +310,8 @@ class Station(base):
         if dict_['gaw_id'] != '':
             self.gaw_id = dict_['gaw_id']
         self.country_id = dict_['country_id']
-        self.contributor_id = dict_['contributor_id']
         self.wmo_region_id = dict_['wmo_region_id']
         self.last_validated_datetime = datetime.utcnow()
-
-        self.active_start_date = datetime.strptime(
-            dict_['active_start_date'], '%Y-%m-%d').date()
-
-        if dict_['active_end_date']:
-            self.active_end_date = datetime.strptime(
-                dict_['active_end_date'], '%Y-%m-%d').date()
 
         self.x = dict_['x']
         self.y = dict_['y']
@@ -293,17 +328,61 @@ class Station(base):
                 # 'stn_type': self.stn_type,
                 'gaw_id': self.gaw_id,
                 'country': self.country.country_name,
-                # TODO: allow for contributor 1..n
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
                 'last_validated_datetime': self.last_validated_datetime,
-                'active_start_date': self.active_start_date,
-                'active_end_date': self.active_end_date
             }
         }
 
     def __repr__(self):
         return 'Station ({}, {})'.format(self.identifier, self.name)
+
+
+class Deployment(base):
+    """Data Registry Deployment"""
+
+    __tablename__ = 'deployments'
+    __table_args__ = (UniqueConstraint('identifier'),)
+
+    identifier = Column(String, primary_key=True)
+    station_id = Column(String, ForeignKey('stations.identifier'),
+                        nullable=False)
+    contributor_id = Column(String, ForeignKey('contributors.identifier'),
+                            nullable=False)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
+
+    # relationships
+    station = relationship('Station', backref=__tablename__)
+    contributor = relationship('Contributor', backref=__tablename__)
+
+    def __init__(self, dict_):
+        """serializer"""
+
+        self.identifier = dict_['identifier']
+        self.station_id = dict_['station_id']
+        self.contributor_id = dict_['contributor_id']
+        self.start_date = datetime.strptime(
+            dict_['start_date'], '%Y-%m-%d').date()
+        if dict_['end_date']:
+            self.end_date = datetime.strptime(
+                dict_['end_date'], '%Y-%m-%d').date()
+
+    @property
+    def __geo_interface__(self):
+        return {
+            'id': self.identifier,
+            'type': 'Feature',
+            'properties': {
+                'station_id': self.station_id,
+                'contributor_id': self.contributor_id,
+                'start_date': self.start_date,
+                'end_date': self.end_date
+            }
+        }
+
+    def __repr__(self):
+        return 'Deployment ({})'.format(self.identifier)
 
 
 class DataRecord(base):
@@ -556,16 +635,20 @@ def init(ctx, datadir):
     if datadir is None:
         raise click.ClickException('Missing required data directory')
 
-    countries = os.path.join(datadir, 'wmo-countries.json')
+    wmo_countries = os.path.join(datadir, 'wmo-countries.json')
+    countries = os.path.join(datadir, 'countries.json')
     contributors = os.path.join(datadir, 'contributors.csv')
     stations = os.path.join(datadir, 'stations.csv')
+    ships = os.path.join(datadir, 'ships.csv')
     datasets = os.path.join(datadir, 'datasets.csv')
     projects = os.path.join(datadir, 'projects.csv')
+    instruments = os.path.join(datadir, 'instruments.csv')
+    deployments = os.path.join(datadir, 'deployments.csv')
 
     registry_ = registry.Registry()
 
     click.echo('Loading countries metadata')
-    with open(countries) as jsonfile:
+    with open(wmo_countries) as jsonfile:
         countries_data = json.load(jsonfile)
         for row in countries_data['countries']:
             country_data = countries_data['countries'][row]
@@ -573,28 +656,14 @@ def init(ctx, datadir):
                 continue
             country = Country(country_data)
             registry_.save(country)
-    # Antarctica is not a recognized country per se but is
-    # provided in WOUDC
-    antarctica = {
-        'id': 'ATA',
-        'country_name': 'Antarctica',
-        'french_name': 'Antarctique',
-        'wmo_region_id': 'the Antarctic',
-        'regional_involvement': 'Antarctica',
-        'link': 'https://www.wmo.int/pages/prog/www/Antarctica/Purpose.html'
-    }
-    country = Country(antarctica)
-    registry_.save(country)
-    taiwan = {
-        'id': 'TWN',
-        'country_name': 'Taiwan',
-        'french_name': 'Taïwan',
-        'wmo_region_id': 'II',
-        'regional_involvement': 'II',
-        'link': 'https://en.wikipedia.org/wiki/Taiwan'
-    }
-    country = Country(taiwan)
-    registry_.save(country)
+    with open(countries) as jsonfile:
+        countries_data = json.load(jsonfile)
+        for row in countries_data:
+            country_data = countries_data[row]
+            if country_data['id'] == 'NUL':
+                continue
+            country = Country(country_data)
+            registry_.save(country)
 
     click.echo('Loading datasets metadata')
     with open(datasets) as csvfile:
@@ -623,7 +692,28 @@ def init(ctx, datadir):
         for row in reader:
             station = Station(row)
             registry_.save(station)
-    # load instruments CSV
+    with open(ships) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            for field in row:
+                if row[field] == '':
+                    row[field] = None
+            ship = Station(row)
+            registry_.save(ship)
+
+    click.echo('Loading deployments metadata')
+    with open(deployments) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            deployment = Deployment(row)
+            registry_.save(deployment)
+
+    click.echo('Loading instruments metadata')
+    with open(instruments) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            instrument = Instrument(row)
+            registry_.save(instrument)
 
 
 admin.add_command(setup)
