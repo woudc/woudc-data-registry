@@ -47,6 +47,7 @@ import csv
 from datetime import datetime, time
 import logging
 import sys
+import yaml
 
 from io import StringIO
 
@@ -150,10 +151,13 @@ class ExtendedCSV(object):
         for row in reader:
             if len(row) == 1 and row[0].startswith('#'):  # table name
                 table_name = row[0].replace('#', '')
-                if table_name in DOMAINS['metadata_tables'].keys():
-                    found_table = True
-                    LOGGER.debug('Found new table {}'.format(table_name))
-                    self.extcsv[table_name] = {}
+                table_count = 2
+                while table_name in self.extcsv:
+                    table_name = '{}_{}'.format(table_name, table_count)
+                # if table_name in DOMAINS['metadata_tables'].keys():
+                found_table = True
+                LOGGER.debug('Found new table {}'.format(table_name))
+                self.extcsv[table_name] = {}
             elif found_table:  # fetch header line
                 LOGGER.debug('Found new table header {}'.format(table_name))
                 self.extcsv[table_name]['_fields'] = row
@@ -165,11 +169,17 @@ class ExtendedCSV(object):
                 LOGGER.debug('Found blank line')
                 continue
             else:  # process row data
-                if table_name in DOMAINS['metadata_tables'].keys():
+                if table_name is not None:
                     self.extcsv[table_name]['_line_num'] = \
                         int(reader.line_num + 1)
                     for idx, val in enumerate(row):
-                        field = self.extcsv[table_name]['_fields'][idx]
+                        try:
+                            field = self.extcsv[table_name]['_fields'][idx]
+                        except IndexError:
+                            msg = ('Rows in table {} have too many '
+                                   'elements.'.format(table_name))
+                            LOGGER.error(msg)
+                            raise NonStandardDataError(msg)
                         self.extcsv[table_name][field] = _get_value_type(field,
                                                                          val)
 
@@ -210,9 +220,8 @@ class ExtendedCSV(object):
         """validate core metadata tables and fields"""
 
         errors = []
-
-        missing_tables = list(set(DOMAINS['metadata_tables']) -
-                              set(self.extcsv.keys()))
+        missing_tables = [table for table in DOMAINS['metadata_tables']
+                          if table not in self.extcsv.keys()]
 
         if missing_tables:
             if not list(set(DOMAINS['metadata_tables']) - set(missing_tables)):
@@ -230,10 +239,12 @@ class ExtendedCSV(object):
             msg = 'Not an Extended CSV file'
             LOGGER.error(msg)
             raise MetadataValidationError(msg, errors)
+        else:
+            LOGGER.debug('No missing metadata tables.')
 
-        for key, value in self.extcsv.items():
-            missing_datas = list(set(DOMAINS['metadata_tables'][key]) -
-                                 set(value.keys()))
+        for key, value in DOMAINS['metadata_tables'].items():
+            missing_datas = list(set(value) -
+                                 set(self.extcsv[key].keys()))
 
             if missing_datas:
                 for missing_data in missing_datas:
@@ -242,8 +253,10 @@ class ExtendedCSV(object):
                         'locator': missing_data,
                         'text': 'ERROR: {}: (line number: {})'.format(
                             ERROR_CODES['missing_data'],
-                            value['_line_num'])
+                            self.extcsv[key]['_line_num'])
                     })
+            else:
+                LOGGER.debug('No missing fields in table {}'.format(key))
 
         if int(self.extcsv['LOCATION']['Latitude']) not in range(-90, 90):
             errors.append({
@@ -265,19 +278,88 @@ class ExtendedCSV(object):
                     self.extcsv['LOCATION']['_line_num'])
             })
 
-        if self.extcsv['CONTENT']['Category'] not in DOMAINS['datasets']:
-            errors.append({
-                'code': 'invalid_data',
-                'locator': 'CONTENT.Category',
-                'text': 'ERROR: {}: {} (line number: {})'.format(
-                    ERROR_CODES['invalid_data'],
-                    self.extcsv['CONTENT']['Category'],
-                    self.extcsv['LOCATION']['_line_num'])
-            })
+        if self.check_dataset():
+            LOGGER.debug('All tables in file validated.')
+        else:
+            errors.append('Invalid table data. See logs for details.')
 
         if errors:
             LOGGER.error(errors)
             raise MetadataValidationError('Invalid metadata', errors)
+
+    def check_dataset(self):
+        dataset_tables = './data/tables.yaml'
+
+        dataset = self.extcsv['CONTENT']['Category']
+        level = self.extcsv['CONTENT']['Level']
+        form = self.extcsv['CONTENT']['Form']
+
+        with open(dataset_tables) as yamlfile:
+            tables = yaml.safe_load(yamlfile)
+
+        if dataset in tables.keys():
+            curr_dict = tables[dataset]
+            if level in curr_dict.keys():
+                curr_dict = curr_dict[level]
+                if form in curr_dict:
+                    curr_dict = curr_dict[form]
+                    if 1 in curr_dict.keys():
+                        for version in curr_dict:
+                            if self.check_tables(self.extcsv,
+                                                 curr_dict[version]):
+                                return True
+                        return False
+                    else:
+                        if self.check_tables(curr_dict):
+                            return True
+                        else:
+                            return False
+                else:
+                    msg = '#CONTENT.Form not valid.'
+                    LOGGER.error(msg)
+            else:
+                msg = '#CONTENT.Level not valid.'
+                LOGGER.error(msg)
+        else:
+            msg = '#CONTENT.Category not valid.'
+            LOGGER.error(msg)
+
+        return False
+
+    def check_tables(self, tables):
+        for key, value in self.extcsv.items():
+            value.pop('_line_num')
+        for table in tables['required'].keys():
+            if table in self.extcsv:
+                LOGGER.debug('{} table validated.'.format(table))
+                # Consider adding order checking with orderdicts
+                missing = set(tables['required'][table])\
+                    - set(self.extcsv[table].keys())
+                extra = set(self.extcsv[table].keys())\
+                    - set(tables['required'][table])
+                if missing:
+                    msg = 'The following fields were missing from table {}'\
+                          ': {}'.format(table, missing)
+                    LOGGER.error(msg)
+                elif extra:
+                    msg = 'The following fields should not be in table {}'\
+                          ': {}'.format(table, extra)
+                    LOGGER.error(msg)
+                else:
+                    LOGGER.debug('All fields in table {} '
+                                 'validated'.format(table))
+            else:
+                msg = 'Could not validate ({} requires {})'.format(
+                    table, self.extcsv['CONTENT']['Category'])
+                LOGGER.error(msg)
+
+        if 'optional' in tables.keys():
+            for table in tables['optional'].keys():
+                if table not in self.extcsv:
+                    LOGGER.warning('Optional table {} is not in file.'.format(
+                                   table))
+
+        return True
 
 
 class NonStandardDataError(Exception):

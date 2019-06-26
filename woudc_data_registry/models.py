@@ -464,7 +464,7 @@ class DataRecord(base):
                 ecsv.extcsv['DATA_GENERATION']['ScientificAuthority']
 
         self.platform_type = ecsv.extcsv['PLATFORM']['Type']
-        self.platform_id = ecsv.extcsv['PLATFORM']['ID']
+        self.platform_id = str(ecsv.extcsv['PLATFORM']['ID'])
         self.platform_name = ecsv.extcsv['PLATFORM']['Name']
         self.platform_country = ecsv.extcsv['PLATFORM']['Country']
 
@@ -473,7 +473,7 @@ class DataRecord(base):
 
         self.instrument_name = ecsv.extcsv['INSTRUMENT']['Name']
         self.instrument_model = ecsv.extcsv['INSTRUMENT']['Model']
-        self.instrument_number = ecsv.extcsv['INSTRUMENT']['Number']
+        self.instrument_number = str(ecsv.extcsv['INSTRUMENT']['Number'])
 
         self.timestamp_utcoffset = ecsv.extcsv['TIMESTAMP']['UTCOffset']
         self.timestamp_date = ecsv.extcsv['TIMESTAMP']['Date']
