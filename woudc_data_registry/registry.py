@@ -99,6 +99,29 @@ class Registry(object):
 
         return results
 
+    def query_multiple_fields(self, table, values, fields=None):
+        """
+        query a table by multiple fields
+
+        :param table: table to be queried
+        :param instance: dictionary with query values
+        :param fields: fields to be filtered by
+
+        :returns: query results
+        """
+
+        conditions = []
+
+        if fields is None:
+            for field in values:
+                conditions.append(getattr(table, field) == values[field])
+        else:
+            for field in fields:
+                conditions.append(getattr(table, field) == values[field])
+
+        results = self.session.query(table).filter(*conditions).all()
+        return results
+
     def save(self, obj=None):
         """
         helper function to save object to registry

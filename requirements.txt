@@ -2,3 +2,4 @@ click
 elasticsearch
 requests
 sqlalchemy
+pyyaml

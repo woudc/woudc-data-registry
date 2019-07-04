@@ -99,20 +99,21 @@ class ParserTest(unittest.TestCase):
 
         ecsv = parser.ExtendedCSV(contents)
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
-        self.assertEqual('20111130.Brewer.MKIII.na.RMDA.csv',
+        self.assertEqual('20111101.Brewer.MKIII.na.RMDA.csv',
                          ecsv.gen_woudc_filename())
 
         # good file, space in instrument name
         contents = util.read_file(resolve_test_data_path(
             'data/ecsv-space-in-instrument-name.csv'))
         ecsv = parser.ExtendedCSV(contents)
-        self.assertEqual('20111130.Brewer-foo.MKIII.na.RMDA.csv',
+        self.assertEqual('20111101.Brewer-foo.MKIII.na.RMDA.csv',
                          ecsv.gen_woudc_filename())
 
         ecsv = parser.ExtendedCSV(contents)
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
 
-        self.assertEqual(DOMAINS['metadata_tables'].keys(), ecsv.extcsv.keys())
+        self.assertTrue(set(DOMAINS['metadata_tables'].keys()).issubset(
+                        set(ecsv.extcsv.keys())))
         ecsv.validate_metadata()
 
         # good file, test special characters
@@ -122,7 +123,8 @@ class ParserTest(unittest.TestCase):
         ecsv = parser.ExtendedCSV(contents)
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
 
-        self.assertEqual(DOMAINS['metadata_tables'].keys(), ecsv.extcsv.keys())
+        self.assertTrue(set(DOMAINS['metadata_tables'].keys()).issubset(
+                        set(ecsv.extcsv.keys())))
         ecsv.validate_metadata()
 
         self.assertEqual(ecsv.extcsv['PLATFORM']['Name'], 'Río Gallegos')
@@ -154,19 +156,8 @@ class ParserTest(unittest.TestCase):
         ecsv = parser.ExtendedCSV(contents)
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
 
-        self.assertEqual(DOMAINS['metadata_tables'].keys(), ecsv.extcsv.keys())
-
-        with self.assertRaises(parser.MetadataValidationError):
-            ecsv.validate_metadata()
-
-        # bad file (invalid data - CONTENT.Category)
-        contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-invalid-content-category.csv'))
-
-        ecsv = parser.ExtendedCSV(contents)
-        self.assertIsInstance(ecsv, parser.ExtendedCSV)
-
-        self.assertEqual(DOMAINS['metadata_tables'].keys(), ecsv.extcsv.keys())
+        self.assertTrue(set(DOMAINS['metadata_tables'].keys()).issubset(
+                        set(ecsv.extcsv.keys())))
 
         with self.assertRaises(parser.MetadataValidationError):
             ecsv.validate_metadata()
