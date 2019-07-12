@@ -45,6 +45,7 @@
 
 import json
 import logging
+from urllib.parse import urlparse
 
 import click
 from elasticsearch import Elasticsearch
@@ -73,7 +74,28 @@ class SearchIndex(object):
         self.url = config.WDR_SEARCH_URL
 
         LOGGER.debug('Connecting to Elasticsearch')
-        self.connection = Elasticsearch([self.url])
+
+        url_parsed = urlparse(self.url)
+
+        if url_parsed.port is None:  # proxy to default HTTP(S) port
+            if url_parsed.scheme == 'https':
+                port = 443
+            else:
+                port = 80
+        else:  # was set explictly
+            port = url_parsed.port
+
+        url_settings = {
+            'host': url_parsed.netloc,
+            'port': port
+        }
+
+        if url_parsed.path is not None:
+            url_settings['url_prefix'] = url_parsed.path
+
+        LOGGER.debug('URL settings: {}'.format(url_settings))
+
+        self.connection = Elasticsearch([url_settings])
 
         self.headers = {'Content-Type': 'application/json'}
 
