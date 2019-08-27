@@ -23,7 +23,7 @@ UTCOffset,Date,Time
 -3,2016-09-01,
 
 #DAILY
-Date,WLCode,ObsCode,ColumnO3,StdDevO3,UTC_Begin,UTC_End,UTC_Mean,NObs,mMu,ColumnSO2
+Date,WLCode,ObsCode,ColumnO3,StdDevO3,UTC_Begin,UTC_End,UTC_Mean,nObs,mMu,ColumnSO2
 2016-09-01,9,DS,296.8,5.1,13.93,17.20,15.09,6,2.292,2.7
 2016-09-02,9,DS,271.6,1.9,13.23,20.22,16.71,30,2.330,3.2
 2016-09-03,9,DS,257.5,2.7,13.30,20.25,16.61,23,2.363,6.9

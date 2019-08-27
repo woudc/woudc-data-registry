@@ -50,7 +50,8 @@ import shutil
 
 from woudc_data_registry import config, registry, search
 from woudc_data_registry.models import (Contributor, DataRecord, Dataset,
-                                        Instrument, Project, Station)
+                                        Deployment, Instrument, Project,
+                                        Station)
 from woudc_data_registry.parser import (ExtendedCSV, MetadataValidationError,
                                         NonStandardDataError)
 from woudc_data_registry.util import is_text_file, read_file
@@ -80,12 +81,13 @@ class Process(object):
         self.process_end = None
         self.registry = registry.Registry()
 
-    def process_data(self, infile, verify_only=False):
+    def process_data(self, infile, verify_only=False, bypass=False):
         """
         process incoming data record
 
         :param infile: incoming filepath
         :param verify_only: perform verification only (no ingest)
+        :param bypass: skip permission prompts
 
         :returns: `bool` of processing result
         """
@@ -242,7 +244,7 @@ class Process(object):
                 self.data_record.platform_name, self.data_record.platform_id))
         else:
             msg = 'Station name: {} did not match data for id: {}'.format(
-                self.data_record.platform_id, self.data_record.platform_id)
+                self.data_record.platform_name, self.data_record.platform_id)
             LOGGER.error(msg)
             raise ProcessingError(msg)
 
@@ -279,10 +281,27 @@ class Process(object):
                 LOGGER.debug('Checking for new serial number...')
                 instrument_added = self.new_serial(instrument_id, verify_only)
                 if not instrument_added:
-                    msg = 'Other instrument data for id:{} does not match '\
-                          'existing records.'.format(instrument_id)
-                    LOGGER.error(msg)
-                    raise ProcessingError(msg)
+                    if bypass:
+                        LOGGER.info('Bypass mode. Skipping permission check.')
+                        ins_data = self.get_instrument_data(instrument_id)
+                        instrument = Instrument(ins_data)
+                        self.registry.save(instrument)
+                        LOGGER.info('Instrument successfully added.')
+                        instrument_added = True
+                    else:
+                        response = input('Not instrument with new serial. Add'
+                                         ' new instrument? (y/n)\n')
+                        if response == 'y':
+                            ins_data = self.get_instrument_data(instrument_id)
+                            instrument = Instrument(ins_data)
+                            self.registry.save(instrument)
+                            LOGGER.info('Instrument successfully added.')
+                            instrument_added = True
+                        else:
+                            msg = 'Instrument data for id:{} does not match '\
+                                  'existing records.'.format(instrument_id)
+                            LOGGER.error(msg)
+                            raise ProcessingError(msg)
                 LOGGER.debug('Updating instruments list.')
                 self.instruments = self.registry.\
                     query_distinct(Instrument.identifier)
@@ -309,9 +328,49 @@ class Process(object):
                 LOGGER.error(msg)
                 raise ProcessingError(msg)
 
-        # TODO: duplicate data submitted
-        # TODO: check new version of file
-
+        LOGGER.debug('Validating agency deployment')
+        deployment_id = ':'.join([self.data_record.platform_id,
+                                  self.data_record.data_generation_agency,
+                                  self.data_record.content_class])
+        data = {
+            'identifier': deployment_id,
+            'station_id': self.data_record.platform_id,
+            'contributor_id': file_contributor,
+            'start_date': self.data_record.timestamp_date,
+            'end_date': self.data_record.timestamp_date
+        }
+        deployment = self.registry.query_multiple_fields(
+            Deployment, data, ['identifier'])
+        if deployment:
+            if deployment.start_date > self.data_record.timestamp_date:
+                deployment.start_date = self.data_record.timestamp_date
+                self.registry.save()
+                LOGGER.debug('Deployment start date updated.')
+            elif deployment.end_date < self.data_record.timestamp_date:
+                deployment.end_date = self.data_record.timestamp_date
+                self.registry.save()
+                LOGGER.debug('Deployment end date updated.')
+            LOGGER.debug('Deployment validated')
+        else:
+            LOGGER.warning('Deployment not found')
+            if bypass:
+                LOGGER.info('Bypass mode. Skipping permission check')
+                deployment = Deployment(data)
+                self.registry.save(deployment)
+                LOGGER.warning('Deployment {} added'.format(
+                    deployment.identifier))
+            else:
+                response = input('Deployment {} not found. Add? (y/n)\n')
+                if response == 'y':
+                    deployment = Deployment(data)
+                    self.registry.save(deployment)
+                    LOGGER.warning('Deployment {} added'.format(
+                        deployment.identifier))
+                else:
+                    msg = 'Deployment {} not added. Skipping file.'.format(
+                        deployment.identifier)
+                    LOGGER.error(msg)
+                    raise ProcessingError(msg)
         LOGGER.info('Data record is valid and verified')
 
         if verify_only:  # do not save or index
@@ -327,12 +386,17 @@ class Process(object):
         shutil.copy2(self.data_record.ingest_filepath, waf_filepath)
 
         LOGGER.info('Indexing data record search engine')
-        self.search_engine.index_data_record(
-            self.data_record.__geo_interface__)
-
+        version = self.search_engine.get_record_version(self.data_record.es_id)
+        if version:
+            if version < self.data_record.data_generation_version:
+                self.search_engine.index_data_record(
+                    self.data_record.__geo_interface__)
+        else:
+            self.search_engine.index_data_record(
+                    self.data_record.__geo_interface__)
         return True
 
-    def new_serial(self, instrument_id, verify_only):
+    def get_instrument_data(self, instrument_id):
         data = {
             'identifier': instrument_id,
             'station_id': self.data_record.platform_id,
@@ -344,6 +408,10 @@ class Process(object):
             'y': self.data_record.y,
             'z': self.data_record.z
         }
+        return data
+
+    def new_serial(self, instrument_id, verify_only):
+        data = self.get_instrument_data(instrument_id)
 
         fields = ['name',
                   'model',

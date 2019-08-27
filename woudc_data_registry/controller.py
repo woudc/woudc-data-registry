@@ -50,7 +50,7 @@ import click
 from woudc_data_registry.processing import Process
 
 
-def orchestrate(file_, directory, verify_only=False):
+def orchestrate(file_, directory, verify_only=False, bypass=False):
     """
     core orchestation workflow
 
@@ -77,7 +77,7 @@ def orchestrate(file_, directory, verify_only=False):
             p = Process()
             try:
                 result = p.process_data(file_to_process,
-                                        verify_only=verify_only)
+                                        verify_only=verify_only, bypass=bypass)
 
                 if result:  # processed
                     if verify_only:
@@ -105,7 +105,9 @@ def data():
               type=click.Path(exists=True, resolve_path=True,
                               dir_okay=True, file_okay=False),
               help='Path to directory of data records')
-def ingest(ctx, file_, directory):
+@click.option('--bypass', '-b', 'bypass', is_flag=True,
+              help='Bypass permission prompts while ingesting')
+def ingest(ctx, file_, directory, bypass):
     """ingest a single data submission or directory of files"""
 
     if file_ is not None and directory is not None:
@@ -116,7 +118,10 @@ def ingest(ctx, file_, directory):
         msg = 'One of --file or --directory is required'
         raise click.ClickException(msg)
 
-    orchestrate(file_, directory)
+    if bypass:
+        orchestrate(file_, directory, bypass=True)
+    else:
+        orchestrate(file_, directory)
 
 
 @click.command()
