@@ -43,43 +43,29 @@
 #
 # =================================================================
 
-import csv
-from datetime import datetime, time
-import logging
+import os
 import sys
+
+import csv
 import yaml
 
+import logging
+
 from io import StringIO
+from datetime import datetime, time
+
 
 LOGGER = logging.getLogger(__name__)
+
+PROJECT_ROOT = '/home/hurkaa/conda-woudc-data-registry'
+table_definition_file = os.path.join(PROJECT_ROOT, 'data', 'tables.yaml')
+with open(table_definition_file) as table_definitions:
+    DOMAINS = yaml.safe_load(table_definitions)
 
 ERROR_CODES = {
     'missing_table': 10000,
     'missing_data': 11000,
     'invalid_data': 12000,
-}
-
-DOMAINS = {
-    'datasets': {
-        'Broad-band',
-        'Lidar',
-        'Multi-band',
-        'OzoneSonde',
-        'RocketSonde',
-        'Spectral',
-        'SurfaceOzone',
-        'TotalOzoneObs',
-        'TotalOzone',
-        'UmkehrN14',
-    },
-    'metadata_tables': {
-        'CONTENT': ['Class', 'Category', 'Level', 'Form'],
-        'DATA_GENERATION': ['Date', 'Agency', 'Version'],
-        'PLATFORM': ['Type', 'ID', 'Name', 'Country'],
-        'INSTRUMENT': ['Name', 'Model', 'Number'],
-        'LOCATION': ['Latitude', 'Longitude', 'Height'],
-        'TIMESTAMP': ['UTCOffset', 'Date']
-    }
 }
 
 
@@ -194,69 +180,81 @@ class ExtendedCSV(object):
         instrument_name = self.extcsv['INSTRUMENT']['Name']
         instrument_model = self.extcsv['INSTRUMENT']['Model']
 
-        if 'Number' in self.extcsv['INSTRUMENT']:
-            instrument_number = self.extcsv['INSTRUMENT']['Number']
-            if self.extcsv['INSTRUMENT']['Number'] is None:
-                instrument_number = 'na'
-            else:
-                instrument_number = self.extcsv['INSTRUMENT']['Number']
-        else:
-            instrument_number = 'na'
+        extcsv_serial = self.extcsv['INSTRUMENT'].get('Number', None)
+        instrument_number = extcsv_serial or 'na'
 
         agency = self.extcsv['DATA_GENERATION']['Agency']
 
-        f = '{}.{}.{}.{}.{}.csv'.format(timestamp, instrument_name,
-                                        instrument_model,
-                                        instrument_number, agency)
-        if ' ' in f:
-            LOGGER.warning('filename contains spaces: {}'.format(f))
-            f_slug = f.replace(' ', '-')
-            LOGGER.info('filename {} renamed to {}'.format(f, f_slug))
-            f = f_slug
+        filename = '{}.{}.{}.{}.{}.csv'.format(timestamp, instrument_name,
+                                               instrument_model,
+                                               instrument_number, agency)
+        if ' ' in filename:
+            LOGGER.warning('filename contains spaces: {}'.format(filename))
+            file_slug = filename.replace(' ', '-')
+            LOGGER.info('filename {} renamed to {}'
+                        .format(filename, file_slug))
+            filename = file_slug
 
-        return f
+        return filename
 
     def validate_metadata(self):
         """validate core metadata tables and fields"""
 
         errors = []
-        missing_tables = [table for table in DOMAINS['metadata_tables']
+        missing_tables = [table for table in DOMAINS['Common']
                           if table not in self.extcsv.keys()]
+        present_tables = [table for table in self.extcsv.keys()
+                          if table in DOMAINS['Common']]
 
-        if missing_tables:
-            if not list(set(DOMAINS['metadata_tables']) - set(missing_tables)):
-                msg = 'No core metadata tables found. Not an Extended CSV file'
-                LOGGER.error(msg)
-                raise NonStandardDataError(msg)
+        if len(present_tables) == 0:
+            msg = 'No core metadata tables found. Not an Extended CSV file'
+            LOGGER.error(msg)
+            raise NonStandardDataError(msg)
 
-            for missing_table in missing_tables:
-                errors.append({
-                    'code': 'missing_table',
-                    'locator': missing_table,
-                    'text': 'ERROR {}: {}'.format(ERROR_CODES['missing_table'],
-                                                  missing_table)
-                })
+        for missing in missing_tables:
+            errors.append({
+                'code': 'missing_table',
+                'locator': missing,
+                'text': 'ERROR {}: {}'.format(ERROR_CODES['missing_table'],
+                                              missing_table)
+            })
+
+        if errors:
             msg = 'Not an Extended CSV file'
             LOGGER.error(msg)
             raise MetadataValidationError(msg, errors)
         else:
             LOGGER.debug('No missing metadata tables.')
 
-        for key, value in DOMAINS['metadata_tables'].items():
-            missing_datas = list(set(value) -
-                                 set(self.extcsv[key].keys()))
+        for table, fields_definition in DOMAINS['Common'].items():
+            missing_fields = [field for field in fields_definition['required']
+                              if field not in self.extcsv[table].keys()]
+            excess_fields = [field for field in self.extcsv[table].keys()
+                             if field not in fields_definition['required']]
 
-            if missing_datas:
-                for missing_data in missing_datas:
+            if len(missing_fields) > 0:
+                for missing in missing_fields:
                     errors.append({
                         'code': 'missing_data',
-                        'locator': missing_data,
+                        'locator': missing_field,
                         'text': 'ERROR: {}: (line number: {})'.format(
                             ERROR_CODES['missing_data'],
-                            self.extcsv[key]['_line_num'])
+                            self.extcsv[table]['_line_num'])
                     })
             else:
-                LOGGER.debug('No missing fields in table {}'.format(key))
+                LOGGER.debug('No missing fields in table {}'.format(table))
+
+            for field in excess_fields:
+                if field in fields_definition.get('optional', ()):
+                    LOGGER.debug('Found optional {} field {}'
+                                 .format(table, field))
+                elif field not in ['_raw', '_line_num']:
+                    del self.extcsv[table][field]
+                    errors.append({
+                        'code': 'excess_data',
+                        'locator': field,
+                        'text': 'TODO'  # TODO
+                    })
 
         if int(self.extcsv['LOCATION']['Latitude']) not in range(-90, 90):
             errors.append({
@@ -288,55 +286,38 @@ class ExtendedCSV(object):
             raise MetadataValidationError('Invalid metadata', errors)
 
     def check_dataset(self):
-        dataset_tables = './data/tables.yaml'
+        tables = DOMAINS['Datasets']
+        curr_dict = tables
 
-        dataset = self.extcsv['CONTENT']['Category']
-        level = self.extcsv['CONTENT']['Level']
-        form = self.extcsv['CONTENT']['Form']
+        for field in ['Category', 'Level', 'Form']:
+            key = self.extcsv['CONTENT'][field]
 
-        with open(dataset_tables) as yamlfile:
-            tables = yaml.safe_load(yamlfile)
-
-        if dataset in tables.keys():
-            curr_dict = tables[dataset]
-            if level in curr_dict.keys():
-                curr_dict = curr_dict[level]
-                if form in curr_dict:
-                    curr_dict = curr_dict[form]
-                    if 1 in curr_dict.keys():
-                        for version in curr_dict:
-                            if self.check_tables(self.extcsv,
-                                                 curr_dict[version]):
-                                return True
-                        return False
-                    else:
-                        if self.check_tables(curr_dict):
-                            return True
-                        else:
-                            return False
-                else:
-                    msg = '#CONTENT.Form not valid.'
-                    LOGGER.error(msg)
+            if key in curr_dict:
+                curr_dict = curr_dict[key]
             else:
-                msg = '#CONTENT.Level not valid.'
-                LOGGER.error(msg)
+                field_name = '#CONTENT.{}'.format(field.capitalize())
+                LOGGER.error('Invalid value for {}: {}'
+                             .format(field_name, key))
+                return False
+
+        if 1 in curr_dict.keys():
+            passing_versions = map(self.check_tables, curr_dict.values())
+            return any(passing_versions)
         else:
-            msg = '#CONTENT.Category not valid.'
-            LOGGER.error(msg)
+            return self.check_tables(curr_dict)
 
-        return False
-
-    def check_tables(self, tables):
+    def check_tables(self, schema):
         for key, value in self.extcsv.items():
+            print(key, value)
             value.pop('_line_num')
-        for table in tables['required'].keys():
+        for table in schema['required'].keys():
             if table in self.extcsv:
                 LOGGER.debug('{} table validated.'.format(table))
                 # Consider adding order checking with orderdicts
-                missing = set(tables['required'][table])\
+                missing = set(schema['required'][table])\
                     - set(self.extcsv[table].keys())
                 extra = set(self.extcsv[table].keys())\
-                    - set(tables['required'][table])
+                    - set(schema['required'][table])
                 if missing:
                     msg = 'The following fields were missing from table {}'\
                           ': {}'.format(table, missing)
@@ -353,8 +334,8 @@ class ExtendedCSV(object):
                     table, self.extcsv['CONTENT']['Category'])
                 LOGGER.error(msg)
 
-        if 'optional' in tables.keys():
-            for table in tables['optional'].keys():
+        if 'optional' in schema.keys():
+            for table in schema['optional'].keys():
                 if table not in self.extcsv:
                     LOGGER.warning('Optional table {} is not in file.'.format(
                                    table))
