@@ -53,6 +53,7 @@ import logging
 
 from io import StringIO
 from datetime import datetime, time
+from collections import OrderedDict
 
 
 LOGGER = logging.getLogger(__name__)
@@ -104,6 +105,19 @@ def _get_value_type(field, value):
     return value2
 
 
+def is_empty_line(line):
+    """
+    Returns True iff <line> represents a non-content line of an Extended CSV
+    file, i.e. a blank line or a comment.
+    """
+
+    if len(line) == 0:
+        return True
+    else:
+        first = line[0].strip()
+        return len(first) == 0 or first.startswith('*')
+
+
 class ExtendedCSV(object):
     """
 
@@ -126,52 +140,118 @@ class ExtendedCSV(object):
         self.number_of_observations = 0
         self._raw = None
 
+        self._table_count = {}
+        self._line_num = {}
+        self.errors = []
+
         LOGGER.debug('Reading into csv')
         self._raw = content
         reader = csv.reader(StringIO(self._raw))
 
-        found_table = False
-        table_name = None
-
         LOGGER.debug('Parsing object model')
-        for row in reader:
-            if len(row) == 1 and row[0].startswith('#'):  # table name
-                table_name = row[0].replace('#', '')
-                table_count = 2
-                while table_name in self.extcsv:
-                    table_name = '{}_{}'.format(table_name, table_count)
-                # if table_name in DOMAINS['metadata_tables'].keys():
-                found_table = True
-                LOGGER.debug('Found new table {}'.format(table_name))
-                self.extcsv[table_name] = {}
-            elif found_table:  # fetch header line
-                LOGGER.debug('Found new table header {}'.format(table_name))
-                self.extcsv[table_name]['_fields'] = row
-                found_table = False
+        parent_table = None
+        lines = enumerate(reader)
+
+        for line_num, row in lines:
+            if len(row) > 0 and row[0].startswith('#'):  # table name
+                parent_table = ''.join(row).lstrip('#').rstrip()
+
+                if parent_table not in self._table_count:
+                    self._table_count[parent_table] = 1
+                else:
+                    updated_count = self._table_count[parent_table] + 1
+                    self._table_count[parent_table] = updated_count
+                    parent_table += '_' + str(updated_count)
+
+                LOGGER.debug('Found new table {}'.format(parent_table))
+                ln, fields = next(lines)
+                while is_empty_line(fields):
+                    msg = 'Unexpected empty line at line {}'.format(ln)
+                    self.errors.append((8, msg))
+                    ln, fields = next(lines)
+
+                errors = self.init_table(parent_table, fields, line_num)
+                self.errors.extend(errors)
             elif len(row) > 0 and row[0].startswith('*'):  # comment
                 LOGGER.debug('Found comment')
+                parent_table = None
                 continue
             elif len(row) == 0:  # blank line
                 LOGGER.debug('Found blank line')
+                parent_table = None
                 continue
-            else:  # process row data
-                if table_name is not None:
-                    self.extcsv[table_name]['_line_num'] = \
-                        int(reader.line_num + 1)
-                    for idx, val in enumerate(row):
-                        try:
-                            field = self.extcsv[table_name]['_fields'][idx]
-                        except IndexError:
-                            msg = ('Rows in table {} have too many '
-                                   'elements.'.format(table_name))
-                            LOGGER.error(msg)
-                            raise NonStandardDataError(msg)
-                        self.extcsv[table_name][field] = _get_value_type(field,
-                                                                         val)
+            elif parent_table is not None:
+                table_values = row
+                errors = self.add_values_to_table(parent_table, table_values,
+                                                  line_num)
+                self.errors.extend(errors)
+            else:
+                msg = 'Unrecognized data {}'.format(row)
+                self.errors.append((9, msg))
 
-        # delete transient fieldlist
-        for key, value in self.extcsv.items():
-            value.pop('_fields')
+        for table, body in self.extcsv.items():
+            arbitrary_column, values = next(iter(body.items()))
+
+            if len(values) == 0:
+                msg = 'Empty table {}'.format(table)
+                self.errors.append((140, msg))
+            elif len(values) == 1:
+                for field in body.keys():
+                    body[field] = body[field][0]
+
+        if len(errors) > 0:
+            raise NonStandardDataError('Failed to validate Extended CSV file')
+
+    def init_table(self, table_name, fields, line_num):
+        """
+        Record an empty Extended CSV table named <table_name> with
+        fields given in the list <fields>, which starts at line <line_num>.
+
+        Returns a list of errors encountered while recording the new table.
+
+        :param table_name: Name of the new table
+        :param fields: List of column names in the new table
+        :param line_num: Line number of the table's header (its name)
+        :returns: List of errors
+        """
+
+        self.extcsv[table_name] = OrderedDict()
+        self._line_num[table_name] = line_num
+
+        for field in fields:
+            self.extcsv[table_name][field] = []
+
+        return []
+
+    def add_values_to_table(self, table_name, values, line_num):
+        """
+        Add the raw strings in <values> to the bottom of the columns
+        in the tabled named <table_name>.
+
+        Returns a list of errors encountered while adding the new values.
+
+        :param table_name: Name of the table the values fall under
+        :param values: A list of values from one row in the table
+        :param line_num: Line number the row occurs at
+        :returns: List of errors
+        """
+
+        fields = self.extcsv[table_name].keys()
+        fillins = len(fields) - len(values)
+        errors = []
+
+        if fillins < 0:
+            msg = 'Data row at line {} has more values than table columns' \
+                      .format(line_num)
+            errors.append((7, msg))
+
+        values.extend([''] * fillins)
+        values = values[:len(fields)]
+
+        for field, value in zip(fields, values):
+            self.extcsv[table_name][field].append(value)
+
+        return errors
 
     def gen_woudc_filename(self):
         """generate WOUDC filename convention"""
@@ -236,10 +316,10 @@ class ExtendedCSV(object):
                 for missing in missing_fields:
                     errors.append({
                         'code': 'missing_data',
-                        'locator': missing_field,
+                        'locator': missing,
                         'text': 'ERROR: {}: (line number: {})'.format(
                             ERROR_CODES['missing_data'],
-                            self.extcsv[table]['_line_num'])
+                            self._line_num[table])
                     })
             else:
                 LOGGER.debug('No missing fields in table {}'.format(table))
