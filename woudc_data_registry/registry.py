@@ -45,7 +45,7 @@
 
 import logging
 
-from sqlalchemy import create_engine
+from sqlalchemy import func, create_engine
 from sqlalchemy.exc import DataError
 from sqlalchemy.orm import sessionmaker
 
@@ -80,13 +80,14 @@ class Registry(object):
 
         return values
 
-    def query_by_field(self, obj, obj_instance, by):
+    def query_by_field(self, obj, obj_instance, by, case_insensitive=False):
         """
         query data by field
 
         :param obj: object (field) to be queried
         :param obj_instance: object instance to be queried
         :param by: value to be queried
+        :param case_insensitive: Whether to query strings case-insensitively
 
         :returns: query results
         """
@@ -95,29 +96,36 @@ class Registry(object):
         value = getattr(obj_instance, by)
 
         LOGGER.debug('Querying for {}={}'.format(field, value))
-        results = self.session.query(obj).filter(field == value).all()
+        condition = func.lower(field) == value.lower() \
+            if case_insensitive \
+            else field == value
 
-        return results
+        return self.session.query(obj).filter(field == value).all()
 
-    def query_multiple_fields(self, table, values, fields=None):
+    def query_multiple_fields(self, table, values, fields=None,
+                              case_insensitive=()):
         """
         query a table by multiple fields
 
         :param table: table to be queried
         :param instance: dictionary with query values
         :param fields: fields to be filtered by
+        :param case_insensitive: Collection of string fields that should be
+                                 queried case-insensitively
 
         :returns: query results
         """
 
         conditions = []
+        target_fields = fields or values.keys()
 
-        if fields is None:
-            for field in values:
-                conditions.append(getattr(table, field) == values[field])
-        else:
-            for field in fields:
-                conditions.append(getattr(table, field) == values[field])
+        for field in target_fields:
+            table_field = getattr(table, field)
+            if field in case_insensitive:
+                condition = func.lower(table_field) == values[field].lower()
+                conditions.append(condition)
+            else:
+                conditions.append(table_field == values[field])
 
         results = self.session.query(table).filter(*conditions).all()
         return results

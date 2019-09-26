@@ -200,19 +200,25 @@ class Process(object):
                 self.data_record.content_category))
 
         LOGGER.debug('Validating contributor')
-        self.contributors = self.registry.query_distinct(
-            Contributor.identifier)
-        file_contributor = '{}:{}'.format(
-            self.data_record.data_generation_agency,
-            self.data_record.content_class)
-        if file_contributor not in self.contributors:
-            msg = 'Contributor {} not found in registry'.format(
-                file_contributor)
+        contributor = {
+            'identifier': '{}:{}'.format(
+                self.data_record.data_generation_agency,
+                self.data_record.content_class),
+            'project_id': self.data_record.content_class
+        }
+
+        fields = ['identifier']
+        result = self.registry.query_multiple_fields(Contributor, contributor,
+                                                     fields, fields)
+        if not result:
+            msg = 'Contributor {} not found in registry' \
+                  .format(contributor['identifier'])
             LOGGER.error(msg)
             raise ProcessingError(msg)
         else:
-            LOGGER.debug('Matched with contributor: {}'.format(
-                file_contributor))
+            self.data_record.data_generation_agency = result[0].identifier
+            LOGGER.debug('Matched with contributor ID {}'
+                         .format(result[0].identifier))
 
         # TODO: consider adding and checking #PLATFORM_Type
         LOGGER.debug('Validating station data')
@@ -236,9 +242,11 @@ class Process(object):
 
         LOGGER.debug('Validating station name...')
         fields = ['identifier', 'name']
-        results = self.registry.query_multiple_fields(Station, station, fields)
-        if results:
-            LOGGER.debug('Validated with name: {} for id: {}'.format(
+        result = self.registry.query_multiple_fields(Station, station, fields,
+                                                     case_insensitive=['name'])
+        if result:
+            self.data_record.platform_name = result[0].name
+            LOGGER.debug('Validated with name {} for id {}'.format(
                 self.data_record.platform_name, self.data_record.platform_id))
         else:
             msg = 'Station name: {} did not match data for id: {}'.format(
@@ -261,51 +269,52 @@ class Process(object):
             raise ProcessingError(msg)
 
         LOGGER.debug('Validating instrument')
-        self.instruments = self.registry.query_distinct(Instrument.identifier)
-        instrument_added = False
-        instrument = [self.data_record.instrument_name,
-                      self.data_record.instrument_model,
-                      self.data_record.instrument_number,
-                      self.data_record.platform_id,
-                      self.data_record.content_category]
-        instrument_id = ':'.join(instrument)
-        if instrument_id not in self.instruments:
-            instrument[2] = str(int(instrument[2]))
-            old_instrument_id = ':'.join(instrument)
-            if old_instrument_id not in self.instruments:
-                msg = 'Instrument {} not found in registry'.format(
-                    instrument_id)
-                LOGGER.warning(msg)
-                LOGGER.debug('Checking for new serial number...')
-                instrument_added = self.new_serial(instrument_id, verify_only)
-                if not instrument_added:
-                    msg = 'Other instrument data for id:{} does not match '\
-                          'existing records.'.format(instrument_id)
-                    LOGGER.error(msg)
-                    raise ProcessingError(msg)
-                LOGGER.debug('Updating instruments list.')
-                self.instruments = self.registry.\
-                    query_distinct(Instrument.identifier)
-            else:
-                instrument_id = old_instrument_id
+        instrument = {
+            'name': self.data_record.instrument_name,
+            'model': self.data_record.instrument_model,
+            'station_id': self.data_record.platform_id,
+            'dataset_id': self.data_record.content_category
+        }
 
-        if instrument_added and verify_only:
-            LOGGER.debug('Skipping location check due to instrument '
-                         'not being added in verification mode.')
-        else:
-            LOGGER.debug('Matched with instrument: {}'.format(instrument_id))
-            LOGGER.debug('Checking instrument location...')
-            location = {
-                'identifier': instrument_id,
-                'x': self.data_record.x,
-                'y': self.data_record.y,
-                'z': self.data_record.z
-            }
-            results = self.registry.query_multiple_fields(Instrument, location)
-            if results:
-                LOGGER.debug('Instrument location validated.')
-            else:
-                msg = 'Instrument location does not match database records.'
+        LOGGER.debug('Validating instrument name...')
+
+        fields = list(instrument.keys())
+        case_insensitive = ['name', 'model', 'serial']
+
+        instrument_found = False
+        base_serial = self.data_record.instrument_number
+        for serial in [base_serial, base_serial.lstrip('0')]:
+            instrument['serial'] = serial
+            result = self.registry.query_multiple_fields(Instrument, instrument,
+                                                         fields, case_insensitive)
+            if len(result) >= 1:
+                db_instrument = result[0]
+                instrument_id = db_instrument.identifier
+                instrument_found = True
+
+                LOGGER.debug('Found instrument match for {}'
+                             .format(instrument_id))
+                if len(results) > 1:
+                    LOGGER.warning('Multiple instrument records match {}'
+                                   .format(instrument_id))
+
+                self.data_record.instrument_name = db_instrument.name
+                self.data_record.instrument_model = db_instrument.model
+                self.data_record.instrument_number = db_instrument.serial
+
+                instrument['name'] = self.data_record.instrument_name
+                instrument['model'] = self.data_record.instrument_model
+                instrument['serial'] = self.data_record.instrument_number
+
+        if not instrument_found:
+            LOGGER.warning('No instrument matching {} found in registry'
+                           .format(instrument))
+            instrument_added = self.new_serial(instrument, verify_only)
+
+            if not instrument_added:
+                instrument['serial'] = base_serial
+                msg = 'Instrument data {} does not match any existing' \
+                      ' records'.format(instrument)
                 LOGGER.error(msg)
                 raise ProcessingError(msg)
 
