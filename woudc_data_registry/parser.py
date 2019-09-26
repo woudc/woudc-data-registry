@@ -70,39 +70,36 @@ ERROR_CODES = {
 }
 
 
-def _get_value_type(field, value):
+def _typecast_value(field, value):
     """
-    derive true type from data value
+    Returns a copy of the string <value> converted to the expected type
+    for a column named <field>, if possible, or returns the original string
+    otherwise.
 
-    :param field: fieldname of value
-    :param value: value to be evaluated
-
-    :returns: value with appropriate typing
+    :param field: Name of column
+    :param value: String containing a value
+    :returns: Value cast to the appropriate type for its column
     """
-
-    field2 = field.lower()
-    value2 = None
 
     if value == '':  # empty
         return None
 
-    if field2 == 'date':
-        value2 = datetime.strptime(value, '%Y-%m-%d').date()
-    elif field2 == 'time':
+    lowered_field = field.lower()
+    if lowered_field == 'date':
+        return datetime.strptime(value, '%Y-%m-%d').date()
+    elif lowered_field == 'time':
         hour, minute, second = [int(v) for v in value.split(':')]
-        value2 = time(hour, minute, second)
-    else:
-        try:
-            if '.' in value:  # float?
-                value2 = float(value)
-            elif len(value) > 1 and value.startswith('0'):
-                value2 = value
-            else:  # int?
-                value2 = int(value)
-        except ValueError:  # string (default)?
-            value2 = value
+        return time(hour, minute, second)
 
-    return value2
+    try:
+        if '.' in value:  # float?
+            return float(value)
+        elif len(value) > 1 and value.startswith('0'):
+            return value
+        else:  # int?
+            return int(value)
+    except ValueError:  # string (default)?
+        return value
 
 
 def is_empty_line(line):
@@ -197,7 +194,11 @@ class ExtendedCSV(object):
                 self.errors.append((140, msg))
             elif len(values) == 1:
                 for field in body.keys():
-                    body[field] = body[field][0]
+                    body[field] = _typecast_value(field, body[field][0])
+            else:
+                for field in body.keys():
+                    body[field] = list(map(
+                        lambda val: _typecast_value(field, val), body[field]))
 
         if len(errors) > 0:
             raise NonStandardDataError('Failed to validate Extended CSV file')
@@ -219,7 +220,7 @@ class ExtendedCSV(object):
         self._line_num[table_name] = line_num
 
         for field in fields:
-            self.extcsv[table_name][field] = []
+            self.extcsv[table_name][field.strip()] = []
 
         return []
 
@@ -328,33 +329,13 @@ class ExtendedCSV(object):
                 if field in fields_definition.get('optional', ()):
                     LOGGER.debug('Found optional {} field {}'
                                  .format(table, field))
-                elif field not in ['_raw', '_line_num']:
+                else:
                     del self.extcsv[table][field]
                     errors.append({
                         'code': 'excess_data',
                         'locator': field,
                         'text': 'TODO'  # TODO
                     })
-
-        if int(self.extcsv['LOCATION']['Latitude']) not in range(-90, 90):
-            errors.append({
-                'code': 'invalid_data',
-                'locator': 'LOCATION.Latitude',
-                'text': 'ERROR: {}: {} (line number: {})'.format(
-                    ERROR_CODES['invalid_data'],
-                    self.extcsv['LOCATION']['Latitude'],
-                    self.extcsv['LOCATION']['_line_num'])
-            })
-
-        if int(self.extcsv['LOCATION']['Longitude']) not in range(-180, 180):
-            errors.append({
-                'code': 'invalid_data',
-                'locator': 'LOCATION.Longitude',
-                'text': 'ERROR: {}: {} (line number: {})'.format(
-                    ERROR_CODES['invalid_data'],
-                    self.extcsv['LOCATION']['Longitude'],
-                    self.extcsv['LOCATION']['_line_num'])
-            })
 
         if self.check_dataset():
             LOGGER.debug('All tables in file validated.')
@@ -387,9 +368,6 @@ class ExtendedCSV(object):
             return self.check_tables(curr_dict)
 
     def check_tables(self, schema):
-        for key, value in self.extcsv.items():
-            print(key, value)
-            value.pop('_line_num')
         for table in schema['required'].keys():
             if table in self.extcsv:
                 LOGGER.debug('{} table validated.'.format(table))
