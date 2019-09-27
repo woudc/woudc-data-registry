@@ -139,7 +139,9 @@ class ExtendedCSV(object):
 
         self._table_count = {}
         self._line_num = {}
+
         self.errors = []
+        self.warnings = []
 
         LOGGER.debug('Reading into csv')
         self._raw = content
@@ -147,10 +149,10 @@ class ExtendedCSV(object):
 
         LOGGER.debug('Parsing object model')
         parent_table = None
-        lines = enumerate(reader)
+        lines = enumerate(reader, 1)
 
         for line_num, row in lines:
-            if len(row) > 0 and row[0].startswith('#'):  # table name
+            if len(row) == 1 and row[0].startswith('#'):  # table name
                 parent_table = ''.join(row).lstrip('#').rstrip()
 
                 if parent_table not in self._table_count:
@@ -164,11 +166,10 @@ class ExtendedCSV(object):
                 ln, fields = next(lines)
                 while is_empty_line(fields):
                     msg = 'Unexpected empty line at line {}'.format(ln)
-                    self.errors.append((8, msg))
+                    self.warnings.append((8, msg))
                     ln, fields = next(lines)
 
-                errors = self.init_table(parent_table, fields, line_num)
-                self.errors.extend(errors)
+                self.init_table(parent_table, fields, line_num)
             elif len(row) > 0 and row[0].startswith('*'):  # comment
                 LOGGER.debug('Found comment')
                 parent_table = None
@@ -177,21 +178,20 @@ class ExtendedCSV(object):
                 LOGGER.debug('Found blank line')
                 parent_table = None
                 continue
-            elif parent_table is not None:
+            elif parent_table is not None \
+                 and any(map(lambda col: len(col) > 0, row)):
                 table_values = row
-                errors = self.add_values_to_table(parent_table, table_values,
-                                                  line_num)
-                self.errors.extend(errors)
+                self.add_values_to_table(parent_table, table_values, line_num)
             else:
-                msg = 'Unrecognized data {}'.format(row)
-                self.errors.append((9, msg))
+                msg = 'Unrecognized data {}'.format(','.join(row))
+                self.errors.append((9, msg, line_num))
 
         for table, body in self.extcsv.items():
             arbitrary_column, values = next(iter(body.items()))
 
             if len(values) == 0:
                 msg = 'Empty table {}'.format(table)
-                self.errors.append((140, msg))
+                self.warnings.append((140, msg))
             elif len(values) == 1:
                 for field in body.keys():
                     body[field] = _typecast_value(field, body[field][0])
@@ -200,8 +200,8 @@ class ExtendedCSV(object):
                     body[field] = list(map(
                         lambda val: _typecast_value(field, val), body[field]))
 
-        if len(errors) > 0:
-            raise NonStandardDataError('Failed to validate Extended CSV file')
+        if len(self.errors) > 0:
+            raise NonStandardDataError(self.errors)
 
     def init_table(self, table_name, fields, line_num):
         """
@@ -222,8 +222,6 @@ class ExtendedCSV(object):
         for field in fields:
             self.extcsv[table_name][field.strip()] = []
 
-        return []
-
     def add_values_to_table(self, table_name, values, line_num):
         """
         Add the raw strings in <values> to the bottom of the columns
@@ -239,20 +237,17 @@ class ExtendedCSV(object):
 
         fields = self.extcsv[table_name].keys()
         fillins = len(fields) - len(values)
-        errors = []
 
         if fillins < 0:
             msg = 'Data row at line {} has more values than table columns' \
                       .format(line_num)
-            errors.append((7, msg))
+            self.warnings.append((7, msg))
 
         values.extend([''] * fillins)
         values = values[:len(fields)]
 
         for field, value in zip(fields, values):
             self.extcsv[table_name][field].append(value)
-
-        return errors
 
     def gen_woudc_filename(self):
         """generate WOUDC filename convention"""
@@ -281,29 +276,23 @@ class ExtendedCSV(object):
     def validate_metadata(self):
         """validate core metadata tables and fields"""
 
-        errors = []
         missing_tables = [table for table in DOMAINS['Common']
                           if table not in self.extcsv.keys()]
         present_tables = [table for table in self.extcsv.keys()
                           if table in DOMAINS['Common']]
+        errors = []
 
         if len(present_tables) == 0:
             msg = 'No core metadata tables found. Not an Extended CSV file'
-            LOGGER.error(msg)
-            raise NonStandardDataError(msg)
+            self.errors.append((161, msg))
+        else:
+            for missing in missing_tables:
+                msg = 'Missing required table: {}'.format(missing)
+                self.errors.append((1, msg))
 
-        for missing in missing_tables:
-            errors.append({
-                'code': 'missing_table',
-                'locator': missing,
-                'text': 'ERROR {}: {}'.format(ERROR_CODES['missing_table'],
-                                              missing_table)
-            })
-
-        if errors:
+        if self.errors:
             msg = 'Not an Extended CSV file'
-            LOGGER.error(msg)
-            raise MetadataValidationError(msg, errors)
+            raise MetadataValidationError(msg, self.errors)
         else:
             LOGGER.debug('No missing metadata tables.')
 
@@ -315,13 +304,9 @@ class ExtendedCSV(object):
 
             if len(missing_fields) > 0:
                 for missing in missing_fields:
-                    errors.append({
-                        'code': 'missing_data',
-                        'locator': missing,
-                        'text': 'ERROR: {}: (line number: {})'.format(
-                            ERROR_CODES['missing_data'],
-                            self._line_num[table])
-                    })
+                    msg = 'Missing required {} field {}'.format(table, missing)
+                    line = self._line_num[table] + 1
+                    self.errors.append((3, msg, line))
             else:
                 LOGGER.debug('No missing fields in table {}'.format(table))
 
@@ -331,24 +316,22 @@ class ExtendedCSV(object):
                                  .format(table, field))
                 else:
                     del self.extcsv[table][field]
-                    errors.append({
-                        'code': 'excess_data',
-                        'locator': field,
-                        'text': 'TODO'  # TODO
-                    })
 
-        if self.check_dataset():
+                    msg = 'Field name {}.{} is not from approved list' \
+                          .format(table, field)
+                    line = self._line_num[table] + 1
+                    self.warnings.append((4, msg, line))
+
+        self.check_dataset()
+        if len(self.errors) == 0:
             LOGGER.debug('All tables in file validated.')
         else:
-            errors.append('Invalid table data. See logs for details.')
-
-        if errors:
-            LOGGER.error(errors)
-            raise MetadataValidationError('Invalid metadata', errors)
+            raise MetadataValidationError('Invalid metadata', self.errors)
 
     def check_dataset(self):
         tables = DOMAINS['Datasets']
         curr_dict = tables
+        fields_line = self._line_num['CONTENT'] + 1
 
         for field in ['Category', 'Level', 'Form']:
             key = self.extcsv['CONTENT'][field]
@@ -357,53 +340,136 @@ class ExtendedCSV(object):
                 curr_dict = curr_dict[key]
             else:
                 field_name = '#CONTENT.{}'.format(field.capitalize())
-                LOGGER.error('Invalid value for {}: {}'
-                             .format(field_name, key))
-                return False
+                msg = 'Unknown {} value {}'.format(field_name, key)
+
+                self.errors.append((56, msg, fields_line))
+                return
 
         if 1 in curr_dict.keys():
-            passing_versions = map(self.check_tables, curr_dict.values())
-            return any(passing_versions)
+            version = self.determine_version(curr_dict)
+            LOGGER.info('Identified version as {}'.format(version))
+            self.check_tables(curr_dict[version])
         else:
-            return self.check_tables(curr_dict)
+            self.check_tables(curr_dict)
+
+    def determine_version(self, schema):
+        """
+        Look for tables that are unique one version?
+        """
+
+        versions = set(schema.keys())
+        tables = {version: schema[version].keys() for version in versions}
+        uniques = {}
+
+        for version in versions:
+            u = set(tables[version])
+            others = versions - {version}
+
+            for other_version in others:
+                u -= set(tables[other_version])
+
+            uniques[version] = u
+
+        candidates = {version: [] for version in versions}
+        for table in self.extcsv:
+            for version in versions:
+                if table in uniques[version]:
+                    candidates[version].append(table)
+
+        def rating(version):
+            return len(candidates[version]) / len(uniques[version])
+
+        candidate_scores = list(map(rating, versions))
+        best_match = max(candidate_scores)
+        if best_match == 0:
+            msg = 'No version-unique tables found'
+            self.errors.append((108, msg, None))
+            raise NonStandardDataError(self.errors)
+        else:
+            for version in versions:
+                if rating(version) == best_match:
+                    return version
 
     def check_tables(self, schema):
-        for table in schema['required'].keys():
-            if table in self.extcsv:
-                LOGGER.debug('{} table validated.'.format(table))
-                # Consider adding order checking with orderdicts
-                missing = set(schema['required'][table])\
-                    - set(self.extcsv[table].keys())
-                extra = set(self.extcsv[table].keys())\
-                    - set(schema['required'][table])
-                if missing:
-                    msg = 'The following fields were missing from table {}'\
-                          ': {}'.format(table, missing)
-                    LOGGER.error(msg)
-                elif extra:
-                    msg = 'The following fields should not be in table {}'\
-                          ': {}'.format(table, extra)
-                    LOGGER.error(msg)
-                else:
-                    LOGGER.debug('All fields in table {} '
-                                 'validated'.format(table))
-            else:
-                msg = 'Could not validate ({} requires {})'.format(
-                    table, self.extcsv['CONTENT']['Category'])
-                LOGGER.error(msg)
+        required_tables = [name for name, body in schema.items()
+                           if 'required' in body]
+        optional_tables = [name for name, body in schema.items()
+                           if 'required' not in body]
 
-        if 'optional' in schema.keys():
-            for table in schema['optional'].keys():
-                if table not in self.extcsv:
-                    LOGGER.warning('Optional table {} is not in file.'.format(
-                                   table))
+        missing_tables = [table for table in required_tables
+                          if table not in self.extcsv.keys()]
+        present_tables = [table for table in self.extcsv.keys()
+                          if table.rstrip('0123456789_') in schema]
 
-        return True
+        required_tables.extend(DOMAINS['Common'].keys())
+        extra_tables = [table for table in self.extcsv.keys()
+                        if table.rstrip('0123456789_') not in required_tables]
+
+        dataset = self.extcsv['CONTENT']['Category']
+        for missing in missing_tables:
+            msg = 'Missing required table(s) {} for {}' \
+                  .format(dataset, ', '.join(missing_tables))
+            self.errors.append((1, msg, None))
+
+        for table in present_tables:
+            table_type = table.rstrip('0123456789_')
+            fields_line = self._line_num[table]
+
+            required = schema[table_type].get('required', ())
+            lowered_provided = list(map(str.lower, self.extcsv[table].keys()))
+            lowered_required = list(map(str.lower, required))
+
+            missing_fields = [field for field in required
+                              if field.lower() not in lowered_provided]
+            extra_fields = [field for field in self.extcsv[table]
+                            if field.lower() not in lowered_required]
+
+            arbitrary_column = next(iter(self.extcsv[table].values()))
+            null_value = '' if not isinstance(arbitrary_column, list) \
+                else [''] * len(arbitrary_column)
+
+            if len(missing_fields) > 0:
+                for field in missing_fields:
+                    msg = 'Missing field {}.{}'.format(table, field)
+                    LOGGER.error(msg)
+                    self.errors.append((3, msg, fields_line))
+                    self.extcsv[table][field] = null_value
+                LOGGER.info('Filled missing fields with null string values')
+
+            if len(extra_fields) > 0:
+                for field in extra_fields:
+                    msg = 'Excess field {} should not be in {}' \
+                          .format(field, table)
+                    LOGGER.error(msg)
+                    self.warnings.append((4, msg, fields_line))
+
+                    del self.extcsv[table][field]
+                LOGGER.debug('Removing excess columns from {}'.format(table))
+
+            LOGGER.debug('Successfully validated table {}'.format(table))
+
+        for table in extra_tables:
+            table_type = table.rstrip('0123456789_')
+            if table_type not in optional_tables:
+                msg = 'Excess table {} does not belong in {} file: removing' \
+                      .format(table, dataset)
+                self.warnings.append((2, msg, None))
+                del self.extcsv[table]
+
+        for table in optional_tables:
+            if table not in self.extcsv:
+                LOGGER.warning('Optional table {} is not in file.'.format(
+                               table))
 
 
 class NonStandardDataError(Exception):
     """custom exception handler"""
-    pass
+
+    def __init__(self, errors):
+        error_string = '\n' + '\n'.join(map(str, errors))
+        super(NonStandardDataError, self).__init__(error_string)
+
+        self.errors = errors
 
 
 class MetadataValidationError(Exception):

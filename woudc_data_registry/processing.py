@@ -113,10 +113,9 @@ class Process(object):
             LOGGER.error('Unknown file: {}'.format(err))
             return False
 
-        LOGGER.info('Parsing data record')
-        ecsv = ExtendedCSV(data)
-
         try:
+            LOGGER.info('Parsing data record')
+            ecsv = ExtendedCSV(data)
             LOGGER.info('Validating Extended CSV')
             ecsv.validate_metadata()
             LOGGER.info('Valid Extended CSV')
@@ -283,7 +282,7 @@ class Process(object):
 
         instrument_found = False
         base_serial = self.data_record.instrument_number
-        for serial in [base_serial, base_serial.lstrip('0')]:
+        for serial in list({base_serial, base_serial.lstrip('0')}):
             instrument['serial'] = serial
             result = self.registry.query_multiple_fields(Instrument, instrument,
                                                          fields, case_insensitive)
