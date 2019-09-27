@@ -118,7 +118,10 @@ woudc-data-registry contributor delete foo
 woudc-data-registry data ingest -d /path/to/dir
 
 # ingest single file
-woudc-data-registry data ingest -f foo.dat
+woudc-data-registry data ingest -f foo.dat -b
+
+# ingest without asking for permissions
+woudc-data-registry data ingest -d /path/to/dir -b
 
 # verify directory of files (walks directory recursively)
 woudc-data-registry data verify -d /path/to/dir

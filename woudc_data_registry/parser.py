@@ -160,6 +160,7 @@ class ExtendedCSV(object):
                 self.extcsv[table_name] = {}
             elif found_table:  # fetch header line
                 LOGGER.debug('Found new table header {}'.format(table_name))
+                LOGGER.warning(row)
                 self.extcsv[table_name]['_fields'] = row
                 found_table = False
             elif len(row) > 0 and row[0].startswith('*'):  # comment
@@ -182,10 +183,6 @@ class ExtendedCSV(object):
                             raise NonStandardDataError(msg)
                         self.extcsv[table_name][field] = _get_value_type(field,
                                                                          val)
-
-        # delete transient fieldlist
-        for key, value in self.extcsv.items():
-            value.pop('_fields')
 
     def gen_woudc_filename(self):
         """generate WOUDC filename convention"""
@@ -281,7 +278,7 @@ class ExtendedCSV(object):
         if self.check_dataset():
             LOGGER.debug('All tables in file validated.')
         else:
-            errors.append('Invalid table data. See logs for details.')
+            errors.append('Invalid table data.')
 
         if errors:
             LOGGER.error(errors)
@@ -331,20 +328,22 @@ class ExtendedCSV(object):
             value.pop('_line_num')
         for table in tables['required'].keys():
             if table in self.extcsv:
-                LOGGER.debug('{} table validated.'.format(table))
+                LOGGER.debug('Validating table {}..'.format(table))
                 # Consider adding order checking with orderdicts
                 missing = set(tables['required'][table])\
-                    - set(self.extcsv[table].keys())
-                extra = set(self.extcsv[table].keys())\
+                    - set(self.extcsv[table]['_fields'])
+                extra = set(self.extcsv[table]['_fields'])\
                     - set(tables['required'][table])
                 if missing:
                     msg = 'The following fields were missing from table {}'\
                           ': {}'.format(table, missing)
                     LOGGER.error(msg)
+                    return False
                 elif extra:
                     msg = 'The following fields should not be in table {}'\
                           ': {}'.format(table, extra)
                     LOGGER.error(msg)
+                    return False
                 else:
                     LOGGER.debug('All fields in table {} '
                                  'validated'.format(table))
@@ -352,12 +351,17 @@ class ExtendedCSV(object):
                 msg = 'Could not validate ({} requires {})'.format(
                     table, self.extcsv['CONTENT']['Category'])
                 LOGGER.error(msg)
+                return False
 
         if 'optional' in tables.keys():
             for table in tables['optional'].keys():
                 if table not in self.extcsv:
                     LOGGER.warning('Optional table {} is not in file.'.format(
                                    table))
+
+        # delete transient fieldlist
+        for key, value in self.extcsv.items():
+            value.pop('_fields')
 
         return True
 

@@ -119,7 +119,8 @@ class Registry(object):
             for field in fields:
                 conditions.append(getattr(table, field) == values[field])
 
-        results = self.session.query(table).filter(*conditions).all()
+        results = self.session.query(table).filter(*conditions).first()
+
         return results
 
     def save(self, obj=None):
