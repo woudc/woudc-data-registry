@@ -42,20 +42,20 @@ Datasets:
     1.0:
       1:
         1:
-          required:
-            DIFFUSE:
+          DIFFUSE:
+            required:
               - Time
               - Irradiance
         2:
-          required:
-            GLOBAL:
+          GLOBAL:
+            required:
               - Time
               - Irradiance
   Lidar:
     1.0:
       1:
-        required:
-          OZONE_SUMMARY:
+        OZONE_SUMMARY:
+          required:
             - Altitudes
             - MinAltitude
             - MaxAltitude
@@ -64,7 +64,8 @@ Datasets:
             - EndDate
             - EndTime
             - PulsesAveraged
-          OZONE_PROFILE:
+        OZONE_PROFILE:
+          required:
             - Altitude
             - OzoneDensity
             - StandardError
@@ -75,27 +76,27 @@ Datasets:
     1.0:
       1:
         1:
-          required:
-            GLOBAL:
+          GLOBAL:
+            required:
               - Wavelength
               - S-Irradiance
               - Time
               - SZA
         2:
-          required:
-            SIMULTANEOUS:
+          SIMULTANEOUS:
+            required:
               - Wavelength
               - GLS-Irradiance
               - DFS-Irradiance
               - DRS-Irradiance
               - Time
               - Airmass
-               - SZA
+              - SZA
   OzoneSonde:
     1.0:
       1:
-        required:
-          FLIGHT_SUMMARY:
+        FLIGHT_SUMMARY:
+          required:
             - IntegratedO3
             - CorrectionCode
             - SondeTotalO3
@@ -105,7 +106,8 @@ Datasets:
             - ObsType
             - Instrument
             - Number
-          PROFILE:
+        PROFILE:
+          required:
             - Pressure
             - O3PartialPressure
             - Temperature
@@ -116,8 +118,8 @@ Datasets:
             - GPHeight
             - RelativeHumidity
             - SampleTemperature
-        optional:
-          AUXILIARY_DATA:
+        AUXILIARY_DATA:
+          optional:
             - MeteoSonde
             - ib1
             - ib2
@@ -125,19 +127,21 @@ Datasets:
             - BackgroundCorr
             - SampleTemperatureType
             - MinutesGroundO3
-          PUMP_CORRECTION:
+        PUMP_CORRECTION:
+          optional:
             - Pressure
             - Correction
       2:
-        required:
-          FLIGHT_SUMMARY:
+        FLIGHT_SUMMARY:
+          required:
             - IntegratedO3
             - CorrectionCode
             - SondeTotalO3
             - NormalizationFactor
             - BackgroundCorrection
             - SampleTemperatureType
-          PROFILE:
+        PROFILE:
+          required:
             - Duration
             - Pressure
             - O3PartialPressure
@@ -154,11 +158,12 @@ Datasets:
             - Latitude
             - Longitude
             - Height
-        optional:
-          PUMP_CORRECTION:
+        PUMP_CORRECTION:
+          optional:
             - Pressure
             - PumpCorrectionFactor
-          PREFLIGHT_SUMMARY:
+        PREFLIGHT_SUMMARY:
+          optional:
             - Ib0
             - ib1
             - ib2
@@ -166,15 +171,18 @@ Datasets:
             - SolutionVolume
             - PumpFlowRate
             - OzoneSondeResponseTime
-          RADIOSONDE:
+        RADIOSONDE:
+          optional:
             - Manufacturer
             - Model
             - Number
-          INTERFACE_CARD:
+        INTERFACE_CARD:
+          optional:
             - Manufacturer
             - Model
             - Number
-          SAMPLING_METHOD:
+        SAMPLING_METHOD:
+          optional:
             - TypeOzoneFreeAir
             - CorrectionWettingFlow
             - SurfaceOzone
@@ -184,11 +192,13 @@ Datasets:
             - BurstOzonePressure
             - GroundEquipment
             - ProcessingSoftware
-          PUMP_SETTINGS:
+        PUMP_SETTINGS:
+          optional:
             - MotorCurrent
             - HeadPressure
             - VacuumPressure
-          OZONE_REFERENCE:
+        OZONE_REFERENCE:
+          optional:
             - Name
             - Model
             - Number
@@ -200,27 +210,31 @@ Datasets:
   RocketSonde:
     1.0:
       1:
-        required:
-          VEHICLE:
+        VEHICLE:
+          required:
             - Type
             - Name
             - RocketID
             - ExperimenterFlightID
             - ParachuteData
-          FLIGHT_SUMMARY:
+        FLIGHT_SUMMARY:
+          required:
             - AltitudeResolution
             - MinAltitude
             - MaxAltitude
-          OZONE_SUMMARY:
+        OZONE_SUMMARY:
+          required:
             - IntegratedRocketO3
             - IntegratedBalloonO3
-             - CrossoverAltitude
+            - CrossoverAltitude
             - ResidualO3
-          AUXILIARY_DATA:
+        AUXILIARY_DATA:
+          required:
             - AirDensityDataSource
             - SourceID
             - BalloonOzoneSondeFlightID
-          OZONE_PROFILE:
+        OZONE_PROFILE:
+          required:
             - Altitude
             - OzoneColDensity
             - OzoneNumDensity
@@ -233,8 +247,8 @@ Datasets:
   TotalOzone:
     1.0:
       1:
-        required:
-          DAILY:
+        DAILY:
+          required:
             - Date
             - WLCode
             - ObsCode
@@ -246,13 +260,14 @@ Datasets:
             - nObs
             - mMu
             - ColumnSO2
-        optional:
-          MONTHLY:
+        MONTHLY:
+          optional:
             - Date
             - ColumnO3
             - StdDevO3
             - Npts
-          SAOZ_DATA_V2:
+        SAOZ_DATA_V2:
+          optional:
             - Date
             - Jday
             - O3sr
@@ -266,8 +281,8 @@ Datasets:
   TotalOzoneObs:
     1.0:
       1:
-        required:
-          OBSERVATIONS:
+        OBSERVATIONS:
+          required:
             - Time
             - WLCode
             - ObsCode
@@ -276,11 +291,13 @@ Datasets:
             - StdDevO3
             - ColumnSO2
             - StdDevSO2
+          optional:
             - ZA
             - NdFilter
             - TempC
             - F324
-          DAILY_SUMMARY:
+        DAILY_SUMMARY:
+          required:
             - WLCode
             - ObsCode
             - nObs
@@ -290,8 +307,8 @@ Datasets:
     1.0:
       1:
         1:
-          required:
-            GLOBAL_SUMMARY:
+          GLOBAL_SUMMARY:
+            required:
               - Time
               - IntACGIH
               - IntCIE
@@ -300,19 +317,22 @@ Datasets:
               - AzimAngle
               - Flag
               - TempC
+            optional:
               - O3
               - Err_O3
               - SO2
               - Err_SO2
               - F324
-            GLOBAL:
+          GLOBAL:
+            required:
               - Wavelength
               - S-Irradiance
               - Time
+            optional:
               - SZA
         2:
-          required:
-            GLOBAL_SUMMARY_NSF:
+          GLOBAL_SUMMARY_NSF:
+            required:
               - Filename
               - Volume
               - SZA
@@ -322,24 +342,26 @@ Datasets:
               - E290-320
               - E320-400
               - UVIndex
-            GLOBAL:
+          GLOBAL:
+            required:
               - Wavelength
               - S-Irradiance
               - Time
+            optional:
               - SZA
   UmkehrN14:
     1.0:
       1:
-        required:
-          TIMESTAMP_2:
+        TIMESTAMP_2:
+          required:
             - UTCOffset
             - Date
             - Time
-          "#N14_VALUES":
+        "#N14_VALUES":
+          required:
             - Date
             - H
             - L
-            - W
             - WLCode
             - ObsCode
             - ColumnO3
@@ -357,14 +379,17 @@ Datasets:
             - N880
             - N890
             - N900
+          optional:
+            - W
     2.0:
       1:
-        required:
-          TIMESTAMP_2:
+        TIMESTAMP_2:
+          required:
             - UTCOffset
             - Date
             - Time
-          C_PROFILE:
+        C_PROFILE:
+          required:
             - Date
             - H
             - L
