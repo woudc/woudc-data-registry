@@ -163,32 +163,15 @@ class Process(object):
 
         LOGGER.info('Verifying data record against core metadata fields')
 
-        project = self.extcsv.extcsv['CONTENT']['Class']
-        project_ok = self.check_project(project)
-        project = self.extcsv.extcsv['CONTENT']['Class']
+        project_ok = self.check_project()
+        dataset_ok = self.check_dataset()
 
-        dataset = self.extcsv.extcsv['CONTENT']['Category']
-        dataset_ok = self.check_dataset(dataset)
-        dataset = self.extcsv.extcsv['CONTENT']['Category']
-
-        agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
-        contributor_ok = self.check_contributor(agency, project)
-        agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
-
-        platform_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
-        platform_type = self.extcsv.extcsv['PLATFORM']['Type']
-        platform_name = self.extcsv.extcsv['PLATFORM']['Name']
-        platform_country = self.extcsv.extcsv['PLATFORM']['Country']
-        platform_gaw_id = self.extcsv.extcsv['PLATFORM']['GAW_ID']
-        platform_ok = self.check_station(platform_id, platform_type,
-                                         platform_name, platform_country,
-                                         platform_gaw_id)
-        platform_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
+        contributor_ok = self.check_contributor()
+        platform_ok = self.check_station()
 
         LOGGER.debug('Validating agency deployment')
-        date = self.extcsv.extcsv['TIMESTAMP']['Date']
-        deployment_ok = self.check_deployment(platform_id, agency,
-                                              project, date)
+        deployment_ok = self.check_deployment()
+
         if not deployment_ok:
             deployment_id = ':'.join([platform_id, agency, project])
             deployment_name = '{}@{}'.format(agency, platform_id)
@@ -203,7 +186,7 @@ class Process(object):
                 permission = response.lower() in ['y', 'yes']
 
             if permission:
-                self.add_deployment(platform_id, agency, project, date)
+                self.add_deployment()
                 deployment_ok = True
 
                 msg = 'New deployment {} added'.format(deployment_name)
@@ -219,30 +202,22 @@ class Process(object):
                 self.errors.append((65, msg, line))
 
         LOGGER.debug('Validating instrument')
-        instrument_name = self.extcsv.extcsv['INSTRUMENT']['Name']
-        instrument_model = str(self.extcsv.extcsv['INSTRUMENT']['Model'])
-        instrument_serial = str(self.extcsv.extcsv['INSTRUMENT']['Number'])
-
-        instrument_args = [instrument_name, instrument_model,
-                           instrument_serial, platform_id, dataset]
-        instrument_ok = self.check_instrument(*instrument_args)
+        instrument_ok = self.check_instrument()
 
         if not instrument_ok:
-            new_serial = instrument_serial.lstrip('0')
+            old_serial = str(self.extcsv.extcsv['INSTRUMENT']['Number'])
+            new_serial = old_serial.lstrip('0')
             LOGGER.debug('Attempting to search instrument serial number {}'
                          .format(new_serial))
 
-            instrument_args[2] = new_serial
-            instrument_ok = self.check_instrument(*instrument_args)
+            self.extcsv.extcsv['INSTRUMENT']['Number'] = new_serial
+            instrument_ok = self.check_instrument()
 
         if not instrument_ok:
             LOGGER.warning('No instrument with serial {} found in registry'
-                           .format(instrument_serial))
-            location = [self.extcsv.extcsv['LOCATION'][coord]
-                        for coord in ['Latitude', 'Longitude', 'Height']]
-            instrument_args[2] = instrument_serial
-            instrument_ok = self.add_instrument(*instrument_args, location,
-                                                verify_only)
+                           .format(old_serial))
+            self.extcsv.extcsv['INSTRUMENT']['Number'] = old_serial
+            instrument_ok = self.add_instrument(verify_only)
 
             if instrument_ok:
                 msg = 'New instrument serial number added'
@@ -252,11 +227,13 @@ class Process(object):
                 line = self.extcsv.line_num['INSTRUMENT'] + 2
                 self.errors.append((139, msg, line))
 
-        lat = self.extcsv.extcsv['LOCATION']['Latitude']
-        lon = self.extcsv.extcsv['LOCATION']['Longitude']
-        height = self.extcsv.extcsv['LOCATION'].get('Height', None)
+        instrument_args = [self.extcsv.extcsv['INSTRUMENT']['Name'],
+            self.extcsv.extcsv['INSTRUMENT']['Model'],
+            str(self.extcsv.extcsv['INSTRUMENT']['Number']),
+            str(self.extcsv.extcsv['PLATFORM']['ID']),
+            self.extcsv.extcsv['CONTENT']['Category']]
         instrument_id = ':'.join(instrument_args) if instrument_ok else None
-        location_ok = self.check_location(lat, lon, height, instrument_id)
+        location_ok = self.check_location(instrument_id)
 
         if not all([project_ok, dataset_ok, contributor_ok,
                     platform_ok, deployment_ok, instrument_ok,
@@ -308,7 +285,12 @@ class Process(object):
                     self.data_record.__geo_interface__)
         return True
 
-    def add_deployment(self, station, agency, project, date):
+    def add_deployment(self):
+        station = str(self.extcsv.extcsv['PLATFORM']['ID'])
+        agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
+        project = self.extcsv.extcsv['CONTENT']['Class']
+        date = self.extcsv.extcsv['TIMESTAMP']['Date']
+
         deployment_id = ':'.join([station, agency, project])
         deployment_model = {
             'identifier': deployment_id,
@@ -321,8 +303,15 @@ class Process(object):
         deployment = Deployment(deployment_model)
         self.registry.save(deployment)
 
-    def add_instrument(self, name, model, serial, station, dataset,
-                       location, verify_only):
+    def add_instrument(self, verify_only):
+        name = self.extcsv.extcsv['INSTRUMENT']['Name']
+        model = str(self.extcsv.extcsv['INSTRUMENT']['Model'])
+        serial = str(self.extcsv.extcsv['INSTRUMENT']['Number'])
+        station = str(self.extcsv.extcsv['PLATFORM']['ID'])
+        dataset = self.extcsv.extcsv['CONTENT']['Category']
+        location = [self.extcsv.extcsv['LOCATION'].get(f, None)
+                    for f in ['Longitude', 'Latitude', 'Height']]
+
         instrument_id = ':'.join([name, model, serial, station, dataset])
         model = {
             'identifier': instrument_id,
@@ -360,7 +349,9 @@ class Process(object):
         else:
             return False
 
-    def check_project(self, project):
+    def check_project(self):
+        project = self.extcsv.extcsv['CONTENT']['Class']
+
         LOGGER.debug('Validating project {}'.format(project))
         self.projects = self.registry.query_distinct(Project.identifier)
 
@@ -380,7 +371,9 @@ class Process(object):
             self.errors.append((53, msg, line))
             return False
 
-    def check_dataset(self, dataset):
+    def check_dataset(self):
+        dataset = self.extcsv.extcsv['CONTENT']['Category']
+
         LOGGER.debug('Validating dataset {}'.format(dataset))
         self.datasets = self.registry.query_distinct(Dataset.identifier)
 
@@ -394,7 +387,10 @@ class Process(object):
             self.errors.append((56, msg, line))
             return False
 
-    def check_contributor(self, agency, project):
+    def check_contributor(self):
+        agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
+        project = self.extcsv.extcsv['CONTENT']['Class']
+
         LOGGER.debug('Validating contributor {} under project {}'
                      .format(agency, project))
         contributor = {
@@ -420,7 +416,13 @@ class Process(object):
             self.errors.append((127, msg, line))
             return False
 
-    def check_station(self, identifier, pl_type, name, country, gaw_id=None):
+    def check_station(self):
+        identifier = str(self.extcsv.extcsv['PLATFORM']['ID'])
+        pl_type = self.extcsv.extcsv['PLATFORM']['Type']
+        name = self.extcsv.extcsv['PLATFORM']['Name']
+        country = self.extcsv.extcsv['PLATFORM']['Country']
+        gaw_id = str(self.extcsv.extcsv['PLATFORM'].get('GAW_ID', '')) or None
+
         # TODO: consider adding and checking #PLATFORM_Type
         LOGGER.debug('Validating station {}:{}'.format(identifier, name))
 
@@ -491,7 +493,12 @@ class Process(object):
 
         return type_ok and name_ok and country_ok
 
-    def check_deployment(self, station, agency, project, date):
+    def check_deployment(self):
+        station = str(self.extcsv.extcsv['PLATFORM']['ID'])
+        agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
+        project = self.extcsv.extcsv['CONTENT']['Class']
+        date = self.extcsv.extcsv['TIMESTAMP']['Date']
+
         deployment_id = ':'.join([station, agency, project])
         results = self.registry.query_by_field(Deployment, 'identifier',
                                                deployment_id)
@@ -512,7 +519,13 @@ class Process(object):
                 LOGGER.debug('Deployment end date updated.')
             return True
 
-    def check_instrument(self, name, model, serial, station, dataset):
+    def check_instrument(self):
+        name = self.extcsv.extcsv['INSTRUMENT']['Name']
+        model = str(self.extcsv.extcsv['INSTRUMENT']['Model'])
+        serial = str(self.extcsv.extcsv['INSTRUMENT']['Number'])
+        station = str(self.extcsv.extcsv['PLATFORM']['ID'])
+        dataset = self.extcsv.extcsv['CONTENT']['Category']
+
         if not name or name.lower() in ['na', 'n/a']:
             self.extcsv.extcsv['INSTRUMENT']['Name'] = name = 'UNKNOWN'
         if not model or model.lower() in ['na', 'n/a']:
@@ -550,7 +563,10 @@ class Process(object):
             self.extcsv.extcsv['INSTRUMENT']['Number'] = result.serial
             return True
 
-    def check_location(self, lat, lon, height, instrument_id):
+    def check_location(self, instrument_id):
+        lat = self.extcsv.extcsv['LOCATION']['Latitude']
+        lon = self.extcsv.extcsv['LOCATION']['Longitude']
+        height = self.extcsv.extcsv['LOCATION'].get('Height', None)
         values_line = self.extcsv.line_num['LOCATION'] + 2
 
         try:
