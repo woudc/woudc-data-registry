@@ -80,20 +80,18 @@ class Registry(object):
 
         return values
 
-    def query_by_field(self, obj, obj_instance, by, case_insensitive=False):
+    def query_by_field(self, obj, by, value, case_insensitive=False):
         """
         query data by field
 
-        :param obj: object (field) to be queried
-        :param obj_instance: object instance to be queried
-        :param by: value to be queried
+        :param obj: Class of table to query in
+        :param by: Field name to be queried
+        :param value: Value of the field in any query results
         :param case_insensitive: Whether to query strings case-insensitively
-
-        :returns: query results
+        :returns: Query results
         """
 
         field = getattr(obj, by)
-        value = getattr(obj_instance, by)
 
         LOGGER.debug('Querying for {}={}'.format(field, value))
         condition = func.lower(field) == value.lower() \
@@ -146,7 +144,9 @@ class Registry(object):
                 self.session.add(obj)
                 # self.session.merge(obj)
             self.session.commit()
-            self.session.close()
         except DataError as err:
             LOGGER.error('Failed to save to registry: {}'.format(err))
             self.session.rollback()
+
+    def close_session(self):
+        self.session.close()

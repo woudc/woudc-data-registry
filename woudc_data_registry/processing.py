@@ -43,16 +43,21 @@
 #
 # =================================================================
 
-from datetime import datetime
-import logging
+
 import os
+import re
+
 import shutil
+import logging
+
+from datetime import datetime, time
 
 from woudc_data_registry import config, registry, search
 from woudc_data_registry.models import (Contributor, DataRecord, Dataset,
                                         Deployment, Instrument, Project,
                                         Station)
-from woudc_data_registry.parser import (ExtendedCSV, MetadataValidationError,
+from woudc_data_registry.parser import (DOMAINS, ExtendedCSV,
+                                        MetadataValidationError,
                                         NonStandardDataError)
 from woudc_data_registry.util import is_text_file, read_file
 
@@ -235,9 +240,12 @@ class Process(object):
         instrument_id = ':'.join(instrument_args) if instrument_ok else None
         location_ok = self.check_location(instrument_id)
 
+        timestamps_ok = True
+        content_ok = self.check_content_consistency()
+
         if not all([project_ok, dataset_ok, contributor_ok,
                     platform_ok, deployment_ok, instrument_ok,
-                    location_ok]):
+                    location_ok, timestamps_ok, content_ok]):
             return False
 
         LOGGER.info('Validating data record')
@@ -640,8 +648,108 @@ class Process(object):
 
         return all([lat_ok, lon_ok])
 
+    def check_timestamp(self, index):
+        table_name = 'TIMESTAMP' if index == 1 else 'TIMESTAMP_' + str(index)
+        utcoffset = self.extcsv.extcsv[table_name]['UTCOffset']
+
+        delim = '([^\*])'
+        number = '([\d]){1,2}'
+        utcoffset_match = re.findall('^(\+|-){num}{delim}{num}{delim}{num}$'
+                                     .format(num=number, delim=delim),
+                                     utcoffset)
+
+        values_line = self.extcsv.line_num['TIMESTAMP'] + 2
+        if len(utcoffset_match) == 1:
+            sign, hour, delim1, minute, delim2, second = utcoffset_match[0]
+
+            try:
+                magnitude = time(int(hour), int(minute), int(second))
+                final_offset = '{}{}'.format(sign, magnitude)
+                self.extcsv.extcsv[table_name]['UTCOffset'] = final_offset
+                return True
+            except (ValueError, TypeError):
+                raise
+#                msg = 'Improperly formatted #{}.UTCOffset {}' \
+#                      .format(table_name, utcoffset)
+#                LOGGER.error(msg)
+#                self.errors.append((24, msg, values_line))
+#                return False
+
+        zero = '([0])'
+        utcoffset_match = re.findall('^(\+|-)[0]+{delim}?[0]*{delim}?[0]*$'
+                                     .format(delim=delim), utcoffset)
+        if len(utcoffset_match) == 1:
+            msg = '{}.UTCOffset is a series of zeroes, correcting to' \
+                  ' +00:00:00'.format(table_name)
+            LOGGER.warning(msg)
+            self.warnings.append((23, msg, values_line))
+
+            self.extcsv.extcsv[table_name]['UTCOffset'] = '+00:00:00'
+            return True
+                
+        msg = 'Improperly formatted #{}.UTCOffset {}' \
+              .format(table_name, utcoffset)
+        LOGGER.error(msg)
+        self.errors.append((24, msg, values_line))
+        return False
+
+    def check_content_consistency(self):
+        dataset = self.extcsv.extcsv['CONTENT']['Category']
+        level = self.extcsv.extcsv['CONTENT']['Level']
+        form = self.extcsv.extcsv['CONTENT']['Form']
+
+        level_ok = True
+        form_ok = True
+        values_line = self.extcsv.line_num['CONTENT'] + 2
+
+        if not level:
+            if dataset == 'UmkehrN14' and 'C_PROFILE' in self.extcsv.extcsv:
+                msg = 'Missing #CONTENT.Level, resolved to 2.0'
+                LOGGER.warning(msg)
+                self.warnings.append((59, msg, values_line))
+                self.extcsv.extcsv['CONTENT']['Level'] = level = 2.0
+            else:
+                msg = 'Missing #CONTENT.Level, resolved to 1.0'
+                LOGGER.warning(msg)
+                self.warnings.append((58, msg, values_line))
+                self.extcsv.extcsv['CONTENT']['Level'] = level = 1.0
+        elif not isinstance(level, float):
+            try:
+                msg = '#CONTENT.Level = {}, corrected to {}' \
+                      .format(level, float(level))
+                LOGGER.warning(msg)
+                self.warnings.append((57, msg, values_line))
+                self.extcsv.extcsv['CONTENT']['Level'] = level = float(level)
+            except ValueError:
+                msg = 'Invalid characters in #CONTENT.Level'
+                LOGGER.error(msg)
+                self.errors.append((60, msg, values_line))
+                level_ok = False
+
+        if level not in DOMAINS['Datasets'][dataset]:
+            msg = 'Unknown #CONTENT.Level for category {}'.format(dataset)
+            LOGGER.error(msg)
+            self.errors.append((60, msg, values_line))
+            level_ok = False
+
+        if not isinstance(form, int):
+            try:
+                msg = '#CONTENT.Form = {}, corrected to {}' \
+                      .format(form, int(form))
+                LOGGER.warning(msg)
+                self.warnings.append((61, msg, values_line))
+                self.extcsv.extcsv['CONTENT']['Form'] = form = int(form)
+            except ValueError:
+                msg = 'Cannot resolve #CONTENT.Form: is empty or' \
+                      ' has invalid characters'
+                LOGGER.error(msg)
+                self.errors.append((62, msg, values_line))
+                form_ok = False
+
+        return level_ok and form_ok
+
     def finish(self):
-         self.registry.close_session()
+        self.registry.close_session()
 
 
 class ProcessingError(Exception):
