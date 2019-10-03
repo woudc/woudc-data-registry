@@ -252,8 +252,15 @@ class Process(object):
                 line = self.extcsv.line_num['INSTRUMENT'] + 2
                 self.errors.append((139, msg, line))
 
+        lat = self.extcsv.extcsv['LOCATION']['Latitude']
+        lon = self.extcsv.extcsv['LOCATION']['Longitude']
+        height = self.extcsv.extcsv['LOCATION'].get('Height', None)
+        instrument_id = ':'.join(instrument_args) if instrument_ok else None
+        location_ok = self.check_location(lat, lon, height, instrument_id)
+
         if not all([project_ok, dataset_ok, contributor_ok,
-                    platform_ok, deployment_ok, instrument_ok]):
+                    platform_ok, deployment_ok, instrument_ok,
+                    location_ok]):
             return False
 
         LOGGER.info('Validating data record')
@@ -542,6 +549,80 @@ class Process(object):
             self.extcsv.extcsv['INSTRUMENT']['Model'] = result.model
             self.extcsv.extcsv['INSTRUMENT']['Number'] = result.serial
             return True
+
+    def check_location(self, lat, lon, height, instrument_id):
+        values_line = self.extcsv.line_num['LOCATION'] + 2
+
+        try:
+            lat_numeric = float(lat)
+            if -90 <= lat_numeric <= 90:
+                LOGGER.debug('Validated instrument latitude')
+            else:
+                msg = '#LOCATION.Latitude is not within the range [-90]-[90]'
+                self.warnings.append((76, msg, values_line))
+            lat_ok = True
+        except ValueError:
+            msg = '#LOCATION.Latitude contains invalid characters'
+            LOGGER.error(msg)
+            self.errors.append((75, msg, values_line))
+            lat_numeric = None
+            lat_ok = False
+
+        try:
+            lon_numeric = float(lon)
+            if -180 <= lon_numeric <= 180:
+               LOGGER.debug('Validated instrument longitude')
+            else:
+                msg = '#LOCATION.Longitude is not within the range [-180]-[180]'
+                self.warnings.append((76, msg, values_line))
+            lon_ok = True
+        except ValueError:
+            msg = '#LOCATION.Longitude contains invalid characters'
+            LOGGER.error(msg)
+            self.errors.append((75, msg, values_line))
+            lon_numeric = None
+            lon_ok = False
+
+        try:
+            height_numeric = float(height) if height else None
+            if not height or -50 <= height_numeric <= 5100:
+                LOGGER.debug('Validated instrument height')
+            else:
+                msg = '#LOCATION.Height is not within the range [-50]-[5100]'
+                self.warnings.append((76, msg, values_line))
+            height_ok = True
+        except ValueError:
+            msg = '#LOCATION.Height contains invalid characters'
+            self.warning.append((75, msg, values_line))
+            height_numeric = None
+            height_ok = False
+
+        if instrument_id is not None:
+            result = self.registry.query_by_field(Instrument, 'identifier',
+                                                  instrument_id)
+            if not result:
+                return True
+
+            instrument = result[0]
+            if all([lat_numeric is not None, instrument.y is not None,
+                    abs(lat_numeric - instrument.y) >= 1]):
+                lat_ok = False
+                msg = '#LOCATION.Latitude in file does not match database'
+                LOGGER.error(msg)
+                self.errors.append((77, msg, values_line))
+            if all([lon_numeric is not None, instrument.x is not None,
+                    abs(lon_numeric - instrument.x) >= 1]):
+                lon_ok = False
+                msg = '#LOCATION.Longitude in file does not match database'
+                LOGGER.error(msg)
+                self.errors.append((77, msg, values_line))
+            if all([height_numeric is not None, instrument.z is not None,
+                    abs(height_numeric - instrument.z) >= 1]):
+                height_ok = False
+                msg = '#LOCATION.Height in file does not match database'
+                self.warnings.append((77, msg, values_line))
+
+        return all([lat_ok, lon_ok])
 
     def finish(self):
          self.registry.close_session()
