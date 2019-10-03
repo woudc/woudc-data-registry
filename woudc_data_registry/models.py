@@ -43,7 +43,7 @@
 #
 # =================================================================
 
-from datetime import datetime
+import datetime
 import logging
 
 import click
@@ -95,7 +95,7 @@ class Country(base):
         self.link = dict_['link']
 
         if 'wmo_membership' in dict_:
-            wmo_membership_ = datetime.strptime(
+            wmo_membership_ = datetime.datetime.strptime(
                 dict_['wmo_membership'], '%Y-%m-%d').date()
         else:
             wmo_membership_ = None
@@ -139,7 +139,7 @@ class Contributor(base):
 
     active = Column(Boolean, nullable=False, default=True)
     last_validated_datetime = Column(DateTime, nullable=False,
-                                     default=datetime.utcnow())
+                                     default=datetime.datetime.utcnow())
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
 
@@ -157,7 +157,7 @@ class Contributor(base):
         self.url = dict_['url']
         self.email = dict_['email']
         self.ftp_username = dict_['ftp_username']
-        self.last_validated_datetime = datetime.utcnow()
+        self.last_validated_datetime = datetime.datetime.utcnow()
         self.x = dict_['x']
         self.y = dict_['y']
 
@@ -292,7 +292,7 @@ class Station(base):
     active = Column(Boolean, nullable=False, default=True)
 
     last_validated_datetime = Column(DateTime, nullable=False,
-                                     default=datetime.utcnow())
+                                     default=datetime.datetime.utcnow())
 
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
@@ -311,7 +311,7 @@ class Station(base):
             self.gaw_id = dict_['gaw_id']
         self.country_id = dict_['country_id']
         self.wmo_region_id = dict_['wmo_region_id']
-        self.last_validated_datetime = datetime.utcnow()
+        self.last_validated_datetime = datetime.datetime.utcnow()
 
         self.x = dict_['x']
         self.y = dict_['y']
@@ -362,11 +362,19 @@ class Deployment(base):
         self.identifier = dict_['identifier']
         self.station_id = dict_['station_id']
         self.contributor_id = dict_['contributor_id']
-        self.start_date = datetime.strptime(
-            dict_['start_date'], '%Y-%m-%d').date()
-        if dict_['end_date']:
-            self.end_date = datetime.strptime(
-                dict_['end_date'], '%Y-%m-%d').date()
+        try:
+            if isinstance(dict_['start_date'], datetime.date):
+                self.start_date = dict_['start_date']
+            else:
+                self.start_date = datetime.datetime.strptime(
+                    dict_['start_date'], '%Y-%m-%d').date()
+            if isinstance(dict_['end_date'], datetime.date):
+                self.end_date = dict_['end_date']
+            else:
+                self.end_date = datetime.datetime.strptime(
+                    dict_['end_date'], '%Y-%m-%d').date()
+        except Exception as err:
+            LOGGER.error(err)
 
     @property
     def __geo_interface__(self):
@@ -429,22 +437,22 @@ class DataRecord(base):
     published = Column(Boolean, nullable=False, default=False)
 
     received_datetime = Column(DateTime, nullable=False,
-                               default=datetime.utcnow())
+                               default=datetime.datetime.utcnow())
 
     inserted_datetime = Column(DateTime, nullable=False,
-                               default=datetime.utcnow())
+                               default=datetime.datetime.utcnow())
 
     processed_datetime = Column(DateTime, nullable=False,
-                                default=datetime.utcnow())
+                                default=datetime.datetime.utcnow())
 
     published_datetime = Column(DateTime, nullable=False,
-                                default=datetime.utcnow())
+                                default=datetime.datetime.utcnow())
 
     ingest_filepath = Column(String, nullable=False)
     filename = Column(String, nullable=False)
 
     url = Column(String, nullable=False)
-    urn = Column(String, nullable=False, unique=True)
+    es_id = Column(String, nullable=False)
 
     def __init__(self, ecsv):
         """serializer"""
@@ -487,7 +495,8 @@ class DataRecord(base):
 
         self.extcsv = ecsv.extcsv
 
-        self.identifier = self.urn = self.get_urn()
+        self.identifier = self.get_urn()
+        self.es_id = self.get_esid()
         self.filename = "TODO"
         self.url = self.get_waf_path('https://woudc.org/archive')
 
@@ -497,12 +506,27 @@ class DataRecord(base):
         """generate data record URN"""
 
         urn_tokens = [
-            'urn',
             self.content_class,
             self.content_category,
             self.data_generation_agency,
-            self.data_generation_date.strftime('%Y-%m-%d'),
-            self.data_generation_version,
+            self.platform_type,
+            self.platform_id,
+            self.instrument_name,
+            self.instrument_model,
+            self.instrument_number,
+            self.timestamp_date,
+            self.data_generation_version
+        ]
+
+        return ':'.join(map(str, urn_tokens)).lower()
+
+    def get_esid(self):
+        """generate data record ES identifier"""
+
+        tokens = [
+            self.content_class,
+            self.content_category,
+            self.data_generation_agency,
             self.platform_type,
             self.platform_id,
             self.instrument_name,
@@ -510,8 +534,7 @@ class DataRecord(base):
             self.instrument_number,
             self.timestamp_date
         ]
-
-        return ':'.join(map(str, urn_tokens)).lower()
+        return ':'.join(map(str, tokens)).lower()
 
     def get_waf_path(self, basepath):
         """generate WAF URL"""
@@ -535,11 +558,10 @@ class DataRecord(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.identifier,
+            'id': self.es_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
-                'urn': self.urn,
                 'content_class': self.content_class,
                 'content_category': self.content_category,
                 'content_level': self.content_level,
@@ -643,7 +665,6 @@ def init(ctx, datadir):
     datasets = os.path.join(datadir, 'datasets.csv')
     projects = os.path.join(datadir, 'projects.csv')
     instruments = os.path.join(datadir, 'instruments.csv')
-    deployments = os.path.join(datadir, 'deployments.csv')
 
     registry_ = registry.Registry()
 
@@ -700,13 +721,6 @@ def init(ctx, datadir):
                     row[field] = None
             ship = Station(row)
             registry_.save(ship)
-
-    click.echo('Loading deployments metadata')
-    with open(deployments) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            deployment = Deployment(row)
-            registry_.save(deployment)
 
     click.echo('Loading instruments metadata')
     with open(instruments) as csvfile:

@@ -50,7 +50,8 @@ import shutil
 
 from woudc_data_registry import config, registry, search
 from woudc_data_registry.models import (Contributor, DataRecord, Dataset,
-                                        Instrument, Project, Station)
+                                        Deployment, Instrument, Project,
+                                        Station)
 from woudc_data_registry.parser import (ExtendedCSV, MetadataValidationError,
                                         NonStandardDataError)
 from woudc_data_registry.util import is_text_file, read_file
@@ -80,20 +81,25 @@ class Process(object):
         self.process_end = None
         self.registry = registry.Registry()
 
-    def process_data(self, infile, verify_only=False):
+    def process_data(self, infile, verify_only=False, bypass=False):
         """
         process incoming data record
 
         :param infile: incoming filepath
         :param verify_only: perform verification only (no ingest)
+        :param bypass: skip permission prompts
 
         :returns: `bool` of processing result
         """
 
         # detect incoming data file
         data = None
+        self.extcsv = None
         self.data_record = None
         self.search_engine = search.SearchIndex()
+
+        self.warnings = []
+        self.errors = []
 
         LOGGER.info('Processing file {}'.format(infile))
         LOGGER.info('Detecting file')
@@ -115,9 +121,9 @@ class Process(object):
 
         try:
             LOGGER.info('Parsing data record')
-            ecsv = ExtendedCSV(data)
+            self.extcsv = ExtendedCSV(data)
             LOGGER.info('Validating Extended CSV')
-            ecsv.validate_metadata()
+            self.extcsv.validate_metadata()
             LOGGER.info('Valid Extended CSV')
         except NonStandardDataError as err:
             self.status = 'failed'
@@ -133,25 +139,6 @@ class Process(object):
             return False
 
         LOGGER.info('Data is valid Extended CSV')
-
-        self.data_record = DataRecord(ecsv)
-        self.data_record.ingest_filepath = infile
-        self.data_record.filename = os.path.basename(infile)
-        self.data_record.url = self.data_record.get_waf_path(
-            config.WDR_WAF_BASEURL)
-        self.process_end = datetime.utcnow()
-
-        LOGGER.debug('Verifying if URN already exists')
-        results = self.registry.query_by_field(
-            DataRecord, self.data_record, 'identifier')
-
-        if results:
-            msg = 'Data exists'
-            self.status = 'failed'
-            self.code = 'ProcessingError'
-            self.message = msg
-            LOGGER.error(msg)
-            return False
 
 #        domains_to_check = [
 #            'content_category',
@@ -176,149 +163,118 @@ class Process(object):
 
         LOGGER.info('Verifying data record against core metadata fields')
 
-        LOGGER.debug('Validating project')
-        self.projects = self.registry.query_distinct(Project.identifier)
-        if self.data_record.content_class not in self.projects:
-            msg = 'Project {} not found in registry'.format(
-                self.data_record.content_class)
-            LOGGER.error(msg)
-            raise ProcessingError(msg)
-        else:
-            LOGGER.debug('Matched with project: {}'.format(
-                self.data_record.content_class))
+        project = self.extcsv.extcsv['CONTENT']['Class']
+        project_ok = self.check_project(project)
+        project = self.extcsv.extcsv['CONTENT']['Class']
 
-        LOGGER.debug('Validating dataset')
-        self.datasets = self.registry.query_distinct(Dataset.identifier)
-        if self.data_record.content_category not in self.datasets:
-            msg = 'Dataset {} not found in registry'.format(
-                self.data_record.content_category)
-            LOGGER.error(msg)
-            raise ProcessingError(msg)
-        else:
-            LOGGER.debug('Matched with dataset: {}'.format(
-                self.data_record.content_category))
+        dataset = self.extcsv.extcsv['CONTENT']['Category']
+        dataset_ok = self.check_dataset(dataset)
+        dataset = self.extcsv.extcsv['CONTENT']['Category']
 
-        LOGGER.debug('Validating contributor')
-        contributor = {
-            'identifier': '{}:{}'.format(
-                self.data_record.data_generation_agency,
-                self.data_record.content_class),
-            'project_id': self.data_record.content_class
-        }
+        agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
+        contributor_ok = self.check_contributor(agency, project)
+        agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
 
-        fields = ['identifier']
-        result = self.registry.query_multiple_fields(Contributor, contributor,
-                                                     fields, fields)
-        if not result:
-            msg = 'Contributor {} not found in registry' \
-                  .format(contributor['identifier'])
-            LOGGER.error(msg)
-            raise ProcessingError(msg)
-        else:
-            self.data_record.data_generation_agency = result[0].identifier
-            LOGGER.debug('Matched with contributor ID {}'
-                         .format(result[0].identifier))
+        platform_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
+        platform_type = self.extcsv.extcsv['PLATFORM']['Type']
+        platform_name = self.extcsv.extcsv['PLATFORM']['Name']
+        platform_country = self.extcsv.extcsv['PLATFORM']['Country']
+        platform_gaw_id = self.extcsv.extcsv['PLATFORM']['GAW_ID']
+        platform_ok = self.check_station(platform_id, platform_type,
+                                         platform_name, platform_country,
+                                         platform_gaw_id)
+        platform_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
 
-        # TODO: consider adding and checking #PLATFORM_Type
-        LOGGER.debug('Validating station data')
-        station = {
-            'identifier': self.data_record.platform_id,
-            'name': self.data_record.platform_name,
-            'country_id': self.data_record.platform_country
-        }
+        LOGGER.debug('Validating agency deployment')
+        date = self.extcsv.extcsv['TIMESTAMP']['Date']
+        deployment_ok = self.check_deployment(platform_id, agency,
+                                              project, date)
+        if not deployment_ok:
+            deployment_id = ':'.join([platform_id, agency, project])
+            deployment_name = '{}@{}'.format(agency, platform_id)
+            LOGGER.warning('Deployment {} not found'.format(deployment_id))
 
-        LOGGER.debug('Validating station id...')
-        results = self.registry.query_multiple_fields(
-            Station, station, ['identifier'])
-        if results:
-            LOGGER.debug('Validated with id: {}'.format(
-                self.data_record.platform_id))
-        else:
-            msg = 'Station {} not found in registry'.format(
-                self.data_record.platform_id)
-            LOGGER.error(msg)
-            raise ProcessingError(msg)
+            if bypass:
+                LOGGER.info('Bypass mode. Skipping permission check')
+                permission = True
+            else:
+                response = input('Deployment {} not found. Add? [y/n] '
+                                 .format(deployment_name))
+                permission = response.lower() in ['y', 'yes']
 
-        LOGGER.debug('Validating station name...')
-        fields = ['identifier', 'name']
-        result = self.registry.query_multiple_fields(Station, station, fields,
-                                                     case_insensitive=['name'])
-        if result:
-            self.data_record.platform_name = result[0].name
-            LOGGER.debug('Validated with name {} for id {}'.format(
-                self.data_record.platform_name, self.data_record.platform_id))
-        else:
-            msg = 'Station name: {} did not match data for id: {}'.format(
-                self.data_record.platform_id, self.data_record.platform_id)
-            LOGGER.error(msg)
-            raise ProcessingError(msg)
+            if permission:
+                self.add_deployment(platform_id, agency, project, date)
+                deployment_ok = True
 
-        LOGGER.debug('Validating station country...')
-        fields = ['identifier', 'country_id']
-        results = self.registry.query_multiple_fields(Station, station, fields)
-        if results:
-            LOGGER.debug('Validated with country: {} for id: {}'.format(
-                self.data_record.platform_country,
-                self.data_record.platform_id))
-        else:
-            msg = 'Station country: {} did not match data for id: {}'.format(
-                self.data_record.platform_country,
-                self.data_record.platform_id)
-            LOGGER.error(msg)
-            raise ProcessingError(msg)
+                msg = 'New deployment {} added'.format(deployment_name)
+                self.warnings.append((202, msg, None))
+            else:
+                msg = 'Deployment {} not added. Skipping file.' \
+                      .format(deployment_id)
+                LOGGER.error(msg)
+
+                msg = 'No deployment {} found in registry' \
+                       .format(deployment_id)
+                line = self.extcsv.line_num['PLATFORM'] + 2
+                self.errors.append((65, msg, line))
 
         LOGGER.debug('Validating instrument')
-        instrument = {
-            'name': self.data_record.instrument_name,
-            'model': self.data_record.instrument_model,
-            'station_id': self.data_record.platform_id,
-            'dataset_id': self.data_record.content_category
-        }
+        instrument_name = self.extcsv.extcsv['INSTRUMENT']['Name']
+        instrument_model = str(self.extcsv.extcsv['INSTRUMENT']['Model'])
+        instrument_serial = str(self.extcsv.extcsv['INSTRUMENT']['Number'])
 
-        LOGGER.debug('Validating instrument name...')
+        instrument_args = [instrument_name, instrument_model,
+                           instrument_serial, platform_id, dataset]
+        instrument_ok = self.check_instrument(*instrument_args)
 
-        fields = list(instrument.keys())
-        case_insensitive = ['name', 'model', 'serial']
+        if not instrument_ok:
+            new_serial = instrument_serial.lstrip('0')
+            LOGGER.debug('Attempting to search instrument serial number {}'
+                         .format(new_serial))
 
-        instrument_found = False
-        base_serial = self.data_record.instrument_number
-        for serial in list({base_serial, base_serial.lstrip('0')}):
-            instrument['serial'] = serial
-            result = self.registry.query_multiple_fields(Instrument, instrument,
-                                                         fields, case_insensitive)
-            if len(result) >= 1:
-                db_instrument = result[0]
-                instrument_id = db_instrument.identifier
-                instrument_found = True
+            instrument_args[2] = new_serial
+            instrument_ok = self.check_instrument(*instrument_args)
 
-                LOGGER.debug('Found instrument match for {}'
-                             .format(instrument_id))
-                if len(results) > 1:
-                    LOGGER.warning('Multiple instrument records match {}'
-                                   .format(instrument_id))
+        if not instrument_ok:
+            LOGGER.warning('No instrument with serial {} found in registry'
+                           .format(instrument_serial))
+            location = [self.extcsv.extcsv['LOCATION'][coord]
+                        for coord in ['Latitude', 'Longitude', 'Height']]
+            instrument_args[2] = instrument_serial
+            instrument_ok = self.add_instrument(*instrument_args, location,
+                                                verify_only)
 
-                self.data_record.instrument_name = db_instrument.name
-                self.data_record.instrument_model = db_instrument.model
-                self.data_record.instrument_number = db_instrument.serial
+            if instrument_ok:
+                msg = 'New instrument serial number added'
+                self.warnings.append((201, msg, None))
+            else:
+                msg = 'Failed to validate instrument against registry'
+                line = self.extcsv.line_num['INSTRUMENT'] + 2
+                self.errors.append((139, msg, line))
 
-                instrument['name'] = self.data_record.instrument_name
-                instrument['model'] = self.data_record.instrument_model
-                instrument['serial'] = self.data_record.instrument_number
+        if not all([project_ok, dataset_ok, contributor_ok,
+                    platform_ok, deployment_ok, instrument_ok]):
+            return False
 
-        if not instrument_found:
-            LOGGER.warning('No instrument matching {} found in registry'
-                           .format(instrument))
-            instrument_added = self.new_serial(instrument, verify_only)
+        LOGGER.info('Validating data record')
+        self.data_record = DataRecord(self.extcsv)
+        self.data_record.ingest_filepath = infile
+        self.data_record.filename = os.path.basename(infile)
+        self.data_record.url = self.data_record.get_waf_path(
+            config.WDR_WAF_BASEURL)
+        self.process_end = datetime.utcnow()
 
-            if not instrument_added:
-                instrument['serial'] = base_serial
-                msg = 'Instrument data {} does not match any existing' \
-                      ' records'.format(instrument)
-                LOGGER.error(msg)
-                raise ProcessingError(msg)
+        LOGGER.debug('Verifying if URN already exists')
+        results = self.registry.query_by_field(
+            DataRecord, 'identifier', self.data_record.identifier)
 
-        # TODO: duplicate data submitted
-        # TODO: check new version of file
+        if results:
+            msg = 'Data exists'
+            self.status = 'failed'
+            self.code = 'ProcessingError'
+            self.message = msg
+            LOGGER.error(msg)
+            return False
 
         LOGGER.info('Data record is valid and verified')
 
@@ -335,43 +291,260 @@ class Process(object):
         shutil.copy2(self.data_record.ingest_filepath, waf_filepath)
 
         LOGGER.info('Indexing data record search engine')
-        self.search_engine.index_data_record(
-            self.data_record.__geo_interface__)
-
+        version = self.search_engine.get_record_version(self.data_record.es_id)
+        if version:
+            if version < self.data_record.data_generation_version:
+                self.search_engine.index_data_record(
+                    self.data_record.__geo_interface__)
+        else:
+            self.search_engine.index_data_record(
+                    self.data_record.__geo_interface__)
         return True
 
-    def new_serial(self, instrument_id, verify_only):
-        data = {
-            'identifier': instrument_id,
-            'station_id': self.data_record.platform_id,
-            'dataset_id': self.data_record.content_category,
-            'name': self.data_record.instrument_name,
-            'model': self.data_record.instrument_model,
-            'serial': self.data_record.instrument_number,
-            'x': self.data_record.x,
-            'y': self.data_record.y,
-            'z': self.data_record.z
+    def add_deployment(self, station, agency, project, date):
+        deployment_id = ':'.join([station, agency, project])
+        deployment_model = {
+            'identifier': deployment_id,
+            'station_id': station,
+            'contributor_id': agency,
+            'start_date': date,
+            'end_date': date
         }
 
-        fields = ['name',
-                  'model',
-                  'station_id',
-                  'dataset_id']
-        results = self.registry.query_multiple_fields(Instrument, data,
-                                                      fields)
-        if results:
+        deployment = Deployment(deployment_model)
+        self.registry.save(deployment)
+
+    def add_instrument(self, name, model, serial, station, dataset,
+                       location, verify_only):
+        instrument_id = ':'.join([name, model, serial, station, dataset])
+        model = {
+            'identifier': instrument_id,
+            'name': name,
+            'model': model,
+            'serial': serial,
+            'station_id': station,
+            'dataset_id': dataset,
+            'x': location[0],
+            'y': location[1],
+            'z': location[2]
+        }
+
+        fields = ['name', 'model', 'station_id', 'dataset_id']
+        case_insensitive = ['name', 'model']
+        result = self.registry.query_multiple_fields(Instrument, model,
+                                                     fields, case_insensitive)
+        if result:
+            model['name'] = result.name
+            model['model'] = result.model
+            self.extcsv.extcsv['INSTRUMENT']['Name'] = result.name
+            self.extcsv.extcsv['INSTRUMENT']['Model'] = result.model
+
             LOGGER.debug('All other instrument data matches.')
             LOGGER.info('Adding instrument with new serial number...')
+
             if verify_only:
-                LOGGER.info('Verification mode detected. '
-                            'Instrument not added.')
+                msg = 'Verification mode detected. Instrument not added.'
+                LOGGER.info(msg)
             else:
-                instrument = Instrument(data)
+                instrument = Instrument(model)
                 self.registry.save(instrument)
                 LOGGER.info('Instrument successfully added.')
             return True
         else:
             return False
+
+    def check_project(self, project):
+        LOGGER.debug('Validating project {}'.format(project))
+        self.projects = self.registry.query_distinct(Project.identifier)
+
+        if not project:
+            self.extcsv.extcsv['CONTENT']['Class'] = project = 'WOUDC'
+            msg = 'Missing #CONTENT.Class: default to "WOUDC"'
+            line = self.extcsv.line_num['CONTENT'] + 2
+            self.warnings.append((52, msg, line))
+
+        if project in self.projects:
+            LOGGER.debug('Match found for project {}'.format(project))
+            return True
+        else:
+            msg = 'Project {} not found in registry'.format(project)
+            line = self.extcsv.line_num['CONTENT'] + 2
+
+            self.errors.append((53, msg, line))
+            return False
+
+    def check_dataset(self, dataset):
+        LOGGER.debug('Validating dataset {}'.format(dataset))
+        self.datasets = self.registry.query_distinct(Dataset.identifier)
+
+        if dataset in self.datasets:
+            LOGGER.debug('Match found for dataset {}'.format(dataset))
+            return True
+        else:
+            msg = 'Dataset {} not found in registry'.format(dataset)
+            line = self.extcsv.line_num['CONTENT'] + 2
+
+            self.errors.append((56, msg, line))
+            return False
+
+    def check_contributor(self, agency, project):
+        LOGGER.debug('Validating contributor {} under project {}'
+                     .format(agency, project))
+        contributor = {
+            'identifier': '{}:{}'.format(agency, project),
+            'project_id': project
+        }
+
+        fields = ['identifier']
+        result = self.registry.query_multiple_fields(Contributor, contributor,
+                                                     fields, fields)
+        if result:
+            contributor_name = result.identifier.split(':')[0]
+            self.extcsv.extcsv['DATA_GENERATION']['Agency'] = contributor_name
+
+            LOGGER.debug('Match found for contributor ID {}'
+                         .format(result.identifier))
+            return True
+        else:
+            msg = 'Contributor {} not found in registry' \
+                  .format(contributor['identifier'])
+            line = self.extcsv.line_num['DATA_GENERATION'] + 2
+
+            self.errors.append((127, msg, line))
+            return False
+
+    def check_station(self, identifier, pl_type, name, country, gaw_id=None):
+        # TODO: consider adding and checking #PLATFORM_Type
+        LOGGER.debug('Validating station {}:{}'.format(identifier, name))
+
+        if pl_type == 'SHP' and any([not country, country == '*IW']):
+            self.extcsv.extcsv['PLATFORM']['Country'] = country = 'XY'
+
+            msg = 'Ship #PLATFORM.Country = *IW corrected to Country = XY' \
+                  ' to meet ISO-3166 standards'
+            line = self.extcsv.line_num['PLATFORM'] + 2
+            self.warnings.append((105, msg, line))
+
+        station = {
+            'identifier': identifier,
+            'type': pl_type,
+            'name': name,
+            'country_id': country
+        }
+
+        LOGGER.debug('Validating station id...')
+        values_line = self.extcsv.line_num['PLATFORM'] + 2
+        result = self.registry.query_by_field(Station, 'identifier',
+                                              identifier)
+        if result:
+            LOGGER.debug('Validated station with id: {}'.format(identifier))
+        else:
+            msg = 'Station {} not found in registry'.format(identifier)
+            self.errors.append((129, msg, values_line))
+            return False
+
+        LOGGER.debug('Validating station type...')
+        platform_types = ['STN', 'SHP']
+        type_ok = pl_type in platform_types
+
+        if type_ok:
+            LOGGER.debug('Validated station type {}'.format(type_ok))
+        else:
+            msg = 'Station type {} not found in registry'.format(pl_type)
+            self.errors.append((128, msg, values_line))
+
+        LOGGER.debug('Validating station name...')
+        fields = ['identifier', 'name']
+        result = self.registry.query_multiple_fields(Station, station,
+                                                     fields, ['name'])
+        name_ok = bool(result)
+        if name_ok:
+            self.extcsv.extcsv['PLATFORM']['Name'] = name = result.name
+            LOGGER.debug('Validated with name {} for id {}'.format(
+                name, identifier))
+        else:
+            msg = 'Station name: {} did not match data for id: {}' \
+                  .format(name, identifier)
+            self.errors.append((130, msg, values_line))
+
+        LOGGER.debug('Validating station country...')
+        fields = ['identifier', 'country_id']
+        result = self.registry.query_multiple_fields(Station, station,
+                                                     fields, ['country_id'])
+        country_ok = bool(result)
+        if country_ok:
+            country = result.country
+            self.extcsv.extcsv['PLATFORM']['Country'] = country
+            LOGGER.debug('Validated with country: {} for id: {}'
+                         .format(country, identifier))
+        else:
+            msg = 'Station country: {} did not match data for id: {}' \
+                  .format(country, identifier)
+            self.errors.append((131, msg, values_line))
+
+        return type_ok and name_ok and country_ok
+
+    def check_deployment(self, station, agency, project, date):
+        deployment_id = ':'.join([station, agency, project])
+        results = self.registry.query_by_field(Deployment, 'identifier',
+                                               deployment_id)
+        if not results:
+            LOGGER.warning('Deployment {} not found'.format(deployment_id))
+            return False
+        else:
+            deployment = results[0]
+            LOGGER.debug('Found deployment match for {}'
+                         .format(deployment_id))
+            if deployment.start_date > date:
+                deployment.start_date = date
+                self.registry.save()
+                LOGGER.debug('Deployment start date updated.')
+            elif deployment.end_date < date:
+                deployment.end_date = date
+                self.registry.save()
+                LOGGER.debug('Deployment end date updated.')
+            return True
+
+    def check_instrument(self, name, model, serial, station, dataset):
+        if not name or name.lower() in ['na', 'n/a']:
+            self.extcsv.extcsv['INSTRUMENT']['Name'] = name = 'UNKNOWN'
+        if not model or model.lower() in ['na', 'n/a']:
+            self.extcsv.extcsv['INSTRUMENT']['Model'] = model = 'UNKNOWN'
+
+        values_line = self.extcsv.line_num['INSTRUMENT'] + 2
+        if name == 'UNKNOWN':
+            msg = '#INSTRUMENT.Name must not be null'
+            self.errors.append((72, msg, values_line))
+            return False
+
+        instrument_id = ':'.join([name, model, serial, station, dataset])
+        instrument = {
+            'name': name,
+            'model': model,
+            'serial': serial,
+            'station_id': station,
+            'dataset_id': dataset
+        }
+
+        fields = list(instrument.keys())
+        case_insensitive = ['name', 'model', 'serial']
+        result = self.registry.query_multiple_fields(Instrument, instrument,
+                                                     fields, case_insensitive)
+        if not result:
+            LOGGER.warning('No instrument {} found in registry'
+                           .format(instrument_id))
+            return False
+        else:
+            LOGGER.debug('Found instrument match for {}'
+                         .format(instrument_id))
+
+            self.extcsv.extcsv['INSTRUMENT']['Name'] = result.name
+            self.extcsv.extcsv['INSTRUMENT']['Model'] = result.model
+            self.extcsv.extcsv['INSTRUMENT']['Number'] = result.serial
+            return True
+
+    def finish(self):
+         self.registry.close_session()
 
 
 class ProcessingError(Exception):

@@ -135,6 +135,23 @@ class SearchIndex(object):
                 LOGGER.error(err)
                 raise SearchIndexError(err)
 
+    def get_record_version(self, identifier):
+        """
+        get version of data record
+
+        :param identifier: identifier of data record
+
+        :returns: `float` version of data record
+        """
+
+        try:
+            result = self.connection.get(index=INDEXES['data_record'],
+                                         doc_type='FeatureCollection',
+                                         id=identifier,)
+            return result['_source']['properties']['data_generation_version']
+        except NotFoundError:
+            return None
+
     def index_data_record(self, data):
         """
         index or update a document

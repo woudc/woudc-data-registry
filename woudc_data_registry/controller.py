@@ -50,7 +50,7 @@ import click
 from woudc_data_registry.processing import Process
 
 
-def orchestrate(file_, directory, verify_only=False):
+def orchestrate(file_, directory, verify_only=False, bypass=False):
     """
     core orchestation workflow
 
@@ -71,24 +71,40 @@ def orchestrate(file_, directory, verify_only=False):
             for f in files:
                 files_to_process.append(os.path.join(root, f))
 
+    passed = []
+    failed = []
+
     with click.progressbar(files_to_process, label='Processing files') as run_:
         for file_to_process in run_:
             click.echo('Processing filename: {}'.format(file_to_process))
             p = Process()
             try:
                 result = p.process_data(file_to_process,
-                                        verify_only=verify_only)
+                                        verify_only=verify_only, bypass=bypass)
 
                 if result:  # processed
                     if verify_only:
                         click.echo('Verified but not ingested')
                     else:
                         click.echo('Ingested successfully')
+                    passed.append(file_to_process)
                 else:
                     click.echo('Not ingested')
+                    failed.append(file_to_process)
             except Exception as err:
                 click.echo('Processing failed: {}'.format(err))
+                failed.append(file_to_process)
+            finally:
+                p.finish()
 
+    for name in files_to_process:
+        if name in passed:
+            click.echo('Pass: ' + name)
+        elif name in failed:
+            click.echo('Fail: ' + name)
+
+    click.echo('({}/{} files passed)'
+               .format(len(passed), len(files_to_process)))
 
 @click.group()
 def data():
@@ -105,7 +121,9 @@ def data():
               type=click.Path(exists=True, resolve_path=True,
                               dir_okay=True, file_okay=False),
               help='Path to directory of data records')
-def ingest(ctx, file_, directory):
+@click.option('--bypass', '-b', 'bypass', is_flag=True,
+              help='Bypass permission prompts while ingesting')
+def ingest(ctx, file_, directory, bypass):
     """ingest a single data submission or directory of files"""
 
     if file_ is not None and directory is not None:
@@ -116,7 +134,10 @@ def ingest(ctx, file_, directory):
         msg = 'One of --file or --directory is required'
         raise click.ClickException(msg)
 
-    orchestrate(file_, directory)
+    if bypass:
+        orchestrate(file_, directory, bypass=True)
+    else:
+        orchestrate(file_, directory)
 
 
 @click.command()

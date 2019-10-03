@@ -353,10 +353,6 @@ class ExtendedCSV(object):
             self.check_tables(curr_dict)
 
     def determine_version(self, schema):
-        """
-        Look for tables that are unique one version?
-        """
-
         versions = set(schema.keys())
         tables = {version: schema[version].keys() for version in versions}
         uniques = {}
@@ -442,7 +438,6 @@ class ExtendedCSV(object):
                           .format(field, table)
                     LOGGER.error(msg)
                     self.warnings.append((4, msg, fields_line))
-
                     del self.extcsv[table][field]
                 LOGGER.debug('Removing excess columns from {}'.format(table))
 
