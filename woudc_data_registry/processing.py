@@ -240,12 +240,12 @@ class Process(object):
         instrument_id = ':'.join(instrument_args) if instrument_ok else None
         location_ok = self.check_location(instrument_id)
 
-        timestamps_ok = True
         content_ok = self.check_content_consistency()
+        data_generation_ok = self.check_data_generation_consistency()
 
         if not all([project_ok, dataset_ok, contributor_ok,
                     platform_ok, deployment_ok, instrument_ok,
-                    location_ok, timestamps_ok, content_ok]):
+                    location_ok, content_ok, data_generation_ok]):
             return False
 
         LOGGER.info('Validating data record')
@@ -747,6 +747,44 @@ class Process(object):
                 form_ok = False
 
         return level_ok and form_ok
+
+    def check_data_generation_consistency(self):
+        date = self.extcsv.extcsv['DATA_GENERATION'].get('Date', None)
+        agency = self.extcsv.extcsv['DATA_GENERATION'].get('Agency', None)
+        version = self.extcsv.extcsv['DATA_GENERATION'].get('Version', None)
+
+        values_line = self.extcsv.line_num['DATA_GENERATION']
+
+        if not date:
+            msg = 'Missing #DATA_GENERATION.Date, resolved to processing date'
+            LOGGER.warning(msg)
+            self.warnings.append((63, msg, values_line))
+
+            kwargs = {key: getattr(self.process_start, key)
+                      for key in ['year', 'month', 'day']}
+            today_date = datetime(**kwargs)
+            self.extcsv.extcsv['DATA_GENERATION']['Date'] = date = today_date
+
+        try:
+            numeric_version = float(version)
+
+            if not 0 <= numeric_version <= 20:
+                msg = '#DATA_GENERATION.Version is not within range [0.0]-[20.0]'
+                LOGGER.warning(msg)
+                self.warnings.append((66, msg, values_line))
+            if str(version) == str(int(numeric_version)):
+                self.extcsv.extcsv['DATA_GENERATION']['Version'] = numeric_version
+
+                msg = '#DATA_GENERATION.Version corrected to one decimal place'
+                LOGGER.warning(msg)
+                self.warnings.append((67, msg, values_line))
+        except ValueError:
+            msg = '#DATA_GENERATION.Version contains invalid characters'
+            LOGGER.error(msg)
+            self.errors.append((68, msg, values_line))
+            return False
+
+        return True
 
     def finish(self):
         self.registry.close_session()
