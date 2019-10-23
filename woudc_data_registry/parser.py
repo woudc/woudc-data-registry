@@ -605,27 +605,40 @@ class ExtendedCSV(object):
             if len(missing_fields) == 0:
                 LOGGER.debug('No missing fields in table {}'.format(table))
             for missing in missing_fields:
-                bad_caps = provided_case_map.get(missing.lower(), None)
+                match_insensitive = provided_case_map.get(missing.lower(),
+                                                          None)
+                if match_insensitive:
+                    msg = 'Capitalization of #{} field {} corrected to' \
+                          ' {}'.format(table, missing, match_insensitive)
+                    self.warnings.append((1000, msg, fields_line))
 
-                if bad_caps:
                     self.extcsv[table][missing] = \
-                        self.extcsv[table].pop(bad_caps)
+                        self.extcsv[table].pop(match_insensitive)
                 else:
                     msg = 'Missing required #{} field {}' \
                           .format(table, missing)
                     self.errors.append((3, msg, fields_line))
 
             for field in excess_fields:
-                if field in definitions.get('optional', ()):
-                    LOGGER.debug('Found optional {} field {}'
-                                 .format(table, field))
-                else:
-                    del self.extcsv[table][field]
+                match_insensitive = optional_case_map.get(field.lower(), None)
 
+                if match_insensitive:
+                    msg = 'Found optional field #{}.{}'.format(table, field)
+                    LOGGER.info(msg)
+
+                    if field != match_insensitive:
+                        msg = 'Capitalization of #{} field {} corrected to' \
+                              ' {}'.format(table, missing, match_insensitive)
+                        self.warnings.append((1000, msg, fields_line))
+
+                        self.extcsv[table][missing] = \
+                            self.extcsv[table].pop(match_insensitive)
+                else:
                     msg = 'Field name {}.{} is not from approved list' \
                           .format(table, field)
                     line = self._line_num[table] + 1
                     self.warnings.append((4, msg, line))
+                    del self.extcsv[table][field]
 
         for table in present_tables:
             body = self.extcsv[table]
@@ -746,7 +759,7 @@ class ExtendedCSV(object):
             provided_case_map = {key.lower(): key for key in provided}
 
             missing_fields = [field for field in required
-                              if field.lower() not in provided_case_map]
+                              if field not in provided]
             extra_fields = [field for field in provided
                             if field.lower() not in required_case_map]
 
@@ -758,12 +771,21 @@ class ExtendedCSV(object):
             num_rows = len(arbitrary_column)
             null_value = [''] * num_rows
 
-            if len(missing_fields) > 0:
-                for field in missing_fields:
+            for field in missing_fields:
+                match_insensitive = provided_case_map.get(field.lower(), None)
+
+                if match_insensitive:
+                    msg = 'Capitalization in #{} field {} corrected to' \
+                          ' {}'.format(table, field, match_insensitive)
+                    self.warnings.append((1000, msg, fields_line))
+
+                    self.extcsv[table][field] = \
+                         self.extcsv[table].pop(match_insensitive)
+                else:
                     msg = 'Missing field {}.{}'.format(table, field)
-                    LOGGER.error(msg)
                     self.errors.append((3, msg, fields_line))
                     self.extcsv[table][field] = null_value
+            if len(missing_fields) > 0:
                 LOGGER.info('Filled missing fields with null string values')
 
             for field in extra_fields:
