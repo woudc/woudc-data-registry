@@ -279,8 +279,11 @@ class ExtendedCSV(object):
 
     def parse_timestamp(self, table, timestamp, line_num):
         """
-        Attempt to convert the raw string <timestamp> into a time object,
-        return the time object if successful else raise a ValueError.
+        Return a time object representing the time contained in string
+        <timestamp> according to the expected HH:mm:SS format.
+
+        Corrects common formatting errors and performs very simple validation
+        checks. Raises ValueError if the string cannot be parsed.
 
         The other parameters are used for error reporting.
 
@@ -290,8 +293,47 @@ class ExtendedCSV(object):
         :returns: The timestamp converted to a time object.
         """
 
-        hour, minute, second = [int(v) for v in value.split(':')]
-        return time(hour, minute, second)
+        tokens = value.split(':')
+        hour = tokens[0] or '00'
+        minute = tokens[1] or '00' if len(tokens) > 1 else '00'
+        second = tokens[2] or '00' if len(tokens) > 2 else '00'
+
+        hour_numeric = minute_numeric = second_numeric = None
+
+        try:
+            hour_numeric = int(hour)
+        except ValueError:
+            msg = '#{}.Time hour contains invalid characters'.format(table)
+            self.errors.append((16, msg, line_num))
+        try:
+            minute_numeric = int(minute)
+        except ValueError:
+            msg = '#{}.Time minute contains invalid characters'.format(table)
+            self.errors.append((16, msg, line_num))
+        try:
+            second_numeric = int(second)
+        except ValueError:
+            msg = '#{}.Time second contains invalid characters'.format(table)
+            self.errors.append((16, msg, line_num))
+
+        if hour_numeric is not None and hour_numeric not in range(0, 24):
+            msg = '#{}.Time hour is not within allowable range [00]-[23]' \
+                  .format(table)
+            self.warnings.append((12, msg, line_num))
+        if minute_numeric is not None and minute_numeric not in range(0, 60):
+            msg = '#{}.Time minute is not within allowable range [00]-[59]' \
+                  .format(table)
+            self.warnings.append((13, msg, line_num))
+        if second_numeric is not None and second_numeric not in range(0, 60):
+            msg = '#{}.Time second is not within allowable range [00]-[59]' \
+                  .format(table)
+            self.warnings.append((14, msg, line_num))
+
+        if None in [hour_numeric, minute_numeric, second_numeric]:
+            raise ValueError('Validation errors found in timestamp {}'
+                             .format(timestamp))
+        else:
+            return time(hour, minute, second)
 
     def parse_datestamp(self, table, datestamp, line_num):
         """
