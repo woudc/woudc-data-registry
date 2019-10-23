@@ -70,38 +70,6 @@ ERROR_CODES = {
 }
 
 
-def _typecast_value(field, value):
-    """
-    Returns a copy of the string <value> converted to the expected type
-    for a column named <field>, if possible, or returns the original string
-    otherwise.
-
-    :param field: Name of column
-    :param value: String containing a value
-    :returns: Value cast to the appropriate type for its column
-    """
-
-    if value == '':  # empty
-        return None
-
-    lowered_field = field.lower()
-    if lowered_field == 'date':
-        return datetime.strptime(value, '%Y-%m-%d').date()
-    elif lowered_field == 'time':
-        hour, minute, second = [int(v) for v in value.split(':')]
-        return time(hour, minute, second)
-
-    try:
-        if '.' in value:  # float?
-            return float(value)
-        elif len(value) > 1 and value.startswith('0'):
-            return value
-        else:  # int?
-            return int(value)
-    except ValueError:  # string (default)?
-        return value
-
-
 def non_content_line(line):
     """
     Returns True iff <line> represents a non-content line of an Extended CSV
@@ -184,7 +152,6 @@ class ExtendedCSV(object):
                     while non_content_line(fields):
                         msg = 'Unexpected empty line between table name' \
                               ' and fields'
-                        LOGGER.warning(msg)
                         self.warnings.append((8, msg, ln))
 
                         ln, fields = next(lines)
@@ -192,7 +159,6 @@ class ExtendedCSV(object):
                     self.init_table(parent_table, fields, line_num)
                 except StopIteration:
                     msg = 'Table {} has no fields'.format(parent_table)
-                    LOGGER.error(msg)
                     self.errors.append((6, msg, line_num))
             elif len(row) > 0 and row[0].startswith('*'):  # comment
                 LOGGER.debug('Found comment')
@@ -269,6 +235,46 @@ class ExtendedCSV(object):
 
         for field, value in zip(fields, values):
             self.extcsv[table_name][field].append(value)
+
+    def _typecast_value(self, table, field, value, line_num):
+        """
+        Returns a copy of the string <value> converted to the expected type
+        for a column named <field> in table <table>, if possible, or returns
+        the original string otherwise.
+
+        :param table: Name of the table where the value was found
+        :param field: Name of the column
+        :param value: String containing a value
+        :param line_num: Line number where the value was found
+        :returns: Value cast to the appropriate type for its column
+        """
+
+        if value == '':  # Empty CSV cell
+            return None
+
+        lowered_field = field.lower()
+
+        try:
+            if lowered_field == 'date':
+                return datetime.strptime(value, '%Y-%m-%d').date()
+            elif lowered_field == 'time':
+                hour, minute, second = [int(v) for v in value.split(':')]
+                return time(hour, minute, second)
+        except Exception as err:
+            msg = 'Failed to parse #{}.{} value {} due to: {}' \
+                  .format(table, field, value, str(err))
+            self.errors.append((1000, msg, line_num))
+            return value
+
+        try:
+            if '.' in value:  # Check float conversion
+                return float(value)
+            elif len(value) > 1 and value.startswith('0'):
+                return value
+            else:  # Check integer conversion
+                return int(value)
+        except Exception:  # Default type to string
+            return value
 
     def gen_woudc_filename(self):
         """generate WOUDC filename convention"""
