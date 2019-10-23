@@ -568,7 +568,7 @@ class ExtendedCSV(object):
         missing_tables = [table for table in DOMAINS['Common']
                           if table not in self.extcsv.keys()]
         present_tables = [table for table in self.extcsv.keys()
-                          if table in DOMAINS['Common']]
+                          if table.rstrip('0123456789_') in DOMAINS['Common']]
         errors = []
 
         if len(present_tables) == 0:
@@ -684,27 +684,20 @@ class ExtendedCSV(object):
                 self.warnings.append((27, msg, start_line))
 
         for table in present_tables:
+            table_type = table.rstrip('0123456789_')
             body = self.extcsv[table]
-            arbitrary_column, values = next(iter(body.items()))
 
             start_line = self._line_num[table]
             values_line = start_line + 2
 
-            if len(values) == 0:
-                msg = 'Empty table {}'.format(table)
-                line = self._line_num[table]
-                self.warnings.append((140, msg, start_line))
-            elif len(values) == 1:
-                for field in body.keys():
-                    body[field] = self.typecast_value(table, field,
-                                                      body[field][0],
-                                                      values_line)
-            else:
-                for field in body.keys():
-                    body[field] = list(map(
-                        lambda val: self.typecast_value(table, field, val,
-                                                        values_line),
-                        body[field]))
+            for field, column in body.items():
+                converted = [self.typecast_value(table, field, val, line)
+                             for line, val in enumerate(column, values_line)]
+
+                if DOMAINS['Common'][table_type]['rows'] == 1:
+                    self.extcsv[table][field] = converted[0]
+                else:
+                    self.extcsv[table][field] = converted
 
         if len(self.errors) == 0:
             LOGGER.debug('All tables in file validated.')
@@ -908,27 +901,21 @@ class ExtendedCSV(object):
                                table))
 
         for table in present_tables:
+            table_type = table.rstrip('0123456789_')
             body = self.extcsv[table]
-            arbitrary_column, values = next(iter(body.items()))
 
             start_line = self._line_num[table]
             values_line = start_line + 2
 
-            if len(values) == 0:
-                msg = 'Empty table {}'.format(table)
-                line = self._line_num[table]
-                self.warnings.append((140, msg, start_line))
-            elif len(values) == 1:
-                for field in body.keys():
-                    body[field] = self.typecast_value(table, field,
-                                                      body[field][0],
-                                                      values_line)
-            else:
-                for field in body.keys():
-                    body[field] = list(map(
-                        lambda val: self.typecast_value(table, field, val,
-                                                        values_line),
-                        body[field]))
+            for field, column in body.items():
+                converted = [self.typecast_value(table, field, val, line)
+                             for line, val in enumerate(column, values_line)]
+
+                if schema[table_type]['rows'] == 1:
+                    self.extcsv[table][field] = converted[0]
+                else:
+                    self.extcsv[table][field] = converted
+
 
 class NonStandardDataError(Exception):
     """custom exception handler"""
