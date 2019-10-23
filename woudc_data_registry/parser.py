@@ -152,6 +152,19 @@ class ExtendedCSV(object):
         lines = enumerate(reader, 1)
 
         for line_num, row in lines:
+            separators = []
+            for bad_sep in ['::', ';', '$', '%', '|', '/', '\\']:
+                if len(row) > 0 and bad_sep in row[0]:
+                    separators.append(bad_sep)
+
+            for separator in separators:
+                comma_separated = row[0].replace(separator, ',')
+                row = next(csv.reader(StringIO(comma_separated)))
+
+                msg = 'Improper delimiter used \'{}\', corrected to \',\'' \
+                      ' (comma)'.format(separator)
+                self.warnings.append((7, msg, line_num))
+
             if len(row) == 1 and row[0].startswith('#'):  # table name
                 parent_table = ''.join(row).lstrip('#').rstrip()
 
