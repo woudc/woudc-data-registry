@@ -475,6 +475,24 @@ class ExtendedCSV(object):
         if len(match) == 1:
             sign, hour, _, minute, _, second = match[0]
 
+            if len(hour) < 2:
+                msg = '#{}.UTCOffset hour should be 2 digits long' \
+                      .format(table)
+                self.warnings.append((1000, msg, line_num))
+                hour = hour.rjust(2, '0')
+
+            if len(minute) < 2:
+                msg = '#{}.UTCOffset minute should be 2 digits long' \
+                      .format(table)
+                self.warnings.append((1000, msg, line_num))
+                minute = minute.rjust(2, '0')
+
+            if len(second) < 2:
+                msg = '#{}.UTCOffset second should be 2 digits long' \
+                      .format(table)
+                self.warnings.append((1000, msg, line_num))
+                second = second.rjust(2, '0')
+
             try:
                 magnitude = time(int(hour), int(minute), int(second))
                 return = '{}{}'.format(sign, magnitude)
