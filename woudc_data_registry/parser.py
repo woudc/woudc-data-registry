@@ -657,6 +657,32 @@ class ExtendedCSV(object):
                     self.warnings.append((4, msg, line))
                     del self.extcsv[table][field]
 
+            num_rows = 0
+            for field in required:
+                column = self.extcsv[table][field]
+                num_rows = len(column)
+
+                for line, value in enumerate(column, values_line):
+                    if not column:
+                        msg = 'Required value #{}.{} is empty'.format(table,
+                                                                      field)
+                        self.errors.append((5, msg, values_line))
+                        break
+
+            occurrence_range = str(definitions['occurrences'])
+            lower, upper = parse_integer_range(occurrence_range)
+            if num_rows == 0:
+                if 'required' in definitions:
+                    msg = 'Required table #{} is empty'.format(table)
+                    self.errors.append((27, msg, start_line))
+                else:
+                    msg = 'Optional table #{} is empty'.format(table)
+                    self.warnings.append((27.5, msg, start_line))
+            elif not lower <= num_rows <= upper:
+                msg = 'Incorrectly formatted table: #{}. Table must contain' \
+                      ' {} lines'.format(table, occurrence_range)
+                self.warnings.append((27, msg, start_line))
+
         for table in present_tables:
             body = self.extcsv[table]
             arbitrary_column, values = next(iter(body.items()))
@@ -842,6 +868,28 @@ class ExtendedCSV(object):
                           .format(field, table)
                     self.warnings.append((4, msg, fields_line))
                     del self.extcsv[table][field]
+
+            for field in required:
+                column = self.extcsv[table][field]
+                for line, value in enumerate(column, values_line):
+                    if not value:
+                        msg = 'Required value #{}.{} is empty' \
+                              .format(table, field)
+                        self.errors.append((5, msg, line))
+                        break
+
+            table_height_range = str(schema[table_type]['rows'])
+            lower, upper = parse_integer_range(table_height_range)
+            if num_rows == 0:
+                if 'required' in schema[table_type]:
+                    msg = 'Required table #{} is empty'.format(table)
+                    self.errors.append((27, msg, start_line))
+                else:
+                    msg = 'Optional table #{} is empty'.format(table)
+                    self.warnings.append((27.5, msg, start_line))
+            elif not lower <= num_rows <= upper:
+                msg = 'Incorrectly formatted table: #{}. Table must contain' \
+                      ' {} lines'.format(table, occurrence_range)
 
             LOGGER.debug('Successfully validated table {}'.format(table))
 
