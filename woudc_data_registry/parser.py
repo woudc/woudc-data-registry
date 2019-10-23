@@ -164,7 +164,7 @@ class ExtendedCSV(object):
             elif len(row) > 0 and row[0].startswith('*'):  # comment
                 LOGGER.debug('Found comment')
                 continue
-            elif not non_content_line(row):  # blank line
+            elif non_content_line(row):  # blank line
                 LOGGER.debug('Found blank line')
                 continue
             elif parent_table is not None and not non_content_line(row):
@@ -296,7 +296,7 @@ class ExtendedCSV(object):
 
             timestamp = timestamp.replace(separator, ':')
 
-        tokens = value.split(':')
+        tokens = timestamp.split(':')
         hour = tokens[0] or '00'
         minute = tokens[1] or '00' if len(tokens) > 1 else '00'
         second = tokens[2] or '00' if len(tokens) > 2 else '00'
@@ -325,7 +325,7 @@ class ExtendedCSV(object):
             self.warnings.append((11, msg, line_num))
             hour = 0
         elif noon_indicator == 'pm' and hour != 12:
-             msg = '#{}.Time corrected from 12-hour clock to 24-hour' \
+            msg = '#{}.Time corrected from 12-hour clock to 24-hour' \
                   ' YYYY-mm-dd format'.format(table)
             self.warnings.append((11, msg, line_num))
             hour += 12
@@ -355,7 +355,7 @@ class ExtendedCSV(object):
             raise ValueError('Validation errors found in timestamp {}'
                              .format(timestamp))
         else:
-            return time(hour, minute, second)
+            return time(hour_numeric, minute_numeric, second_numeric)
 
     def parse_datestamp(self, table, datestamp, line_num):
         """
@@ -402,17 +402,17 @@ class ExtendedCSV(object):
         year = month = day = None
 
         try:
-            year = int(sections[0])
+            year = int(tokens[0])
         except ValueError:
             msg = '#{}.Date year contains invalid characters'.format(table)
             self.errors.append((24, msg, line_num))
         try:
-            month = int(sections[1])
+            month = int(tokens[1])
         except ValueError:
             msg = '#{}.Date month contains invalid characters'.format(table)
             self.errors.append((24, msg, line_num))
         try:
-            day = int(sections[2])
+            day = int(tokens[2])
         except ValueError:
             msg = '#{}.Date year contains invalid characters'.format(table)
             self.errors.append((24, msg, line_num))
@@ -462,7 +462,7 @@ class ExtendedCSV(object):
         sign = '(\+|-|\+-)?'
         delim = '[^-\+\w\d]'
         mandatory_place = '([\d]{1,2})'
-        optional_place = '({}([\d]{0,2}))?'.format(delim)
+        optional_place = '(' + delim + '([\d]{0,2}))?'
 
         template = '^{sign}{mandatory}{optional}{optional}$' \
                    .format(sign=sign, mandatory=mandatory_place,
@@ -513,7 +513,7 @@ class ExtendedCSV(object):
 
             try:
                 magnitude = time(int(hour), int(minute), int(second))
-                return = '{}{}'.format(sign, magnitude)
+                return '{}{}'.format(sign, magnitude)
             except (ValueError, TypeError) as err:
                 msg = 'Improperly formatted #{}.UTCOffset {}: {}' \
                       .format(table, str(err))
@@ -584,22 +584,39 @@ class ExtendedCSV(object):
         else:
             LOGGER.debug('No missing metadata tables.')
 
-        for table, fields_definition in DOMAINS['Common'].items():
-            missing_fields = [field for field in fields_definition['required']
-                              if field not in self.extcsv[table].keys()]
-            excess_fields = [field for field in self.extcsv[table].keys()
-                             if field not in fields_definition['required']]
+        for table, definitions in DOMAINS['Common'].items():
+            required = definitions.get('required', ())
+            optional = definitions.get('optional', ())
+            provided = self.extcsv[table].keys()
 
-            if len(missing_fields) > 0:
-                for missing in missing_fields:
-                    msg = 'Missing required {} field {}'.format(table, missing)
-                    line = self._line_num[table] + 1
-                    self.errors.append((3, msg, line))
-            else:
+            required_case_map = {key.lower(): key for key in required}
+            optional_case_map = {key.lower(): key for key in optional}
+            provided_case_map = {key.lower(): key for key in provided}
+
+            missing_fields = [field for field in required
+                              if field not in provided]
+            excess_fields = [field for field in provided
+                             if field.lower() not in required_case_map]
+
+            start_line = self._line_num[table]
+            fields_line = start_line + 1
+            values_line = fields_line + 1
+
+            if len(missing_fields) == 0:
                 LOGGER.debug('No missing fields in table {}'.format(table))
+            for missing in missing_fields:
+                bad_caps = provided_case_map.get(missing.lower(), None)
+
+                if bad_caps:
+                    self.extcsv[table][missing] = \
+                        self.extcsv[table].pop(bad_caps)
+                else:
+                    msg = 'Missing required #{} field {}' \
+                          .format(table, missing)
+                    self.errors.append((3, msg, fields_line))
 
             for field in excess_fields:
-                if field in fields_definition.get('optional', ()):
+                if field in definitions.get('optional', ()):
                     LOGGER.debug('Found optional {} field {}'
                                  .format(table, field))
                 else:
@@ -719,20 +736,27 @@ class ExtendedCSV(object):
 
         for table in present_tables:
             table_type = table.rstrip('0123456789_')
-            fields_line = self._line_num[table]
 
             required = schema[table_type].get('required', ())
-            lowered_provided = list(map(str.lower, self.extcsv[table].keys()))
-            lowered_required = list(map(str.lower, required))
+            optional = schema[table_type].get('optional', ())
+            provided = self.extcsv[table].keys()
+
+            required_case_map = {key.lower(): key for key in required}
+            optional_case_map = {key.lower(): key for key in optional}
+            provided_case_map = {key.lower(): key for key in provided}
 
             missing_fields = [field for field in required
-                              if field.lower() not in lowered_provided]
-            extra_fields = [field for field in self.extcsv[table]
-                            if field.lower() not in lowered_required]
+                              if field.lower() not in provided_case_map]
+            extra_fields = [field for field in provided
+                            if field.lower() not in required_case_map]
+
+            start_line = self._line_num[table]
+            fields_line = start_line + 1
+            values_line = fields_line + 1
 
             arbitrary_column = next(iter(self.extcsv[table].values()))
-            null_value = '' if not isinstance(arbitrary_column, list) \
-                else [''] * len(arbitrary_column)
+            num_rows = len(arbitrary_column)
+            null_value = [''] * num_rows
 
             if len(missing_fields) > 0:
                 for field in missing_fields:
@@ -742,14 +766,25 @@ class ExtendedCSV(object):
                     self.extcsv[table][field] = null_value
                 LOGGER.info('Filled missing fields with null string values')
 
-            if len(extra_fields) > 0:
-                for field in extra_fields:
-                    msg = 'Excess field {} should not be in {}' \
+            for field in extra_fields:
+                match_insensitive = optional_case_map.get(field.lower(), None)
+
+                if match_insensitive:
+                    LOGGER.info('Found optional field #{}.{}'
+                                .format(table, match_insensitive))
+
+                    if field != match_insensitive:
+                        msg = 'Capitalization in #{} field {} corrected to' \
+                              ' {}'.format(table, field, match_insensitive)
+                        self.warnings.append((1000, msg, fields_line))
+
+                        self.extcsv[table][match_insensitive] = \
+                            self.extcsv[table].pop(field)
+                else:
+                    msg = 'Removing excess column #{}.{}' \
                           .format(field, table)
-                    LOGGER.error(msg)
                     self.warnings.append((4, msg, fields_line))
                     del self.extcsv[table][field]
-                LOGGER.debug('Removing excess columns from {}'.format(table))
 
             LOGGER.debug('Successfully validated table {}'.format(table))
 
