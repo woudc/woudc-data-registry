@@ -165,8 +165,8 @@ class ExtendedCSV(object):
                 LOGGER.debug('Found new table {}'.format(parent_table))
                 ln, fields = next(lines)
                 while is_empty_line(fields):
-                    msg = 'Unexpected empty line at line {}'.format(ln)
-                    self.warnings.append((8, msg))
+                    msg = 'Unexpected empty line'
+                    self.warnings.append((8, msg, ln))
                     ln, fields = next(lines)
 
                 self.init_table(parent_table, fields, line_num)
@@ -191,7 +191,8 @@ class ExtendedCSV(object):
 
             if len(values) == 0:
                 msg = 'Empty table {}'.format(table)
-                self.warnings.append((140, msg))
+                line = self._line_num[table]
+                self.warnings.append((140, msg, line))
             elif len(values) == 1:
                 for field in body.keys():
                     body[field] = _typecast_value(field, body[field][0])
@@ -239,9 +240,8 @@ class ExtendedCSV(object):
         fillins = len(fields) - len(values)
 
         if fillins < 0:
-            msg = 'Data row at line {} has more values than table columns' \
-                      .format(line_num)
-            self.warnings.append((7, msg))
+            msg = 'Data row has more values than table columns'
+            self.warnings.append((7, msg, line_num))
 
         values.extend([''] * fillins)
         values = values[:len(fields)]
@@ -284,11 +284,11 @@ class ExtendedCSV(object):
 
         if len(present_tables) == 0:
             msg = 'No core metadata tables found. Not an Extended CSV file'
-            self.errors.append((161, msg))
+            self.errors.append((161, msg, None))
         else:
             for missing in missing_tables:
                 msg = 'Missing required table: {}'.format(missing)
-                self.errors.append((1, msg))
+                self.errors.append((1, msg, None))
 
         if self.errors:
             msg = 'Not an Extended CSV file'
