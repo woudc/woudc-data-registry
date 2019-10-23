@@ -388,6 +388,22 @@ class ExtendedCSV(object):
         :returns: The datestamp converted to a datetime object.
         """
 
+        separators = re.findall('[^\w\d]', datestamp)
+        bad_seps = set(separators) - set('-')
+
+        for separator in bad_seps:
+            msg = '#{}.Date separator \'{}\' corrected to \'-\' (hyphen)' \
+                  .format(table, separator)
+            self.warnings.append((17, msg, line_num))
+
+            datestamp = datestamp.replace(separator, '-')
+
+        if '-' not in datestamp:
+            msg = '#{}.Date missing separator. Proper date format is' \
+                  ' YYYY-MM-DD'.format(table)
+            self.errors.append((18, msg, line_num))
+            raise ValueError(msg)
+
         tokens = datestamp.split('-')
         if len(tokens) < 3:
             msg = '#{}.Date incomplete'.format(table)
