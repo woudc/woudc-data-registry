@@ -465,8 +465,41 @@ class ExtendedCSV(object):
         :returns: The value converted to expected UTCOffset format.
         """
 
-        # Currently a stub, but will be validated later.
-        return utcoffset
+        sign = '(\+|-)'
+        delim = '[^-\+\w\d]'
+        number = '([\d]{1,2})'
+        template = '^{sign}{num}{delim}{num}{delim}{num}$' \
+                   .format(sign=sign, num=number, delim=delim)
+        match = re.findall(template, utcoffset)
+
+        if len(match) == 1:
+            sign, hour, _, minute, _, second = match[0]
+
+            try:
+                magnitude = time(int(hour), int(minute), int(second))
+                return = '{}{}'.format(sign, magnitude)
+            except (ValueError, TypeError) as err:
+                msg = 'Improperly formatted #{}.UTCOffset {}: {}' \
+                      .format(table, str(err))
+                self.errors.append((24, msg, line_num))
+                raise ValueError(msg)
+
+        template = '^{sign}[0]+{delim}?[0]+{delim}?[0]+' \
+                   .format(sign=sign, delim=delim)
+        match = re.findall(template, utcoffset)
+
+        if len(match) == 1:
+            msg = '{}.UTCOffset is a series of zeroes, correcting to' \
+                  ' +00:00:00'.format(table_name)
+            LOGGER.warning(msg)
+            self.warnings.append((23, msg, values_line))
+
+            return '+00:00:00'
+
+        msg = 'Improperly formatted #{}.UTCOffset {}' \
+              .format(table, utcoffset)
+        self.errors.append((24, msg, values_line))
+        raise ValueError(msg)
 
     def gen_woudc_filename(self):
         """generate WOUDC filename convention"""
