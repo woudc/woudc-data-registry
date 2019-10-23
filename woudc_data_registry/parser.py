@@ -44,6 +44,7 @@
 # =================================================================
 
 import os
+import re
 import sys
 
 import csv
@@ -373,8 +374,11 @@ class ExtendedCSV(object):
 
     def parse_datestamp(self, table, datestamp, line_num):
         """
-        Attempt to convert the raw string <datestamp> into a datetime object,
-        return the datetime object if successful else raise a ValueError.
+        Return a date object representing the date contained in string
+        <datestamp> according to the expected YYYY-MM-DD format.
+
+        Corrects common formatting errors and performs very simple validation
+        checks. Raises ValueError if the string cannot be parsed.
 
         The other parameters are used for error reporting.
 
@@ -384,7 +388,52 @@ class ExtendedCSV(object):
         :returns: The datestamp converted to a datetime object.
         """
 
-        return datetime.strptime(datestamp, '%Y-%m-%d').date()
+        tokens = datestamp.split('-')
+        if len(tokens) < 3:
+            msg = '#{}.Date incomplete'.format(table)
+            self.errors.append((22, msg, line_num))
+            raise ValueError(msg)
+        elif len(tokens) > 3:
+            msg = '#{}.Date has too many separators'.format(table)
+            self.errors.append((23, msg, line_num))
+            raise ValueError(msg)
+
+        year = month = day = None
+
+        try:
+            year = int(sections[0])
+        except ValueError:
+            msg = '#{}.Date year contains invalid characters'.format(table)
+            self.errors.append((24, msg, line_num))
+        try:
+            month = int(sections[1])
+        except ValueError:
+            msg = '#{}.Date month contains invalid characters'.format(table)
+            self.errors.append((24, msg, line_num))
+        try:
+            day = int(sections[2])
+        except ValueError:
+            msg = '#{}.Date year contains invalid characters'.format(table)
+            self.errors.append((24, msg, line_num))
+
+        present_year = datetime.now().year
+        if year is not None and year not in range(1940, present_year + 1):
+            msg = '#{}.Date year is not within allowable range' \
+                  '[1940]-[PRESENT]'.format(table)
+            self.warnings.append(msg)
+        if month is not None and month not in range(1, 12 + 1):
+            msg = '#{}.Date month is not within allowable range' \
+                  '[01]-[12]'.format(table)
+            self.warnings.append(msg)
+        if day is not None and day not in range(1, 31 + 1):
+            msg = '#{}.Date day is not within allowable range' \
+                  '[01]-[31]'.format(table)
+            self.warnings.append(msg)
+
+        if None in [year, month, day]:
+            raise ValueError('')
+        else:
+            return datetime.strptime(datestamp, '%Y-%m-%d').date()
 
     def parse_utcoffset(self, table, utcoffset, line_num):
         """
