@@ -174,21 +174,6 @@ class ExtendedCSV(object):
                 msg = 'Unrecognized data {}'.format(','.join(row))
                 self.errors.append((9, msg, line_num))
 
-        for table, body in self.extcsv.items():
-            arbitrary_column, values = next(iter(body.items()))
-
-            if len(values) == 0:
-                msg = 'Empty table {}'.format(table)
-                line = self._line_num[table]
-                self.warnings.append((140, msg, line))
-            elif len(values) == 1:
-                for field in body.keys():
-                    body[field] = self.typecast_value(field, body[field][0])
-            else:
-                for field in body.keys():
-                    body[field] = list(map(
-                        lambda val: self.typecast_value(field, val), body[field]))
-
         if len(self.errors) > 0:
             raise NonStandardDataError(self.errors)
 
@@ -625,6 +610,29 @@ class ExtendedCSV(object):
                     line = self._line_num[table] + 1
                     self.warnings.append((4, msg, line))
 
+        for table in present_tables:
+            body = self.extcsv[table]
+            arbitrary_column, values = next(iter(body.items()))
+
+            start_line = self._line_num[table]
+            values_line = start_line + 2
+
+            if len(values) == 0:
+                msg = 'Empty table {}'.format(table)
+                line = self._line_num[table]
+                self.warnings.append((140, msg, start_line))
+            elif len(values) == 1:
+                for field in body.keys():
+                    body[field] = self.typecast_value(table, field,
+                                                      body[field][0],
+                                                      values_line)
+            else:
+                for field in body.keys():
+                    body[field] = list(map(
+                        lambda val: self.typecast_value(table, field, val,
+                                                        values_line),
+                        body[field]))
+
         if len(self.errors) == 0:
             LOGGER.debug('All tables in file validated.')
         else:
@@ -758,6 +766,28 @@ class ExtendedCSV(object):
                 LOGGER.warning('Optional table {} is not in file.'.format(
                                table))
 
+        for table in present_tables:
+            body = self.extcsv[table]
+            arbitrary_column, values = next(iter(body.items()))
+
+            start_line = self._line_num[table]
+            values_line = start_line + 2
+
+            if len(values) == 0:
+                msg = 'Empty table {}'.format(table)
+                line = self._line_num[table]
+                self.warnings.append((140, msg, start_line))
+            elif len(values) == 1:
+                for field in body.keys():
+                    body[field] = self.typecast_value(table, field,
+                                                      body[field][0],
+                                                      values_line)
+            else:
+                for field in body.keys():
+                    body[field] = list(map(
+                        lambda val: self.typecast_value(table, field, val,
+                                                        values_line),
+                        body[field]))
 
 class NonStandardDataError(Exception):
     """custom exception handler"""
