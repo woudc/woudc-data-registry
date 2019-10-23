@@ -121,6 +121,27 @@ def str2bool(value):
     return value2
 
 
+def parse_integer_range(bounds_string):
+    """
+    Returns an integer lower bound and upper bound of the range defined within
+    <bounds_string>. Formats accepted include 'n', 'n+', and 'm-n'.
+
+    :param bounds_string: String representing a range of integers
+    :return: Pair of integer lower bound and upper bound on the range
+    """
+
+    if bounds_string.endswith('+'):
+        lower_bound = int(bounds_string[:-1])
+        upper_bound = float('inf')
+    elif bounds_string.count('-') == 1:
+        lower_bound, upper_bound = map(int, bounds_string.split('-'))
+    else:
+        lower_bound = int(bounds_string)
+        upper_bound = lower_bound
+
+    return (lower_bound, upper_bound)
+
+
 def is_text_file(file_):
     """
     detect if file is of type text

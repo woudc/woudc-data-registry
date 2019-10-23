@@ -56,6 +56,7 @@ from io import StringIO
 from datetime import datetime, time
 from collections import OrderedDict
 
+from woudc_data_registry.util import parse_integer_range
 
 LOGGER = logging.getLogger(__name__)
 
@@ -584,6 +585,22 @@ class ExtendedCSV(object):
         else:
             LOGGER.debug('No missing metadata tables.')
 
+        for table_type, schema in DOMAINS['Common'].items():
+            count = self._table_count[table_type]
+            schema = DOMAINS['Common'][table_type]
+
+            lower, upper = parse_integer_range(str(schema['occurrences']))
+            if count < lower:
+                msg = 'At least {} occurrencess of table #{} are required' \
+                      .format(lower, table)
+                line = self._line_num[table_type + '_' + str(table_count)]
+                self.errors.append((1000, msg, line))
+            elif count > upper:
+                msg = 'Cannot have more than {} occurrences of #{}' \
+                      .format(upper, table_type)
+                line = self.line_num[table_type + '_' + str(upper + 1)]
+                self.errors.append((26, msg, line))
+
         for table, definitions in DOMAINS['Common'].items():
             required = definitions.get('required', ())
             optional = definitions.get('optional', ())
@@ -747,6 +764,24 @@ class ExtendedCSV(object):
                   .format(dataset, ', '.join(missing_tables))
             self.errors.append((1, msg, None))
 
+        for table_type in schema.keys():
+            if table_type not in self._table_count:
+                continue
+            count = self._table_count[table_type]
+
+            lower, upper = parse_integer_range(
+                str(schema[table_type]['occurrences']))
+            if table_type in required_tables and count < lower:
+                msg = 'At least {} occurrencess of table #{} are required' \
+                      .format(lower, table)
+                line = self._line_num[table_type + '_' + str(table_count)]
+                self.errors.append((1000, msg, line))
+            if count > upper:
+                msg = 'Cannot have more than {} occurrences of #{}' \
+                      .format(upper, table_type)
+                line = self.line_num[table_type + '_' + str(upper + 1)]
+                self.errors.append((26, msg, line))
+
         for table in present_tables:
             table_type = table.rstrip('0123456789_')
 
@@ -815,10 +850,11 @@ class ExtendedCSV(object):
             if table_type not in optional_tables:
                 msg = 'Excess table {} does not belong in {} file: removing' \
                       .format(table, dataset)
+                LOGGER.warning(msg)
                 self.warnings.append((2, msg, None))
                 del self.extcsv[table]
 
-        for table in optional_tables:
+        for table in optional:
             if table not in self.extcsv:
                 LOGGER.warning('Optional table {} is not in file.'.format(
                                table))

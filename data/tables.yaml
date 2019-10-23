@@ -1,12 +1,16 @@
 ---
 Common:
   CONTENT:
+    rows: 1
+    occurrences: 1
     required:
       - Class
       - Category
       - Level
       - Form
   DATA_GENERATION:
+    rows: 1
+    occurrences: 1
     required:
       - Date
       - Agency
@@ -14,6 +18,8 @@ Common:
     optional:
       - ScientificAuthority
   PLATFORM:
+    rows: 1
+    occurrences: 1
     required:
       - Type
       - ID
@@ -22,16 +28,22 @@ Common:
     optional:
       - GAW_ID
   INSTRUMENT:
+    rows: 1
+    occurrences: 1
     required:
       - Name
       - Model
       - Number
   LOCATION:
+    rows: 1
+    occurrences: 1
     required:
       - Latitude
       - Longitude
       - Height
   TIMESTAMP:
+    rows: 1
+    occurrences: 1+
     required:
       - UTCOffset
       - Date
@@ -43,11 +55,15 @@ Datasets:
       1:
         1:
           DIFFUSE:
+            rows: 1+
+            occurrences: 1+
             required:
               - Time
               - Irradiance
         2:
           GLOBAL:
+            rows: 1+
+            occurrences: 1+
             required:
               - Time
               - Irradiance
@@ -55,6 +71,8 @@ Datasets:
     1.0:
       1:
         OZONE_SUMMARY:
+          rows: 1
+          occurrences: 1+
           required:
             - Altitudes
             - MinAltitude
@@ -65,6 +83,8 @@ Datasets:
             - EndTime
             - PulsesAveraged
         OZONE_PROFILE:
+          rows: 1+
+          occurrences: 1+
           required:
             - Altitude
             - OzoneDensity
@@ -77,6 +97,8 @@ Datasets:
       1:
         1:
           GLOBAL:
+            rows: 1+
+            occurrences: 1
             required:
               - Wavelength
               - S-Irradiance
@@ -84,6 +106,8 @@ Datasets:
               - SZA
         2:
           SIMULTANEOUS:
+            rows: 1+
+            occurrences: 1
             required:
               - Wavelength
               - GLS-Irradiance
@@ -96,6 +120,8 @@ Datasets:
     1.0:
       1:
         FLIGHT_SUMMARY:
+          rows: 1
+          occurrences: 1
           required:
             - IntegratedO3
             - CorrectionCode
@@ -107,6 +133,8 @@ Datasets:
             - Instrument
             - Number
         PROFILE:
+          rows: 1+
+          occurrences: 1
           required:
             - Pressure
             - O3PartialPressure
@@ -119,6 +147,8 @@ Datasets:
             - RelativeHumidity
             - SampleTemperature
         AUXILIARY_DATA:
+          rows: 1
+          occurrences: 0-1
           optional:
             - MeteoSonde
             - ib1
@@ -128,11 +158,15 @@ Datasets:
             - SampleTemperatureType
             - MinutesGroundO3
         PUMP_CORRECTION:
+          rows: 1+
+          occurrences: 0-1
           optional:
             - Pressure
             - Correction
       2:
         FLIGHT_SUMMARY:
+          rows: 1
+          occurrences: 1
           required:
             - IntegratedO3
             - CorrectionCode
@@ -141,6 +175,8 @@ Datasets:
             - BackgroundCorrection
             - SampleTemperatureType
         PROFILE:
+          rows: 1+
+          occurrences: 1
           required:
             - Duration
             - Pressure
@@ -159,10 +195,14 @@ Datasets:
             - Longitude
             - Height
         PUMP_CORRECTION:
+          rows: 1+
+          occurrences: 0-1
           optional:
             - Pressure
             - PumpCorrectionFactor
         PREFLIGHT_SUMMARY:
+          rows: 1
+          occurrences: 0-1
           optional:
             - Ib0
             - ib1
@@ -172,16 +212,22 @@ Datasets:
             - PumpFlowRate
             - OzoneSondeResponseTime
         RADIOSONDE:
+          rows: 1
+          occurrences: 0-1
           optional:
             - Manufacturer
             - Model
             - Number
         INTERFACE_CARD:
+          rows: 1
+          occurrences: 0-1
           optional:
             - Manufacturer
             - Model
             - Number
         SAMPLING_METHOD:
+          rows: 1
+          occurrences: 0-1
           optional:
             - TypeOzoneFreeAir
             - CorrectionWettingFlow
@@ -193,11 +239,15 @@ Datasets:
             - GroundEquipment
             - ProcessingSoftware
         PUMP_SETTINGS:
+          rows: 1
+          occurrences: 0-1
           optional:
             - MotorCurrent
             - HeadPressure
             - VacuumPressure
         OZONE_REFERENCE:
+          rows: 1
+          occurrences: 0-1
           optional:
             - Name
             - Model
@@ -211,6 +261,8 @@ Datasets:
     1.0:
       1:
         VEHICLE:
+          rows: 1
+          occurrences: 1
           required:
             - Type
             - Name
@@ -218,22 +270,30 @@ Datasets:
             - ExperimenterFlightID
             - ParachuteData
         FLIGHT_SUMMARY:
+          rows: 1
+          occurrences: 1
           required:
             - AltitudeResolution
             - MinAltitude
             - MaxAltitude
         OZONE_SUMMARY:
+          rows: 1
+          occurrences: 1
           required:
             - IntegratedRocketO3
             - IntegratedBalloonO3
             - CrossoverAltitude
             - ResidualO3
         AUXILIARY_DATA:
+          rows: 1
+          occurrences: 1
           required:
             - AirDensityDataSource
             - SourceID
             - BalloonOzoneSondeFlightID
         OZONE_PROFILE:
+          rows: 1+
+          occurrences: 1
           required:
             - Altitude
             - OzoneColDensity
@@ -248,6 +308,8 @@ Datasets:
     1.0:
       1:
         DAILY:
+          rows: 1+
+          occurrences: 1
           required:
             - Date
             - WLCode
@@ -261,12 +323,16 @@ Datasets:
             - mMu
             - ColumnSO2
         MONTHLY:
+          rows: 1
+          occurrences: 0-1
           optional:
             - Date
             - ColumnO3
             - StdDevO3
             - Npts
         SAOZ_DATA_V2:
+          rows: 1+
+          occurrences: 0-1
           optional:
             - Date
             - Jday
@@ -282,6 +348,8 @@ Datasets:
     1.0:
       1:
         OBSERVATIONS:
+          rows: 1+
+          occurrences: 1
           required:
             - Time
             - WLCode
@@ -297,6 +365,8 @@ Datasets:
             - TempC
             - F324
         DAILY_SUMMARY:
+          rows: 1
+          occurrences: 1
           required:
             - WLCode
             - ObsCode
@@ -308,6 +378,8 @@ Datasets:
       1:
         1:
           GLOBAL_SUMMARY:
+            rows: 1
+            occurrences: 1+
             required:
               - Time
               - IntACGIH
@@ -324,6 +396,8 @@ Datasets:
               - Err_SO2
               - F324
           GLOBAL:
+            rows: 1+
+            occurrences: 1+
             required:
               - Wavelength
               - S-Irradiance
@@ -332,6 +406,8 @@ Datasets:
               - SZA
         2:
           GLOBAL_SUMMARY_NSF:
+            rows: 1
+            occurrences: 1+
             required:
               - Filename
               - Volume
@@ -343,6 +419,8 @@ Datasets:
               - E320-400
               - UVIndex
           GLOBAL:
+            rows: 1+
+            occurrences: 1
             required:
               - Wavelength
               - S-Irradiance
@@ -352,12 +430,9 @@ Datasets:
   UmkehrN14:
     1.0:
       1:
-        TIMESTAMP_2:
-          required:
-            - UTCOffset
-            - Date
-            - Time
-        "#N14_VALUES":
+        #N14_VALUES:
+          rows: 1+
+          occurrences: 1
           required:
             - Date
             - H
@@ -383,12 +458,9 @@ Datasets:
             - W
     2.0:
       1:
-        TIMESTAMP_2:
-          required:
-            - UTCOffset
-            - Date
-            - Time
         C_PROFILE:
+          rows: 1+
+          occurrences: 1
           required:
             - Date
             - H
