@@ -175,14 +175,23 @@ class ExtendedCSV(object):
                     self._table_count[parent_table] = updated_count
                     parent_table += '_' + str(updated_count)
 
-                LOGGER.debug('Found new table {}'.format(parent_table))
-                ln, fields = next(lines)
-                while is_empty_line(fields):
-                    msg = 'Unexpected empty line'
-                    self.warnings.append((8, msg, ln))
+                try:
+                    LOGGER.debug('Found new table {}'.format(parent_table))
                     ln, fields = next(lines)
 
-                self.init_table(parent_table, fields, line_num)
+                    while is_empty_line(fields):
+                        msg = 'Unexpected empty line between table name' \
+                              ' and fields'
+                        LOGGER.warning(msg)
+                        self.warnings.append((8, msg, ln))
+
+                        ln, fields = next(lines)
+
+                    self.init_table(parent_table, fields, line_num)
+                except StopIteration:
+                    msg = 'Table {} has no fields'.format(parent_table)
+                    LOGGER.error(msg)
+                    self.errors.append((6, msg, line_num))
             elif len(row) > 0 and row[0].startswith('*'):  # comment
                 LOGGER.debug('Found comment')
                 parent_table = None
