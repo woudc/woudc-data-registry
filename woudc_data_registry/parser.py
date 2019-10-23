@@ -465,11 +465,23 @@ class ExtendedCSV(object):
         :returns: The value converted to expected UTCOffset format.
         """
 
-        sign = '(\+|-)'
+        separators = re.findall('[^-\+\w\d]', utcoffset)
+        bad_seps = set(separators) - set(':')
+
+        for separator in bad_seps:
+            msg = '#{}.UTCOffset separator \'{}\' corrected to \':\'' \
+                  ' (colon)'.format(table, separator)
+            self.warnings.append((1000, msg, line_num))
+            utcoffset = utcoffset.replace(separator, ':')
+
+        sign = '(\+|-|\+-)?'
         delim = '[^-\+\w\d]'
-        number = '([\d]{1,2})'
-        template = '^{sign}{num}{delim}{num}{delim}{num}$' \
-                   .format(sign=sign, num=number, delim=delim)
+        mandatory_place = '([\d]{1,2})'
+        optional_place = '({}([\d]{0,2}))?'.format(delim)
+
+        template = '^{sign}{mandatory}{optional}{optional}$' \
+                   .format(sign=sign, mandatory=mandatory_place,
+                           optional=optional_place)
         match = re.findall(template, utcoffset)
 
         if len(match) == 1:
@@ -481,17 +493,38 @@ class ExtendedCSV(object):
                 self.warnings.append((1000, msg, line_num))
                 hour = hour.rjust(2, '0')
 
-            if len(minute) < 2:
+            if not minute:
+                msg = 'Missing #{}.UTCOffset minute, defaulting to 00' \
+                      .format(table)
+                self.warnings.append((1000, msg, line_num))
+                minute = '00'
+            elif len(minute) < 2:
                 msg = '#{}.UTCOffset minute should be 2 digits long' \
                       .format(table)
                 self.warnings.append((1000, msg, line_num))
                 minute = minute.rjust(2, '0')
 
-            if len(second) < 2:
+            if not second:
+                msg = 'Missing #{}.UTCOffset second, defaulting to 00' \
+                      .format(table)
+                self.warnings.append((1000, msg, values_line))
+                second = '00'
+            elif len(second) < 2:
                 msg = '#{}.UTCOffset second should be 2 digits long' \
                       .format(table)
                 self.warnings.append((1000, msg, line_num))
                 second = second.rjust(2, '0')
+
+            if not sign:
+                msg = 'Missing sign in #{}.UTCOffset, default to +' \
+                      .format(table)
+                self.warnings.append((1000, msg, line_num))
+                sign = '+'
+            elif sign == '+-':
+                msg = 'Invalid sign {} in #{}.UTCOffset, correcting to {}' \
+                      .format(sign, table, '-')
+                self.warnings.append((1000, msg, line_num))
+                sign = '-'
 
             try:
                 magnitude = time(int(hour), int(minute), int(second))
@@ -502,7 +535,7 @@ class ExtendedCSV(object):
                 self.errors.append((24, msg, line_num))
                 raise ValueError(msg)
 
-        template = '^{sign}[0]+{delim}?[0]+{delim}?[0]+' \
+        template = '^{sign}[0]+{delim}?[0]*{delim}?[0]*' \
                    .format(sign=sign, delim=delim)
         match = re.findall(template, utcoffset)
 
