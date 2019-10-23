@@ -128,7 +128,8 @@ class Process(object):
             LOGGER.info('Parsing data record')
             self.extcsv = ExtendedCSV(data)
             LOGGER.info('Validating Extended CSV')
-            self.extcsv.validate_metadata()
+            self.extcsv.validate_metadata_tables()
+            self.extcsv.validate_dataset_tables()
             LOGGER.info('Valid Extended CSV')
         except NonStandardDataError as err:
             self.status = 'failed'
@@ -647,51 +648,6 @@ class Process(object):
                 self.warnings.append((77, msg, values_line))
 
         return all([lat_ok, lon_ok])
-
-    def check_timestamp(self, index):
-        table_name = 'TIMESTAMP' if index == 1 else 'TIMESTAMP_' + str(index)
-        utcoffset = self.extcsv.extcsv[table_name]['UTCOffset']
-
-        delim = '([^\*])'
-        number = '([\d]){1,2}'
-        utcoffset_match = re.findall('^(\+|-){num}{delim}{num}{delim}{num}$'
-                                     .format(num=number, delim=delim),
-                                     utcoffset)
-
-        values_line = self.extcsv.line_num['TIMESTAMP'] + 2
-        if len(utcoffset_match) == 1:
-            sign, hour, delim1, minute, delim2, second = utcoffset_match[0]
-
-            try:
-                magnitude = time(int(hour), int(minute), int(second))
-                final_offset = '{}{}'.format(sign, magnitude)
-                self.extcsv.extcsv[table_name]['UTCOffset'] = final_offset
-                return True
-            except (ValueError, TypeError):
-                raise
-#                msg = 'Improperly formatted #{}.UTCOffset {}' \
-#                      .format(table_name, utcoffset)
-#                LOGGER.error(msg)
-#                self.errors.append((24, msg, values_line))
-#                return False
-
-        zero = '([0])'
-        utcoffset_match = re.findall('^(\+|-)[0]+{delim}?[0]*{delim}?[0]*$'
-                                     .format(delim=delim), utcoffset)
-        if len(utcoffset_match) == 1:
-            msg = '{}.UTCOffset is a series of zeroes, correcting to' \
-                  ' +00:00:00'.format(table_name)
-            LOGGER.warning(msg)
-            self.warnings.append((23, msg, values_line))
-
-            self.extcsv.extcsv[table_name]['UTCOffset'] = '+00:00:00'
-            return True
-                
-        msg = 'Improperly formatted #{}.UTCOffset {}' \
-              .format(table_name, utcoffset)
-        LOGGER.error(msg)
-        self.errors.append((24, msg, values_line))
-        return False
 
     def check_content_consistency(self):
         dataset = self.extcsv.extcsv['CONTENT']['Category']

@@ -576,7 +576,7 @@ class ExtendedCSV(object):
 
         return filename
 
-    def validate_metadata(self):
+    def validate_metadata_tables(self):
         """validate core metadata tables and fields"""
 
         missing_tables = [table for table in DOMAINS['Common']
@@ -625,13 +625,12 @@ class ExtendedCSV(object):
                     line = self._line_num[table] + 1
                     self.warnings.append((4, msg, line))
 
-        self.check_dataset()
         if len(self.errors) == 0:
             LOGGER.debug('All tables in file validated.')
         else:
             raise MetadataValidationError('Invalid metadata', self.errors)
 
-    def check_dataset(self):
+    def validate_dataset_tables(self):
         tables = DOMAINS['Datasets']
         curr_dict = tables
         fields_line = self._line_num['CONTENT'] + 1
