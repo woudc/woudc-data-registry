@@ -280,7 +280,8 @@ class ExtendedCSV(object):
     def parse_timestamp(self, table, timestamp, line_num):
         """
         Return a time object representing the time contained in string
-        <timestamp> according to the expected HH:mm:SS format.
+        <timestamp> according to the expected HH:mm:SS format with optional
+        'am' or 'pm' designation.
 
         Corrects common formatting errors and performs very simple validation
         checks. Raises ValueError if the string cannot be parsed.
@@ -292,6 +293,22 @@ class ExtendedCSV(object):
         :param line_num: Line number where the value was found.
         :returns: The timestamp converted to a time object.
         """
+
+        if timestamp[-2] in ['am', 'pm']:
+            noon_indicator = timestamp[-2:]
+            timestamp = timestamp[:-2].strip()
+        else:
+            noon_indicator = None
+
+        separators = re.findall('[^\w\d]', timestamp)
+        bad_seps = set(separators) - set(':')
+
+        for separator in bad_seps:
+            msg = '#{}.Time separator \'{}\' corrected to \':\' (colon)' \
+                  .format(table, separator)
+            self.warnings.append((15, msg, line_num))
+
+            timestamp = timestamp.replace(separator, ':')
 
         tokens = value.split(':')
         hour = tokens[0] or '00'
@@ -316,18 +333,37 @@ class ExtendedCSV(object):
             msg = '#{}.Time second contains invalid characters'.format(table)
             self.errors.append((16, msg, line_num))
 
-        if hour_numeric is not None and hour_numeric not in range(0, 24):
-            msg = '#{}.Time hour is not within allowable range [00]-[23]' \
-                  .format(table)
-            self.warnings.append((12, msg, line_num))
-        if minute_numeric is not None and minute_numeric not in range(0, 60):
-            msg = '#{}.Time minute is not within allowable range [00]-[59]' \
-                  .format(table)
-            self.warnings.append((13, msg, line_num))
+        if noon_indicator == 'am' and hour == 12:
+            msg = '#{}.Time corrected from 12-hour clock to 24-hour' \
+                  ' YYYY-mm-dd format'.format(table)
+            self.warnings.append((11, msg, line_num))
+            hour = 0
+        elif noon_indicator == 'pm' and hour != 12:
+             msg = '#{}.Time corrected from 12-hour clock to 24-hour' \
+                  ' YYYY-mm-dd format'.format(table)
+            self.warnings.append((11, msg, line_num))
+            hour += 12
+
         if second_numeric is not None and second_numeric not in range(0, 60):
             msg = '#{}.Time second is not within allowable range [00]-[59]' \
                   .format(table)
             self.warnings.append((14, msg, line_num))
+
+            while second_numeric >= 60 and minute_numeric is not None:
+                second_numeric -= 60
+                minute_numeric += 1
+        if minute_numeric is not None and minute_numeric not in range(0, 60):
+            msg = '#{}.Time minute is not within allowable range [00]-[59]' \
+                  .format(table)
+            self.warnings.append((13, msg, line_num))
+
+            while minute_numeric >= 60 and hour_numeric is not None:
+                minute_numeric -= 60
+                hour_numeric += 1
+        if hour_numeric is not None and hour_numeric not in range(0, 24):
+            msg = '#{}.Time hour is not within allowable range [00]-[23]' \
+                  .format(table)
+            self.warnings.append((12, msg, line_num))
 
         if None in [hour_numeric, minute_numeric, second_numeric]:
             raise ValueError('Validation errors found in timestamp {}'
