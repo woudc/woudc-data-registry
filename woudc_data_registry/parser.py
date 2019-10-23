@@ -182,11 +182,11 @@ class ExtendedCSV(object):
                 self.warnings.append((140, msg, line))
             elif len(values) == 1:
                 for field in body.keys():
-                    body[field] = _typecast_value(field, body[field][0])
+                    body[field] = self.typecast_value(field, body[field][0])
             else:
                 for field in body.keys():
                     body[field] = list(map(
-                        lambda val: _typecast_value(field, val), body[field]))
+                        lambda val: self.typecast_value(field, val), body[field]))
 
         if len(self.errors) > 0:
             raise NonStandardDataError(self.errors)
@@ -236,7 +236,7 @@ class ExtendedCSV(object):
         for field, value in zip(fields, values):
             self.extcsv[table_name][field].append(value)
 
-    def _typecast_value(self, table, field, value, line_num):
+    def typecast_value(self, table, field, value, line_num):
         """
         Returns a copy of the string <value> converted to the expected type
         for a column named <field> in table <table>, if possible, or returns
@@ -255,11 +255,12 @@ class ExtendedCSV(object):
         lowered_field = field.lower()
 
         try:
-            if lowered_field == 'date':
-                return datetime.strptime(value, '%Y-%m-%d').date()
-            elif lowered_field == 'time':
-                hour, minute, second = [int(v) for v in value.split(':')]
-                return time(hour, minute, second)
+            if lowered_field == 'time':
+                return self.parse_timestamp(table, value, line_num)
+            elif lowered_field == 'date':
+                return self.parse_datestamp(table, value, line_num)
+            elif lowered_field == 'utcoffset':
+                return self.parse_utcoffset(table, value, line_num)
         except Exception as err:
             msg = 'Failed to parse #{}.{} value {} due to: {}' \
                   .format(table, field, value, str(err))
@@ -275,6 +276,54 @@ class ExtendedCSV(object):
                 return int(value)
         except Exception:  # Default type to string
             return value
+
+    def parse_timestamp(self, table, timestamp, line_num):
+        """
+        Attempt to convert the raw string <timestamp> into a time object,
+        return the time object if successful else raise a ValueError.
+
+        The other parameters are used for error reporting.
+
+        :param table: Name of table the value was found under.
+        :param timestamp: String value taken from a Time column.
+        :param line_num: Line number where the value was found.
+        :returns: The timestamp converted to a time object.
+        """
+
+        hour, minute, second = [int(v) for v in value.split(':')]
+        return time(hour, minute, second)
+
+    def parse_datestamp(self, table, datestamp, line_num):
+        """
+        Attempt to convert the raw string <datestamp> into a datetime object,
+        return the datetime object if successful else raise a ValueError.
+
+        The other parameters are used for error reporting.
+
+        :param table: Name of table the value was found under.
+        :param datestamp: String value taken from a Date column.
+        :param line_num: Line number where the value was found.
+        :returns: The datestamp converted to a datetime object.
+        """
+
+        return datetime.strptime(datestamp, '%Y-%m-%d').date()
+
+    def parse_utcoffset(self, table, utcoffset, line_num):
+        """
+        Validates the raw string <utcoffset>, converting it to the expected
+        format defined by the regular expression (+|-)\d\d:\d\d:\d\d if
+        possible. Returns the converted value or else raises a ValueError.
+
+        The other parameters are used for error reporting.
+
+        :param table: Name of table the value was found under.
+        :param utcoffset: String value taken from a UTCOffset column.
+        :param line_num: Line number where the value was found.
+        :returns: The value converted to expected UTCOffset format.
+        """
+
+        # Currently a stub, but will be validated later.
+        return utcoffset
 
     def gen_woudc_filename(self):
         """generate WOUDC filename convention"""
