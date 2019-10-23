@@ -102,7 +102,7 @@ def _typecast_value(field, value):
         return value
 
 
-def is_empty_line(line):
+def non_content_line(line):
     """
     Returns True iff <line> represents a non-content line of an Extended CSV
     file, i.e. a blank line or a comment.
@@ -110,9 +110,11 @@ def is_empty_line(line):
 
     if len(line) == 0:
         return True
-    else:
+    elif len(line) == 1:
         first = line[0].strip()
         return len(first) == 0 or first.startswith('*')
+    else:
+        return line[0].strip().startswith('*')
 
 
 class ExtendedCSV(object):
@@ -179,7 +181,7 @@ class ExtendedCSV(object):
                     LOGGER.debug('Found new table {}'.format(parent_table))
                     ln, fields = next(lines)
 
-                    while is_empty_line(fields):
+                    while non_content_line(fields):
                         msg = 'Unexpected empty line between table name' \
                               ' and fields'
                         LOGGER.warning(msg)
@@ -194,14 +196,11 @@ class ExtendedCSV(object):
                     self.errors.append((6, msg, line_num))
             elif len(row) > 0 and row[0].startswith('*'):  # comment
                 LOGGER.debug('Found comment')
-                parent_table = None
                 continue
-            elif len(row) == 0:  # blank line
+            elif not non_content_line(row):  # blank line
                 LOGGER.debug('Found blank line')
-                parent_table = None
                 continue
-            elif parent_table is not None \
-                 and any(map(lambda col: len(col) > 0, row)):
+            elif parent_table is not None and not non_content_line(row):
                 table_values = row
                 self.add_values_to_table(parent_table, table_values, line_num)
             else:
