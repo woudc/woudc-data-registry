@@ -55,7 +55,7 @@ from datetime import datetime, time
 from woudc_data_registry import config, registry, search
 from woudc_data_registry.models import (Contributor, DataRecord, Dataset,
                                         Deployment, Instrument, Project,
-                                        Station)
+                                        Station, StationName)
 from woudc_data_registry.parser import (DOMAINS, ExtendedCSV,
                                         MetadataValidationError,
                                         NonStandardDataError)
@@ -314,6 +314,35 @@ class Process(object):
         deployment = Deployment(deployment_model)
         self.registry.save(deployment)
 
+    def add_station_name(self, bypass=False):
+        station_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
+        station_name = self.extcsv.extcsv['PLATFORM']['Name']
+        name_id = '{}:{}'.format(station_id, station_name)
+
+        if bypass:
+            LOGGER.info('Bypass mode. Skipping permission check')
+            permission = True
+        else:
+            response = input('Station name {} not found. Add? [y/n] '
+                             .format(name_id))
+            permission = response.lower() in ['y', 'yes']
+
+        if not permission:
+            return False
+        else:
+            observation_time = self.extcsv.extcsv['TIMESTAMP']['Time']
+            model = {
+                'identifier': name_id,
+                'station_id': station_id,
+                'name': station_name,
+                'first_seen': observation_time,
+                'last_seen': observation_time
+            }
+
+            station_name_object = StationName(model)
+            self.registry.save(station_name_object)
+            return True
+
     def add_instrument(self, verify_only):
         name = self.extcsv.extcsv['INSTRUMENT']['Name']
         model = str(self.extcsv.extcsv['INSTRUMENT']['Model'])
@@ -389,7 +418,7 @@ class Process(object):
         dataset_model = {'identifier': dataset}
 
         fields = ['identifier']
-        response = self.registry.query_mutliple_fields(Dataset, dataset_model,
+        response = self.registry.query_multiple_fields(Dataset, dataset_model,
                                                        fields, fields)
         if response:
             LOGGER.debug('Match found for dataset {}'.format(dataset))
@@ -417,7 +446,7 @@ class Process(object):
         result = self.registry.query_multiple_fields(Contributor, contributor,
                                                      fields, fields)
         if result:
-            contributor_name = result.identifier.split(':')[0]
+            contributor_name = result.acronym
             self.extcsv.extcsv['DATA_GENERATION']['Agency'] = contributor_name
 
             LOGGER.debug('Match found for contributor ID {}'
@@ -487,14 +516,17 @@ class Process(object):
             self.errors.append((128, msg, values_line))
 
         LOGGER.debug('Validating station name...')
-        fields = ['identifier', 'name']
-        result = self.registry.query_multiple_fields(Station, station,
-                                                     fields, ['name'])
-        name_ok = bool(result)
+        model = {'station_id': identifier, 'name': station['name']}
+        response = self.registry.query_multiple_fields(StationName, model,
+                                                       model.keys(), ['name'])
+        name_ok = bool(response)
         if name_ok:
-            self.extcsv.extcsv['PLATFORM']['Name'] = name = result.name
+            self.extcsv.extcsv['PLATFORM']['Name'] = name = response.name
             LOGGER.debug('Validated with name {} for id {}'.format(
                 name, identifier))
+        elif add_station_name():
+            LOGGER.info('Added new station name {}'.format(station['name']))
+            name_ok = True
         else:
             msg = 'Station name: {} did not match data for id: {}' \
                   .format(name, identifier)
