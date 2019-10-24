@@ -110,12 +110,6 @@ class Process(object):
 
         LOGGER.info('Processing file {}'.format(infile))
         LOGGER.info('Detecting file')
-        if not is_text_file(infile):
-            self.status = 'failed'
-            self.code = 'NonStandardDataError'
-            self.message = 'binary file detected'
-            LOGGER.error('Unknown file: {}'.format(self.message))
-            return False
 
         try:
             data = read_file(infile)
@@ -138,7 +132,7 @@ class Process(object):
             self.status = 'failed'
             self.code = 'NonStandardDataError'
             self.message = err
-            LOGGER.error('Invalid Extended CSV: {}'.format(err))
+            LOGGER.error('Invalid Extended CSV: {}'.format(str(err)).strip())
             return False
         except MetadataValidationError as err:
             self.status = 'failed'
@@ -215,7 +209,7 @@ class Process(object):
 
         if not instrument_ok:
             old_serial = str(self.extcsv.extcsv['INSTRUMENT']['Number'])
-            new_serial = old_serial.lstrip('0')
+            new_serial = old_serial.lstrip('0') or '0'
             LOGGER.debug('Attempting to search instrument serial number {}'
                          .format(new_serial))
 
@@ -307,11 +301,12 @@ class Process(object):
         project = self.extcsv.extcsv['CONTENT']['Class']
         date = self.extcsv.extcsv['TIMESTAMP']['Date']
 
+        contributor_in = ':'.join([agency, project])
         deployment_id = ':'.join([station, agency, project])
         deployment_model = {
             'identifier': deployment_id,
             'station_id': station,
-            'contributor_id': agency,
+            'contributor_id': contributor_id,
             'start_date': date,
             'end_date': date
         }
@@ -391,10 +386,14 @@ class Process(object):
         dataset = self.extcsv.extcsv['CONTENT']['Category']
 
         LOGGER.debug('Validating dataset {}'.format(dataset))
-        self.datasets = self.registry.query_distinct(Dataset.identifier)
+        dataset_model = {'identifier': dataset}
 
-        if dataset in self.datasets:
+        fields = ['identifier']
+        response = self.registry.query_mutliple_fields(Dataset, dataset_model,
+                                                       fields, fields)
+        if response:
             LOGGER.debug('Match found for dataset {}'.format(dataset))
+            self.extcsv.extcsv['CONTENT']['Category'] = response.identifier
             return True
         else:
             msg = 'Dataset {} not found in registry'.format(dataset)
@@ -441,14 +440,24 @@ class Process(object):
 
         # TODO: consider adding and checking #PLATFORM_Type
         LOGGER.debug('Validating station {}:{}'.format(identifier, name))
+        values_line = self.extcsv.line_num('PLATFORM') + 2
 
-        if pl_type == 'SHP' and any([not country, country == '*IW']):
-            self.extcsv.extcsv['PLATFORM']['Country'] = country = 'XY'
-
-            msg = 'Ship #PLATFORM.Country = *IW corrected to Country = XY' \
-                  ' to meet ISO-3166 standards'
+        water_codes = ['*IW', 'IW', 'XZ']
+        if pl_type == 'SHP' and any([not country, country in waters_codes]):
+            msg = 'Ship #PLATFORM.Country = \'{}\' corrected to \'XY\'' \
+                  ' to meet ISO-3166 standards'.format(country)
             line = self.extcsv.line_num('PLATFORM') + 2
             self.warnings.append((105, msg, line))
+
+            self.extcsv.extcsv['PLATFORM']['Country'] = country = 'XY'
+
+        if len(identifier) < 3:
+            msg = '#PLATFORM.ID {} is too short: left-padding with zeros' \
+                  .format(identifier)
+            self.warnings.append((1000, msg, values_line))
+
+            identifier = identifier.rjust(3, '0')
+            self.extcsv.extcsv['PLATFORM']['ID'] = identifier
 
         station = {
             'identifier': identifier,
@@ -458,10 +467,9 @@ class Process(object):
         }
 
         LOGGER.debug('Validating station id...')
-        values_line = self.extcsv.line_num('PLATFORM') + 2
-        result = self.registry.query_by_field(Station, 'identifier',
-                                              identifier)
-        if result:
+        response = self.registry.query_by_field(Station, 'identifier',
+                                                identifier)
+        if response:
             LOGGER.debug('Validated station with id: {}'.format(identifier))
         else:
             msg = 'Station {} not found in registry'.format(identifier)
@@ -494,14 +502,15 @@ class Process(object):
 
         LOGGER.debug('Validating station country...')
         fields = ['identifier', 'country_id']
-        result = self.registry.query_multiple_fields(Station, station,
-                                                     fields, ['country_id'])
-        country_ok = bool(result)
+        response = self.registry.query_multiple_fields(Station, station,
+                                                       fields, ['country_id'])
+        country_ok = bool(response)
         if country_ok:
-            country = result.country
-            self.extcsv.extcsv['PLATFORM']['Country'] = country
-            LOGGER.debug('Validated with country: {} for id: {}'
-                         .format(country, identifier))
+            country = response.country
+            self.extcsv.extcsv['PLATFORM']['Country'] = country.identifier
+            LOGGER.debug('Validated with country: {} ({}) for id: {}'
+                         .format(country.country_name, country.identifier,
+                                 identifier))
         else:
             msg = 'Station country: {} did not match data for id: {}' \
                   .format(country, identifier)
@@ -529,7 +538,7 @@ class Process(object):
                 deployment.start_date = date
                 self.registry.save()
                 LOGGER.debug('Deployment start date updated.')
-            elif deployment.end_date < date:
+            elif deployment.end_date and deployment.end_date < date:
                 deployment.end_date = date
                 self.registry.save()
                 LOGGER.debug('Deployment end date updated.')
@@ -625,31 +634,37 @@ class Process(object):
             height_ok = True
         except ValueError:
             msg = '#LOCATION.Height contains invalid characters'
-            self.warning.append((75, msg, values_line))
+            self.warnings.append((75, msg, values_line))
             height_numeric = None
             height_ok = False
 
-        if instrument_id is not None:
+        station_type = self.extcsv.extcsv['PLATFORM'].get('Type', 'STN')
+        if not all([lat_ok, lon_ok]):
+            return False
+        elif station_type == 'SHP':
+            LOGGER.debug('Not validating shipboard instrument location')
+            return True
+        elif instrument_id is not None:
             result = self.registry.query_by_field(Instrument, 'identifier',
                                                   instrument_id)
             if not result:
                 return True
 
             instrument = result[0]
-            if all([lat_numeric is not None, instrument.y is not None,
-                    abs(lat_numeric - instrument.y) >= 1]):
+            if lat_numeric is not None and instrument.y is not None \
+               and abs(lat_numeric - instrument.y) >= 1:
                 lat_ok = False
                 msg = '#LOCATION.Latitude in file does not match database'
                 LOGGER.error(msg)
                 self.errors.append((77, msg, values_line))
-            if all([lon_numeric is not None, instrument.x is not None,
-                    abs(lon_numeric - instrument.x) >= 1]):
+            if lon_numeric is not None and instrument.x is not None \
+               and abs(lon_numeric - instrument.x) >= 1:
                 lon_ok = False
                 msg = '#LOCATION.Longitude in file does not match database'
                 LOGGER.error(msg)
                 self.errors.append((77, msg, values_line))
-            if all([height_numeric is not None, instrument.z is not None,
-                    abs(height_numeric - instrument.z) >= 1]):
+            if height_numeric is not None and instrument.z is not None \
+               and abs(height_numeric - instrument.z) >= 1:
                 height_ok = False
                 msg = '#LOCATION.Height in file does not match database'
                 self.warnings.append((77, msg, values_line))
