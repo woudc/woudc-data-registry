@@ -578,15 +578,20 @@ class Process(object):
 
     def check_instrument(self):
         name = self.extcsv.extcsv['INSTRUMENT']['Name']
-        model = str(self.extcsv.extcsv['INSTRUMENT']['Model'])
-        serial = str(self.extcsv.extcsv['INSTRUMENT']['Number'])
+        model = self.extcsv.extcsv['INSTRUMENT']['Model']
+        serial = self.extcsv.extcsv['INSTRUMENT']['Number']
         station = str(self.extcsv.extcsv['PLATFORM']['ID'])
         dataset = self.extcsv.extcsv['CONTENT']['Category']
 
         if not name or name.lower() in ['na', 'n/a']:
             self.extcsv.extcsv['INSTRUMENT']['Name'] = name = 'UNKNOWN'
-        if not model or model.lower() in ['na', 'n/a']:
-            self.extcsv.extcsv['INSTRUMENT']['Model'] = model = 'UNKNOWN'
+        if not model or str(model).lower() in ['na', 'n/a']:
+            self.extcsv.extcsv['INSTRUMENT']['Model'] = model = 'na'
+        if not serial or str(serial).lower() in ['na', 'n/a']:
+            self.extcsv.extcsv['INSTRUMENT']['Number'] = serial = 'na'
+
+        model = str(model)
+        serial = str(serial)
 
         values_line = self.extcsv.line_num('INSTRUMENT') + 2
         if name == 'UNKNOWN':
