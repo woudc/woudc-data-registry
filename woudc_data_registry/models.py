@@ -49,6 +49,7 @@ import logging
 import click
 import csv
 import json
+import codecs
 from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
                         Float, Enum, ForeignKey, Integer, String, Time,
                         UniqueConstraint)
@@ -340,6 +341,32 @@ class Station(base):
         return 'Station ({}, {})'.format(self.identifier, self.name)
 
 
+class StationName(base):
+    """ Data Registry Station Alternative Name """
+
+    __tablename__ = 'station_names'
+    __table_args__ = (UniqueConstraint('identifier'),)
+
+    identifier = Column(String, primary_key=True)
+    station_id = Column(String, ForeignKey('stations.identifier'),
+                        nullable=False)
+    name = Column(String, nullable=False)
+
+    first_seen = Column(Date, nullable=False)
+    last_seen = Column(Date, nullable=True)
+
+    def __init__(self, dict_):
+        self.identifier = dict_['identifier']
+        self.station_id = dict_['station_id']
+        self.name = dict_['name']
+
+        self.first_seen = dict_['first_seen']
+        self.last_seen = dict_.get('last_seen', None)
+
+    def __repr__(self):
+        return 'Station name ({}, {})'.format(self.station_id, self.name)
+
+
 class Deployment(base):
     """Data Registry Deployment"""
 
@@ -607,6 +634,42 @@ class DataRecord(base):
         return 'DataRecord({}, {})'.format(self.identifier, self.url)
 
 
+def unpack_station_names(rows):
+    """
+    Collects CSV data on station names from the iterable <rows>
+    and returns an iterable of station name records.
+
+    Station names that are equivalent but appear separately in the input
+    (e.g. the same name in multiple capitalizations and/or encodings)
+    are corrected and start/end dates adjusted accordingly.
+
+    :param rows: Iterable of rows of CSV input data.
+    :returns: Iterable of station name records (dictionaries).
+    """
+
+    tracker = {}
+    decode_hex = codecs.getdecoder('hex_codec')
+
+    for row in rows:
+        name = row['name']
+        station = row['station_id']
+
+        if name.startswith('\\x'):
+            name = decode_hex(name[2:])[0].decode('utf-8')
+            row['name'] = name
+            row['identifier'] = ':'.join([row['station_id'], name])
+        if name not in tracker:
+            tracker[name] = row
+        else:
+            tracker[name]['first_seen'] = min(tracker[name]['first_seen'],
+                                              row['first_seen'])
+            tracker[name]['last_seen'] = '' \
+                if '' in [tracker[name]['last_seen'], row['last_seen']] \
+                else max(tracker[name]['last_seen'], row['last_seen'])
+
+    return tracker.values()
+
+
 @click.group()
 def admin():
     """System administration"""
@@ -665,6 +728,7 @@ def init(ctx, datadir):
     contributors = os.path.join(datadir, 'contributors.csv')
     stations = os.path.join(datadir, 'stations.csv')
     ships = os.path.join(datadir, 'ships.csv')
+    station_names = os.path.join(datadir, 'station-names.csv')
     datasets = os.path.join(datadir, 'datasets.csv')
     projects = os.path.join(datadir, 'projects.csv')
     instruments = os.path.join(datadir, 'instruments.csv')
@@ -724,6 +788,16 @@ def init(ctx, datadir):
                     row[field] = None
             ship = Station(row)
             registry_.save(ship)
+
+    with open(station_names) as csvfile:
+        reader = csv.DictReader(csvfile)
+        records = unpack_station_names(reader)
+        for obj in records:
+            for field in obj:
+                if obj[field] == '':
+                    obj[field] = None
+            station_name = StationName(obj)
+            registry_.save(station_name)
 
     click.echo('Loading instruments metadata')
     with open(instruments) as csvfile:
