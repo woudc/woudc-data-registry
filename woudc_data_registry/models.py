@@ -129,6 +129,7 @@ class Contributor(base):
 
     identifier = Column(String, primary_key=True)
     name = Column(String, nullable=False)
+    acronym = Column(String, nullable=False)
     country_id = Column(String, ForeignKey('countries.identifier'),
                         nullable=False)
     project = Column(String, nullable=False, default='WOUDC')
@@ -151,6 +152,7 @@ class Contributor(base):
 
         self.identifier = dict_['identifier']
         self.name = dict_['name']
+        self.acronym = dict_['acronym']
         self.country_id = dict_['country_id']
         self.project = dict_['project']
         self.wmo_region_id = dict_['wmo_region_id']
@@ -368,7 +370,8 @@ class Deployment(base):
             else:
                 self.start_date = datetime.datetime.strptime(
                     dict_['start_date'], '%Y-%m-%d').date()
-            if isinstance(dict_['end_date'], datetime.date):
+            if dict_['end_date'] is None \
+               or isinstance(dict_['end_date'], datetime.date):
                 self.end_date = dict_['end_date']
             else:
                 self.end_date = datetime.datetime.strptime(
