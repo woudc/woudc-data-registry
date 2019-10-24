@@ -1,0 +1,502 @@
+---
+Common:
+  CONTENT:
+    rows: 1
+    occurrences: 1
+    required:
+      - Class
+      - Category
+      - Level
+      - Form
+  DATA_GENERATION:
+    rows: 1
+    occurrences: 1
+    required:
+      - Date
+      - Agency
+      - Version
+    optional:
+      - ScientificAuthority
+  PLATFORM:
+    rows: 1
+    occurrences: 1
+    required:
+      - Type
+      - ID
+      - Name
+      - Country
+    optional:
+      - GAW_ID
+  INSTRUMENT:
+    rows: 1
+    occurrences: 1
+    required:
+      - Name
+      - Model
+    optional:
+      - Number
+  LOCATION:
+    rows: 1
+    occurrences: 1
+    required:
+      - Latitude
+      - Longitude
+    optional:
+      - Height
+  TIMESTAMP:
+    rows: 1
+    occurrences: 1+
+    required:
+      - UTCOffset
+      - Date
+    optional:
+      - Time
+Datasets:
+  Broad-band:
+    1.0:
+      1:
+        1:
+          DIFFUSE:
+            rows: 1+
+            occurrences: 1+
+            required:
+              - Time
+            optional:
+              - Irradiance
+        2:
+          GLOBAL:
+            rows: 1+
+            occurrences: 1+
+            required:
+              - Time
+            optional:
+              - Irradiance
+  Lidar:
+    1.0:
+      1:
+        OZONE_SUMMARY:
+          rows: 1
+          occurrences: 1+
+          required:
+            - Altitudes
+            - MinAltitude
+            - MaxAltitude
+            - StartDate
+            - StartTime
+          optional:
+            - EndDate
+            - EndTime
+            - PulsesAveraged
+        OZONE_PROFILE:
+          rows: 1+
+          occurrences: 1+
+          required:
+            - Altitude
+            - OzoneDensity
+            - StandardError
+            - RangeResolution
+          optional:
+            - AirDensity
+            - Temperature
+  Multi-band:
+    1.0:
+      1:
+        1:
+          GLOBAL:
+            rows: 1+
+            occurrences: 1
+            required:
+              - Wavelength
+              - S-Irradiance
+              - Time
+            optional:
+              - SZA
+        2:
+          SIMULTANEOUS:
+            rows: 1+
+            occurrences: 1
+            required:
+              - Wavelength
+              - Time
+            optional:
+              - GLS-Irradiance
+              - DFS-Irradiance
+              - DRS-Irradiance
+              - Airmass
+              - SZA
+  OzoneSonde:
+    1.0:
+      1:
+        FLIGHT_SUMMARY:
+          rows: 1
+          occurrences: 1
+          optional:
+            - IntegratedO3
+            - CorrectionCode
+            - SondeTotalO3
+            - CorrectionFactor
+            - TotalO3
+            - WLCode
+            - ObsType
+            - Instrument
+            - Number
+        PROFILE:
+          rows: 1+
+          occurrences: 1
+          optional:
+            - Pressure
+            - O3PartialPressure
+            - Temperature
+            - WindSpeed
+            - WindDirection
+            - LevelCode
+            - Duration
+            - GPHeight
+            - RelativeHumidity
+            - SampleTemperature
+        AUXILIARY_DATA:
+          rows: 1
+          occurrences: 0-1
+          optional:
+            - MeteoSonde
+            - ib1
+            - ib2
+            - PumpRate
+            - BackgroundCorr
+            - SampleTemperatureType
+            - MinutesGroundO3
+        PUMP_CORRECTION:
+          rows: 1+
+          occurrences: 0-1
+          optional:
+            - Pressure
+            - Correction
+      2:
+        FLIGHT_SUMMARY:
+          rows: 1
+          occurrences: 1
+          required:
+            - IntegratedO3
+            - SondeTotalO3
+            - BackgroundCorrection
+            - SampleTemperatureType
+          optional:
+            - CorrectionCode
+            - NormalizationFactor
+
+        PROFILE:
+          rows: 1+
+          occurrences: 1
+          required:
+            - Duration
+            - Pressure
+            - O3PartialPressure
+            - Temperature
+            - WindSpeed
+            - WindDirection
+            - LevelCode
+            - GPHeight
+            - RelativeHumidity
+            - SampleTemperature
+            - SondeCurrent
+            - Latitude
+            - Longitude
+          optional:
+            - PumpMotorCurrent
+            - PumpMotorVoltage
+            - Height
+        PUMP_CORRECTION:
+          rows: 1+
+          occurrences: 0-1
+          optional:
+            - Pressure
+            - PumpCorrectionFactor
+        PREFLIGHT_SUMMARY:
+          rows: 1
+          occurrences: 0-1
+          optional:
+            - Ib0
+            - ib1
+            - ib2
+            - SolutionType
+            - SolutionVolume
+            - PumpFlowRate
+            - OzoneSondeResponseTime
+        RADIOSONDE:
+          rows: 1
+          occurrences: 0-1
+          optional:
+            - Manufacturer
+            - Model
+            - Number
+        INTERFACE_CARD:
+          rows: 1
+          occurrences: 0-1
+          optional:
+            - Manufacturer
+            - Model
+            - Number
+        SAMPLING_METHOD:
+          rows: 1
+          occurrences: 0-1
+          optional:
+            - TypeOzoneFreeAir
+            - CorrectionWettingFlow
+            - SurfaceOzone
+            - DurationSurfaceOzoneExposure
+            - LengthBG
+            - WMOTropopausePressure
+            - BurstOzonePressure
+            - GroundEquipment
+            - ProcessingSoftware
+        PUMP_SETTINGS:
+          rows: 1
+          occurrences: 0-1
+          optional:
+            - MotorCurrent
+            - HeadPressure
+            - VacuumPressure
+        OZONE_REFERENCE:
+          rows: 1
+          occurrences: 0-1
+          optional:
+            - Name
+            - Model
+            - Number
+            - Version
+            - TotalO3
+            - WLCode
+            - ObsType
+            - UTC_Mean
+  RocketSonde:
+    1.0:
+      1:
+        VEHICLE:
+          rows: 1
+          occurrences: 1
+          required:
+            - Type
+            - Name
+            - RocketID
+            - ExperimenterFlightID
+            - ParachuteData
+        FLIGHT_SUMMARY:
+          rows: 1
+          occurrences: 1
+          required:
+            - AltitudeResolution
+            - MinAltitude
+            - MaxAltitude
+        OZONE_SUMMARY:
+          rows: 1
+          occurrences: 1
+          required:
+            - IntegratedRocketO3
+            - IntegratedBalloonO3
+            - CrossoverAltitude
+            - ResidualO3
+        AUXILIARY_DATA:
+          rows: 1
+          occurrences: 1
+          required:
+            - AirDensityDataSource
+            - SourceID
+            - BalloonOzoneSondeFlightID
+        OZONE_PROFILE:
+          rows: 1+
+          occurrences: 1
+          required:
+            - Altitude
+          optional:
+            - OzoneColDensity
+            - OzoneNumDensity
+            - RelativeError
+            - VolMixingRatio
+            - MassMixingRatio
+            - AirPressure
+            - Temperature
+            - AirDensity
+  TotalOzone:
+    1.0:
+      1:
+        DAILY:
+          rows: 1+
+          occurrences: 1
+          required:
+            - Date
+          optional:
+            - WLCode
+            - ObsCode
+            - ColumnO3
+            - StdDevO3
+            - UTC_Begin
+            - UTC_End
+            - UTC_Mean
+            - nObs
+            - mMu
+            - ColumnSO2
+        MONTHLY:
+          rows: 1
+          occurrences: 0-1
+          optional:
+            - Date
+            - ColumnO3
+            - StdDevO3
+            - Npts
+        SAOZ_DATA_V2:
+          rows: 1+
+          occurrences: 0-1
+          optional:
+            - Date
+            - Jday
+            - O3sr
+            - O3ss
+            - dO3sr
+            - dO3ss
+            - NO2sr
+            - NO2ss
+            - dNO2sr
+            - dNO2ss
+  TotalOzoneObs:
+    1.0:
+      1:
+        OBSERVATIONS:
+          rows: 1+
+          occurrences: 1
+          required:
+            - Time
+            - WLCode
+            - ObsCode
+            - Airmass
+            - ColumnO3
+          optional:
+            - StdDevO3
+            - ColumnSO2
+            - StdDevSO2
+            - ZA
+            - NdFilter
+            - TempC
+            - F324
+        DAILY_SUMMARY:
+          rows: 1
+          occurrences: 1
+          required:
+            - WLCode
+            - ObsCode
+            - nObs
+            - MeanO3
+          optional:
+            - StdDevO3
+  Spectral:
+    1.0:
+      1:
+        1:
+          GLOBAL_SUMMARY:
+            rows: 1
+            occurrences: 1+
+            required:
+              - Time
+              - IntACGIH
+            optional:
+              - IntCIE
+              - ZenAngle
+              - MuValue
+              - AzimAngle
+              - Flag
+              - TempC
+              - O3
+              - Err_O3
+              - SO2
+              - Err_SO2
+              - F324
+          GLOBAL:
+            rows: 1+
+            occurrences: 1+
+            required:
+              - Wavelength
+              - S-Irradiance
+            optional:
+              - Time
+              - SZA
+        2:
+          GLOBAL_SUMMARY_NSF:
+            rows: 1
+            occurrences: 1+
+            required:
+              - Filename
+              - Volume
+              - SZA
+              - Azimuth
+              - Minimum_useable_wavelength
+              - E290-320
+              - E320-400
+              - UVIndex
+            optional:
+              - Sky_condition
+          GLOBAL:
+            rows: 1+
+            occurrences: 1
+            required:
+              - Wavelength
+              - S-Irradiance
+              - Time
+            optional:
+              - SZA
+  UmkehrN14:
+    1.0:
+      1:
+        #N14_VALUES:
+          rows: 1+
+          occurrences: 1
+          required:
+            - Date
+            - H
+            - WLCode
+            - ObsCode
+            - ColumnO3
+          optional:
+            - L
+            - W
+            - N600
+            - N650
+            - N700
+            - N740
+            - N750
+            - N770
+            - N800
+            - N830
+            - N840
+            - N850
+            - N865
+            - N880
+            - N890
+            - N900
+    2.0:
+      1:
+        C_PROFILE:
+          rows: 1+
+          occurrences: 1
+          required:
+            - Date
+            - H
+            - L
+            - ColumnO3Obs
+            - ColumnO3Retr
+            - Layer10
+            - Layer9
+            - Layer8
+            - Layer7
+            - Layer6
+            - Layer5
+            - Layer4
+            - Layer3
+            - Layer2
+            - Layer1
+            - ITER
+            - SX
+            - SZA_1
+            - nSZA
+            - DFMRS
+            - FEPS
+            - RMSRES
+...

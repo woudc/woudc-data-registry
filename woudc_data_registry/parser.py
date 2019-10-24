@@ -61,8 +61,10 @@ from woudc_data_registry.util import parse_integer_range
 LOGGER = logging.getLogger(__name__)
 
 PROJECT_ROOT = '/home/hurkaa/conda-woudc-data-registry'
-table_definition_file = os.path.join(PROJECT_ROOT, 'data', 'tables.yaml')
-with open(table_definition_file) as table_definitions:
+tables_file = 'tables_backfilling.yaml'
+
+table_definition_path = os.path.join(PROJECT_ROOT, 'data', tables_file)
+with open(table_definition_path) as table_definitions:
     DOMAINS = yaml.safe_load(table_definitions)
 
 ERROR_CODES = {
