@@ -86,13 +86,15 @@ class Process(object):
         self.process_end = None
         self.registry = registry.Registry()
 
-    def process_data(self, infile, verify_only=False, bypass=False):
+    def process_data(self, infile, core_only=False,
+                     verify_only=False, bypass=False):
         """
-        process incoming data record
+        Process incoming data record.
 
-        :param infile: incoming filepath
-        :param verify_only: perform verification only (no ingest)
-        :param bypass: skip permission prompts
+        :param infile: Path to incoming data file.
+        :param core_only: Whether to only verify core metadata tables.
+        :param verify_only: Whether to perform verification only (not ingest).
+        :param bypass: Whether to skip permission prompts to add records.
 
         :returns: `bool` of processing result
         """
@@ -129,7 +131,8 @@ class Process(object):
             self.extcsv = ExtendedCSV(data)
             LOGGER.info('Validating Extended CSV')
             self.extcsv.validate_metadata_tables()
-            self.extcsv.validate_dataset_tables()
+            if not core_only:
+                self.extcsv.validate_dataset_tables()
             LOGGER.info('Valid Extended CSV')
         except NonStandardDataError as err:
             self.status = 'failed'
@@ -248,6 +251,10 @@ class Process(object):
                     platform_ok, deployment_ok, instrument_ok,
                     location_ok, content_ok, data_generation_ok]):
             return False
+
+        if core_only:
+            msg = 'Core mode detected. NOT validating dataset-specific tables'
+            LOGGER.info(msg)
 
         LOGGER.info('Validating data record')
         self.data_record = DataRecord(self.extcsv)
