@@ -46,6 +46,7 @@
 
 import os
 import re
+import yaml
 
 import shutil
 import logging
@@ -56,12 +57,17 @@ from woudc_data_registry import config, registry, search
 from woudc_data_registry.models import (Contributor, DataRecord, Dataset,
                                         Deployment, Instrument, Project,
                                         Station, StationName)
-from woudc_data_registry.parser import (DOMAINS, ExtendedCSV,
+from woudc_data_registry.parser import (PROJECT_ROOT, DOMAINS, ExtendedCSV,
                                         MetadataValidationError,
                                         NonStandardDataError)
 from woudc_data_registry.util import is_text_file, read_file
 
 LOGGER = logging.getLogger(__name__)
+
+alias_filename = 'aliases.yaml'
+alias_fullpath = os.path.join(PROJECT_ROOT, 'data', alias_filename)
+with open(alias_fullpath) as alias_definitions:
+    ALIASES = yaml.safe_load(alias_definitions)
 
 
 class Process(object):
@@ -208,15 +214,20 @@ class Process(object):
         instrument_ok = self.check_instrument()
 
         if not instrument_ok:
+            # Attempt to fix the serial by left-stripping zeroes
             old_serial = str(self.extcsv.extcsv['INSTRUMENT']['Number'])
             new_serial = old_serial.lstrip('0') or '0'
-            LOGGER.debug('Attempting to search instrument serial number {}'
-                         .format(new_serial))
 
-            self.extcsv.extcsv['INSTRUMENT']['Number'] = new_serial
-            instrument_ok = self.check_instrument()
+            if old_serial != new_serial:
+                LOGGER.debug('Attempting to search instrument serial number' \
+                             ' {}'.format(new_serial))
+
+                self.extcsv.extcsv['INSTRUMENT']['Number'] = new_serial
+                instrument_ok = self.check_instrument()
 
         if not instrument_ok:
+            # Attempt to add a new record with the new serial number
+            # using name and model from the registry
             LOGGER.warning('No instrument with serial {} found in registry'
                            .format(old_serial))
             self.extcsv.extcsv['INSTRUMENT']['Number'] = old_serial
@@ -225,21 +236,37 @@ class Process(object):
             if instrument_ok:
                 msg = 'New instrument serial number added'
                 self.warnings.append((201, msg, None))
-            else:
-                msg = 'Failed to validate instrument against registry'
-                line = self.extcsv.line_num('INSTRUMENT') + 2
-                self.errors.append((139, msg, line))
 
         instrument_args = [self.extcsv.extcsv['INSTRUMENT']['Name'],
             self.extcsv.extcsv['INSTRUMENT']['Model'],
             str(self.extcsv.extcsv['INSTRUMENT']['Number']),
             str(self.extcsv.extcsv['PLATFORM']['ID']),
             self.extcsv.extcsv['CONTENT']['Category']]
-        instrument_id = ':'.join(instrument_args) if instrument_ok else None
-        location_ok = self.check_location(instrument_id)
+        instrument_id = ':'.join(instrument_args)
 
-        content_ok = self.check_content_consistency()
-        data_generation_ok = self.check_data_generation_consistency()
+        if not instrument_ok:
+            # Attempt to force the new instrument name/model into the registry
+            response = input('Instrument {} not found. Add? [y/n] '
+                             .format(instrument_id))
+
+            if response.lower() in ['y', 'yes']:
+                if self.add_instrument(verify_only, force=True):
+                    msg = 'New instrument name, model, and serial added'
+                    self.warnings.append((1000, msg, None))
+
+                    instrument_ok = True
+
+        if instrument_ok:
+            location_ok = self.check_location(instrument_id)
+        else:
+            msg = 'Failed to validate instrument against registry'
+            line = self.extcsv.line_num('INSTRUMENT') + 2
+            self.errors.append((139, msg, line))
+
+            location_ok = False
+
+        content_ok = self.check_content()
+        data_generation_ok = self.check_data_generation()
 
         if not all([project_ok, dataset_ok, contributor_ok,
                     platform_ok, deployment_ok, instrument_ok,
@@ -296,6 +323,12 @@ class Process(object):
         return True
 
     def add_deployment(self):
+        """
+        Record in the data registry that the #DATA_GENERATION.Agency in the
+        instance's Extended CSV source is deployed at the station referred
+        to by the file's #PLATFORM.ID.
+        """
+
         station = str(self.extcsv.extcsv['PLATFORM']['ID'])
         agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
         project = self.extcsv.extcsv['CONTENT']['Class']
@@ -315,6 +348,15 @@ class Process(object):
         self.registry.save(deployment)
 
     def add_station_name(self, bypass=False):
+        """
+        Record in the data registry that the station referred to in the
+        instance's Extended CSV source's #PLATFORM.ID has the file's
+        #PLATFORM.Name as an alternative name.
+
+        :param bypass: Whether to skip permission checks to add the name.
+        :returns: Whether the operation was successful.
+        """
+
         station_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
         station_name = self.extcsv.extcsv['PLATFORM']['Name']
         name_id = '{}:{}'.format(station_id, station_name)
@@ -343,7 +385,23 @@ class Process(object):
             self.registry.save(station_name_object)
             return True
 
-    def add_instrument(self, verify_only):
+    def add_instrument(self, verify_only, force=False):
+        """
+        Record the instrument metadata in the instance's source file
+        #INSTRUMENT table in the data registry.
+
+        Unless <force> is true, the operation will only complete if the
+        instrument's name and model are both in the registry already.
+        Returns whether the operation was successful. If <verify_only> is
+        False, then returns if the operation is possible and does not do it.
+
+        :param verify_only: Whether to stop short of inserting data into
+                            the data registry.
+        :param force: Whether to insert if name or model are not found
+                      in the registry.
+        :returns: Whether the operation was successful (or possible).
+        """
+
         name = self.extcsv.extcsv['INSTRUMENT']['Name']
         model = str(self.extcsv.extcsv['INSTRUMENT']['Model'])
         serial = str(self.extcsv.extcsv['INSTRUMENT']['Number'])
@@ -365,17 +423,27 @@ class Process(object):
             'z': location[2]
         }
 
-        fields = ['name', 'model', 'station_id', 'dataset_id']
-        case_insensitive = ['name', 'model']
-        result = self.registry.query_multiple_fields(Instrument, model,
-                                                     fields, case_insensitive)
-        if result:
-            model['name'] = result.name
-            model['model'] = result.model
-            self.extcsv.extcsv['INSTRUMENT']['Name'] = result.name
-            self.extcsv.extcsv['INSTRUMENT']['Model'] = result.model
+        if force:
+            LOGGER.debug('Force-adding instrument. Skipping name/model check')
+            permission = True
+        else:
+            fields = ['name', 'model', 'station_id', 'dataset_id']
+            case_insensitive = ['name', 'model']
+            response = self.registry.query_multiple_fields(Instrument, model,
+                                                           fields,
+                                                           case_insensitive)
+            if response:
+                model['name'] = response.name
+                model['model'] = response.model
+                self.extcsv.extcsv['INSTRUMENT']['Name'] = response.name
+                self.extcsv.extcsv['INSTRUMENT']['Model'] = response.model
 
-            LOGGER.debug('All other instrument data matches.')
+                LOGGER.debug('All other instrument data matches.')
+                permission = True
+            else:
+                permission = False
+
+        if permission:
             LOGGER.info('Adding instrument with new serial number...')
 
             if verify_only:
@@ -390,6 +458,11 @@ class Process(object):
             return False
 
     def check_project(self):
+        """
+        Validates the instance's Extended CSV source file's #CONTENT.Class,
+        and returns True if no errors are found.
+        """
+
         project = self.extcsv.extcsv['CONTENT']['Class']
 
         LOGGER.debug('Validating project {}'.format(project))
@@ -397,7 +470,7 @@ class Process(object):
 
         if not project:
             self.extcsv.extcsv['CONTENT']['Class'] = project = 'WOUDC'
-            msg = 'Missing #CONTENT.Class: default to "WOUDC"'
+            msg = 'Missing #CONTENT.Class: default to \'WOUDC\''
             line = self.extcsv.line_num('CONTENT') + 2
             self.warnings.append((52, msg, line))
 
@@ -412,6 +485,12 @@ class Process(object):
             return False
 
     def check_dataset(self):
+        """
+        Validates the instance's Extended CSV source file's #CONTENT.Category,
+        and returns True if no errors are found.
+
+        Adjusts the Extended CSV contents if necessary to form a match.
+        """
         dataset = self.extcsv.extcsv['CONTENT']['Category']
 
         LOGGER.debug('Validating dataset {}'.format(dataset))
@@ -432,8 +511,26 @@ class Process(object):
             return False
 
     def check_contributor(self):
+        """
+        Validates the instance's Extended CSV source file's
+        #DATA_GENERATION.Agency, and returns True if no errors are found.
+
+        Adjusts the Extended CSV contents if necessary to form a match.
+
+        Prerequisite: #CONTENT.Class is a trusted value.
+        """
+
         agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
         project = self.extcsv.extcsv['CONTENT']['Class']
+
+        if agency in ALIASES['Agency']:
+            msg = 'Correcting agency {} to {} using alias table' \
+                  .format(agency, ALIASES['Agency'][agency])
+            line = self.extcsv.line_num('DATA_GENERATION') + 2
+            self.warnings.append((1000, msg, line))
+
+            agency = ALIASES['Agency'][agency]
+            self.extcsv.extcsv['DATA_GENERATION']['Agency'] = agency
 
         LOGGER.debug('Validating contributor {} under project {}'
                      .format(agency, project))
@@ -461,6 +558,13 @@ class Process(object):
             return False
 
     def check_station(self):
+        """
+        Validates the instance's Extended CSV source file's #PLATFORM table
+        and returns True if no errors are found.
+
+        Adjusts the Extended CSV contents if necessary to form a match.
+        """
+
         identifier = str(self.extcsv.extcsv['PLATFORM']['ID'])
         pl_type = self.extcsv.extcsv['PLATFORM']['Type']
         name = self.extcsv.extcsv['PLATFORM']['Name']
@@ -551,6 +655,18 @@ class Process(object):
         return type_ok and name_ok and country_ok
 
     def check_deployment(self):
+        """
+        Validates the instance's Extended CSV source file's combination of
+        #DATA_GENERATION.Agency and #PLATFORM.ID, and returns True if no
+        errors are found.
+
+        Updates the deployment's start and end date if a match is found.
+
+        Prerequisite: #DATA_GENERATION.Agency,
+                      #PLATFORM_ID, and
+                      #CONTENT.Class are all trusted values.
+        """
+
         station = str(self.extcsv.extcsv['PLATFORM']['ID'])
         agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
         project = self.extcsv.extcsv['CONTENT']['Class']
@@ -577,6 +693,16 @@ class Process(object):
             return True
 
     def check_instrument(self):
+        """
+        Validates the instance's Extended CSV source file's #INSTRUMENT table
+        and returns True if no errors are found.
+
+        Adjusts the Extended CSV contents if necessary to form a match.
+
+        Prerequisite: #PLATFORM.ID and
+                      #CONTENT.Category are all trusted values.
+        """
+
         name = self.extcsv.extcsv['INSTRUMENT']['Name']
         model = self.extcsv.extcsv['INSTRUMENT']['Model']
         serial = self.extcsv.extcsv['INSTRUMENT']['Number']
@@ -626,6 +752,12 @@ class Process(object):
             return True
 
     def check_location(self, instrument_id):
+        """
+        Validates the instance's Extended CSV source file's #LOCATION table
+        against the location of the instrument with ID <instrument_id>
+        and returns True if no errors are found.
+        """
+
         lat = self.extcsv.extcsv['LOCATION']['Latitude']
         lon = self.extcsv.extcsv['LOCATION']['Longitude']
         height = self.extcsv.extcsv['LOCATION'].get('Height', None)
@@ -708,7 +840,17 @@ class Process(object):
 
         return all([lat_ok, lon_ok])
 
-    def check_content_consistency(self):
+    def check_content(self):
+        """
+        Validates the instance's Extended CSV source file's #CONTENT.Level
+        and #CONTENT.Form by comparing them to other tables. Returns
+        True if no errors were encountered.
+
+        Fill is the Extended CSV with missing values if possible.
+
+        Prerequisite: #CONTENT.Category is a trusted value.
+        """
+
         dataset = self.extcsv.extcsv['CONTENT']['Category']
         level = self.extcsv.extcsv['CONTENT']['Level']
         form = self.extcsv.extcsv['CONTENT']['Form']
@@ -763,9 +905,16 @@ class Process(object):
 
         return level_ok and form_ok
 
-    def check_data_generation_consistency(self):
+    def check_data_generation(self):
+        """
+        Validates the instance's Extended CSV source file's
+        #DATA_GENERATION.Date and #DATA_GENERATION.Version by comparison
+        with other tables. Returns True if no errors were encountered.
+
+        Fill is the Extended CSV with missing values if possible.
+        """
+
         date = self.extcsv.extcsv['DATA_GENERATION'].get('Date', None)
-        agency = self.extcsv.extcsv['DATA_GENERATION'].get('Agency', None)
         version = self.extcsv.extcsv['DATA_GENERATION'].get('Version', None)
 
         values_line = self.extcsv.line_num('DATA_GENERATION')
