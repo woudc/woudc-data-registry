@@ -204,7 +204,7 @@ class Process(object):
 
                 msg = 'No deployment {} found in registry' \
                        .format(deployment_id)
-                line = self.extcsv.line_num['PLATFORM'] + 2
+                line = self.extcsv.line_num('PLATFORM') + 2
                 self.errors.append((65, msg, line))
 
         LOGGER.debug('Validating instrument')
@@ -230,7 +230,7 @@ class Process(object):
                 self.warnings.append((201, msg, None))
             else:
                 msg = 'Failed to validate instrument against registry'
-                line = self.extcsv.line_num['INSTRUMENT'] + 2
+                line = self.extcsv.line_num('INSTRUMENT') + 2
                 self.errors.append((139, msg, line))
 
         instrument_args = [self.extcsv.extcsv['INSTRUMENT']['Name'],
@@ -367,7 +367,7 @@ class Process(object):
         if not project:
             self.extcsv.extcsv['CONTENT']['Class'] = project = 'WOUDC'
             msg = 'Missing #CONTENT.Class: default to "WOUDC"'
-            line = self.extcsv.line_num['CONTENT'] + 2
+            line = self.extcsv.line_num('CONTENT') + 2
             self.warnings.append((52, msg, line))
 
         if project in self.projects:
@@ -375,7 +375,7 @@ class Process(object):
             return True
         else:
             msg = 'Project {} not found in registry'.format(project)
-            line = self.extcsv.line_num['CONTENT'] + 2
+            line = self.extcsv.line_num('CONTENT') + 2
 
             self.errors.append((53, msg, line))
             return False
@@ -391,7 +391,7 @@ class Process(object):
             return True
         else:
             msg = 'Dataset {} not found in registry'.format(dataset)
-            line = self.extcsv.line_num['CONTENT'] + 2
+            line = self.extcsv.line_num('CONTENT') + 2
 
             self.errors.append((56, msg, line))
             return False
@@ -420,7 +420,7 @@ class Process(object):
         else:
             msg = 'Contributor {} not found in registry' \
                   .format(contributor['identifier'])
-            line = self.extcsv.line_num['DATA_GENERATION'] + 2
+            line = self.extcsv.line_num('DATA_GENERATION') + 2
 
             self.errors.append((127, msg, line))
             return False
@@ -440,7 +440,7 @@ class Process(object):
 
             msg = 'Ship #PLATFORM.Country = *IW corrected to Country = XY' \
                   ' to meet ISO-3166 standards'
-            line = self.extcsv.line_num['PLATFORM'] + 2
+            line = self.extcsv.line_num('PLATFORM') + 2
             self.warnings.append((105, msg, line))
 
         station = {
@@ -451,7 +451,7 @@ class Process(object):
         }
 
         LOGGER.debug('Validating station id...')
-        values_line = self.extcsv.line_num['PLATFORM'] + 2
+        values_line = self.extcsv.line_num('PLATFORM') + 2
         result = self.registry.query_by_field(Station, 'identifier',
                                               identifier)
         if result:
@@ -540,7 +540,7 @@ class Process(object):
         if not model or model.lower() in ['na', 'n/a']:
             self.extcsv.extcsv['INSTRUMENT']['Model'] = model = 'UNKNOWN'
 
-        values_line = self.extcsv.line_num['INSTRUMENT'] + 2
+        values_line = self.extcsv.line_num('INSTRUMENT') + 2
         if name == 'UNKNOWN':
             msg = '#INSTRUMENT.Name must not be null'
             self.errors.append((72, msg, values_line))
@@ -576,7 +576,7 @@ class Process(object):
         lat = self.extcsv.extcsv['LOCATION']['Latitude']
         lon = self.extcsv.extcsv['LOCATION']['Longitude']
         height = self.extcsv.extcsv['LOCATION'].get('Height', None)
-        values_line = self.extcsv.line_num['LOCATION'] + 2
+        values_line = self.extcsv.line_num('LOCATION') + 2
 
         try:
             lat_numeric = float(lat)
@@ -656,7 +656,7 @@ class Process(object):
 
         level_ok = True
         form_ok = True
-        values_line = self.extcsv.line_num['CONTENT'] + 2
+        values_line = self.extcsv.line_num('CONTENT') + 2
 
         if not level:
             if dataset == 'UmkehrN14' and 'C_PROFILE' in self.extcsv.extcsv:
@@ -709,7 +709,7 @@ class Process(object):
         agency = self.extcsv.extcsv['DATA_GENERATION'].get('Agency', None)
         version = self.extcsv.extcsv['DATA_GENERATION'].get('Version', None)
 
-        values_line = self.extcsv.line_num['DATA_GENERATION']
+        values_line = self.extcsv.line_num('DATA_GENERATION')
 
         if not date:
             msg = 'Missing #DATA_GENERATION.Date, resolved to processing date'

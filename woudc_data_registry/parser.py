@@ -178,6 +178,20 @@ class ExtendedCSV(object):
         if len(self.errors) > 0:
             raise NonStandardDataError(self.errors)
 
+    def line_num(self, table):
+        """
+        Returns the line in the source file at which <table> started.
+        """
+
+        return self._line_num[table]
+
+    def table_count(self, table_type):
+        """
+        Returns the number of tables named <table_type> in the source file.
+        """
+
+        return self._table_count[table_type]
+
     def init_table(self, table_name, fields, line_num):
         """
         Record an empty Extended CSV table named <table_name> with
@@ -586,19 +600,19 @@ class ExtendedCSV(object):
             LOGGER.debug('No missing metadata tables.')
 
         for table_type, schema in DOMAINS['Common'].items():
-            count = self._table_count[table_type]
+            count = self.table_count(table_type)
             schema = DOMAINS['Common'][table_type]
 
             lower, upper = parse_integer_range(str(schema['occurrences']))
             if count < lower:
                 msg = 'At least {} occurrencess of table #{} are required' \
                       .format(lower, table)
-                line = self._line_num[table_type + '_' + str(table_count)]
+                line = self.line_num(table_type + '_' + str(table_count))
                 self.errors.append((1000, msg, line))
             elif count > upper:
                 msg = 'Cannot have more than {} occurrences of #{}' \
                       .format(upper, table_type)
-                line = self.line_num[table_type + '_' + str(upper + 1)]
+                line = self.line_num(table_type + '_' + str(upper + 1))
                 self.errors.append((26, msg, line))
 
         for table, definitions in DOMAINS['Common'].items():
@@ -615,7 +629,7 @@ class ExtendedCSV(object):
             excess_fields = [field for field in provided
                              if field.lower() not in required_case_map]
 
-            start_line = self._line_num[table]
+            start_line = self.line_num(table)
             fields_line = start_line + 1
             values_line = fields_line + 1
 
@@ -653,7 +667,7 @@ class ExtendedCSV(object):
                 else:
                     msg = 'Field name {}.{} is not from approved list' \
                           .format(table, field)
-                    line = self._line_num[table] + 1
+                    line = self.line_num(table) + 1
                     self.warnings.append((4, msg, line))
                     del self.extcsv[table][field]
 
@@ -687,7 +701,7 @@ class ExtendedCSV(object):
             table_type = table.rstrip('0123456789_')
             body = self.extcsv[table]
 
-            start_line = self._line_num[table]
+            start_line = self.line_num(table)
             values_line = start_line + 2
 
             for field, column in body.items():
@@ -707,7 +721,7 @@ class ExtendedCSV(object):
     def validate_dataset_tables(self):
         tables = DOMAINS['Datasets']
         curr_dict = tables
-        fields_line = self._line_num['CONTENT'] + 1
+        fields_line = self.line_num('CONTENT') + 1
 
         for field in ['Category', 'Level', 'Form']:
             key = self.extcsv['CONTENT'][field]
@@ -786,19 +800,19 @@ class ExtendedCSV(object):
         for table_type in schema.keys():
             if table_type not in self._table_count:
                 continue
-            count = self._table_count[table_type]
+            count = self.table_count(table_type)
 
             lower, upper = parse_integer_range(
                 str(schema[table_type]['occurrences']))
             if table_type in required_tables and count < lower:
                 msg = 'At least {} occurrencess of table #{} are required' \
                       .format(lower, table)
-                line = self._line_num[table_type + '_' + str(table_count)]
+                line = self.line_num(table_type + '_' + str(table_count))
                 self.errors.append((1000, msg, line))
             if count > upper:
                 msg = 'Cannot have more than {} occurrences of #{}' \
                       .format(upper, table_type)
-                line = self.line_num[table_type + '_' + str(upper + 1)]
+                line = self.line_num(table_type + '_' + str(upper + 1))
                 self.errors.append((26, msg, line))
 
         for table in present_tables:
@@ -817,7 +831,7 @@ class ExtendedCSV(object):
             extra_fields = [field for field in provided
                             if field.lower() not in required_case_map]
 
-            start_line = self._line_num[table]
+            start_line = self.line_num(table)
             fields_line = start_line + 1
             values_line = fields_line + 1
 
@@ -904,7 +918,7 @@ class ExtendedCSV(object):
             table_type = table.rstrip('0123456789_')
             body = self.extcsv[table]
 
-            start_line = self._line_num[table]
+            start_line = self.line_num(table)
             values_line = start_line + 2
 
             for field, column in body.items():
