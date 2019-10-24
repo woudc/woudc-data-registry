@@ -67,12 +67,6 @@ table_definition_path = os.path.join(PROJECT_ROOT, 'data', tables_file)
 with open(table_definition_path) as table_definitions:
     DOMAINS = yaml.safe_load(table_definitions)
 
-ERROR_CODES = {
-    'missing_table': 10000,
-    'missing_data': 11000,
-    'invalid_data': 12000,
-}
-
 
 def non_content_line(line):
     """
@@ -140,7 +134,7 @@ class ExtendedCSV(object):
                 self.warnings.append((7, msg, line_num))
 
             if len(row) == 1 and row[0].startswith('#'):  # table name
-                parent_table = ''.join(row).lstrip('#').rstrip()
+                parent_table = ''.join(row).lstrip('#').strip()
 
                 if parent_table not in self._table_count:
                     self._table_count[parent_table] = 1
@@ -237,7 +231,7 @@ class ExtendedCSV(object):
         values = values[:len(fields)]
 
         for field, value in zip(fields, values):
-            self.extcsv[table_name][field].append(value)
+            self.extcsv[table_name][field].append(value.strip())
 
     def typecast_value(self, table, field, value, line_num):
         """
@@ -732,19 +726,36 @@ class ExtendedCSV(object):
                 curr_dict = curr_dict[key]
             else:
                 field_name = '#CONTENT.{}'.format(field.capitalize())
-                msg = 'Unknown {} value {}'.format(field_name, key)
-
-                self.errors.append((56, msg, fields_line))
-                return
+                msg = 'Cannot assess dataset table schema:'
+                      ' {} unknown'.format(field_name)
+                self.warnings.append((56, msg, fields_line))
+                return False
 
         if 1 in curr_dict.keys():
             version = self.determine_version(curr_dict)
             LOGGER.info('Identified version as {}'.format(version))
-            self.check_tables(curr_dict[version])
+
+            curr_dict = curr_dict[version]
+
+        if self.check_tables(curr_dict):
+            LOGGER.debug('All dataset tables in file validated')
         else:
-            self.check_tables(curr_dict)
+            raise MetadataValidationError('Dataset tables failed validation',
+                                          self.errors)
 
     def determine_version(self, schema):
+        """
+        Attempt to determine which of multiple possible table definitions
+        contained in <schema> fits the instance's Extended CSV file best,
+        based on which required or optional tables are present.
+
+        Returns the best-fitting version, or raises an error if there is
+        not enough information.
+
+        :param schema: Dictionary with nested dictionaries of
+                       table definitions as values.
+        """
+
         versions = set(schema.keys())
         tables = {version: schema[version].keys() for version in versions}
         uniques = {}
@@ -779,6 +790,8 @@ class ExtendedCSV(object):
                     return version
 
     def check_tables(self, schema):
+        success = True
+
         required_tables = [name for name, body in schema.items()
                            if 'required' in body]
         optional_tables = [name for name, body in schema.items()
@@ -798,6 +811,7 @@ class ExtendedCSV(object):
             msg = 'Missing required table(s) {} for {}' \
                   .format(dataset, ', '.join(missing_tables))
             self.errors.append((1, msg, None))
+            success = False
 
         for table_type in schema.keys():
             if table_type not in self._table_count:
@@ -811,11 +825,13 @@ class ExtendedCSV(object):
                       .format(lower, table)
                 line = self.line_num(table_type + '_' + str(table_count))
                 self.errors.append((1000, msg, line))
+                success = False
             if count > upper:
                 msg = 'Cannot have more than {} occurrences of #{}' \
                       .format(upper, table_type)
                 line = self.line_num(table_type + '_' + str(upper + 1))
                 self.errors.append((26, msg, line))
+                success = False
 
         for table in present_tables:
             table_type = table.rstrip('0123456789_')
@@ -852,9 +868,10 @@ class ExtendedCSV(object):
                     self.extcsv[table][field] = \
                          self.extcsv[table].pop(match_insensitive)
                 else:
-                    msg = 'Missing field {}.{}'.format(table, field)
+                    msg = 'Missing required field {}.{}'.format(table, field)
                     self.errors.append((3, msg, fields_line))
                     self.extcsv[table][field] = null_value
+                    success = False
             if len(missing_fields) > 0:
                 LOGGER.info('Filled missing fields with null string values')
 
@@ -885,6 +902,7 @@ class ExtendedCSV(object):
                         msg = 'Required value #{}.{} is empty' \
                               .format(table, field)
                         self.errors.append((5, msg, line))
+                        success = False
                         break
 
             table_height_range = str(schema[table_type]['rows'])
@@ -893,6 +911,7 @@ class ExtendedCSV(object):
                 if 'required' in schema[table_type]:
                     msg = 'Required table #{} is empty'.format(table)
                     self.errors.append((27, msg, start_line))
+                    success = False
                 else:
                     msg = 'Optional table #{} is empty'.format(table)
                     self.warnings.append((27.5, msg, start_line))
@@ -931,6 +950,8 @@ class ExtendedCSV(object):
                     self.extcsv[table][field] = converted[0]
                 else:
                     self.extcsv[table][field] = converted
+
+        return success
 
 
 class NonStandardDataError(Exception):
