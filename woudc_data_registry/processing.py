@@ -45,13 +45,12 @@
 
 
 import os
-import re
 import yaml
 
 import shutil
 import logging
 
-from datetime import datetime, time
+from datetime import datetime
 
 from woudc_data_registry import config, registry, search
 from woudc_data_registry.models import (Contributor, DataRecord, Dataset,
@@ -60,7 +59,7 @@ from woudc_data_registry.models import (Contributor, DataRecord, Dataset,
 from woudc_data_registry.parser import (PROJECT_ROOT, DOMAINS, ExtendedCSV,
                                         MetadataValidationError,
                                         NonStandardDataError)
-from woudc_data_registry.util import is_text_file, read_file
+from woudc_data_registry.util import read_file
 
 LOGGER = logging.getLogger(__name__)
 
@@ -230,7 +229,7 @@ class Process(object):
                 LOGGER.warning(msg)
 
                 msg = 'No deployment {} found in registry' \
-                       .format(deployment_id)
+                    .format(deployment_id)
                 line = self.extcsv.line_num('PLATFORM') + 2
                 self._error(65, line, msg)
 
@@ -243,7 +242,7 @@ class Process(object):
             new_serial = old_serial.lstrip('0') or '0'
 
             if old_serial != new_serial:
-                LOGGER.debug('Attempting to search instrument serial number' \
+                LOGGER.debug('Attempting to search instrument serial number'
                              ' {}'.format(new_serial))
 
                 self.extcsv.extcsv['INSTRUMENT']['Number'] = new_serial
@@ -261,7 +260,8 @@ class Process(object):
                 msg = 'New instrument serial number added'
                 self._warning(201, None, msg)
 
-        instrument_args = [self.extcsv.extcsv['INSTRUMENT']['Name'],
+        instrument_args = [
+            self.extcsv.extcsv['INSTRUMENT']['Name'],
             self.extcsv.extcsv['INSTRUMENT']['Model'],
             str(self.extcsv.extcsv['INSTRUMENT']['Number']),
             str(self.extcsv.extcsv['PLATFORM']['ID']),
@@ -593,7 +593,7 @@ class Process(object):
         pl_type = self.extcsv.extcsv['PLATFORM']['Type']
         name = self.extcsv.extcsv['PLATFORM']['Name']
         country = self.extcsv.extcsv['PLATFORM']['Country']
-        gaw_id = str(self.extcsv.extcsv['PLATFORM'].get('GAW_ID', '')) or None
+        # gaw_id = self.extcsv.extcsv['PLATFORM'].get('GAW_ID', None)
 
         # TODO: consider adding and checking #PLATFORM_Type
         LOGGER.debug('Validating station {}:{}'.format(identifier, name))
@@ -652,7 +652,7 @@ class Process(object):
             self.extcsv.extcsv['PLATFORM']['Name'] = name = response.name
             LOGGER.debug('Validated with name {} for id {}'.format(
                 name, identifier))
-        elif add_station_name():
+        elif self.add_station_name():
             LOGGER.info('Added new station name {}'.format(station['name']))
             name_ok = True
         else:
@@ -805,9 +805,10 @@ class Process(object):
         try:
             lon_numeric = float(lon)
             if -180 <= lon_numeric <= 180:
-               LOGGER.debug('Validated instrument longitude')
+                LOGGER.debug('Validated instrument longitude')
             else:
-                msg = '#LOCATION.Longitude is not within the range [-180]-[180]'
+                msg = '#LOCATION.Longitude is not within' \
+                      ' allowable range [-180]-[180]'
                 self._warning(76, values_line, msg)
             lon_ok = True
         except ValueError:
@@ -824,12 +825,10 @@ class Process(object):
             else:
                 msg = '#LOCATION.Height is not within the range [-50]-[5100]'
                 self._warning(76, values_line, msg)
-            height_ok = True
         except ValueError:
             msg = '#LOCATION.Height contains invalid characters'
             self._warning(75, values_line, msg)
             height_numeric = None
-            height_ok = False
 
         station_type = self.extcsv.extcsv['PLATFORM'].get('Type', 'STN')
         if not all([lat_ok, lon_ok]):
@@ -858,7 +857,6 @@ class Process(object):
                 self._error(77, values_line, msg)
             if height_numeric is not None and instrument.z is not None \
                and abs(height_numeric - instrument.z) >= 1:
-                height_ok = False
                 msg = '#LOCATION.Height in file does not match database'
                 self._warning(77, values_line, msg)
 
@@ -953,10 +951,12 @@ class Process(object):
             numeric_version = float(version)
 
             if not 0 <= numeric_version <= 20:
-                msg = '#DATA_GENERATION.Version is not within range [0.0]-[20.0]'
+                msg = '#DATA_GENERATION.Version is not within' \
+                      ' allowable range [0.0]-[20.0]'
                 self._warning(66, values_line, msg)
             if str(version) == str(int(numeric_version)):
-                self.extcsv.extcsv['DATA_GENERATION']['Version'] = numeric_version
+                self.extcsv.extcsv['DATA_GENERATION']['Version'] = \
+                    numeric_version
 
                 msg = '#DATA_GENERATION.Version corrected to one decimal place'
                 self._warning(67, values_line, msg)

@@ -317,7 +317,7 @@ class ExtendedCSV(object):
         else:
             noon_indicator = None
 
-        separators = re.findall('[^\w\d]', timestamp)
+        separators = re.findall(r'[^\w\d]', timestamp)
         bad_seps = set(separators) - set(':')
 
         for separator in bad_seps:
@@ -404,7 +404,7 @@ class ExtendedCSV(object):
         :returns: The datestamp converted to a datetime object.
         """
 
-        separators = re.findall('[^\w\d]', datestamp)
+        separators = re.findall(r'[^\w\d]', datestamp)
         bad_seps = set(separators) - set('-')
 
         for separator in bad_seps:
@@ -470,7 +470,7 @@ class ExtendedCSV(object):
     def parse_utcoffset(self, table, utcoffset, line_num):
         """
         Validates the raw string <utcoffset>, converting it to the expected
-        format defined by the regular expression (+|-)\d\d:\d\d:\d\d if
+        format defined by the regular expression (+|-)\\d\\d:\\d\\d:\\d\\d if
         possible. Returns the converted value or else raises a ValueError.
 
         The other parameters are used for error reporting.
@@ -481,7 +481,7 @@ class ExtendedCSV(object):
         :returns: The value converted to expected UTCOffset format.
         """
 
-        separators = re.findall('[^-\+\w\d]', utcoffset)
+        separators = re.findall(r'[^-\+\w\d]', utcoffset)
         bad_seps = set(separators) - set(':')
 
         for separator in bad_seps:
@@ -490,10 +490,10 @@ class ExtendedCSV(object):
             self._warning(1000, line_num, msg)
             utcoffset = utcoffset.replace(separator, ':')
 
-        sign = '(\+|-|\+-)?'
-        delim = '[^-\+\w\d]'
-        mandatory_place = '([\d]{1,2})'
-        optional_place = '(' + delim + '([\d]{0,2}))?'
+        sign = r'(\+|-|\+-)?'
+        delim = r'[^-\+\w\d]'
+        mandatory_place = r'([\d]{1,2})'
+        optional_place = '(' + delim + r'([\d]{0,2}))?'
 
         template = '^{sign}{mandatory}{optional}{optional}$' \
                    .format(sign=sign, mandatory=mandatory_place,
@@ -523,7 +523,7 @@ class ExtendedCSV(object):
             if not second:
                 msg = 'Missing #{}.UTCOffset second, defaulting to 00' \
                       .format(table)
-                self._warning(1000, values_line, msg)
+                self._warning(1000, line_num, msg)
                 second = '00'
             elif len(second) < 2:
                 msg = '#{}.UTCOffset second should be 2 digits long' \
@@ -557,14 +557,14 @@ class ExtendedCSV(object):
 
         if len(match) == 1:
             msg = '{}.UTCOffset is a series of zeroes, correcting to' \
-                  ' +00:00:00'.format(table_name)
-            self._warning(23, values_line, msg)
+                  ' +00:00:00'.format(table)
+            self._warning(23, line_num, msg)
 
             return '+00:00:00'
 
         msg = 'Improperly formatted #{}.UTCOffset {}' \
               .format(table, utcoffset)
-        self._error(24, values_line, msg)
+        self._error(24, line_num, msg)
         raise ValueError(msg)
 
     def gen_woudc_filename(self):
@@ -598,7 +598,6 @@ class ExtendedCSV(object):
                           if table not in self.extcsv.keys()]
         present_tables = [table for table in self.extcsv.keys()
                           if table.rstrip('0123456789_') in DOMAINS['Common']]
-        errors = []
 
         if len(present_tables) == 0:
             msg = 'No core metadata tables found. Not an Extended CSV file'
@@ -621,8 +620,8 @@ class ExtendedCSV(object):
             lower, upper = parse_integer_range(str(schema['occurrences']))
             if count < lower:
                 msg = 'At least {} occurrencess of table #{} are required' \
-                      .format(lower, table)
-                line = self.line_num(table_type + '_' + str(table_count))
+                      .format(lower, table_type)
+                line = self.line_num(table_type + '_' + str(count))
                 self._error(1000, line, msg)
             elif count > upper:
                 msg = 'Cannot have more than {} occurrences of #{}' \
@@ -841,8 +840,8 @@ class ExtendedCSV(object):
                 str(schema[table_type]['occurrences']))
             if table_type in required_tables and count < lower:
                 msg = 'At least {} occurrencess of table #{} are required' \
-                      .format(lower, table)
-                line = self.line_num(table_type + '_' + str(table_count))
+                      .format(lower, table_type)
+                line = self.line_num(table_type + '_' + str(count))
                 self._error(1000, line, msg)
                 success = False
             if count > upper:
@@ -885,7 +884,7 @@ class ExtendedCSV(object):
                     self._warning(1000, fields_line, msg)
 
                     self.extcsv[table][field] = \
-                         self.extcsv[table].pop(match_insensitive)
+                        self.extcsv[table].pop(match_insensitive)
                 else:
                     msg = 'Missing required field {}.{}'.format(table, field)
                     self._error(3, fields_line, msg)
@@ -936,7 +935,7 @@ class ExtendedCSV(object):
                     self._warning(27.5, start_line, msg)
             elif not lower <= num_rows <= upper:
                 msg = 'Incorrectly formatted table: #{}. Table must contain' \
-                      ' {} lines'.format(table, occurrence_range)
+                      ' {} lines'.format(table, table_height_range)
 
             LOGGER.debug('Successfully validated table {}'.format(table))
 

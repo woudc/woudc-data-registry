@@ -98,7 +98,7 @@ class Registry(object):
             if case_insensitive \
             else field == value
 
-        return self.session.query(obj).filter(field == value).all()
+        return self.session.query(obj).filter(condition).all()
 
     def query_multiple_fields(self, table, values, fields=None,
                               case_insensitive=()):

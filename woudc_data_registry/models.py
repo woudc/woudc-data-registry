@@ -657,7 +657,7 @@ def unpack_station_names(rows):
         if name.startswith('\\x'):
             name = decode_hex(name[2:])[0].decode('utf-8')
             row['name'] = name
-            row['identifier'] = ':'.join([row['station_id'], name])
+            row['identifier'] = ':'.join([station, name])
         if name not in tracker:
             tracker[name] = row
         else:
