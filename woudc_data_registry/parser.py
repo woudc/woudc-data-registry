@@ -108,8 +108,8 @@ class ExtendedCSV(object):
         self._table_count = {}
         self._line_num = {}
 
-        self.errors = []
         self.warnings = []
+        self.errors = []
 
         LOGGER.debug('Reading into csv')
         self._raw = content
@@ -119,10 +119,11 @@ class ExtendedCSV(object):
         parent_table = None
         lines = enumerate(reader, 1)
 
+        success = True
         for line_num, row in lines:
             separators = []
             for bad_sep in ['::', ';', '$', '%', '|', '/', '\\']:
-                if len(row) > 0 and bad_sep in row[0]:
+                if not non_content_line(row) and bad_sep in row[0]:
                     separators.append(bad_sep)
 
             for separator in separators:
@@ -131,7 +132,7 @@ class ExtendedCSV(object):
 
                 msg = 'Improper delimiter used \'{}\', corrected to \',\'' \
                       ' (comma)'.format(separator)
-                self.warnings.append((7, msg, line_num))
+                self._warning(7, line_num, msg)
 
             if len(row) == 1 and row[0].startswith('#'):  # table name
                 parent_table = ''.join(row).lstrip('#').strip()
@@ -150,14 +151,15 @@ class ExtendedCSV(object):
                     while non_content_line(fields):
                         msg = 'Unexpected empty line between table name' \
                               ' and fields'
-                        self.warnings.append((8, msg, ln))
+                        self._warning(8, ln, msg)
 
                         ln, fields = next(lines)
 
                     self.init_table(parent_table, fields, line_num)
                 except StopIteration:
                     msg = 'Table {} has no fields'.format(parent_table)
-                    self.errors.append((6, msg, line_num))
+                    self._error(6, line_num, msg)
+                    success = False
             elif len(row) > 0 and row[0].startswith('*'):  # comment
                 LOGGER.debug('Found comment')
                 continue
@@ -169,9 +171,9 @@ class ExtendedCSV(object):
                 self.add_values_to_table(parent_table, table_values, line_num)
             else:
                 msg = 'Unrecognized data {}'.format(','.join(row))
-                self.errors.append((9, msg, line_num))
+                self._error(9, line_num, msg)
 
-        if len(self.errors) > 0:
+        if not success:
             raise NonStandardDataError(self.errors)
 
     def line_num(self, table):
@@ -187,6 +189,24 @@ class ExtendedCSV(object):
         """
 
         return self._table_count[table_type]
+
+    def _warning(self, error_code, line, message=None):
+        """
+        Record <message> as an error with code <error_code> that took place
+        at line <line> in the input file.
+        """
+
+        LOGGER.warning(message)
+        self.warnings.append((error_code, message, line))
+
+    def _error(self, error_code, line, message=None):
+        """
+        Record <message> as an error with code <error_code> that took place
+        at line <line> in the input file.
+        """
+
+        LOGGER.error(message)
+        self.errors.append((error_code, message, line))
 
     def init_table(self, table_name, fields, line_num):
         """
@@ -225,7 +245,7 @@ class ExtendedCSV(object):
 
         if fillins < 0:
             msg = 'Data row has more values than table columns'
-            self.warnings.append((7, msg, line_num))
+            self._warning(7, line_num, msg)
 
         values.extend([''] * fillins)
         values = values[:len(fields)]
@@ -261,7 +281,7 @@ class ExtendedCSV(object):
         except Exception as err:
             msg = 'Failed to parse #{}.{} value {} due to: {}' \
                   .format(table, field, value, str(err))
-            self.errors.append((1000, msg, line_num))
+            self._error(1000, line_num, msg)
             return value
 
         try:
@@ -303,7 +323,7 @@ class ExtendedCSV(object):
         for separator in bad_seps:
             msg = '#{}.Time separator \'{}\' corrected to \':\' (colon)' \
                   .format(table, separator)
-            self.warnings.append((15, msg, line_num))
+            self._warning(15, line_num, msg)
 
             timestamp = timestamp.replace(separator, ':')
 
@@ -318,33 +338,33 @@ class ExtendedCSV(object):
             hour_numeric = int(hour)
         except ValueError:
             msg = '#{}.Time hour contains invalid characters'.format(table)
-            self.errors.append((16, msg, line_num))
+            self._error(16, line_num, msg)
         try:
             minute_numeric = int(minute)
         except ValueError:
             msg = '#{}.Time minute contains invalid characters'.format(table)
-            self.errors.append((16, msg, line_num))
+            self._error(16, line_num, msg)
         try:
             second_numeric = int(second)
         except ValueError:
             msg = '#{}.Time second contains invalid characters'.format(table)
-            self.errors.append((16, msg, line_num))
+            self._error(16, line_num, msg)
 
         if noon_indicator == 'am' and hour == 12:
             msg = '#{}.Time corrected from 12-hour clock to 24-hour' \
                   ' YYYY-mm-dd format'.format(table)
-            self.warnings.append((11, msg, line_num))
+            self._warning(11, line_num, msg)
             hour = 0
         elif noon_indicator == 'pm' and hour != 12:
             msg = '#{}.Time corrected from 12-hour clock to 24-hour' \
                   ' YYYY-mm-dd format'.format(table)
-            self.warnings.append((11, msg, line_num))
+            self._warning(11, line_num, msg)
             hour += 12
 
         if second_numeric is not None and second_numeric not in range(0, 60):
             msg = '#{}.Time second is not within allowable range [00]-[59]' \
                   .format(table)
-            self.warnings.append((14, msg, line_num))
+            self._warning(14, line_num, msg)
 
             while second_numeric >= 60 and minute_numeric is not None:
                 second_numeric -= 60
@@ -352,7 +372,7 @@ class ExtendedCSV(object):
         if minute_numeric is not None and minute_numeric not in range(0, 60):
             msg = '#{}.Time minute is not within allowable range [00]-[59]' \
                   .format(table)
-            self.warnings.append((13, msg, line_num))
+            self._warning(13, line_num, msg)
 
             while minute_numeric >= 60 and hour_numeric is not None:
                 minute_numeric -= 60
@@ -360,7 +380,7 @@ class ExtendedCSV(object):
         if hour_numeric is not None and hour_numeric not in range(0, 24):
             msg = '#{}.Time hour is not within allowable range [00]-[23]' \
                   .format(table)
-            self.warnings.append((12, msg, line_num))
+            self._warning(12, line_num, msg)
 
         if None in [hour_numeric, minute_numeric, second_numeric]:
             raise ValueError('Validation errors found in timestamp {}'
@@ -390,24 +410,24 @@ class ExtendedCSV(object):
         for separator in bad_seps:
             msg = '#{}.Date separator \'{}\' corrected to \'-\' (hyphen)' \
                   .format(table, separator)
-            self.warnings.append((17, msg, line_num))
+            self._warning(17, line_num, msg)
 
             datestamp = datestamp.replace(separator, '-')
 
         if '-' not in datestamp:
             msg = '#{}.Date missing separator. Proper date format is' \
                   ' YYYY-MM-DD'.format(table)
-            self.errors.append((18, msg, line_num))
+            self._error(18, line_num, msg)
             raise ValueError(msg)
 
         tokens = datestamp.split('-')
         if len(tokens) < 3:
             msg = '#{}.Date incomplete'.format(table)
-            self.errors.append((22, msg, line_num))
+            self._error(22, line_num, msg)
             raise ValueError(msg)
         elif len(tokens) > 3:
             msg = '#{}.Date has too many separators'.format(table)
-            self.errors.append((23, msg, line_num))
+            self._error(23, line_num, msg)
             raise ValueError(msg)
 
         year = month = day = None
@@ -416,31 +436,31 @@ class ExtendedCSV(object):
             year = int(tokens[0])
         except ValueError:
             msg = '#{}.Date year contains invalid characters'.format(table)
-            self.errors.append((24, msg, line_num))
+            self._error(24, line_num, msg)
         try:
             month = int(tokens[1])
         except ValueError:
             msg = '#{}.Date month contains invalid characters'.format(table)
-            self.errors.append((24, msg, line_num))
+            self._error(24, line_num, msg)
         try:
             day = int(tokens[2])
         except ValueError:
             msg = '#{}.Date year contains invalid characters'.format(table)
-            self.errors.append((24, msg, line_num))
+            self._error(24, line_num, msg)
 
         present_year = datetime.now().year
         if year is not None and year not in range(1940, present_year + 1):
             msg = '#{}.Date year is not within allowable range' \
                   '[1940]-[PRESENT]'.format(table)
-            self.warnings.append(msg)
+            self._warning(1000, line_num, msg)
         if month is not None and month not in range(1, 12 + 1):
             msg = '#{}.Date month is not within allowable range' \
                   '[01]-[12]'.format(table)
-            self.warnings.append(msg)
+            self._warning(1000, line_num, msg)
         if day is not None and day not in range(1, 31 + 1):
             msg = '#{}.Date day is not within allowable range' \
                   '[01]-[31]'.format(table)
-            self.warnings.append(msg)
+            self._warning(1000, line_num, msg)
 
         if None in [year, month, day]:
             raise ValueError('')
@@ -467,7 +487,7 @@ class ExtendedCSV(object):
         for separator in bad_seps:
             msg = '#{}.UTCOffset separator \'{}\' corrected to \':\'' \
                   ' (colon)'.format(table, separator)
-            self.warnings.append((1000, msg, line_num))
+            self._warning(1000, line_num, msg)
             utcoffset = utcoffset.replace(separator, ':')
 
         sign = '(\+|-|\+-)?'
@@ -486,40 +506,40 @@ class ExtendedCSV(object):
             if len(hour) < 2:
                 msg = '#{}.UTCOffset hour should be 2 digits long' \
                       .format(table)
-                self.warnings.append((1000, msg, line_num))
+                self._warning(1000, line_num, msg)
                 hour = hour.rjust(2, '0')
 
             if not minute:
                 msg = 'Missing #{}.UTCOffset minute, defaulting to 00' \
                       .format(table)
-                self.warnings.append((1000, msg, line_num))
+                self._warning(1000, line_num, msg)
                 minute = '00'
             elif len(minute) < 2:
                 msg = '#{}.UTCOffset minute should be 2 digits long' \
                       .format(table)
-                self.warnings.append((1000, msg, line_num))
+                self._warning(1000, line_num, msg)
                 minute = minute.rjust(2, '0')
 
             if not second:
                 msg = 'Missing #{}.UTCOffset second, defaulting to 00' \
                       .format(table)
-                self.warnings.append((1000, msg, values_line))
+                self._warning(1000, values_line, msg)
                 second = '00'
             elif len(second) < 2:
                 msg = '#{}.UTCOffset second should be 2 digits long' \
                       .format(table)
-                self.warnings.append((1000, msg, line_num))
+                self._warning(1000, line_num, msg)
                 second = second.rjust(2, '0')
 
             if not sign:
                 msg = 'Missing sign in #{}.UTCOffset, default to +' \
                       .format(table)
-                self.warnings.append((1000, msg, line_num))
+                self._warning(1000, line_num, msg)
                 sign = '+'
             elif sign == '+-':
                 msg = 'Invalid sign {} in #{}.UTCOffset, correcting to {}' \
                       .format(sign, table, '-')
-                self.warnings.append((1000, msg, line_num))
+                self._warning(1000, line_num, msg)
                 sign = '-'
 
             try:
@@ -528,7 +548,7 @@ class ExtendedCSV(object):
             except (ValueError, TypeError) as err:
                 msg = 'Improperly formatted #{}.UTCOffset {}: {}' \
                       .format(table, str(err))
-                self.errors.append((24, msg, line_num))
+                self._error(24, line_num, msg)
                 raise ValueError(msg)
 
         template = '^{sign}[0]+{delim}?[0]*{delim}?[0]*' \
@@ -538,14 +558,13 @@ class ExtendedCSV(object):
         if len(match) == 1:
             msg = '{}.UTCOffset is a series of zeroes, correcting to' \
                   ' +00:00:00'.format(table_name)
-            LOGGER.warning(msg)
-            self.warnings.append((23, msg, values_line))
+            self._warning(23, values_line, msg)
 
             return '+00:00:00'
 
         msg = 'Improperly formatted #{}.UTCOffset {}' \
               .format(table, utcoffset)
-        self.errors.append((24, msg, values_line))
+        self._error(24, values_line, msg)
         raise ValueError(msg)
 
     def gen_woudc_filename(self):
@@ -583,11 +602,11 @@ class ExtendedCSV(object):
 
         if len(present_tables) == 0:
             msg = 'No core metadata tables found. Not an Extended CSV file'
-            self.errors.append((161, msg, None))
+            self._error(161, None, msg)
         else:
             for missing in missing_tables:
                 msg = 'Missing required table: {}'.format(missing)
-                self.errors.append((1, msg, None))
+                self._error(1, None, msg)
 
         if self.errors:
             msg = 'Not an Extended CSV file'
@@ -604,12 +623,12 @@ class ExtendedCSV(object):
                 msg = 'At least {} occurrencess of table #{} are required' \
                       .format(lower, table)
                 line = self.line_num(table_type + '_' + str(table_count))
-                self.errors.append((1000, msg, line))
+                self._error(1000, line, msg)
             elif count > upper:
                 msg = 'Cannot have more than {} occurrences of #{}' \
                       .format(upper, table_type)
                 line = self.line_num(table_type + '_' + str(upper + 1))
-                self.errors.append((26, msg, line))
+                self._error(26, line, msg)
 
         for table, definitions in DOMAINS['Common'].items():
             required = definitions.get('required', ())
@@ -637,14 +656,14 @@ class ExtendedCSV(object):
                 if match_insensitive:
                     msg = 'Capitalization of #{} field {} corrected to' \
                           ' {}'.format(table, missing, match_insensitive)
-                    self.warnings.append((1000, msg, fields_line))
+                    self._warning(1000, fields_line, msg)
 
                     self.extcsv[table][missing] = \
                         self.extcsv[table].pop(match_insensitive)
                 else:
                     msg = 'Missing required #{} field {}' \
                           .format(table, missing)
-                    self.errors.append((3, msg, fields_line))
+                    self._error(3, fields_line, msg)
 
             for field in excess_fields:
                 match_insensitive = optional_case_map.get(field.lower(), None)
@@ -655,16 +674,16 @@ class ExtendedCSV(object):
 
                     if field != match_insensitive:
                         msg = 'Capitalization of #{} field {} corrected to' \
-                              ' {}'.format(table, missing, match_insensitive)
-                        self.warnings.append((1000, msg, fields_line))
+                              ' {}'.format(table, field, match_insensitive)
+                        self._warning(1000, fields_line, msg)
 
-                        self.extcsv[table][missing] = \
-                            self.extcsv[table].pop(match_insensitive)
+                        self.extcsv[table][match_insensitive] = \
+                            self.extcsv[table].pop(field)
                 else:
                     msg = 'Field name {}.{} is not from approved list' \
                           .format(table, field)
                     line = self.line_num(table) + 1
-                    self.warnings.append((4, msg, line))
+                    self._warning(4, line, msg)
                     del self.extcsv[table][field]
 
             num_rows = 0
@@ -676,7 +695,7 @@ class ExtendedCSV(object):
                     if not column:
                         msg = 'Required value #{}.{} is empty'.format(table,
                                                                       field)
-                        self.errors.append((5, msg, values_line))
+                        self._error(5, values_line, msg)
                         break
 
             occurrence_range = str(definitions['occurrences'])
@@ -684,14 +703,14 @@ class ExtendedCSV(object):
             if num_rows == 0:
                 if 'required' in definitions:
                     msg = 'Required table #{} is empty'.format(table)
-                    self.errors.append((27, msg, start_line))
+                    self._error(27, start_line, msg)
                 else:
                     msg = 'Optional table #{} is empty'.format(table)
-                    self.warnings.append((27.5, msg, start_line))
+                    self._warning(27.5, start_line, msg)
             elif not lower <= num_rows <= upper:
                 msg = 'Incorrectly formatted table: #{}. Table must contain' \
                       ' {} lines'.format(table, occurrence_range)
-                self.warnings.append((27, msg, start_line))
+                self._warning(27, start_line, msg)
 
         for table in present_tables:
             table_type = table.rstrip('0123456789_')
@@ -726,9 +745,9 @@ class ExtendedCSV(object):
                 curr_dict = curr_dict[key]
             else:
                 field_name = '#CONTENT.{}'.format(field.capitalize())
-                msg = 'Cannot assess dataset table schema:'
+                msg = 'Cannot assess dataset table schema:' \
                       ' {} unknown'.format(field_name)
-                self.warnings.append((56, msg, fields_line))
+                self._warning(56, fields_line, msg)
                 return False
 
         if 1 in curr_dict.keys():
@@ -782,7 +801,7 @@ class ExtendedCSV(object):
         best_match = max(candidate_scores)
         if best_match == 0:
             msg = 'No version-unique tables found'
-            self.errors.append((108, msg, None))
+            self._error(108, None, msg)
             raise NonStandardDataError(self.errors)
         else:
             for version in versions:
@@ -810,7 +829,7 @@ class ExtendedCSV(object):
         for missing in missing_tables:
             msg = 'Missing required table(s) {} for {}' \
                   .format(dataset, ', '.join(missing_tables))
-            self.errors.append((1, msg, None))
+            self._error(1, None, msg)
             success = False
 
         for table_type in schema.keys():
@@ -824,13 +843,13 @@ class ExtendedCSV(object):
                 msg = 'At least {} occurrencess of table #{} are required' \
                       .format(lower, table)
                 line = self.line_num(table_type + '_' + str(table_count))
-                self.errors.append((1000, msg, line))
+                self._error(1000, line, msg)
                 success = False
             if count > upper:
                 msg = 'Cannot have more than {} occurrences of #{}' \
                       .format(upper, table_type)
                 line = self.line_num(table_type + '_' + str(upper + 1))
-                self.errors.append((26, msg, line))
+                self._error(26, line, msg)
                 success = False
 
         for table in present_tables:
@@ -863,13 +882,13 @@ class ExtendedCSV(object):
                 if match_insensitive:
                     msg = 'Capitalization in #{} field {} corrected to' \
                           ' {}'.format(table, field, match_insensitive)
-                    self.warnings.append((1000, msg, fields_line))
+                    self._warning(1000, fields_line, msg)
 
                     self.extcsv[table][field] = \
                          self.extcsv[table].pop(match_insensitive)
                 else:
                     msg = 'Missing required field {}.{}'.format(table, field)
-                    self.errors.append((3, msg, fields_line))
+                    self._error(3, fields_line, msg)
                     self.extcsv[table][field] = null_value
                     success = False
             if len(missing_fields) > 0:
@@ -885,14 +904,14 @@ class ExtendedCSV(object):
                     if field != match_insensitive:
                         msg = 'Capitalization in #{} field {} corrected to' \
                               ' {}'.format(table, field, match_insensitive)
-                        self.warnings.append((1000, msg, fields_line))
+                        self._warning(1000, fields_line, msg)
 
                         self.extcsv[table][match_insensitive] = \
                             self.extcsv[table].pop(field)
                 else:
                     msg = 'Removing excess column #{}.{}' \
                           .format(field, table)
-                    self.warnings.append((4, msg, fields_line))
+                    self._warning(4, fields_line, msg)
                     del self.extcsv[table][field]
 
             for field in required:
@@ -901,7 +920,7 @@ class ExtendedCSV(object):
                     if not value:
                         msg = 'Required value #{}.{} is empty' \
                               .format(table, field)
-                        self.errors.append((5, msg, line))
+                        self._error(5, line, msg)
                         success = False
                         break
 
@@ -910,11 +929,11 @@ class ExtendedCSV(object):
             if num_rows == 0:
                 if 'required' in schema[table_type]:
                     msg = 'Required table #{} is empty'.format(table)
-                    self.errors.append((27, msg, start_line))
+                    self._error(27, start_line, msg)
                     success = False
                 else:
                     msg = 'Optional table #{} is empty'.format(table)
-                    self.warnings.append((27.5, msg, start_line))
+                    self._warning(27.5, start_line, msg)
             elif not lower <= num_rows <= upper:
                 msg = 'Incorrectly formatted table: #{}. Table must contain' \
                       ' {} lines'.format(table, occurrence_range)
@@ -927,7 +946,7 @@ class ExtendedCSV(object):
                 msg = 'Excess table {} does not belong in {} file: removing' \
                       .format(table, dataset)
                 LOGGER.warning(msg)
-                self.warnings.append((2, msg, None))
+                self._warning(2, None, msg)
                 del self.extcsv[table]
 
         for table in optional:

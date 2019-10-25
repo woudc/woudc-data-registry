@@ -92,6 +92,27 @@ class Process(object):
         self.process_end = None
         self.registry = registry.Registry()
 
+        self.warnings = []
+        self.errors = []
+
+    def _warning(self, error_code, line, message=None):
+        """
+        Record <message> as an error with code <error_code> that took place
+        at line <line> in the input file.
+        """
+
+        LOGGER.warning(message)
+        self.warnings.append((error_code, message, line))
+
+    def _error(self, error_code, line, message=None):
+        """
+        Record <message> as an error with code <error_code> that took place
+        at line <line> in the input file.
+        """
+
+        LOGGER.error(message)
+        self.errors.append((error_code, message, line))
+
     def process_data(self, infile, core_only=False,
                      verify_only=False, bypass=False):
         """
@@ -108,7 +129,6 @@ class Process(object):
         # detect incoming data file
         data = None
         self.extcsv = None
-        self.data_record = None
         self.search_engine = search.SearchIndex()
 
         self.warnings = []
@@ -181,6 +201,10 @@ class Process(object):
         LOGGER.debug('Validating agency deployment')
         deployment_ok = self.check_deployment()
 
+        project = self.extcsv.extcsv['CONTENT']['Class']
+        agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
+        platform_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
+
         if not deployment_ok:
             deployment_id = ':'.join([platform_id, agency, project])
             deployment_name = '{}@{}'.format(agency, platform_id)
@@ -199,16 +223,16 @@ class Process(object):
                 deployment_ok = True
 
                 msg = 'New deployment {} added'.format(deployment_name)
-                self.warnings.append((202, msg, None))
+                self._warning(202, None, msg)
             else:
                 msg = 'Deployment {} not added. Skipping file.' \
                       .format(deployment_id)
-                LOGGER.error(msg)
+                LOGGER.warning(msg)
 
                 msg = 'No deployment {} found in registry' \
                        .format(deployment_id)
                 line = self.extcsv.line_num('PLATFORM') + 2
-                self.errors.append((65, msg, line))
+                self._error(65, line, msg)
 
         LOGGER.debug('Validating instrument')
         instrument_ok = self.check_instrument()
@@ -235,7 +259,7 @@ class Process(object):
 
             if instrument_ok:
                 msg = 'New instrument serial number added'
-                self.warnings.append((201, msg, None))
+                self._warning(201, None, msg)
 
         instrument_args = [self.extcsv.extcsv['INSTRUMENT']['Name'],
             self.extcsv.extcsv['INSTRUMENT']['Model'],
@@ -248,11 +272,10 @@ class Process(object):
             # Attempt to force the new instrument name/model into the registry
             response = input('Instrument {} not found. Add? [y/n] '
                              .format(instrument_id))
-
             if response.lower() in ['y', 'yes']:
                 if self.add_instrument(verify_only, force=True):
                     msg = 'New instrument name, model, and serial added'
-                    self.warnings.append((1000, msg, None))
+                    self._warning(1000, None, msg)
 
                     instrument_ok = True
 
@@ -261,7 +284,7 @@ class Process(object):
         else:
             msg = 'Failed to validate instrument against registry'
             line = self.extcsv.line_num('INSTRUMENT') + 2
-            self.errors.append((139, msg, line))
+            self._error(139, line, msg)
 
             location_ok = False
 
@@ -334,7 +357,7 @@ class Process(object):
         project = self.extcsv.extcsv['CONTENT']['Class']
         date = self.extcsv.extcsv['TIMESTAMP']['Date']
 
-        contributor_in = ':'.join([agency, project])
+        contributor_id = ':'.join([agency, project])
         deployment_id = ':'.join([station, agency, project])
         deployment_model = {
             'identifier': deployment_id,
@@ -469,10 +492,11 @@ class Process(object):
         self.projects = self.registry.query_distinct(Project.identifier)
 
         if not project:
-            self.extcsv.extcsv['CONTENT']['Class'] = project = 'WOUDC'
             msg = 'Missing #CONTENT.Class: default to \'WOUDC\''
             line = self.extcsv.line_num('CONTENT') + 2
-            self.warnings.append((52, msg, line))
+            self._warning(52, line, msg)
+
+            self.extcsv.extcsv['CONTENT']['Class'] = project = 'WOUDC'
 
         if project in self.projects:
             LOGGER.debug('Match found for project {}'.format(project))
@@ -481,7 +505,7 @@ class Process(object):
             msg = 'Project {} not found in registry'.format(project)
             line = self.extcsv.line_num('CONTENT') + 2
 
-            self.errors.append((53, msg, line))
+            self._error(53, line, msg)
             return False
 
     def check_dataset(self):
@@ -507,7 +531,7 @@ class Process(object):
             msg = 'Dataset {} not found in registry'.format(dataset)
             line = self.extcsv.line_num('CONTENT') + 2
 
-            self.errors.append((56, msg, line))
+            self._error(56, line, msg)
             return False
 
     def check_contributor(self):
@@ -527,7 +551,7 @@ class Process(object):
             msg = 'Correcting agency {} to {} using alias table' \
                   .format(agency, ALIASES['Agency'][agency])
             line = self.extcsv.line_num('DATA_GENERATION') + 2
-            self.warnings.append((1000, msg, line))
+            self._warning(1000, line, msg)
 
             agency = ALIASES['Agency'][agency]
             self.extcsv.extcsv['DATA_GENERATION']['Agency'] = agency
@@ -554,7 +578,7 @@ class Process(object):
                   .format(contributor['identifier'])
             line = self.extcsv.line_num('DATA_GENERATION') + 2
 
-            self.errors.append((127, msg, line))
+            self._error(127, line, msg)
             return False
 
     def check_station(self):
@@ -576,18 +600,18 @@ class Process(object):
         values_line = self.extcsv.line_num('PLATFORM') + 2
 
         water_codes = ['*IW', 'IW', 'XZ']
-        if pl_type == 'SHP' and any([not country, country in waters_codes]):
+        if pl_type == 'SHP' and any([not country, country in water_codes]):
             msg = 'Ship #PLATFORM.Country = \'{}\' corrected to \'XY\'' \
                   ' to meet ISO-3166 standards'.format(country)
             line = self.extcsv.line_num('PLATFORM') + 2
-            self.warnings.append((105, msg, line))
+            self._warning(105, line, msg)
 
             self.extcsv.extcsv['PLATFORM']['Country'] = country = 'XY'
 
         if len(identifier) < 3:
             msg = '#PLATFORM.ID {} is too short: left-padding with zeros' \
                   .format(identifier)
-            self.warnings.append((1000, msg, values_line))
+            self._warning(1000, values_line, msg)
 
             identifier = identifier.rjust(3, '0')
             self.extcsv.extcsv['PLATFORM']['ID'] = identifier
@@ -606,7 +630,7 @@ class Process(object):
             LOGGER.debug('Validated station with id: {}'.format(identifier))
         else:
             msg = 'Station {} not found in registry'.format(identifier)
-            self.errors.append((129, msg, values_line))
+            self._error(129, values_line, msg)
             return False
 
         LOGGER.debug('Validating station type...')
@@ -617,7 +641,7 @@ class Process(object):
             LOGGER.debug('Validated station type {}'.format(type_ok))
         else:
             msg = 'Station type {} not found in registry'.format(pl_type)
-            self.errors.append((128, msg, values_line))
+            self._error(128, values_line, msg)
 
         LOGGER.debug('Validating station name...')
         model = {'station_id': identifier, 'name': station['name']}
@@ -634,7 +658,7 @@ class Process(object):
         else:
             msg = 'Station name: {} did not match data for id: {}' \
                   .format(name, identifier)
-            self.errors.append((130, msg, values_line))
+            self._error(130, values_line, msg)
 
         LOGGER.debug('Validating station country...')
         fields = ['identifier', 'country_id']
@@ -650,7 +674,7 @@ class Process(object):
         else:
             msg = 'Station country: {} did not match data for id: {}' \
                   .format(country, identifier)
-            self.errors.append((131, msg, values_line))
+            self._error(131, values_line, msg)
 
         return type_ok and name_ok and country_ok
 
@@ -722,7 +746,7 @@ class Process(object):
         values_line = self.extcsv.line_num('INSTRUMENT') + 2
         if name == 'UNKNOWN':
             msg = '#INSTRUMENT.Name must not be null'
-            self.errors.append((72, msg, values_line))
+            self._error(72, values_line, msg)
             return False
 
         instrument_id = ':'.join([name, model, serial, station, dataset])
@@ -769,12 +793,12 @@ class Process(object):
                 LOGGER.debug('Validated instrument latitude')
             else:
                 msg = '#LOCATION.Latitude is not within the range [-90]-[90]'
-                self.warnings.append((76, msg, values_line))
+                self._warning(76, values_line, msg)
             lat_ok = True
         except ValueError:
             msg = '#LOCATION.Latitude contains invalid characters'
             LOGGER.error(msg)
-            self.errors.append((75, msg, values_line))
+            self._error(75, values_line, msg)
             lat_numeric = None
             lat_ok = False
 
@@ -784,12 +808,12 @@ class Process(object):
                LOGGER.debug('Validated instrument longitude')
             else:
                 msg = '#LOCATION.Longitude is not within the range [-180]-[180]'
-                self.warnings.append((76, msg, values_line))
+                self._warning(76, values_line, msg)
             lon_ok = True
         except ValueError:
             msg = '#LOCATION.Longitude contains invalid characters'
             LOGGER.error(msg)
-            self.errors.append((75, msg, values_line))
+            self._error(75, values_line, msg)
             lon_numeric = None
             lon_ok = False
 
@@ -799,11 +823,11 @@ class Process(object):
                 LOGGER.debug('Validated instrument height')
             else:
                 msg = '#LOCATION.Height is not within the range [-50]-[5100]'
-                self.warnings.append((76, msg, values_line))
+                self._warning(76, values_line, msg)
             height_ok = True
         except ValueError:
             msg = '#LOCATION.Height contains invalid characters'
-            self.warnings.append((75, msg, values_line))
+            self._warning(75, values_line, msg)
             height_numeric = None
             height_ok = False
 
@@ -825,18 +849,18 @@ class Process(object):
                 lat_ok = False
                 msg = '#LOCATION.Latitude in file does not match database'
                 LOGGER.error(msg)
-                self.errors.append((77, msg, values_line))
+                self._error(77, values_line, msg)
             if lon_numeric is not None and instrument.x is not None \
                and abs(lon_numeric - instrument.x) >= 1:
                 lon_ok = False
                 msg = '#LOCATION.Longitude in file does not match database'
                 LOGGER.error(msg)
-                self.errors.append((77, msg, values_line))
+                self._error(77, values_line, msg)
             if height_numeric is not None and instrument.z is not None \
                and abs(height_numeric - instrument.z) >= 1:
                 height_ok = False
                 msg = '#LOCATION.Height in file does not match database'
-                self.warnings.append((77, msg, values_line))
+                self._warning(77, values_line, msg)
 
         return all([lat_ok, lon_ok])
 
@@ -862,45 +886,42 @@ class Process(object):
         if not level:
             if dataset == 'UmkehrN14' and 'C_PROFILE' in self.extcsv.extcsv:
                 msg = 'Missing #CONTENT.Level, resolved to 2.0'
-                LOGGER.warning(msg)
-                self.warnings.append((59, msg, values_line))
+                self._warning(59, values_line, msg)
+
                 self.extcsv.extcsv['CONTENT']['Level'] = level = 2.0
             else:
                 msg = 'Missing #CONTENT.Level, resolved to 1.0'
-                LOGGER.warning(msg)
-                self.warnings.append((58, msg, values_line))
+                self._warning(58, values_line, msg)
+
                 self.extcsv.extcsv['CONTENT']['Level'] = level = 1.0
         elif not isinstance(level, float):
             try:
                 msg = '#CONTENT.Level = {}, corrected to {}' \
                       .format(level, float(level))
-                LOGGER.warning(msg)
-                self.warnings.append((57, msg, values_line))
+                self._warning(57, values_line, msg)
+
                 self.extcsv.extcsv['CONTENT']['Level'] = level = float(level)
             except ValueError:
                 msg = 'Invalid characters in #CONTENT.Level'
-                LOGGER.error(msg)
-                self.errors.append((60, msg, values_line))
+                self._error(60, values_line, msg)
                 level_ok = False
 
         if level not in DOMAINS['Datasets'][dataset]:
             msg = 'Unknown #CONTENT.Level for category {}'.format(dataset)
-            LOGGER.error(msg)
-            self.errors.append((60, msg, values_line))
+            self._error(60, values_line, msg)
             level_ok = False
 
         if not isinstance(form, int):
             try:
                 msg = '#CONTENT.Form = {}, corrected to {}' \
                       .format(form, int(form))
-                LOGGER.warning(msg)
-                self.warnings.append((61, msg, values_line))
+                self._warning(61, values_line, msg)
+
                 self.extcsv.extcsv['CONTENT']['Form'] = form = int(form)
             except ValueError:
                 msg = 'Cannot resolve #CONTENT.Form: is empty or' \
                       ' has invalid characters'
-                LOGGER.error(msg)
-                self.errors.append((62, msg, values_line))
+                self._error(62, values_line, msg)
                 form_ok = False
 
         return level_ok and form_ok
@@ -921,8 +942,7 @@ class Process(object):
 
         if not date:
             msg = 'Missing #DATA_GENERATION.Date, resolved to processing date'
-            LOGGER.warning(msg)
-            self.warnings.append((63, msg, values_line))
+            self._warning(63, values_line, msg)
 
             kwargs = {key: getattr(self.process_start, key)
                       for key in ['year', 'month', 'day']}
@@ -934,18 +954,16 @@ class Process(object):
 
             if not 0 <= numeric_version <= 20:
                 msg = '#DATA_GENERATION.Version is not within range [0.0]-[20.0]'
-                LOGGER.warning(msg)
-                self.warnings.append((66, msg, values_line))
+                self._warning(66, values_line, msg)
             if str(version) == str(int(numeric_version)):
                 self.extcsv.extcsv['DATA_GENERATION']['Version'] = numeric_version
 
                 msg = '#DATA_GENERATION.Version corrected to one decimal place'
-                LOGGER.warning(msg)
-                self.warnings.append((67, msg, values_line))
+                self._warning(67, values_line, msg)
         except ValueError:
             msg = '#DATA_GENERATION.Version contains invalid characters'
             LOGGER.error(msg)
-            self.errors.append((68, msg, values_line))
+            self._error(68, values_line, msg)
             return False
 
         return True
