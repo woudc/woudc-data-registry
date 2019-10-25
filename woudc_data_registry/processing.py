@@ -56,16 +56,14 @@ from woudc_data_registry import config, registry, search
 from woudc_data_registry.models import (Contributor, DataRecord, Dataset,
                                         Deployment, Instrument, Project,
                                         Station, StationName)
-from woudc_data_registry.parser import (PROJECT_ROOT, DOMAINS, ExtendedCSV,
+from woudc_data_registry.parser import (DOMAINS, ExtendedCSV,
                                         MetadataValidationError,
                                         NonStandardDataError)
 from woudc_data_registry.util import read_file
 
 LOGGER = logging.getLogger(__name__)
 
-alias_filename = 'aliases.yaml'
-alias_fullpath = os.path.join(PROJECT_ROOT, 'data', alias_filename)
-with open(alias_fullpath) as alias_definitions:
+with open(config.WDR_ALIAS_CONFIG) as alias_definitions:
     ALIASES = yaml.safe_load(alias_definitions)
 
 

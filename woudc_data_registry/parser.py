@@ -56,15 +56,12 @@ from io import StringIO
 from datetime import datetime, time
 from collections import OrderedDict
 
+from woudc_data_registry import config
 from woudc_data_registry.util import parse_integer_range
 
 LOGGER = logging.getLogger(__name__)
 
-PROJECT_ROOT = '/home/hurkaa/conda-woudc-data-registry'
-tables_file = 'tables_backfilling.yaml'
-
-table_definition_path = os.path.join(PROJECT_ROOT, 'data', tables_file)
-with open(table_definition_path) as table_definitions:
+with open(config.WDR_TABLE_CONFIG) as table_definitions:
     DOMAINS = yaml.safe_load(table_definitions)
 
 
