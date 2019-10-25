@@ -106,6 +106,7 @@ def orchestrate(file_, directory, core_only=False,
     click.echo('({}/{} files passed)'
                .format(len(passed), len(files_to_process)))
 
+
 @click.group()
 def data():
     """Data processing"""
@@ -123,7 +124,7 @@ def data():
               help='Path to directory of data records')
 @click.option('--loose', '-l', 'loose', is_flag=True,
               help='Only validate core metadata tables')
-@click.option('--bypass', '-b', 'bypass', is_flag=True,
+@click.option('--bypass', '-b', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
 def ingest(ctx, file_, directory, loose, bypass):
     """ingest a single data submission or directory of files"""
@@ -136,10 +137,7 @@ def ingest(ctx, file_, directory, loose, bypass):
         msg = 'One of --file or --directory is required'
         raise click.ClickException(msg)
 
-    if bypass:
-        orchestrate(file_, directory, core_only=loose, bypass=True)
-    else:
-        orchestrate(file_, directory, core_only=loose)
+    orchestrate(file_, directory, core_only=loose, bypass=True)
 
 
 @click.command()
@@ -153,7 +151,9 @@ def ingest(ctx, file_, directory, loose, bypass):
               help='Path to directory of data records')
 @click.option('--loose', '-l', 'loose', is_flag=True,
               help='Only validate core metadata tables')
-def verify(ctx, file_, loose, directory):
+@click.option('--bypass', '-b', 'bypass', is_flag=True, default=False,
+              help='Bypass permission prompts while ingesting')
+def verify(ctx, file_, loose, directory, bypass):
     """verify a single data submission or directory of files"""
 
     if file_ is not None and directory is not None:
@@ -164,7 +164,8 @@ def verify(ctx, file_, loose, directory):
         msg = 'One of --file or --directory is required'
         raise click.ClickException(msg)
 
-    orchestrate(file_, directory, core_only=loose, verify_only=True)
+    orchestrate(file_, directory, core_only=loose, verify_only=True,
+                bypass=bypass)
 
 
 data.add_command(ingest)
