@@ -844,13 +844,14 @@ class Process(object):
 
             instrument = result[0]
             if lat_numeric is not None and instrument.y is not None \
-               and abs(lat_numeric - instrument.y) >= 1:
+               and abs(lat_numeric - instrument.y) >= 1.5:
                 lat_ok = False
                 msg = '#LOCATION.Latitude in file does not match database'
                 LOGGER.error(msg)
                 self._error(77, values_line, msg)
             if lon_numeric is not None and instrument.x is not None \
-               and abs(lon_numeric - instrument.x) >= 1:
+               and (lat_numeric is None or abs(lat_numeric) < 89.5) \
+               and abs(lon_numeric - instrument.x) >= 1.5:
                 lon_ok = False
                 msg = '#LOCATION.Longitude in file does not match database'
                 LOGGER.error(msg)
@@ -935,6 +936,7 @@ class Process(object):
 
         date = self.extcsv.extcsv['DATA_GENERATION'].get('Date', None)
         version = self.extcsv.extcsv['DATA_GENERATION'].get('Version', None)
+        version = version or 1.0
 
         values_line = self.extcsv.line_num('DATA_GENERATION')
 

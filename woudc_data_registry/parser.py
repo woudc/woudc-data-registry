@@ -691,7 +691,7 @@ class ExtendedCSV(object):
                 num_rows = len(column)
 
                 for line, value in enumerate(column, values_line):
-                    if not column:
+                    if not value:
                         msg = 'Required value #{}.{} is empty'.format(table,
                                                                       field)
                         self._error(5, values_line, msg)

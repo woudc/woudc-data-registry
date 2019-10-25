@@ -14,8 +14,8 @@ Common:
     required:
       - Date
       - Agency
-      - Version
     optional:
+      - Version
       - ScientificAuthority
   PLATFORM:
     rows: 1
