@@ -308,7 +308,7 @@ class Process(object):
 
         LOGGER.debug('Verifying if URN already exists')
         results = self.registry.query_by_field(
-            DataRecord, 'identifier', self.data_record.identifier)
+            DataRecord, 'data_record_id', self.data_record.data_record_id)
 
         if results:
             msg = 'Data exists'
@@ -487,7 +487,7 @@ class Process(object):
         project = self.extcsv.extcsv['CONTENT']['Class']
 
         LOGGER.debug('Validating project {}'.format(project))
-        self.projects = self.registry.query_distinct(Project.identifier)
+        self.projects = self.registry.query_distinct(Project.project_id)
 
         if not project:
             msg = 'Missing #CONTENT.Class: default to \'WOUDC\''
@@ -516,14 +516,14 @@ class Process(object):
         dataset = self.extcsv.extcsv['CONTENT']['Category']
 
         LOGGER.debug('Validating dataset {}'.format(dataset))
-        dataset_model = {'identifier': dataset}
+        dataset_model = {'dataset_id': dataset}
 
-        fields = ['identifier']
+        fields = ['dataset_id']
         response = self.registry.query_multiple_fields(Dataset, dataset_model,
                                                        fields, fields)
         if response:
             LOGGER.debug('Match found for dataset {}'.format(dataset))
-            self.extcsv.extcsv['CONTENT']['Category'] = response.identifier
+            self.extcsv.extcsv['CONTENT']['Category'] = response.dataset_id
             return True
         else:
             msg = 'Dataset {} not found in registry'.format(dataset)
@@ -557,11 +557,11 @@ class Process(object):
         LOGGER.debug('Validating contributor {} under project {}'
                      .format(agency, project))
         contributor = {
-            'identifier': '{}:{}'.format(agency, project),
+            'contributor_id': '{}:{}'.format(agency, project),
             'project_id': project
         }
 
-        fields = ['identifier']
+        fields = ['contributor_id']
         result = self.registry.query_multiple_fields(Contributor, contributor,
                                                      fields, fields)
         if result:
@@ -569,11 +569,11 @@ class Process(object):
             self.extcsv.extcsv['DATA_GENERATION']['Agency'] = contributor_name
 
             LOGGER.debug('Match found for contributor ID {}'
-                         .format(result.identifier))
+                         .format(result.contributor_id))
             return True
         else:
             msg = 'Contributor {} not found in registry' \
-                  .format(contributor['identifier'])
+                  .format(contributor['contributor_id'])
             line = self.extcsv.line_num('DATA_GENERATION') + 2
 
             self._error(127, line, msg)
@@ -615,14 +615,14 @@ class Process(object):
             self.extcsv.extcsv['PLATFORM']['ID'] = identifier
 
         station = {
-            'identifier': identifier,
-            'type': pl_type,
-            'name': name,
+            'station_id': identifier,
+            'station_type': pl_type,
+            'current_name': name,
             'country_id': country
         }
 
         LOGGER.debug('Validating station id...')
-        response = self.registry.query_by_field(Station, 'identifier',
+        response = self.registry.query_by_field(Station, 'station_id',
                                                 identifier)
         if response:
             LOGGER.debug('Validated station with id: {}'.format(identifier))
@@ -642,7 +642,7 @@ class Process(object):
             self._error(128, values_line, msg)
 
         LOGGER.debug('Validating station name...')
-        model = {'station_id': identifier, 'name': station['name']}
+        model = {'station_id': identifier, 'name': station['current_name']}
         response = self.registry.query_multiple_fields(StationName, model,
                                                        model.keys(), ['name'])
         name_ok = bool(response)
@@ -651,7 +651,8 @@ class Process(object):
             LOGGER.debug('Validated with name {} for id {}'.format(
                 name, identifier))
         elif self.add_station_name():
-            LOGGER.info('Added new station name {}'.format(station['name']))
+            LOGGER.info('Added new station name {}'
+                        .format(station['current_name']))
             name_ok = True
         else:
             msg = 'Station name: {} did not match data for id: {}' \
@@ -659,15 +660,15 @@ class Process(object):
             self._error(130, values_line, msg)
 
         LOGGER.debug('Validating station country...')
-        fields = ['identifier', 'country_id']
+        fields = ['station_id', 'country_id']
         response = self.registry.query_multiple_fields(Station, station,
                                                        fields, ['country_id'])
         country_ok = bool(response)
         if country_ok:
             country = response.country
-            self.extcsv.extcsv['PLATFORM']['Country'] = country.identifier
+            self.extcsv.extcsv['PLATFORM']['Country'] = country.country_id
             LOGGER.debug('Validated with country: {} ({}) for id: {}'
-                         .format(country.country_name, country.identifier,
+                         .format(country.name_en, country.country_id,
                                  identifier))
         else:
             msg = 'Station country: {} did not match data for id: {}' \
@@ -695,7 +696,7 @@ class Process(object):
         date = self.extcsv.extcsv['TIMESTAMP']['Date']
 
         deployment_id = ':'.join([station, agency, project])
-        results = self.registry.query_by_field(Deployment, 'identifier',
+        results = self.registry.query_by_field(Deployment, 'deployment_id',
                                                deployment_id)
         if not results:
             LOGGER.warning('Deployment {} not found'.format(deployment_id))
@@ -835,7 +836,7 @@ class Process(object):
             LOGGER.debug('Not validating shipboard instrument location')
             return True
         elif instrument_id is not None:
-            result = self.registry.query_by_field(Instrument, 'identifier',
+            result = self.registry.query_by_field(Instrument, 'instrument_id',
                                                   instrument_id)
             if not result:
                 return True
