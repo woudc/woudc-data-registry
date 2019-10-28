@@ -52,7 +52,7 @@ import logging
 
 from datetime import datetime
 
-from woudc_data_registry import config, registry, search
+from woudc_data_registry import config
 from woudc_data_registry.models import (Contributor, DataRecord, Dataset,
                                         Deployment, Instrument, Project,
                                         Station, StationName)
@@ -79,7 +79,7 @@ class Process(object):
     - index
     """
 
-    def __init__(self):
+    def __init__(self, registry_conn, search_engine_conn):
         """constructor"""
 
         self.status = None
@@ -87,7 +87,12 @@ class Process(object):
         self.message = None
         self.process_start = datetime.utcnow()
         self.process_end = None
-        self.registry = registry.Registry()
+        self.registry = registry_conn
+        self.search_engine = search_engine_conn
+
+        self._registry_updates = []
+        self._search_engine_updates = []
+        self.data_record = None
 
         self.warnings = []
         self.errors = []
@@ -110,14 +115,12 @@ class Process(object):
         LOGGER.error(message)
         self.errors.append((error_code, message, line))
 
-    def process_data(self, infile, core_only=False,
-                     verify_only=False, bypass=False):
+    def validate(self, infile, core_only=False, bypass=False):
         """
         Process incoming data record.
 
         :param infile: Path to incoming data file.
         :param core_only: Whether to only verify core metadata tables.
-        :param verify_only: Whether to perform verification only (not ingest).
         :param bypass: Whether to skip permission prompts to add records.
 
         :returns: `bool` of processing result
@@ -126,7 +129,6 @@ class Process(object):
         # detect incoming data file
         data = None
         self.extcsv = None
-        self.search_engine = search.SearchIndex()
 
         self.warnings = []
         self.errors = []
@@ -165,28 +167,6 @@ class Process(object):
             return False
 
         LOGGER.info('Data is valid Extended CSV')
-
-#        domains_to_check = [
-#            'content_category',
-#            'data_generation_agency',
-#            'platform_type',
-#            'platform_id',
-#            'platform_name',
-#            'platform_country',
-#            'instrument_name',
-#            'instrument_model'
-#        ]
-
-#        for domain_to_check in domains_to_check:
-#            value = getattr(self.data_record, domain_to_check)
-#            domain = getattr(DataRecord, domain_to_check)
-#
-#            if value not in self.registry.query_distinct(domain):
-#                msg = 'value {} not in domain {}'.format(value,
-#                                                         domain_to_check)
-#                LOGGER.error(msg)
-#                # raise ProcessingError(msg)
-
         LOGGER.info('Verifying data record against core metadata fields')
 
         project_ok = self.check_project()
@@ -219,7 +199,7 @@ class Process(object):
                 self.add_deployment()
                 deployment_ok = True
 
-                msg = 'New deployment {} added'.format(deployment_name)
+                msg = 'New deployment {} queued'.format(deployment_name)
                 self._warning(202, None, msg)
             else:
                 msg = 'Deployment {} not added. Skipping file.' \
@@ -252,10 +232,10 @@ class Process(object):
             LOGGER.warning('No instrument with serial {} found in registry'
                            .format(old_serial))
             self.extcsv.extcsv['INSTRUMENT']['Number'] = old_serial
-            instrument_ok = self.add_instrument(verify_only)
+            instrument_ok = self.add_instrument()
 
             if instrument_ok:
-                msg = 'New instrument serial number added'
+                msg = 'New instrument serial number queued'
                 self._warning(201, None, msg)
 
         instrument_args = [
@@ -271,8 +251,8 @@ class Process(object):
             response = input('Instrument {} not found. Add? [y/n] '
                              .format(instrument_id))
             if response.lower() in ['y', 'yes']:
-                if self.add_instrument(verify_only, force=True):
-                    msg = 'New instrument name, model, and serial added'
+                if self.add_instrument(force=True):
+                    msg = 'New instrument name, model, and serial queued'
                     self._warning(1000, None, msg)
 
                     instrument_ok = True
@@ -319,29 +299,38 @@ class Process(object):
             return False
 
         LOGGER.info('Data record is valid and verified')
+        return True
 
-        if verify_only:  # do not save or index
-            LOGGER.info('Verification mode detected. NOT saving to registry')
-            return True
+    def persist(self):
+        LOGGER.info('Beginning persistence to data registry')
+        for model in self._registry_updates:
+            LOGGER.debug('Saving {} to registry'.format(str(model)))
+            self.registry.save(model)
 
-        LOGGER.info('Saving data record CSV to registry')
+        # TODO
+        # LOGGER.info('Beginning persistence to search engine')
+        # for model in self._search_engine_updates:
+        #     LOGGER.debug('Saving {} to search engine')
+
+        LOGGER.info('Saving data record to registry')
         self.registry.save(self.data_record)
+
+        prev_version = \
+            self.search_engine.get_record_version(self.data_record.es_id)
+        if not prev_version \
+           or self.data_record.data_generation_version > prev_version:
+            LOGGER.info('Saving data record to search index')
+            self.search_engine.index_data_record(
+                self.data_record.__geo_interface__)
 
         LOGGER.info('Saving data record CSV to WAF')
         waf_filepath = self.data_record.get_waf_path(config.WDR_WAF_BASEDIR)
         os.makedirs(os.path.dirname(waf_filepath), exist_ok=True)
         shutil.copy2(self.data_record.ingest_filepath, waf_filepath)
 
-        LOGGER.info('Indexing data record search engine')
-        version = self.search_engine.get_record_version(self.data_record.es_id)
-        if version:
-            if version < self.data_record.data_generation_version:
-                self.search_engine.index_data_record(
-                    self.data_record.__geo_interface__)
-        else:
-            self.search_engine.index_data_record(
-                    self.data_record.__geo_interface__)
-        return True
+        LOGGER.info('Persistence complete')
+        self._registry_updates = []
+        self._search_index_updates = []
 
     def add_deployment(self):
         """
@@ -366,7 +355,7 @@ class Process(object):
         }
 
         deployment = Deployment(deployment_model)
-        self.registry.save(deployment)
+        self._registry_updates.append(deployment)
 
     def add_station_name(self, bypass=False):
         """
@@ -403,7 +392,7 @@ class Process(object):
             }
 
             station_name_object = StationName(model)
-            self.registry.save(station_name_object)
+            self._registry_updates.append(station_name_object)
             return True
 
     def add_instrument(self, verify_only, force=False):
@@ -472,7 +461,8 @@ class Process(object):
                 LOGGER.info(msg)
             else:
                 instrument = Instrument(model)
-                self.registry.save(instrument)
+                self._registry_updates.append(instrument)
+                self._search_engine_updates.append(instrument)
                 LOGGER.info('Instrument successfully added.')
             return True
         else:
@@ -707,11 +697,11 @@ class Process(object):
                          .format(deployment_id))
             if deployment.start_date > date:
                 deployment.start_date = date
-                self.registry.save()
+                self._registry_updates.append(deployment)
                 LOGGER.debug('Deployment start date updated.')
             elif deployment.end_date and deployment.end_date < date:
                 deployment.end_date = date
-                self.registry.save()
+                self._registry_updates.append(deployment)
                 LOGGER.debug('Deployment end date updated.')
             return True
 
@@ -966,9 +956,6 @@ class Process(object):
             return False
 
         return True
-
-    def finish(self):
-        self.registry.close_session()
 
 
 class ProcessingError(Exception):

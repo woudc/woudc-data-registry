@@ -49,6 +49,9 @@ import click
 
 from woudc_data_registry.processing import Process
 
+from woudc_data_registry.registry import Registry
+from woudc_data_registry.search import SearchIndex
+
 
 def orchestrate(file_, directory, core_only=False,
                 verify_only=False, bypass=False):
@@ -74,18 +77,21 @@ def orchestrate(file_, directory, core_only=False,
     passed = []
     failed = []
 
+    registry = Registry()
+    search_engine = SearchIndex()
+
     with click.progressbar(files_to_process, label='Processing files') as run_:
         for file_to_process in run_:
             click.echo('Processing filename: {}'.format(file_to_process))
-            p = Process()
+            p = Process(registry, search_engine)
             try:
-                result = p.process_data(file_to_process, core_only=core_only,
-                                        verify_only=verify_only, bypass=bypass)
+                if p.validate(file_to_process, core_only=core_only,
+                              bypass=bypass):
 
-                if result:  # processed
                     if verify_only:
                         click.echo('Verified but not ingested')
                     else:
+                        p.persist()
                         click.echo('Ingested successfully')
                     passed.append(file_to_process)
                 else:
@@ -94,8 +100,8 @@ def orchestrate(file_, directory, core_only=False,
             except Exception as err:
                 click.echo('Processing failed: {}'.format(err))
                 failed.append(file_to_process)
-            finally:
-                p.finish()
+
+    registry.close_session()
 
     for name in files_to_process:
         if name in passed:
