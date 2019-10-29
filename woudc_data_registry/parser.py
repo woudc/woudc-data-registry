@@ -43,7 +43,6 @@
 #
 # =================================================================
 
-import os
 import re
 import sys
 
@@ -176,16 +175,17 @@ class ExtendedCSV(object):
     def line_num(self, table):
         """
         Returns the line in the source file at which <table> started.
+        If there is no table in the file named <table>, returns None instead.
         """
 
-        return self._line_num[table]
+        return self._line_num.get(table, None)
 
     def table_count(self, table_type):
         """
         Returns the number of tables named <table_type> in the source file.
         """
 
-        return self._table_count[table_type]
+        return self._table_count.get(table_type, 0)
 
     def _warning(self, error_code, line, message=None):
         """
@@ -249,6 +249,24 @@ class ExtendedCSV(object):
 
         for field, value in zip(fields, values):
             self.extcsv[table_name][field].append(value.strip())
+
+    def remove_table(self, table_name):
+        """
+        Remove a table from the memory of this Extended CSV instance.
+        Does not alter the source file in any way.
+
+        :param table_name: Name of the table to delete.
+        """
+
+        table_type = table_name.rstrip('0123456789_')
+
+        self.extcsv.pop(table_name)
+        self.line_num.pop(table_name)
+
+        if self.table_count[table_type] > 1:
+            self.table_count[table_type] -= 1
+        else:
+            self.table_count.pop(table_type)
 
     def typecast_value(self, table, field, value, line_num):
         """
