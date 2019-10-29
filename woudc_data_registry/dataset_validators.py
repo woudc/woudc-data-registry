@@ -23,6 +23,8 @@ def get_validator(dataset):
 
     if dataset == 'TotalOzone':
         return TotalOzoneValidator()
+    elif dataset == 'TotalOzoneObs':
+        return TotalOzoneObsValidator()
     elif dataset == 'Spectral':
         return SpectralValidator()
     elif dataset in DATASETS:
@@ -200,6 +202,7 @@ class TotalOzoneValidator(DatasetValidator):
 
             if prev_date and date < prev_date:
                 in_order = False
+            prev_date = date
 
             if date not in dates_encountered:
                 dates_encountered[date] = row
@@ -310,6 +313,73 @@ class TotalOzoneValidator(DatasetValidator):
         ])
         return monthly
 
+
+class TotalOzoneObsValidator(DatasetValidator):
+    """
+    Dataset-specific validator for TotalOzoneObs files.
+    """
+
+    def check_all(self, extcsv):
+        """
+        Assess any dataset-specific tables inside <extcsv> for errors.
+        Returns True iff no errors were encountered.
+
+        TotalOzoneObs errors include improper ordering of times in the
+        #OBSERVATIONS tables.
+
+        :param extcsv: A parsed Extended CSV file of TotalOzoneObs data.
+        :returns: True iff the file's dataset-specific tables are error-free.
+        """
+
+        LOGGER.info('Beginning TotalOzoneObs-specific checks')
+
+        time_series_ok = self.check_time_series(extcsv)
+
+        LOGGER.info('TotalOzoneObs-specific checks complete')
+        return time_series_ok
+
+    def check_time_series(self, extcsv):
+        """
+        Assess the ordering of Times in the #OBSERVATIONS table in <extcsv>.
+        Returns True iff no errors were found.
+
+        :param extcsv: A parsed Extended CSV file of TotalOzoneObs data.
+        :returns: True iff the ordering of #OBSERVATIONS.Times is error-free.
+        """
+
+        observations = zip(*extcsv.extcsv['OBSERVATIONS'].values())
+
+        observations_valueline = extcsv.line_num('OBSERVATIONS') + 2
+        times_encountered = {}
+
+        in_order = True
+        prev_time = None
+        for line_num, row in enumerate(observations, observations_valueline):
+            time = row[0]
+
+            if prev_time and time < prev_time:
+                in_order = False
+            prev_time = time
+
+            if time not in times_encountered:
+                times_encountered[time] = row
+            else:
+                msg = 'Found multiple observations with #OBSERVATIONS.Time' \
+                      ' {}'.format(time)
+                self._warning(51, line_num, msg)
+
+        if not in_order:
+            msg = '#OBSERVATIONS.Time found in non-chronological order'
+            self._warning(50, observations_valueline, msg)
+
+            sorted_times = sorted(extcsv.extcsv['OBSERVATIONS']['Time'])
+            sorted_rows = [times_encountered[time] for time in sorted_times]
+
+            for field_num, field in enumerate(extcsv.extcsv['OBSERVATIONS']):
+                column = list(map(lambda row: row[field_num], sorted_rows))
+                extcsv.extcsv['OBSERVATIONS'][field] = column
+
+        return True
 
 
 class SpectralValidator(DatasetValidator):
