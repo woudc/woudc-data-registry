@@ -405,8 +405,8 @@ Datasets:
             occurrences: 1+
             required:
               - Time
-              - IntACGIH
             optional:
+              - IntACGIH
               - IntCIE
               - ZenAngle
               - MuValue
@@ -423,9 +423,9 @@ Datasets:
             occurrences: 1+
             required:
               - Wavelength
-              - S-Irradiance
             optional:
               - Time
+              - S-Irradiance
               - SZA
           data_table: GLOBAL
         2:
@@ -452,7 +452,7 @@ Datasets:
               - Time
             optional:
               - SZA
-        data_table: DIFFUSE
+          data_table: DIFFUSE
   UmkehrN14:
     1.0:
       1:

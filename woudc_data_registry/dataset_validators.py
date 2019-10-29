@@ -23,6 +23,8 @@ def get_validator(dataset):
 
     if dataset == 'TotalOzone':
         return TotalOzoneValidator()
+    elif dataset == 'Spectral':
+        return SpectralValidator()
     elif dataset in DATASETS:
         return DatasetValidator()
     else:
@@ -90,10 +92,13 @@ class TotalOzoneValidator(DatasetValidator):
         :returns: True iff the file's dataset-specific tables are error-free.
         """
 
+        LOGGER.info('Beginning TotalOzone-specific checks')
+
         timestamps_ok = self.check_timestamps(extcsv)
         time_series_ok = self.check_time_series(extcsv)
         monthly_ok = self.check_monthly(extcsv)
 
+        LOGGER.info('TotalOzone-specific checks complete')
         return all([timestamps_ok, time_series_ok, monthly_ok])
 
     def check_timestamps(self, extcsv):
@@ -104,6 +109,8 @@ class TotalOzoneValidator(DatasetValidator):
         :param extcsv: A parsed Extended CSV file of TotalOzone data.
         :returns: True iff the two #TIMESTAMP tables are error-free.
         """
+
+        LOGGER.debug('Assessing #TIMESTAMP tables for similarity')
 
         timestamp1_date = extcsv.extcsv['TIMESTAMP']['Date']
         timestamp1_time = extcsv.extcsv['TIMESTAMP'].get('Time', None)
@@ -173,6 +180,8 @@ class TotalOzoneValidator(DatasetValidator):
         :returns: True iff the ordering of #DAILY Dates is error-free.
         """
 
+        LOGGER.debug('Assessing order of #DAILY.Date column')
+
         timestamp1_date = extcsv.extcsv['TIMESTAMP']['Date']
         daily_start = extcsv.line_num('DAILY') + 2
         dates_encountered = {}
@@ -227,6 +236,8 @@ class TotalOzoneValidator(DatasetValidator):
         :returns: True iff the #MONTHLY table is error-free.
         """
 
+        LOGGER.debug('Assessing correctness of #MONTHLY table')
+
         try:
             template_monthly = self.derive_monthly_from_daily(extcsv)
         except Exception as err:
@@ -266,6 +277,8 @@ class TotalOzoneValidator(DatasetValidator):
         :returns: An OrderedDict representing the derived #MONTHLY table.
         """
 
+        LOGGER.debug('Renerating #MONTHLY table from data')
+
         dates_column = extcsv.extcsv['DAILY']['Date']
         ozone_column = extcsv.extcsv['DAILY'].get('ColumnO3', None)
 
@@ -296,3 +309,58 @@ class TotalOzoneValidator(DatasetValidator):
             ('Npts', ozone_npts)
         ])
         return monthly
+
+
+
+class SpectralValidator(DatasetValidator):
+    """
+    Dataset-specific validator for Spectral files.
+    """
+
+    def check_all(self, extcsv):
+        """
+        Assess any dataset-specific tables inside <extcsv> for errors.
+        Returns True iff no errors were encountered.
+
+        Spectral errors include incorrect groupings of #TIMESTAMP, #GLOBAL,
+        and #GLOBAL_SUMMARY tables such that the counts of each are different.
+
+        :param extcsv: A parsed Extended CSV file of Spectral data.
+        :returns: True iff the file's dataset-specific tables are error-free.
+        """
+
+        LOGGER.info('Beginning Spectral-specific checks')
+
+        groupings_ok = self.check_groupings(extcsv)
+
+        LOGGER.info('Spectral-specific checks complete')
+        return groupings_ok
+
+    def check_groupings(self, extcsv):
+        """
+        Assess the numbers of #TIMESTAMP, #GLOBAL, and #GLOBAL_SUMMARY tables
+        in the input file <extcsv>. Returns True iff no errors were found.
+
+        :param extcsv: A parsed Extended CSV file of Spectral data.
+        :returns: True iff the file is free of table grouping errors.
+        """
+
+        LOGGER.debug('Assessing #TIMESTAMP, #GLOBAL, #GLOBAL_SUMMARY'
+                     ' table counts')
+
+        global_summary_table = 'GLOBAL_SUMMARY_NSF' \
+            if 'GLOBAL_SUMMARY_NSF' in extcsv.extcsv \
+            else 'GLOBAL_SUMMARY'
+
+        timestamp_count = extcsv.table_count('TIMESTAMP')
+        global_count = extcsv.table_count('GLOBAL')
+        global_summary_count = extcsv.table_count(global_summary_table)
+
+        if not timestamp_count == global_count == global_summary_count:
+            msg = 'Required Spectral tables #TIMESTAMP, #GLOBAL, and #{}' \
+                  ' have uneven counts {}, {}, and {}: must be even counts' \
+                  ' of each'.format(global_summary_table, timestamp_count,
+                                    global_count, global_summary_count)
+            self._warning(147, None, msg)
+
+        return True
