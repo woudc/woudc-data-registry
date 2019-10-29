@@ -27,6 +27,8 @@ def get_validator(dataset):
         return TotalOzoneObsValidator()
     elif dataset == 'Spectral':
         return SpectralValidator()
+    elif dataset == 'UmkehrN14':
+        return UmkehrValidator()
     elif dataset == 'Lidar':
         return LidarValidator()
     elif dataset in DATASETS:
@@ -481,5 +483,158 @@ class LidarValidator(DatasetValidator):
                   ' have uneven counts {}, {}: must be equal counts of each' \
                   .format(profile_count, summary_count)
             self._warning(146, None, msg)
+
+        return True
+
+
+class UmkehrValidator(DatasetValidator):
+    """
+    Dataset-specific validator for Umkehr files.
+    """
+
+    def check_all(self, extcsv):
+        """
+        Assess any dataset-specific tables inside <extcsv> for errors.
+        Returns True iff no errors were encountered.
+
+        Umkehr errors include inconsistencies between the two #TIMESTAMP
+        tables and improper ordering of dates within their data tables.
+
+        :param extcsv: A parsed Extended CSV file of Umkehr data.
+        :returns: True iff the file's dataset-specific tables are error-free.
+        """
+
+        LOGGER.info('Beginning Umkehr-specific checks')
+
+        timestamps_ok = self.check_timestamps(extcsv)
+        time_series_ok = self.check_time_series(extcsv)
+
+        LOGGER.info('Umkehr-specific checks complete')
+        return timestamps_ok and time_series_ok
+
+    def check_timestamps(self, extcsv):
+        """
+        Assess the two required #TIMESTAMP tables in <extcsv> for errors
+        and inconsistencies. Returns True iff no errors were found.
+
+        :param extcsv: A parsed Extended CSV file of Umkehr data.
+        :returns: True iff the two #TIMESTAMP tables are error-free.
+        """
+
+        LOGGER.debug('Assessing #TIMESTAMP tables for similarity')
+
+        level = extcsv.extcsv['CONTENT']['Level']
+        data_table = 'N14_VALUES' if level == 1.0 else 'C_PROFILE'
+
+        timestamp1_date = extcsv.extcsv['TIMESTAMP']['Date']
+        timestamp1_time = extcsv.extcsv['TIMESTAMP'].get('Time', None)
+        observation_dates = extcsv.extcsv[data_table]['Date']
+
+        timestamp1_startline = extcsv.line_num('TIMESTAMP')
+        timestamp1_valueline = timestamp1_startline + 2
+
+        if timestamp1_date != observation_dates[0]:
+            msg = '#TIMESTAMP.Date before #{table} does not equal' \
+                  ' first date of #{table}'.format(table=data_table)
+            self._warning(150, timestamp1_valueline, msg)
+
+            extcsv.extcsv['TIMESTAMP']['Date'] = observation_dates[0]
+
+        timestamp_count = extcsv.table_count('TIMESTAMP')
+        if timestamp_count == 1:
+            msg = '#TIMESTAMP table after #{} is missing, deriving' \
+                  ' based on requirements'.format(data_table)
+            self._warning(153, None, msg)
+
+            utcoffset = extcsv.extcsv['TIMESTAMP']['UTCOffset']
+            final_date = observation_dates[-1]
+
+            timestamp2 = OrderedDict([
+                ('UTCOffset', utcoffset),
+                ('Date', final_date),
+                ('Time', timestamp1_time)
+            ])
+            extcsv.extcsv['TIMESTAMP_2'] = timestamp2
+
+        timestamp2_date = extcsv.extcsv['TIMESTAMP_2']['Date']
+        timestamp2_time = extcsv.extcsv['TIMESTAMP_2']['Time']
+
+        timestamp2_startline = extcsv.line_num('TIMESTAMP_2')
+        timestamp2_valueline = None if timestamp2_startline is None \
+            else timestamp2_startline + 2
+
+        if timestamp2_date != observation_dates[-1]:
+            msg = '#TIMESTAMP.Date after #{table} does not equal' \
+                  ' last date of #{table}'.format(table=data_table)
+            self._warning(151, timestamp2_valueline, msg)
+
+            extcsv.extcsv['TIMESTAMP_2']['Date'] = observation_dates[-1]
+
+        if timestamp2_time != timestamp1_time:
+            msg = 'Inconsistent Time values between #TIMESTAMP tables'
+            self._warning(154, timestamp2_valueline, msg)
+
+        if timestamp_count > 2:
+            msg = 'More than 2 #TIMESTAMP tables present; removing extras'
+            line = extcsv.line_num('TIMESTAMP_3')
+            self._warning(116, line, msg)
+
+            for ind in range(3, timestamp_count + 1):
+                table_name = 'TIMESTAMP_' + str(ind)
+                extcsv.remove_table(table_name)
+
+        return True
+
+    def check_time_series(self, extcsv):
+        """
+        Assess the ordering of dates in the data table (#N14_VALUES or
+        #C_PROFILE) in <extcsv>. Returns True iff no errors were found.
+
+        :param extcsv: A parsed Extended CSV file of Umkehr data.
+        :returns: True iff the ordering of observation dates is error-free.
+        """
+
+        level = extcsv.extcsv['CONTENT']['Level']
+        data_table = 'N14_VALUES' if level == 1.0 else 'C_PROFILE'
+
+        LOGGER.debug('Assessing order of #{}.Date column'.format(data_table))
+
+        timestamp1_date = extcsv.extcsv['TIMESTAMP']['Date']
+        observation_valueline = extcsv.line_num(data_table) + 2
+        dates_encountered = {}
+
+        columns = zip(*extcsv.extcsv[data_table].values())
+
+        in_order = True
+        prev_date = None
+        for line_num, row in enumerate(columns, observation_valueline):
+            date = row[0]
+
+            if prev_date and date < prev_date:
+                in_order = False
+            prev_date = date
+
+            if date not in dates_encountered:
+                dates_encountered[date] = row
+            elif row == dates_encountered[date]:
+                msg = 'Duplicate data ignored with non-unique #{}.Date' \
+                      .format(data_table)
+                self._warning(47, line_num, msg)
+            else:
+                msg = '#Found multiple observations under #DAILY.Date {}' \
+                      .format(date)
+                self._error(48, line_num, msg)
+
+        if not in_order:
+            msg = '#{}.Date found in non-chronological order' \
+                  .format(data_table)
+            self._warning(49, observation_valueline, msg)
+
+            sorted_dates = sorted(extcsv.extcsv[data_table]['Date'])
+            sorted_rows = [dates_encountered[date] for date in sorted_dates]
+
+            for fieldnum, field in enumerate(extcsv.extcsv[data_table].keys()):
+                column = list(map(lambda row: row[fieldnum], sorted_rows))
+                extcsv.extcsv[data_table][field] = column
 
         return True
