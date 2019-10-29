@@ -27,6 +27,8 @@ def get_validator(dataset):
         return TotalOzoneObsValidator()
     elif dataset == 'Spectral':
         return SpectralValidator()
+    elif dataset == 'Lidar':
+        return LidarValidator()
     elif dataset in DATASETS:
         return DatasetValidator()
     else:
@@ -432,5 +434,52 @@ class SpectralValidator(DatasetValidator):
                   ' of each'.format(global_summary_table, timestamp_count,
                                     global_count, global_summary_count)
             self._warning(147, None, msg)
+
+        return True
+
+
+class LidarValidator(DatasetValidator):
+    """
+    Dataset-specific validator for Lidar files.
+    """
+
+    def check_all(self, extcsv):
+        """
+        Assess any dataset-specific tables inside <extcsv> for errors.
+        Returns True iff no errors were encountered.
+
+        Lidar errors include incorrect groupings of #OZONE_PROFILE and
+        and #OZONE_SUMMARY tables such that the counts of each are different.
+
+        :param extcsv: A parsed Extended CSV file of Lidar data.
+        :returns: True iff the file's dataset-specific tables are error-free.
+        """
+
+        LOGGER.info('Beginning Lidar-specific checks')
+
+        groupings_ok = self.check_groupings(extcsv)
+
+        LOGGER.info('Lidar-specific checks complete')
+        return groupings_ok
+
+    def check_groupings(self, extcsv):
+        """
+        Assess the numbers of #OZONE_PROFILE and #OZONE_SUMMARY tables
+        in the input file <extcsv>. Returns True iff no errors were found.
+
+        :param extcsv: A parsed Extended CSV file of Lidar data.
+        :returns: True iff the file is free of table grouping errors.
+        """
+
+        LOGGER.debug('Assessing #OZONE_PROFILE, #GLOBAL_SUMMARY table counts')
+
+        profile_count = extcsv.table_count('OZONE_PROFILE')
+        summary_count = extcsv.table_count('OZONE_SUMMARY')
+
+        if profile_count != summary_count:
+            msg = 'Required Lidar tables #OZONE_PROFILE and #OZONE_SUMMARY' \
+                  ' have uneven counts {}, {}: must be equal counts of each' \
+                  .format(profile_count, summary_count)
+            self._warning(146, None, msg)
 
         return True
