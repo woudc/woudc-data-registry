@@ -59,6 +59,7 @@ from woudc_data_registry.models import (Contributor, DataRecord, Dataset,
 from woudc_data_registry.parser import (DOMAINS, ExtendedCSV,
                                         MetadataValidationError,
                                         NonStandardDataError)
+from woudc_data_registry.dataset_validators import get_validator
 from woudc_data_registry.util import read_file
 
 LOGGER = logging.getLogger(__name__)
@@ -277,6 +278,13 @@ class Process(object):
         if core_only:
             msg = 'Core mode detected. NOT validating dataset-specific tables'
             LOGGER.info(msg)
+        else:
+            dataset = self.extcsv.extcsv['CONTENT']['Category']
+            dataset_validator = get_validator(dataset)
+
+            dataset_validated = dataset_validator.check_all(self.extcsv)
+            if not dataset_validated:
+                return False
 
         LOGGER.info('Validating data record')
         self.data_record = DataRecord(self.extcsv)
