@@ -63,6 +63,7 @@ Datasets:
               - Time
             optional:
               - Irradiance
+          data_table: DIFFUSE
         2:
           GLOBAL:
             rows: 1+
@@ -71,6 +72,7 @@ Datasets:
               - Time
             optional:
               - Irradiance
+          data_table: GLOBAL
   Lidar:
     1.0:
       1:
@@ -98,6 +100,7 @@ Datasets:
           optional:
             - AirDensity
             - Temperature
+        data_table: OZONE_PROFILE
   Multi-band:
     1.0:
       1:
@@ -111,6 +114,7 @@ Datasets:
               - Time
             optional:
               - SZA
+          data_table: GLOBAL
         2:
           SIMULTANEOUS:
             rows: 1+
@@ -124,6 +128,7 @@ Datasets:
               - DRS-Irradiance
               - Airmass
               - SZA
+          data_table: SIMULTANEOUS
   OzoneSonde:
     1.0:
       1:
@@ -171,6 +176,7 @@ Datasets:
           optional:
             - Pressure
             - Correction
+        data_table: PROFILE
       2:
         FLIGHT_SUMMARY:
           rows: 1
@@ -183,7 +189,6 @@ Datasets:
           optional:
             - CorrectionCode
             - NormalizationFactor
-
         PROFILE:
           rows: 1+
           occurrences: 1
@@ -268,6 +273,7 @@ Datasets:
             - WLCode
             - ObsType
             - UTC_Mean
+        data_table: PROFILE
   RocketSonde:
     1.0:
       1:
@@ -316,6 +322,7 @@ Datasets:
             - AirPressure
             - Temperature
             - AirDensity
+        data_table: OZONE_PROFILE
   TotalOzone:
     1.0:
       1:
@@ -357,6 +364,7 @@ Datasets:
             - NO2ss
             - dNO2sr
             - dNO2ss
+        data_table: DAILY
   TotalOzoneObs:
     1.0:
       1:
@@ -387,6 +395,7 @@ Datasets:
             - MeanO3
           optional:
             - StdDevO3
+        data_table: OBSERVATIONS
   Spectral:
     1.0:
       1:
@@ -418,6 +427,7 @@ Datasets:
             optional:
               - Time
               - SZA
+          data_table: GLOBAL
         2:
           GLOBAL_SUMMARY_NSF:
             rows: 1
@@ -442,10 +452,11 @@ Datasets:
               - Time
             optional:
               - SZA
+        data_table: DIFFUSE
   UmkehrN14:
     1.0:
       1:
-        #N14_VALUES:
+        N14_VALUES:
           rows: 1+
           occurrences: 1
           required:
@@ -471,6 +482,7 @@ Datasets:
             - N880
             - N890
             - N900
+        data_table: N14_VALUES
     2.0:
       1:
         C_PROFILE:
@@ -499,4 +511,5 @@ Datasets:
             - DFMRS
             - FEPS
             - RMSRES
+        data_table: C_PROFILE
 ...

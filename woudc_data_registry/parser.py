@@ -806,6 +806,7 @@ class ExtendedCSV(object):
 
     def check_tables(self, schema):
         success = True
+        observations_table = schema.pop('data_table')
 
         required_tables = [name for name, body in schema.items()
                            if 'required' in body]
@@ -950,6 +951,13 @@ class ExtendedCSV(object):
                 LOGGER.warning('Optional table {} is not in file.'.format(
                                table))
 
+        for i in range(1, self.table_count(observations_table) + 1):
+            table_name = observations_table + '_' + str(i) \
+                if i > 1 else observations_table
+            arbitrary_column = next(iter(self.extcsv[table_name].values()))
+
+            self.number_of_observations += len(arbitrary_column)
+
         for table in present_tables:
             table_type = table.rstrip('0123456789_')
             body = self.extcsv[table]
@@ -966,6 +974,7 @@ class ExtendedCSV(object):
                 else:
                     self.extcsv[table][field] = converted
 
+        schema['data_table'] = observations_table
         return success
 
 
