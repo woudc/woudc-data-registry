@@ -279,6 +279,10 @@ class Process(object):
             msg = 'Core mode detected. NOT validating dataset-specific tables'
             LOGGER.info(msg)
         else:
+            time_series_ok = self.check_time_series()
+            if not time_series_ok:
+                return False
+
             dataset = self.extcsv.extcsv['CONTENT']['Category']
             dataset_validator = get_validator(dataset)
 
@@ -400,7 +404,7 @@ class Process(object):
         if not permission:
             return False
         else:
-            observation_time = self.extcsv.extcsv['TIMESTAMP']['Time']
+            observation_time = self.extcsv.extcsv['TIMESTAMP']['Date']
             model = {
                 'identifier': name_id,
                 'station_id': station_id,
@@ -930,15 +934,16 @@ class Process(object):
         #DATA_GENERATION.Date and #DATA_GENERATION.Version by comparison
         with other tables. Returns True if no errors were encountered.
 
-        Fill is the Extended CSV with missing values if possible.
+        Fill in the Extended CSV with missing values if possible.
         """
 
-        date = self.extcsv.extcsv['DATA_GENERATION'].get('Date', None)
+        dg_date = self.extcsv.extcsv['DATA_GENERATION'].get('Date', None)
         version = self.extcsv.extcsv['DATA_GENERATION'].get('Version', None)
+        version_ok = True
 
         values_line = self.extcsv.line_num('DATA_GENERATION')
 
-        if not date:
+        if not dg_date:
             msg = 'Missing #DATA_GENERATION.Date, resolved to processing date'
             self._warning(63, values_line, msg)
 
@@ -949,7 +954,23 @@ class Process(object):
 
         try:
             numeric_version = float(version)
+        except TypeError:
+            msg = 'Empty #DATA_GENERATION.Version, defaulting to 1.0'
+            self._warning(1000, values_line, msg)
 
+            self.extcsv.extcsv['DATA_GENERATION']['Version'] = version = '1.0'
+            numeric_version = 1.0
+        except ValueError:
+            try:
+                while version.count('.') > 1 and version.endswith('.0'):
+                    version = version[:-2]
+                numeric_version = float(version)
+            except ValueError:
+                msg = '#DATA_GENERATION.Version contains invalid characters'
+                self._error(68, values_line, msg)
+                version_ok = False
+
+        if version_ok:
             if not 0 <= numeric_version <= 20:
                 msg = '#DATA_GENERATION.Version is not within' \
                       ' allowable range [0.0]-[20.0]'
@@ -960,13 +981,49 @@ class Process(object):
 
                 msg = '#DATA_GENERATION.Version corrected to one decimal place'
                 self._warning(67, values_line, msg)
-        except ValueError:
-            msg = '#DATA_GENERATION.Version contains invalid characters'
-            LOGGER.error(msg)
-            self._error(68, values_line, msg)
-            return False
 
-        return True
+        return version_ok
+
+    def check_time_series(self):
+        """
+        Validates the input Extended CSV source file's dates across all tables
+        to ensure that no date is more recent that #DATA_GENERATION.Date.
+        """
+
+        dg_date = self.extcsv.extcsv['DATA_GENERATION']['Date']
+        ts_time = self.extcsv.extcsv['TIMESTAMP']['Time']
+
+        dates_ok = True
+        err_base = '#{}.Date cannot be more recent than #DATA_GENERATION.Date'
+
+        for table, body in self.extcsv.extcsv.items():
+            if table == 'DATA_GENERATION':
+                continue
+
+            values_line = self.extcsv.line_num(table) + 2
+
+            date_column = body.get('Date', [])
+            if not isinstance(date_column, list):
+                date_column = [date_column]
+
+            for line, other_date in enumerate(date_column, values_line):
+                if other_date > dg_date:
+                    err_code = 31 if table.startswith('TIMESTAMP') else 32
+                    msg = err_base.format(table)
+                    self._error(err_code, line, msg)
+
+            time_column = body.get('Time', [])
+            if not isinstance(time_column, list):
+                time_column = [time_column]
+
+            if ts_time:
+                for line, other_time in enumerate(time_column, values_line):
+                    if other_time and other_time < ts_time:
+                        msg = 'First #TIMESTAMP.Time cannot be more recent' \
+                              ' than other time(s)'
+                        self._warning(22, line, msg)
+
+        return dates_ok
 
 
 class ProcessingError(Exception):
