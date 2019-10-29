@@ -56,11 +56,129 @@ from woudc_data_registry.util import json_serial
 
 LOGGER = logging.getLogger(__name__)
 
-INDEXES = {
-    'contributor': 'woudc-data-registry.contributor',
-    'station': 'woudc-data-registry.station',
-    'instrument': 'woudc-data-registry.instrument',
-    'data_record': 'woudc-data-registry.data_record'
+typedefs = {
+    'keyword': {
+        'type': 'keyword',
+        'ignore_above': 256
+    }
+}
+
+MAPPINGS = {
+    'contributor': {
+        'index': 'woudc-data-registry.contributor'
+    },
+    'station': {
+        'index': 'woudc-data-registry.station'
+    },
+    'instrument': {
+        'index': 'woudc-data-registry.instrument'
+    },
+    'data_record': {
+        'index': 'woudc-data-registry.data_record',
+        'properties': {
+            'content_class': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'content_category': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'content_form': {
+                'type': 'byte'
+            },
+            'content_level': {
+                'type': 'float'
+            },
+            'data_generation_agency': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'data_generation_date': {
+                'type': 'date'
+            },
+            'data_generation_version': {
+                'type': 'float'
+            },
+            'data_generation_scientific_authority': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'platform_id': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'platform_type': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'platform_name': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'platform_country': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'platform_gaw_id': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'instrument_name': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'instrument_model': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'instrument_number': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'timestamp_utcoffset': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'data_generation_date': {
+                'type': 'date'
+            },
+            'timestamp_time': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'published': {
+                'type': 'boolean'
+            },
+            'received_datetime': {
+                'type': 'date'
+            },
+            'inserted_datetime': {
+                'type': 'date'
+            },
+            'processed_datetime': {
+                'type': 'date'
+            },
+            'published_datetime': {
+                'type': 'date'
+            },
+            'number_of_observations': {
+                'type': 'integer'
+            },
+            'ingest_filepath': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'filename': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            },
+            'url': {
+                'type': 'text',
+                'fields': {name: typedefs[name] for name in ['keyword']}
+            }
+        }
+    }
 }
 
 
@@ -101,36 +219,48 @@ class SearchIndex(object):
 
     def create(self):
         """create search indexes"""
-        settings = {
-            'mappings': {
-                'FeatureCollection': {
-                    'properties': {
-                        'geometry': {
-                            'type': 'geo_shape'
+
+        for definition in MAPPINGS.values():
+            index_name = definition['index']
+
+            settings = {
+               'mappings': {
+                    'FeatureCollection': {
+                        'properties': {
+                            'geometry': {
+                                'type': 'geo_shape'
+                            }
                         }
                     }
-                }
-            },
-            'settings': {
-                'index': {
-                    'number_of_shards': 1,
-                    'number_of_replicas': 0
+                },
+                'settings': {
+                    'index': {
+                        'number_of_shards': 1,
+                        'number_of_replicas': 0
+                    }
                 }
             }
-        }
 
-        for key, value in INDEXES.items():
+            if 'properties' in definition:
+                props = settings['mappings']['FeatureCollection']['properties']
+                props['properties'] = {
+                    'properties': definition['properties']
+                }
+
             try:
-                self.connection.indices.create(index=value, body=settings)
+                self.connection.indices.create(index=index_name, body=settings)
             except (ConnectionError, RequestError) as err:
                 LOGGER.error(err)
                 raise SearchIndexError(err)
 
     def delete(self):
         """delete search indexes"""
-        for key, value in INDEXES.items():
+
+        for definition in MAPPINGS.values():
+            index_name = definition['index']
+
             try:
-                self.connection.indices.delete(value)
+                self.connection.indices.delete(index_name)
             except NotFoundError as err:
                 LOGGER.error(err)
                 raise SearchIndexError(err)
@@ -145,7 +275,8 @@ class SearchIndex(object):
         """
 
         try:
-            result = self.connection.get(index=INDEXES['data_record'],
+            index = MAPPINGS['data_record']['index']
+            result = self.connection.get(index=index,
                                          doc_type='FeatureCollection',
                                          id=identifier,)
             return result['_source']['properties']['data_generation_version']
@@ -161,15 +292,16 @@ class SearchIndex(object):
         :returns: `bool` status of indexing result
         """
 
+        index = MAPPINGS['data_record']['index']
         identifier = data['id']
 
         try:
-            result = self.connection.get(index=INDEXES['data_record'],
+            result = self.connection.get(index=index,
                                          doc_type='FeatureCollection',
                                          id=identifier)
             LOGGER.debug('existing record, updating')
             data_ = json.dumps({'doc': data}, default=json_serial)
-            result = self.connection.update(index=INDEXES['data_record'],
+            result = self.connection.update(index=index,
                                             doc_type='FeatureCollection',
                                             id=identifier, body=data_)
             LOGGER.debug('Result: {}'.format(result))
@@ -179,7 +311,7 @@ class SearchIndex(object):
             data_ = json.dumps(data, default=json_serial)
             LOGGER.debug('indexing {}'.format(identifier))
             try:
-                result = self.connection.index(index=INDEXES['data_record'],
+                result = self.connection.index(index=index,
                                                doc_type='FeatureCollection',
                                                id=identifier, body=data_)
                 LOGGER.debug('Result: {}'.format(result))
