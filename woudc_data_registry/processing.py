@@ -240,7 +240,7 @@ class Process(object):
 
         instrument_args = [
             self.extcsv.extcsv['INSTRUMENT']['Name'],
-            self.extcsv.extcsv['INSTRUMENT']['Model'],
+            str(self.extcsv.extcsv['INSTRUMENT']['Model']),
             str(self.extcsv.extcsv['INSTRUMENT']['Number']),
             str(self.extcsv.extcsv['PLATFORM']['ID']),
             self.extcsv.extcsv['CONTENT']['Category']]
@@ -302,6 +302,12 @@ class Process(object):
         return True
 
     def persist(self):
+        """
+        Publish all changes from the previous file parse to the data registry
+        and ElasticSearch index, including instrument/deployment updates.
+        Copies the input file to the WAF.
+        """
+
         LOGGER.info('Beginning persistence to data registry')
         for model in self._registry_updates:
             LOGGER.debug('Saving {} to registry'.format(str(model)))
@@ -334,9 +340,9 @@ class Process(object):
 
     def add_deployment(self):
         """
-        Record in the data registry that the #DATA_GENERATION.Agency in the
-        instance's Extended CSV source is deployed at the station referred
-        to by the file's #PLATFORM.ID.
+        Create a new deployment instance for the input Extended CSV file's
+        #PLATFORM and #DATA_GENERATION.Agency. Queues the new deployment
+        to be saved next time the publish method is called.
         """
 
         station = str(self.extcsv.extcsv['PLATFORM']['ID'])
@@ -359,9 +365,13 @@ class Process(object):
 
     def add_station_name(self, bypass=False):
         """
-        Record in the data registry that the station referred to in the
-        instance's Extended CSV source's #PLATFORM.ID has the file's
-        #PLATFORM.Name as an alternative name.
+        Create an alternative station name for the input Extended CSV file's
+        #PLATFORM.Name and #PLATFORM.ID. Queues the new station name
+        record to be saved next time the publish method is called.
+
+        Unless <bypass> is provided and True, there will be a permission
+        prompt before a record is created. If permission is denied, no
+        station name will be queued and False will be returned.
 
         :param bypass: Whether to skip permission checks to add the name.
         :returns: Whether the operation was successful.
@@ -395,21 +405,19 @@ class Process(object):
             self._registry_updates.append(station_name_object)
             return True
 
-    def add_instrument(self, verify_only, force=False):
+    def add_instrument(self, force=False):
         """
-        Record the instrument metadata in the instance's source file
-        #INSTRUMENT table in the data registry.
+        Create a new instrument record from the input Extended CSV file's
+        #INSTRUMENT table and queue it to be saved next time the publish
+        method is called.
 
-        Unless <force> is true, the operation will only complete if the
+        Unless <force> is True, the operation will only complete if the
         instrument's name and model are both in the registry already.
-        Returns whether the operation was successful. If <verify_only> is
-        False, then returns if the operation is possible and does not do it.
+        Returns whether the operation was successful.
 
-        :param verify_only: Whether to stop short of inserting data into
-                            the data registry.
         :param force: Whether to insert if name or model are not found
                       in the registry.
-        :returns: Whether the operation was successful (or possible).
+        :returns: Whether the operation was successful.
         """
 
         name = self.extcsv.extcsv['INSTRUMENT']['Name']
@@ -454,16 +462,11 @@ class Process(object):
                 permission = False
 
         if permission:
-            LOGGER.info('Adding instrument with new serial number...')
+            LOGGER.info('Creating instrument with new serial number...')
 
-            if verify_only:
-                msg = 'Verification mode detected. Instrument not added.'
-                LOGGER.info(msg)
-            else:
-                instrument = Instrument(model)
-                self._registry_updates.append(instrument)
-                self._search_engine_updates.append(instrument)
-                LOGGER.info('Instrument successfully added.')
+            instrument = Instrument(model)
+            self._registry_updates.append(instrument)
+            self._search_engine_updates.append(instrument)
             return True
         else:
             return False
