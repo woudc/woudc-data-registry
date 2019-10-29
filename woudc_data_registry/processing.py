@@ -298,20 +298,11 @@ class Process(object):
             config.WDR_WAF_BASEURL)
         self.process_end = datetime.utcnow()
 
-        LOGGER.debug('Verifying if URN already exists')
-        results = self.registry.query_by_field(
-            DataRecord, 'data_record_id', self.data_record.data_record_id)
+        data_record_ok = self.check_data_record()
 
-        if results:
-            msg = 'Data exists'
-            self.status = 'failed'
-            self.code = 'ProcessingError'
-            self.message = msg
-            LOGGER.error(msg)
-            return False
-
-        LOGGER.info('Data record is valid and verified')
-        return True
+        if data_record_ok:
+            LOGGER.info('Data record is valid and verified')
+        return data_record_ok
 
     def persist(self):
         """
@@ -986,12 +977,12 @@ class Process(object):
 
     def check_time_series(self):
         """
-        Validates the input Extended CSV source file's dates across all tables
+        Validate the input Extended CSV source file's dates across all tables
         to ensure that no date is more recent that #DATA_GENERATION.Date.
         """
 
         dg_date = self.extcsv.extcsv['DATA_GENERATION']['Date']
-        ts_time = self.extcsv.extcsv['TIMESTAMP']['Time']
+        ts_time = self.extcsv.extcsv['TIMESTAMP'].get('Time', None)
 
         dates_ok = True
         err_base = '#{}.Date cannot be more recent than #DATA_GENERATION.Date'
@@ -1025,6 +1016,76 @@ class Process(object):
 
         return dates_ok
 
+    def check_data_record(self):
+        """
+        Validate the data record made from the input Extended CSV file,
+        and look for collisions with any previous submissions of the
+        same data.
+
+        Prerequisite: #DATA_GENERATION.Date,
+                      #DATA_GENERATION.Version,
+                      #INSTRUMENT.Name,
+                      and #INSTRUMENT.Number are all trusted values
+                      and self.data_record exists.
+        """
+
+        dg_date = self.extcsv.extcsv['DATA_GENERATION']['Date']
+        version = self.extcsv.extcsv['DATA_GENERATION']['Version']
+        dg_valueline = self.extcsv.line_num('DATA_GENERATION') + 2
+
+        components = self.data_record.data_record_id.split(':')
+        components[-1] = '%.%'
+        identifier_pattern = ':'.join(components)
+
+        LOGGER.debug('Verifying if URN already exists')
+
+        response = self.registry.query_by_pattern(
+            DataRecord, 'data_record_id', identifier_pattern)
+
+        if not response:
+            return True
+
+        old_dg_date = response.data_generation_date
+        old_version = float(response.data_generation_version)
+
+        dg_date_equal = dg_date == old_dg_date
+        dg_date_before = dg_date < old_dg_date
+        version_equal = version == old_version
+        version_before = version < old_version
+
+        dg_date_ok = True
+        version_ok = True
+
+        if dg_date_before:
+            msg = 'Submitted file #DATA_GENERATION.Date is earlier than' \
+                  ' previously submitted version'
+            self._error(103, dg_valueline, msg)
+            dg_date_ok = False
+        elif dg_date_equal and version_equal:
+            msg = 'Submitted file version and #DATA_GENERATION.Date' \
+                  ' identical to previously submitted file'
+            self._error(102, dg_valueline, msg)
+            dg_date_pl = version_ok = False
+        elif dg_date_equal:
+            msg = 'Submitted file #DATA_GENERATION.Date identical to' \
+                  ' previously submitted version'
+            self._error(143, dg_valueline, msg)
+            dg_date_ok = False
+        elif version_equal:
+            msg = 'Submitted version number identical to previous file'
+            self._error(141, dg_valueline, msg)
+            version_ok = False
+
+        instrument_name = self.extcsv.extcsv['INSTRUMENT']['Name']
+        instrument_serial = self.extcsv.extcsv['INSTRUMENT']['Number']
+        old_serial = response.instrument.serial
+
+        if instrument_name == 'ECC' and instrument_serial != old_serial:
+            msg = 'ECC instrument serial number different from previous file'
+            instrument_valueline = self.extcsv.line_num('INSTRUMENT') + 2
+            self._warning(145, instrument_valueline, msg)
+
+        return dg_date_ok and version_ok
 
 class ProcessingError(Exception):
     """custom exception handler"""

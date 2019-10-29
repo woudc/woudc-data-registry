@@ -100,6 +100,30 @@ class Registry(object):
 
         return self.session.query(obj).filter(condition).all()
 
+    def query_by_pattern(self, obj, by, pattern, case_insensitive=False):
+        """
+        Query data using a single field's value, matching results based on
+        a regex pattern.
+
+        :param obj: Class of table to query in.
+        :param by: Field name to be queried.
+        :param pattern: Wildcard pattern that any result's value must match.
+        :param case_insensitive: Whether to query strings case-insensitively.
+        :returns: One element of query results.
+        """
+
+        field = getattr(obj, by)
+
+        if case_insensitive:
+            LOGGER.debug('Querying for LOWER({}) LIKE {}'
+                         .format(field, pattern.lower()))
+            condition = func.lower(field).like(pattern.lower())
+        else:
+            LOGGER.debug('Querying for {} LIKE {}'.format(field, pattern))
+            condition = field.like(pattern)
+
+        return self.session.query(obj).filter(condition).first()
+
     def query_multiple_fields(self, table, values, fields=None,
                               case_insensitive=()):
         """

@@ -495,9 +495,8 @@ class DataRecord(base):
     url = Column(String, nullable=False)
     es_id = Column(String, nullable=False)
 
-    # relationships
-    # station = relationship('Station', backref=__tablename__)
-    # instrument = relationship('Instrument', backref=__tablename__)
+    # Relationships
+    instrument = relationship('Instrument', backref=__tablename__)
 
     def __init__(self, ecsv):
         """serializer"""
