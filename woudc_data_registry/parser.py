@@ -49,6 +49,7 @@ import sys
 import csv
 import yaml
 
+import jsonschema
 import logging
 
 from io import StringIO
@@ -60,8 +61,23 @@ from woudc_data_registry.util import parse_integer_range
 
 LOGGER = logging.getLogger(__name__)
 
+with open(config.WDR_TABLE_SCHEMA) as table_schema_file:
+    table_schema = yaml.safe_load(table_schema_file)
 with open(config.WDR_TABLE_CONFIG) as table_definitions:
     DOMAINS = yaml.safe_load(table_definitions)
+
+try:
+    jsonschema.validate(DOMAINS, table_schema)
+except jsonschema.SchemaError as err:
+    LOGGER.critical('Failed to read table definition schema:'
+                    ' cannot process incoming files.\dResponsible error: {}'
+                    .format(err))
+    sys.exit(1)
+except jsonschema.ValidationError as err:
+    LOGGER.critical('Failed to read table definition file:'
+                    ' cannot process incoming files.\dResponsible error: {}'
+                    .format(err))
+    sys.exit(1)
 
 
 def non_content_line(line):
@@ -645,8 +661,8 @@ class ExtendedCSV(object):
                 self._error(26, line, msg)
 
         for table, definitions in DOMAINS['Common'].items():
-            required = definitions.get('required', ())
-            optional = definitions.get('optional', ())
+            required = definitions.get('required_fields', ())
+            optional = definitions.get('optional_fields', ())
             provided = self.extcsv[table].keys()
 
             required_case_map = {key.lower(): key for key in required}
@@ -715,7 +731,7 @@ class ExtendedCSV(object):
             occurrence_range = str(definitions['occurrences'])
             lower, upper = parse_integer_range(occurrence_range)
             if num_rows == 0:
-                if 'required' in definitions:
+                if 'required_fields' in definitions:
                     msg = 'Required table #{} is empty'.format(table)
                     self._error(27, start_line, msg)
                 else:
@@ -753,7 +769,7 @@ class ExtendedCSV(object):
         fields_line = self.line_num('CONTENT') + 1
 
         for field in ['Category', 'Level', 'Form']:
-            key = self.extcsv['CONTENT'][field]
+            key = str(self.extcsv['CONTENT'][field])
 
             if key in curr_dict:
                 curr_dict = curr_dict[key]
@@ -827,9 +843,9 @@ class ExtendedCSV(object):
         observations_table = schema.pop('data_table')
 
         required_tables = [name for name, body in schema.items()
-                           if 'required' in body]
+                           if 'required_fields' in body]
         optional_tables = [name for name, body in schema.items()
-                           if 'required' not in body]
+                           if 'required_fields' not in body]
 
         missing_tables = [table for table in required_tables
                           if table not in self.extcsv.keys()]
@@ -870,8 +886,8 @@ class ExtendedCSV(object):
         for table in present_tables:
             table_type = table.rstrip('0123456789_')
 
-            required = schema[table_type].get('required', ())
-            optional = schema[table_type].get('optional', ())
+            required = schema[table_type].get('required_fields', ())
+            optional = schema[table_type].get('optional_fields', ())
             provided = self.extcsv[table].keys()
 
             required_case_map = {key.lower(): key for key in required}
@@ -942,7 +958,7 @@ class ExtendedCSV(object):
             table_height_range = str(schema[table_type]['rows'])
             lower, upper = parse_integer_range(table_height_range)
             if num_rows == 0:
-                if 'required' in schema[table_type]:
+                if 'required_fields' in schema[table_type]:
                     msg = 'Required table #{} is empty'.format(table)
                     self._error(27, start_line, msg)
                     success = False
@@ -1023,6 +1039,6 @@ if __name__ == '__main__':
     with open(sys.argv[1]) as fh:
         ecsv = ExtendedCSV(fh.read())
     try:
-        ecsv.validate_metadata()
+        ecsv.validate_metadata_tables()
     except MetadataValidationError as err:
         print(err.errors)

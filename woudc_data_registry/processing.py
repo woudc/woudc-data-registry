@@ -177,99 +177,116 @@ class Process(object):
         project_ok = self.check_project()
         dataset_ok = self.check_dataset()
 
-        contributor_ok = self.check_contributor()
+        if not project_ok:
+            LOGGER.warning('Skipping contributor check: depends on'
+                           ' values with errors')
+            contributor_ok = False
+        else:
+            contributor_ok = self.check_contributor()
+
         platform_ok = self.check_station()
 
-        LOGGER.debug('Validating agency deployment')
-        deployment_ok = self.check_deployment()
+        if not all([project_ok, contributor_ok, platform_id]):
+            LOGGER.warning('Skipping deployment check: depends on'
+                           ' values with errors')
+            deployment_ok = False
+        else:
+            LOGGER.debug('Validating agency deployment')
+            deployment_ok = self.check_deployment()
 
-        project = self.extcsv.extcsv['CONTENT']['Class']
-        agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
-        platform_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
+            project = self.extcsv.extcsv['CONTENT']['Class']
+            agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
+            platform_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
 
-        if not deployment_ok:
-            deployment_id = ':'.join([platform_id, agency, project])
-            deployment_name = '{}@{}'.format(agency, platform_id)
-            LOGGER.warning('Deployment {} not found'.format(deployment_id))
+            if not deployment_ok:
+                deployment_id = ':'.join([platform_id, agency, project])
+                deployment_name = '{}@{}'.format(agency, platform_id)
+                LOGGER.warning('Deployment {} not found'.format(deployment_id))
 
-            if bypass:
-                LOGGER.info('Bypass mode. Skipping permission check')
-                permission = True
-            else:
-                response = input('Deployment {} not found. Add? [y/n] '
-                                 .format(deployment_name))
-                permission = response.lower() in ['y', 'yes']
+                if bypass:
+                    LOGGER.info('Bypass mode. Skipping permission check')
+                    permission = True
+                else:
+                    response = input('Deployment {} not found. Add? [y/n] '
+                                     .format(deployment_name))
+                    permission = response.lower() in ['y', 'yes']
 
-            if permission:
-                self.add_deployment()
-                deployment_ok = True
+                if permission:
+                    self.add_deployment()
+                    deployment_ok = True
 
-                msg = 'New deployment {} queued'.format(deployment_name)
-                self._warning(202, None, msg)
-            else:
-                msg = 'Deployment {} not added. Skipping file.' \
-                      .format(deployment_id)
-                LOGGER.warning(msg)
+                    msg = 'New deployment {} queued'.format(deployment_name)
+                    self._warning(202, None, msg)
+                else:
+                    msg = 'Deployment {} not added. Skipping file.' \
+                          .format(deployment_id)
+                    LOGGER.warning(msg)
 
-                msg = 'No deployment {} found in registry' \
-                    .format(deployment_id)
-                line = self.extcsv.line_num('PLATFORM') + 2
-                self._error(65, line, msg)
+                    msg = 'No deployment {} found in registry' \
+                        .format(deployment_id)
+                    line = self.extcsv.line_num('PLATFORM') + 2
+                    self._error(65, line, msg)
 
         LOGGER.debug('Validating instrument')
-        instrument_ok = self.check_instrument()
-
-        if not instrument_ok:
-            # Attempt to fix the serial by left-stripping zeroes
-            old_serial = str(self.extcsv.extcsv['INSTRUMENT']['Number'])
-            new_serial = old_serial.lstrip('0') or '0'
-
-            if old_serial != new_serial:
-                LOGGER.debug('Attempting to search instrument serial number'
-                             ' {}'.format(new_serial))
-
-                self.extcsv.extcsv['INSTRUMENT']['Number'] = new_serial
-                instrument_ok = self.check_instrument()
-
-        if not instrument_ok:
-            # Attempt to add a new record with the new serial number
-            # using name and model from the registry
-            LOGGER.warning('No instrument with serial {} found in registry'
-                           .format(old_serial))
-            self.extcsv.extcsv['INSTRUMENT']['Number'] = old_serial
-            instrument_ok = self.add_instrument()
-
-            if instrument_ok:
-                msg = 'New instrument serial number queued'
-                self._warning(201, None, msg)
-
-        instrument_args = [
-            self.extcsv.extcsv['INSTRUMENT']['Name'],
-            str(self.extcsv.extcsv['INSTRUMENT']['Model']),
-            str(self.extcsv.extcsv['INSTRUMENT']['Number']),
-            str(self.extcsv.extcsv['PLATFORM']['ID']),
-            self.extcsv.extcsv['CONTENT']['Category']]
-        instrument_id = ':'.join(instrument_args)
-
-        if not instrument_ok:
-            # Attempt to force the new instrument name/model into the registry
-            response = input('Instrument {} not found. Add? [y/n] '
-                             .format(instrument_id))
-            if response.lower() in ['y', 'yes']:
-                if self.add_instrument(force=True):
-                    msg = 'New instrument name, model, and serial queued'
-                    self._warning(1000, None, msg)
-
-                    instrument_ok = True
-
-        if instrument_ok:
-            location_ok = self.check_location(instrument_id)
+        if not all([dataset_ok, platform_ok]):
+            LOGGER.warning('Skipping instrument check: depends on'
+                           ' values with errors')
+            instrument_ok = False
         else:
+            instrument_ok = self.check_instrument()
+
+            if not instrument_ok:
+                # Attempt to fix the serial by left-stripping zeroes
+                old_serial = str(self.extcsv.extcsv['INSTRUMENT']['Number'])
+                new_serial = old_serial.lstrip('0') or '0'
+
+                if old_serial != new_serial:
+                    LOGGER.debug('Attempting to search instrument serial'
+                                 ' number {}'.format(new_serial))
+
+                    self.extcsv.extcsv['INSTRUMENT']['Number'] = new_serial
+                    instrument_ok = self.check_instrument()
+
+            if not instrument_ok:
+                # Attempt to add a new record with the new serial number
+                # using name and model from the registry
+                LOGGER.warning('No instrument with serial {} found in registry'
+                               .format(old_serial))
+                self.extcsv.extcsv['INSTRUMENT']['Number'] = old_serial
+                instrument_ok = self.add_instrument()
+
+                if instrument_ok:
+                    msg = 'New instrument serial number queued'
+                    self._warning(201, None, msg)
+
+            instrument_args = [
+                self.extcsv.extcsv['INSTRUMENT']['Name'],
+                str(self.extcsv.extcsv['INSTRUMENT']['Model']),
+                str(self.extcsv.extcsv['INSTRUMENT']['Number']),
+                str(self.extcsv.extcsv['PLATFORM']['ID']),
+                self.extcsv.extcsv['CONTENT']['Category']]
+            instrument_id = ':'.join(instrument_args)
+
+            if not instrument_ok:
+                # Attempt to force the new instrument name/model
+                # into the registry
+                response = input('Instrument {} not found. Add? [y/n] '
+                                 .format(instrument_id))
+                if response.lower() in ['y', 'yes']:
+                    if self.add_instrument(force=True):
+                        msg = 'New instrument name, model, and serial queued'
+                        self._warning(1000, None, msg)
+
+                        instrument_ok = True
+
+        if not instrument_ok:
             msg = 'Failed to validate instrument against registry'
             line = self.extcsv.line_num('INSTRUMENT') + 2
             self._error(139, line, msg)
 
             location_ok = False
+        else:
+            location_ok = self.check_location(instrument_id)
 
         content_ok = self.check_content()
         data_generation_ok = self.check_data_generation()
@@ -283,15 +300,13 @@ class Process(object):
             msg = 'Lax mode detected. NOT validating dataset-specific tables'
             LOGGER.info(msg)
         else:
-            time_series_ok = self.check_time_series()
-            if not time_series_ok:
-                return False
-
             dataset = self.extcsv.extcsv['CONTENT']['Category']
             dataset_validator = get_validator(dataset)
 
+            time_series_ok = self.check_time_series()
             dataset_validated = dataset_validator.check_all(self.extcsv)
-            if not dataset_validated:
+
+            if not all([time_series_ok, dataset_validated]):
                 return False
 
         LOGGER.info('Validating data record')
@@ -836,13 +851,14 @@ class Process(object):
 
             instrument = result[0]
             if lat_numeric is not None and instrument.y is not None \
-               and abs(lat_numeric - instrument.y) >= 1:
+               and abs(lat_numeric - instrument.y) >= 1.5:
                 lat_ok = False
                 msg = '#LOCATION.Latitude in file does not match database'
                 LOGGER.error(msg)
                 self._error(77, values_line, msg)
             if lon_numeric is not None and instrument.x is not None \
-               and abs(lon_numeric - instrument.x) >= 1:
+               and (lat_numeric is None or abs(lat_numeric) < 89.5) \
+               and abs(lon_numeric - instrument.x) >= 1.5:
                 lon_ok = False
                 msg = '#LOCATION.Longitude in file does not match database'
                 LOGGER.error(msg)
@@ -896,7 +912,7 @@ class Process(object):
                 self._error(60, values_line, msg)
                 level_ok = False
 
-        if level not in DOMAINS['Datasets'][dataset]:
+        if str(level) not in DOMAINS['Datasets'][dataset]:
             msg = 'Unknown #CONTENT.Level for category {}'.format(dataset)
             self._error(60, values_line, msg)
             level_ok = False
