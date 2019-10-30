@@ -60,7 +60,7 @@ from woudc_data_registry.parser import (DOMAINS, ExtendedCSV,
                                         MetadataValidationError,
                                         NonStandardDataError)
 from woudc_data_registry.dataset_validators import get_validator
-from woudc_data_registry.util import read_file
+from woudc_data_registry.util import is_text_file, read_file
 
 LOGGER = logging.getLogger(__name__)
 
@@ -116,12 +116,12 @@ class Process(object):
         LOGGER.error(message)
         self.errors.append((error_code, message, line))
 
-    def validate(self, infile, core_only=False, bypass=False):
+    def validate(self, infile, metadata_only=False, bypass=False):
         """
         Process incoming data record.
 
         :param infile: Path to incoming data file.
-        :param core_only: Whether to only verify core metadata tables.
+        :param metadata_only: Whether to only verify common metadata tables.
         :param bypass: Whether to skip permission prompts to add records.
 
         :returns: `bool` of processing result
@@ -136,6 +136,10 @@ class Process(object):
 
         LOGGER.info('Processing file {}'.format(infile))
         LOGGER.info('Detecting file')
+        if not is_text_file(infile):
+            msg = 'Binary file detected'
+            self._error(1000, None, msg)
+            return False
 
         try:
             data = read_file(infile)
@@ -151,14 +155,14 @@ class Process(object):
             self.extcsv = ExtendedCSV(data)
             LOGGER.info('Validating Extended CSV')
             self.extcsv.validate_metadata_tables()
-            if not core_only:
+            if not metadata_only:
                 self.extcsv.validate_dataset_tables()
             LOGGER.info('Valid Extended CSV')
         except NonStandardDataError as err:
             self.status = 'failed'
             self.code = 'NonStandardDataError'
-            self.message = err
-            LOGGER.error('Invalid Extended CSV: {}'.format(str(err)).strip())
+            self.message = str(err).strip()
+            LOGGER.error('Invalid Extended CSV: {}'.format(self.message))
             return False
         except MetadataValidationError as err:
             self.status = 'failed'
@@ -275,8 +279,8 @@ class Process(object):
                     location_ok, content_ok, data_generation_ok]):
             return False
 
-        if core_only:
-            msg = 'Core mode detected. NOT validating dataset-specific tables'
+        if metadata_only:
+            msg = 'Lax mode detected. NOT validating dataset-specific tables'
             LOGGER.info(msg)
         else:
             time_series_ok = self.check_time_series()
@@ -351,7 +355,7 @@ class Process(object):
         station = str(self.extcsv.extcsv['PLATFORM']['ID'])
         agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
         project = self.extcsv.extcsv['CONTENT']['Class']
-        date = self.extcsv.extcsv['TIMESTAMP']['Date']
+        timestamp_date = self.extcsv.extcsv['TIMESTAMP']['Date']
 
         contributor_id = ':'.join([agency, project])
         deployment_id = ':'.join([station, agency, project])
@@ -359,8 +363,8 @@ class Process(object):
             'identifier': deployment_id,
             'station_id': station,
             'contributor_id': contributor_id,
-            'start_date': date,
-            'end_date': date
+            'start_date': timestamp_date,
+            'end_date': timestamp_date
         }
 
         deployment = Deployment(deployment_model)
@@ -484,13 +488,6 @@ class Process(object):
 
         LOGGER.debug('Validating project {}'.format(project))
         self.projects = self.registry.query_distinct(Project.project_id)
-
-        if not project:
-            msg = 'Missing #CONTENT.Class: default to \'WOUDC\''
-            line = self.extcsv.line_num('CONTENT') + 2
-            self._warning(52, line, msg)
-
-            self.extcsv.extcsv['CONTENT']['Class'] = project = 'WOUDC'
 
         if project in self.projects:
             LOGGER.debug('Match found for project {}'.format(project))
@@ -689,7 +686,7 @@ class Process(object):
         station = str(self.extcsv.extcsv['PLATFORM']['ID'])
         agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
         project = self.extcsv.extcsv['CONTENT']['Class']
-        date = self.extcsv.extcsv['TIMESTAMP']['Date']
+        timestamp_date = self.extcsv.extcsv['TIMESTAMP']['Date']
 
         deployment_id = ':'.join([station, agency, project])
         results = self.registry.query_by_field(Deployment, 'deployment_id',
@@ -701,12 +698,12 @@ class Process(object):
             deployment = results[0]
             LOGGER.debug('Found deployment match for {}'
                          .format(deployment_id))
-            if deployment.start_date > date:
-                deployment.start_date = date
+            if deployment.start_date > timestamp_date:
+                deployment.start_date = timestamp_date
                 self._registry_updates.append(deployment)
                 LOGGER.debug('Deployment start date updated.')
-            elif deployment.end_date and deployment.end_date < date:
-                deployment.end_date = date
+            elif deployment.end_date and deployment.end_date < timestamp_date:
+                deployment.end_date = timestamp_date
                 self._registry_updates.append(deployment)
                 LOGGER.debug('Deployment end date updated.')
             return True
@@ -941,7 +938,9 @@ class Process(object):
             kwargs = {key: getattr(self.process_start, key)
                       for key in ['year', 'month', 'day']}
             today_date = datetime(**kwargs)
-            self.extcsv.extcsv['DATA_GENERATION']['Date'] = date = today_date
+
+            self.extcsv.extcsv['DATA_GENERATION']['Date'] = today_date
+            dg_date = today_date
 
         try:
             numeric_version = float(version)
@@ -1065,7 +1064,7 @@ class Process(object):
             msg = 'Submitted file version and #DATA_GENERATION.Date' \
                   ' identical to previously submitted file'
             self._error(102, dg_valueline, msg)
-            dg_date_pl = version_ok = False
+            dg_date_ok = version_ok = False
         elif dg_date_equal:
             msg = 'Submitted file #DATA_GENERATION.Date identical to' \
                   ' previously submitted version'
@@ -1086,6 +1085,7 @@ class Process(object):
             self._warning(145, instrument_valueline, msg)
 
         return dg_date_ok and version_ok
+
 
 class ProcessingError(Exception):
     """custom exception handler"""

@@ -294,7 +294,9 @@ class Station(base):
     stn_type_enum = Enum('STN', 'SHP', name='type')
 
     station_id = Column(String, primary_key=True)
-    current_name = Column(String, nullable=False)
+    station_name_id = Column(String,
+                             ForeignKey('station_names.station_name_id'),
+                             nullable=False)
     station_type = Column(stn_type_enum, nullable=False)
     gaw_id = Column(String, nullable=True)
     country_id = Column(String, ForeignKey('countries.country_id'),
@@ -316,7 +318,7 @@ class Station(base):
         """serializer"""
 
         self.station_id = dict_['identifier']
-        self.current_name = dict_['name']
+        self.station_name_id = '{}:{}'.format(self.station_id, dict_['name'])
         self.station_type = dict_['station_type']
         if dict_['gaw_id'] != '':
             self.gaw_id = dict_['gaw_id']
@@ -356,8 +358,7 @@ class StationName(base):
     __table_args__ = (UniqueConstraint('station_name_id'),)
 
     station_name_id = Column(String, primary_key=True)
-    station_id = Column(String, ForeignKey('stations.station_id'),
-                        nullable=False)
+    station_id = Column(String, nullable=False)
     name = Column(String, nullable=False)
 
     start_date = Column(Date, nullable=False)
@@ -795,6 +796,16 @@ def init(ctx, datadir):
             registry_.save(contributor)
 
     click.echo('Loading stations metadata')
+    with open(station_names) as csvfile:
+        reader = csv.DictReader(csvfile)
+        records = unpack_station_names(reader)
+        for obj in records:
+            for field in obj:
+                if obj[field] == '':
+                    obj[field] = None
+            station_name = StationName(obj)
+            registry_.save(station_name)
+
     with open(stations) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -808,16 +819,6 @@ def init(ctx, datadir):
                     row[field] = None
             ship = Station(row)
             registry_.save(ship)
-
-    with open(station_names) as csvfile:
-        reader = csv.DictReader(csvfile)
-        records = unpack_station_names(reader)
-        for obj in records:
-            for field in obj:
-                if obj[field] == '':
-                    obj[field] = None
-            station_name = StationName(obj)
-            registry_.save(station_name)
 
     click.echo('Loading instruments metadata')
     with open(instruments) as csvfile:

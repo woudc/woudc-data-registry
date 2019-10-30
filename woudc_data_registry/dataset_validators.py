@@ -198,24 +198,24 @@ class TotalOzoneValidator(DatasetValidator):
         in_order = True
         prev_date = None
         for line_num, row in enumerate(daily_columns, daily_start):
-            date = row[0]
+            daily_date = row[0]
 
-            if date.year != timestamp1_date.year:
+            if daily_date.year != timestamp1_date.year:
                 msg = '#DAILY.Date has a different year than #TIMESTAMP.Date'
                 self._warning(42, line_num, msg)
 
-            if prev_date and date < prev_date:
+            if prev_date and daily_date < prev_date:
                 in_order = False
-            prev_date = date
+            prev_date = daily_date
 
-            if date not in dates_encountered:
-                dates_encountered[date] = row
-            elif row == dates_encountered[date]:
+            if daily_date not in dates_encountered:
+                dates_encountered[daily_date] = row
+            elif row == dates_encountered[daily_date]:
                 msg = 'Duplicate data ignored with non-unique #DAILY.Date'
                 self._warning(47, line_num, msg)
             else:
                 msg = '#Found multiple observations under #DAILY.Date {}' \
-                      .format(date)
+                      .format(daily_date)
                 self._error(48, line_num, msg)
                 sequence_ok = False
 
@@ -226,7 +226,7 @@ class TotalOzoneValidator(DatasetValidator):
             self._warning(49, daily_start, msg)
 
             sorted_dates = sorted(extcsv.extcsv['DAILY']['Date'])
-            sorted_daily = [dates_encountered[date] for date in sorted_dates]
+            sorted_daily = [dates_encountered[date_] for date_ in sorted_dates]
 
             for field_num, field in enumerate(extcsv.extcsv['DAILY'].keys()):
                 column = list(map(lambda row: row[field_num], sorted_daily))
@@ -608,21 +608,21 @@ class UmkehrValidator(DatasetValidator):
         in_order = True
         prev_date = None
         for line_num, row in enumerate(columns, observation_valueline):
-            date = row[0]
+            observation_date = row[0]
 
-            if prev_date and date < prev_date:
+            if prev_date and observation_date < prev_date:
                 in_order = False
-            prev_date = date
+            prev_date = observation_date
 
-            if date not in dates_encountered:
-                dates_encountered[date] = row
-            elif row == dates_encountered[date]:
+            if observation_date not in dates_encountered:
+                dates_encountered[observation_date] = row
+            elif row == dates_encountered[observation_date]:
                 msg = 'Duplicate data ignored with non-unique #{}.Date' \
                       .format(data_table)
                 self._warning(47, line_num, msg)
             else:
                 msg = '#Found multiple observations under #DAILY.Date {}' \
-                      .format(date)
+                      .format(observation_date)
                 self._error(48, line_num, msg)
 
         if not in_order:
@@ -631,7 +631,7 @@ class UmkehrValidator(DatasetValidator):
             self._warning(49, observation_valueline, msg)
 
             sorted_dates = sorted(extcsv.extcsv[data_table]['Date'])
-            sorted_rows = [dates_encountered[date] for date in sorted_dates]
+            sorted_rows = [dates_encountered[date_] for date_ in sorted_dates]
 
             for fieldnum, field in enumerate(extcsv.extcsv[data_table].keys()):
                 column = list(map(lambda row: row[fieldnum], sorted_rows))

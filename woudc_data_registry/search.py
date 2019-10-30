@@ -140,7 +140,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {name: typedefs[name] for name in ['keyword']}
             },
-            'data_generation_date': {
+            'timestamp_date': {
                 'type': 'date'
             },
             'timestamp_time': {
@@ -224,7 +224,7 @@ class SearchIndex(object):
             index_name = definition['index']
 
             settings = {
-               'mappings': {
+                'mappings': {
                     'FeatureCollection': {
                         'properties': {
                             'geometry': {
@@ -330,7 +330,8 @@ class SearchIndex(object):
         :returns: `bool` status of un-indexing result
         """
 
-        result = self.connection.delete(index=INDEXES['data_record'],
+        index = MAPPINGS['data_record']['index']
+        result = self.connection.delete(index=index,
                                         doc_type='FeatureCollection',
                                         id=identifier)
 

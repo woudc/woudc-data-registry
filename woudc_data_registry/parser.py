@@ -964,7 +964,7 @@ class ExtendedCSV(object):
                 self._warning(2, None, msg)
                 del self.extcsv[table]
 
-        for table in optional:
+        for table in optional_tables:
             if table not in self.extcsv:
                 LOGGER.warning('Optional table {} is not in file.'.format(
                                table))

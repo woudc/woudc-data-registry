@@ -53,16 +53,16 @@ from woudc_data_registry.registry import Registry
 from woudc_data_registry.search import SearchIndex
 
 
-def orchestrate(file_, directory, core_only=False,
+def orchestrate(file_, directory, metadata_only=False,
                 verify_only=False, bypass=False):
     """
     Core orchestation workflow
 
-    :param file_: File to process
-    :param directory: Directory to process (recursive)
-    :param core_only: Whether to verify only the common metadata tables
+    :param file_: File to process.
+    :param directory: Directory to process (recursive).
+    :param metadata_only: Whether to verify only the common metadata tables.
     :param verify_only: Whether to verify the file for correctness without
-                        processing
+                        processing.
     """
 
     files_to_process = []
@@ -85,7 +85,7 @@ def orchestrate(file_, directory, core_only=False,
             click.echo('Processing filename: {}'.format(file_to_process))
             p = Process(registry, search_engine)
             try:
-                if p.validate(file_to_process, core_only=core_only,
+                if p.validate(file_to_process, metadata_only=metadata_only,
                               bypass=bypass):
 
                     if verify_only:
@@ -105,9 +105,9 @@ def orchestrate(file_, directory, core_only=False,
 
     for name in files_to_process:
         if name in passed:
-            click.echo('Pass: ' + name)
+            click.echo('Pass: {}'.format(name))
         elif name in failed:
-            click.echo('Fail: ' + name)
+            click.echo('Fail: {}'.format(name))
 
     click.echo('({}/{} files passed)'
                .format(len(passed), len(files_to_process)))
@@ -128,11 +128,11 @@ def data():
               type=click.Path(exists=True, resolve_path=True,
                               dir_okay=True, file_okay=False),
               help='Path to directory of data records')
-@click.option('--loose', '-l', 'loose', is_flag=True,
+@click.option('--lax', '-l', 'lax', is_flag=True,
               help='Only validate core metadata tables')
 @click.option('--bypass', '-b', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-def ingest(ctx, file_, directory, loose, bypass):
+def ingest(ctx, file_, directory, lax, bypass):
     """ingest a single data submission or directory of files"""
 
     if file_ is not None and directory is not None:
@@ -143,7 +143,7 @@ def ingest(ctx, file_, directory, loose, bypass):
         msg = 'One of --file or --directory is required'
         raise click.ClickException(msg)
 
-    orchestrate(file_, directory, core_only=loose, bypass=True)
+    orchestrate(file_, directory, metadata_only=lax, bypass=bypass)
 
 
 @click.command()
@@ -155,11 +155,11 @@ def ingest(ctx, file_, directory, loose, bypass):
               type=click.Path(exists=True, resolve_path=True,
                               dir_okay=True, file_okay=False),
               help='Path to directory of data records')
-@click.option('--loose', '-l', 'loose', is_flag=True,
+@click.option('--lax', '-l', 'lax', is_flag=True,
               help='Only validate core metadata tables')
 @click.option('--bypass', '-b', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-def verify(ctx, file_, loose, directory, bypass):
+def verify(ctx, file_, directory, lax, bypass):
     """verify a single data submission or directory of files"""
 
     if file_ is not None and directory is not None:
@@ -170,7 +170,7 @@ def verify(ctx, file_, loose, directory, bypass):
         msg = 'One of --file or --directory is required'
         raise click.ClickException(msg)
 
-    orchestrate(file_, directory, core_only=loose, verify_only=True,
+    orchestrate(file_, directory, metadata_only=lax, verify_only=True,
                 bypass=bypass)
 
 
