@@ -186,7 +186,7 @@ class Process(object):
 
         platform_ok = self.check_station()
 
-        if not all([project_ok, contributor_ok, platform_id]):
+        if not all([project_ok, contributor_ok, platform_ok]):
             LOGGER.warning('Skipping deployment check: depends on'
                            ' values with errors')
             deployment_ok = False

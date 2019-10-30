@@ -47,6 +47,7 @@ import re
 import sys
 
 import csv
+import json
 import yaml
 
 import jsonschema
@@ -62,7 +63,7 @@ from woudc_data_registry.util import parse_integer_range
 LOGGER = logging.getLogger(__name__)
 
 with open(config.WDR_TABLE_SCHEMA) as table_schema_file:
-    table_schema = yaml.safe_load(table_schema_file)
+    table_schema = json.load(table_schema_file)
 with open(config.WDR_TABLE_CONFIG) as table_definitions:
     DOMAINS = yaml.safe_load(table_definitions)
 
