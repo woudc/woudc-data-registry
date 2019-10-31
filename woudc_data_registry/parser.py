@@ -623,143 +623,239 @@ class ExtendedCSV(object):
 
         return filename
 
-    def validate_metadata_tables(self):
-        """validate core metadata tables and fields"""
+    def collimate_tables(self, tables, schema):
+        """
+        Convert the lists of raw strings in all the tables in <tables>
+        into processed values of an appropriate type.
 
-        missing_tables = [table for table in DOMAINS['Common']
-                          if table not in self.extcsv.keys()]
-        present_tables = [table for table in self.extcsv.keys()
-                          if table.rstrip('0123456789_') in DOMAINS['Common']]
+        Ensure that all one-row tables have their single value reported
+        for each field rather than a list containing the one value.
 
-        if len(present_tables) == 0:
-            msg = 'No core metadata tables found. Not an Extended CSV file'
-            self._error(161, None, msg)
-        else:
-            for missing in missing_tables:
-                msg = 'Missing required table: {}'.format(missing)
-                self._error(1, None, msg)
+        Assumes that all tables in <tables> are demonstratedly valid.
 
-        if self.errors:
-            msg = 'Not an Extended CSV file'
-            raise MetadataValidationError(msg, self.errors)
-        else:
-            LOGGER.debug('No missing metadata tables.')
+        :param tables: List of tables in which to process columns.
+        :param schema: A series of table definitions for the input file.
+        """
 
-        for table_type, schema in DOMAINS['Common'].items():
+        for table_name in tables:
+            table_type = table_name.rstrip('0123456789_')
+            body = self.extcsv[table_name]
+
+            table_valueline = self.line_num(table_name) + 2
+
+            for field, column in body.items():
+                converted = [
+                    self.typecast_value(table_name, field, val, line)
+                    for line, val in enumerate(column, table_valueline)
+                ]
+
+                if schema[table_type]['rows'] == 1:
+                    self.extcsv[table_name][field] = converted[0]
+                else:
+                    self.extcsv[table_name][field] = converted
+
+    def check_table_occurrences(self, schema):
+        """
+        Validate the number of occurrences of each table type in <schema>
+        against the expected range of occurrences for that type.
+        Returns True iff all tables occur an acceptable number of times.
+
+        :param schema: A series of table definitions for the input file.
+        :returns: Whether all tables are within the expected occurrence range.
+        """
+
+        success = True
+
+        for table_type in schema.keys():
             count = self.table_count(table_type)
-            schema = DOMAINS['Common'][table_type]
 
-            lower, upper = parse_integer_range(str(schema['occurrences']))
+            occurrence_range = str(schema[table_type]['occurrences'])
+            lower, upper = parse_integer_range(occurrence_range)
+
             if count < lower:
                 msg = 'At least {} occurrencess of table #{} are required' \
                       .format(lower, table_type)
                 line = self.line_num(table_type + '_' + str(count))
                 self._error(1000, line, msg)
-            elif count > upper:
+                success = False
+            if count > upper:
                 msg = 'Cannot have more than {} occurrences of #{}' \
                       .format(upper, table_type)
                 line = self.line_num(table_type + '_' + str(upper + 1))
                 self._error(26, line, msg)
+                success = False
 
-        for table, definitions in DOMAINS['Common'].items():
-            required = definitions.get('required_fields', ())
-            optional = definitions.get('optional_fields', ())
-            provided = self.extcsv[table].keys()
+        return success
 
-            required_case_map = {key.lower(): key for key in required}
-            optional_case_map = {key.lower(): key for key in optional}
-            provided_case_map = {key.lower(): key for key in provided}
+    def check_table_height(self, table, definition, num_rows):
+        """
+        Validate the number of rows in the table named <table> against the
+        expected range of rows assuming the table has <num_rows> rows.
+        Returns True iff the table has an acceptable number of rows.
 
-            missing_fields = [field for field in required
-                              if field not in provided]
-            excess_fields = [field for field in provided
-                             if field.lower() not in required_case_map]
+        :param table: Name of a table in the input file.
+        :param definition: Schema definition of <table>.
+        :param num_rows: The number of rows in <table>.
+        :returns: Whether all tables are in the expected height range.
+        """
 
-            start_line = self.line_num(table)
-            fields_line = start_line + 1
-            values_line = fields_line + 1
+        height_range = str(definition['rows'])
+        lower, upper = parse_integer_range(height_range)
 
-            if len(missing_fields) == 0:
-                LOGGER.debug('No missing fields in table {}'.format(table))
-            for missing in missing_fields:
-                match_insensitive = provided_case_map.get(missing.lower(),
-                                                          None)
-                if match_insensitive:
-                    msg = 'Capitalization of #{} field {} corrected to' \
-                          ' {}'.format(table, missing, match_insensitive)
-                    self._warning(1000, fields_line, msg)
+        occurrence_range = str(definition['occurrences'])
+        is_required, _ = parse_integer_range(occurrence_range)
 
-                    self.extcsv[table][missing] = \
-                        self.extcsv[table].pop(match_insensitive)
-                else:
-                    msg = 'Missing required #{} field {}' \
-                          .format(table, missing)
-                    self._error(3, fields_line, msg)
+        table_startline = self.line_num(table)
+        success = True
 
-            for field in excess_fields:
-                match_insensitive = optional_case_map.get(field.lower(), None)
+        if num_rows == 0:
+            if is_required:
+                msg = 'Required table #{} is empty'.format(table)
+                self._error(27, table_startline, msg)
+                success = False
+            else:
+                msg = 'Optional table #{} is empty'.format(table)
+                self._warning(27.5, table_startline, msg)
+        elif not lower <= num_rows <= upper:
+            msg = 'Incorrectly formatted table: #{}. Table must contain' \
+                  ' {} lines'.format(table, height_range)
+            self._warning(27, table_startline, msg)
 
-                if match_insensitive:
-                    msg = 'Found optional field #{}.{}'.format(table, field)
-                    LOGGER.info(msg)
+        return success
 
-                    if field != match_insensitive:
-                        msg = 'Capitalization of #{} field {} corrected to' \
-                              ' {}'.format(table, field, match_insensitive)
-                        self._warning(1000, fields_line, msg)
+    def check_field_validity(self, table, definition):
+        """
+        Validates the fields of the table named <table>, ensuring that
+        all required fields are present, correcting capitalizations,
+        creating empty columns for any optional fields that were not
+        provided, and removing any unrecognized fields.
 
-                        self.extcsv[table][match_insensitive] = \
-                            self.extcsv[table].pop(field)
-                else:
-                    msg = 'Field name {}.{} is not from approved list' \
-                          .format(table, field)
-                    line = self.line_num(table) + 1
-                    self._warning(4, line, msg)
-                    del self.extcsv[table][field]
+        Returns True if the table's fields satisfy its definition.
 
-            num_rows = 0
-            for field in required:
-                column = self.extcsv[table][field]
-                num_rows = len(column)
+        :param table: Name of a table in the input file.
+        :param definition: Schema definition for the table.
+        :returns: Whether fields satisfy the table's definition.
+        """
 
-                for line, value in enumerate(column, values_line):
-                    if not column:
-                        msg = 'Required value #{}.{} is empty'.format(table,
-                                                                      field)
-                        self._error(5, values_line, msg)
-                        break
+        success = True
+        table_type = table.rstrip('0123456789_')
 
-            occurrence_range = str(definitions['occurrences'])
-            lower, upper = parse_integer_range(occurrence_range)
-            if num_rows == 0:
-                if 'required_fields' in definitions:
-                    msg = 'Required table #{} is empty'.format(table)
-                    self._error(27, start_line, msg)
-                else:
-                    msg = 'Optional table #{} is empty'.format(table)
-                    self._warning(27.5, start_line, msg)
-            elif not lower <= num_rows <= upper:
-                msg = 'Incorrectly formatted table: #{}. Table must contain' \
-                      ' {} lines'.format(table, occurrence_range)
-                self._warning(27, start_line, msg)
+        required = definition.get('required_fields', ())
+        optional = definition.get('optional_fields', ())
+        provided = self.extcsv[table].keys()
+
+        required_case_map = {key.lower(): key for key in required}
+        optional_case_map = {key.lower(): key for key in optional}
+        provided_case_map = {key.lower(): key for key in provided}
+
+        missing_fields = [field for field in required
+                          if field not in provided]
+        extra_fields = [field for field in provided
+                        if field.lower() not in required_case_map]
+
+        table_fieldline = self.line_num(table) + 1
+        table_valueline = table_fieldline + 1
+
+        arbitrary_column = next(iter(self.extcsv[table].values()))
+        num_rows = len(arbitrary_column)
+        null_value = [''] * num_rows
+
+        # Attempt to find a match for all required missing fields.
+        for missing in missing_fields:
+            match_insensitive = provided_case_map.get(missing.lower(), None)
+            if match_insensitive:
+                msg = 'Capitalization in #{} field {} corrected to {}' \
+                      .format(table, missing, match_insensitive)
+                self._warning(1000, table_fieldline, msg)
+
+                self.extcsv[table][missing] = \
+                    self.extcsv[table].pop(match_insensitive)
+            else:
+                msg = 'Missing required field {}.{}'.format(table, missing)
+                self._error(3, table_fieldline, msg)
+                self.extcsv[table][missing] = null_value
+                success = False
+
+        if len(missing_fields) == 0:
+            LOGGER.debug('No missing fields in table {}'.format(table))
+        else:
+            LOGGER.info('Filled missing fields with null string values')
+
+        # Assess whether non-required fields are optional fields or
+        # excess ones that are not part of the table's schema.
+        for extra in extra_fields:
+            match_insensitive = optional_case_map.get(extra.lower(), None)
+
+            if match_insensitive:
+                LOGGER.info('Found optional field #{}.{}'
+                            .format(table, extra))
+
+                if extra != match_insensitive:
+                    msg = 'Capitalization in #{} field {} corrected to' \
+                          ' {}'.format(table, extra, match_insensitive)
+                    self._warning(1000, table_fieldline, msg)
+
+                    self.extcsv[table][match_insensitive] = \
+                        self.extcsv[table].pop(extra)
+            else:
+                msg = 'Unknown column {} in table #{}'.format(extra, table)
+                self._warning(4, table_fieldline, msg)
+                del self.extcsv[table][extra]
+
+        # Check that no required fields have empty values.
+        for field in required:
+            column = self.extcsv[table][field]
+
+            if None in column:
+                line = table_valueline + column.index(None)
+                msg = 'Required value #{}.{} is empty'.format(table, field)
+                self._error(5, line, msg)
+                success = False
+
+        return success
+
+    def validate_metadata_tables(self):
+        """validate core metadata tables and fields"""
+
+        schema = DOMAINS['Common']
+        success = True
+
+        missing_tables = [table for table in schema
+                          if table not in self.extcsv.keys()]
+        present_tables = [table for table in self.extcsv.keys()
+                          if table.rstrip('0123456789_') in schema]
+
+        if len(present_tables) == 0:
+            msg = 'No core metadata tables found. Not an Extended CSV file'
+            self._error(161, None, msg)
+            success = False
+        else:
+            for missing in missing_tables:
+                msg = 'Missing required table: {}'.format(missing)
+                self._error(1, None, msg)
+                success = False
+
+        if success:
+            LOGGER.debug('No missing metadata tables.')
+        else:
+            msg = 'Not an Extended CSV file'
+            raise MetadataValidationError(msg, self.errors)
+
+        success |= self.check_table_occurrences(schema)
 
         for table in present_tables:
             table_type = table.rstrip('0123456789_')
+            definition = schema[table_type]
             body = self.extcsv[table]
 
-            start_line = self.line_num(table)
-            values_line = start_line + 2
+            arbitrary_column = next(iter(body.values()))
+            num_rows = len(arbitrary_column)
 
-            for field, column in body.items():
-                converted = [self.typecast_value(table, field, val, line)
-                             for line, val in enumerate(column, values_line)]
+            success |= self.check_field_validity(table, definition)
+            success |= self.check_table_height(table, definition, num_rows)
 
-                if DOMAINS['Common'][table_type]['rows'] == 1:
-                    self.extcsv[table][field] = converted[0]
-                else:
-                    self.extcsv[table][field] = converted
-
-        if len(self.errors) == 0:
+        if success:
+            self.collimate_tables(present_tables, schema)
             LOGGER.debug('All tables in file validated.')
         else:
             raise MetadataValidationError('Invalid metadata', self.errors)
@@ -769,25 +865,26 @@ class ExtendedCSV(object):
         curr_dict = tables
         fields_line = self.line_num('CONTENT') + 1
 
-        for field in ['Category', 'Level', 'Form']:
-            key = str(self.extcsv['CONTENT'][field])
+        for field in [('Category', str), ('Level', float), ('Form', int)]:
+            field_name, type_converter = field
+            key = str(type_converter(self.extcsv['CONTENT'][field_name]))
 
             if key in curr_dict:
                 curr_dict = curr_dict[key]
             else:
-                field_name = '#CONTENT.{}'.format(field.capitalize())
+                field_name = '#CONTENT.{}'.format(field_name.capitalize())
                 msg = 'Cannot assess dataset table schema:' \
                       ' {} unknown'.format(field_name)
                 self._warning(56, fields_line, msg)
                 return False
 
-        if 1 in curr_dict.keys():
+        if '1' in curr_dict.keys():
             version = self.determine_version(curr_dict)
             LOGGER.info('Identified version as {}'.format(version))
 
             curr_dict = curr_dict[version]
 
-        if self.check_tables(curr_dict):
+        if self.check_dataset(curr_dict):
             LOGGER.debug('All dataset tables in file validated')
         else:
             raise MetadataValidationError('Dataset tables failed validation',
@@ -839,7 +936,7 @@ class ExtendedCSV(object):
                 if rating(version) == best_match:
                     return version
 
-    def check_tables(self, schema):
+    def check_dataset(self, schema):
         success = True
         observations_table = schema.pop('data_table')
 
@@ -859,118 +956,25 @@ class ExtendedCSV(object):
 
         dataset = self.extcsv['CONTENT']['Category']
         for missing in missing_tables:
-            msg = 'Missing required table(s) {} for {}' \
+            msg = 'Missing required table(s) {} for category {}' \
                   .format(dataset, ', '.join(missing_tables))
             self._error(1, None, msg)
             success = False
 
-        for table_type in schema.keys():
-            if table_type not in self._table_count:
-                continue
-            count = self.table_count(table_type)
-
-            lower, upper = parse_integer_range(
-                str(schema[table_type]['occurrences']))
-            if table_type in required_tables and count < lower:
-                msg = 'At least {} occurrencess of table #{} are required' \
-                      .format(lower, table_type)
-                line = self.line_num(table_type + '_' + str(count))
-                self._error(1000, line, msg)
-                success = False
-            if count > upper:
-                msg = 'Cannot have more than {} occurrences of #{}' \
-                      .format(upper, table_type)
-                line = self.line_num(table_type + '_' + str(upper + 1))
-                self._error(26, line, msg)
-                success = False
+        success |= self.check_table_occurrences(schema)
 
         for table in present_tables:
             table_type = table.rstrip('0123456789_')
+            definition = schema[table_type]
+            body = self.extcsv[table]
 
-            required = schema[table_type].get('required_fields', ())
-            optional = schema[table_type].get('optional_fields', ())
-            provided = self.extcsv[table].keys()
-
-            required_case_map = {key.lower(): key for key in required}
-            optional_case_map = {key.lower(): key for key in optional}
-            provided_case_map = {key.lower(): key for key in provided}
-
-            missing_fields = [field for field in required
-                              if field not in provided]
-            extra_fields = [field for field in provided
-                            if field.lower() not in required_case_map]
-
-            start_line = self.line_num(table)
-            fields_line = start_line + 1
-            values_line = fields_line + 1
-
-            arbitrary_column = next(iter(self.extcsv[table].values()))
+            arbitrary_column = next(iter(body.values()))
             num_rows = len(arbitrary_column)
-            null_value = [''] * num_rows
 
-            for field in missing_fields:
-                match_insensitive = provided_case_map.get(field.lower(), None)
+            success |= self.check_field_validity(table, definition)
+            success |= self.check_table_height(table, definition, num_rows)
 
-                if match_insensitive:
-                    msg = 'Capitalization in #{} field {} corrected to' \
-                          ' {}'.format(table, field, match_insensitive)
-                    self._warning(1000, fields_line, msg)
-
-                    self.extcsv[table][field] = \
-                        self.extcsv[table].pop(match_insensitive)
-                else:
-                    msg = 'Missing required field {}.{}'.format(table, field)
-                    self._error(3, fields_line, msg)
-                    self.extcsv[table][field] = null_value
-                    success = False
-            if len(missing_fields) > 0:
-                LOGGER.info('Filled missing fields with null string values')
-
-            for field in extra_fields:
-                match_insensitive = optional_case_map.get(field.lower(), None)
-
-                if match_insensitive:
-                    LOGGER.info('Found optional field #{}.{}'
-                                .format(table, match_insensitive))
-
-                    if field != match_insensitive:
-                        msg = 'Capitalization in #{} field {} corrected to' \
-                              ' {}'.format(table, field, match_insensitive)
-                        self._warning(1000, fields_line, msg)
-
-                        self.extcsv[table][match_insensitive] = \
-                            self.extcsv[table].pop(field)
-                else:
-                    msg = 'Removing excess column #{}.{}' \
-                          .format(field, table)
-                    self._warning(4, fields_line, msg)
-                    del self.extcsv[table][field]
-
-            for field in required:
-                column = self.extcsv[table][field]
-                for line, value in enumerate(column, values_line):
-                    if not value:
-                        msg = 'Required value #{}.{} is empty' \
-                              .format(table, field)
-                        self._error(5, line, msg)
-                        success = False
-                        break
-
-            table_height_range = str(schema[table_type]['rows'])
-            lower, upper = parse_integer_range(table_height_range)
-            if num_rows == 0:
-                if 'required_fields' in schema[table_type]:
-                    msg = 'Required table #{} is empty'.format(table)
-                    self._error(27, start_line, msg)
-                    success = False
-                else:
-                    msg = 'Optional table #{} is empty'.format(table)
-                    self._warning(27.5, start_line, msg)
-            elif not lower <= num_rows <= upper:
-                msg = 'Incorrectly formatted table: #{}. Table must contain' \
-                      ' {} lines'.format(table, table_height_range)
-
-            LOGGER.debug('Successfully validated table {}'.format(table))
+            LOGGER.debug('Finished validating table {}'.format(table))
 
         for table in extra_tables:
             table_type = table.rstrip('0123456789_')
@@ -993,21 +997,7 @@ class ExtendedCSV(object):
 
             self.number_of_observations += len(arbitrary_column)
 
-        for table in present_tables:
-            table_type = table.rstrip('0123456789_')
-            body = self.extcsv[table]
-
-            start_line = self.line_num(table)
-            values_line = start_line + 2
-
-            for field, column in body.items():
-                converted = [self.typecast_value(table, field, val, line)
-                             for line, val in enumerate(column, values_line)]
-
-                if schema[table_type]['rows'] == 1:
-                    self.extcsv[table][field] = converted[0]
-                else:
-                    self.extcsv[table][field] = converted
+        self.collimate_tables(present_tables, schema)
 
         schema['data_table'] = observations_table
         return success
