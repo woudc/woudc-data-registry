@@ -78,11 +78,11 @@ MAPPINGS = {
         'properties': {
             'content_class': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'content_category': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'content_form': {
                 'type': 'byte'
@@ -92,7 +92,7 @@ MAPPINGS = {
             },
             'data_generation_agency': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'data_generation_date': {
                 'type': 'date'
@@ -102,50 +102,50 @@ MAPPINGS = {
             },
             'data_generation_scientific_authority': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'platform_id': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'platform_type': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'platform_name': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'platform_country': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'platform_gaw_id': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'instrument_name': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'instrument_model': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'instrument_number': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'timestamp_utcoffset': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'timestamp_date': {
                 'type': 'date'
             },
             'timestamp_time': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'published': {
                 'type': 'boolean'
@@ -167,15 +167,15 @@ MAPPINGS = {
             },
             'ingest_filepath': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'filename': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'url': {
                 'type': 'text',
-                'fields': {name: typedefs[name] for name in ['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             }
         }
     }
