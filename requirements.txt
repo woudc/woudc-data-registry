@@ -3,3 +3,4 @@ elasticsearch
 requests
 sqlalchemy
 pyyaml
+jsonschema

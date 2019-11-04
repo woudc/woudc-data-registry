@@ -37,7 +37,7 @@ def get_validator(dataset):
         raise ValueError('Invalid dataset {}'.format(dataset))
 
 
-class DatasetValidator:
+class DatasetValidator(object):
     """
     Superclass for Extended CSV validators of dataset-specific tables.
     Contains no checks of its own, so all files successfully validate.
@@ -572,7 +572,7 @@ class UmkehrValidator(DatasetValidator):
 
         if timestamp2_time != timestamp1_time:
             msg = 'Inconsistent Time values between #TIMESTAMP tables'
-            self._warning(154, timestamp2_valueline, msg)
+            self._warning(118, timestamp2_valueline, msg)
 
         if timestamp_count > 2:
             msg = 'More than 2 #TIMESTAMP tables present; removing extras'

@@ -93,10 +93,13 @@ class Registry(object):
 
         field = getattr(obj, by)
 
-        LOGGER.debug('Querying for {}={}'.format(field, value))
-        condition = func.lower(field) == value.lower() \
-            if case_insensitive \
-            else field == value
+        if case_insensitive:
+            LOGGER.debug('Querying for LOWER({}) = LOWER({})'
+                         .format(field, value))
+            condition = func.lower(field) == value.lower()
+        else:
+            LOGGER.debug('Querying for {} = {}'.format(field, value))
+            condition = field == value
 
         return self.session.query(obj).filter(condition).all()
 

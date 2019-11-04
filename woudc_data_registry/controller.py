@@ -63,6 +63,7 @@ def orchestrate(file_, directory, metadata_only=False,
     :param metadata_only: Whether to verify only the common metadata tables.
     :param verify_only: Whether to verify the file for correctness without
                         processing.
+    :param bypass: Whether to skip permission prompts for adding new records.
     """
 
     files_to_process = []
@@ -130,7 +131,7 @@ def data():
               help='Path to directory of data records')
 @click.option('--lax', '-l', 'lax', is_flag=True,
               help='Only validate core metadata tables')
-@click.option('--bypass', '-b', 'bypass', is_flag=True, default=False,
+@click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
 def ingest(ctx, file_, directory, lax, bypass):
     """ingest a single data submission or directory of files"""
@@ -157,7 +158,7 @@ def ingest(ctx, file_, directory, lax, bypass):
               help='Path to directory of data records')
 @click.option('--lax', '-l', 'lax', is_flag=True,
               help='Only validate core metadata tables')
-@click.option('--bypass', '-b', 'bypass', is_flag=True, default=False,
+@click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
 def verify(ctx, file_, directory, lax, bypass):
     """verify a single data submission or directory of files"""
