@@ -558,6 +558,8 @@ class DataRecord(base):
         urn_tokens = [
             self.content_class,
             self.content_category,
+            self.content_level,
+            self.content_form,
             self.data_generation_agency,
             self.platform_type,
             self.station_id,
@@ -576,6 +578,8 @@ class DataRecord(base):
         tokens = [
             self.content_class,
             self.content_category,
+            self.content_level,
+            self.content_form,
             self.data_generation_agency,
             self.platform_type,
             self.station_id,

@@ -75,6 +75,8 @@ def orchestrate(file_, directory, metadata_only=False,
             for f in files:
                 files_to_process.append(os.path.join(root, f))
 
+    files_to_process.sort()
+
     passed = []
     failed = []
 

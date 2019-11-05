@@ -184,7 +184,7 @@ class Process(object):
         else:
             contributor_ok = self.check_contributor()
 
-        platform_ok = self.check_station()
+        platform_ok = self.check_station(bypass=bypass)
 
         if not all([project_ok, contributor_ok, platform_ok]):
             LOGGER.warning('Skipping deployment check: depends on'
@@ -587,7 +587,7 @@ class Process(object):
             self._error(127, line, msg)
             return False
 
-    def check_station(self):
+    def check_station(self, bypass=False):
         """
         Validates the instance's Extended CSV source file's #PLATFORM table
         and returns True if no errors are found.
@@ -658,7 +658,7 @@ class Process(object):
             self.extcsv.extcsv['PLATFORM']['Name'] = name = response.name
             LOGGER.debug('Validated with name {} for id {}'.format(
                 name, identifier))
-        elif self.add_station_name():
+        elif self.add_station_name(bypass):
             LOGGER.info('Added new station name {}'
                         .format(station['current_name']))
             name_ok = True
