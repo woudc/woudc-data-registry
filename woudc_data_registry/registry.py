@@ -46,7 +46,7 @@
 import logging
 
 from sqlalchemy import func, create_engine
-from sqlalchemy.exc import DataError
+from sqlalchemy.exc import DataError, SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
 from woudc_data_registry import config
@@ -170,7 +170,12 @@ class Registry(object):
             if obj is not None:
                 self.session.add(obj)
                 # self.session.merge(obj)
-            self.session.commit()
+            try:
+                self.session.commit()
+            except SQLAlchemyError as err:
+                LOGGER.error('Failed to persist {} due to: {}'
+                             .format(obj, err))
+                self.session.rollback()
         except DataError as err:
             LOGGER.error('Failed to save to registry: {}'.format(err))
             self.session.rollback()
