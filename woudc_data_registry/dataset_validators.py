@@ -85,6 +85,9 @@ class TotalOzoneValidator(DatasetValidator):
     Dataset-specific validator for TotalOzone files.
     """
 
+    def __init__(self):
+        super(TotalOzoneValidator, self).__init__()
+
     def check_all(self, extcsv):
         """
         Assess any dataset-specific tables inside <extcsv> for errors.
@@ -323,6 +326,9 @@ class TotalOzoneObsValidator(DatasetValidator):
     Dataset-specific validator for TotalOzoneObs files.
     """
 
+    def __init__(self):
+        super(TotalOzoneObsValidator, self).__init__()
+
     def check_all(self, extcsv):
         """
         Assess any dataset-specific tables inside <extcsv> for errors.
@@ -391,6 +397,9 @@ class SpectralValidator(DatasetValidator):
     Dataset-specific validator for Spectral files.
     """
 
+    def __init__(self):
+        super(SpectralValidator, self).__init__()
+
     def check_all(self, extcsv):
         """
         Assess any dataset-specific tables inside <extcsv> for errors.
@@ -445,6 +454,9 @@ class LidarValidator(DatasetValidator):
     Dataset-specific validator for Lidar files.
     """
 
+    def __init__(self):
+        super(LidarValidator, self).__init__()
+
     def check_all(self, extcsv):
         """
         Assess any dataset-specific tables inside <extcsv> for errors.
@@ -491,6 +503,9 @@ class UmkehrValidator(DatasetValidator):
     """
     Dataset-specific validator for Umkehr files.
     """
+
+    def __init__(self):
+        super(UmkehrValidator, self).__init__()
 
     def check_all(self, extcsv):
         """
