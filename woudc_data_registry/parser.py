@@ -738,7 +738,6 @@ class ExtendedCSV(object):
         """
 
         success = True
-        table_type = table.rstrip('0123456789_')
 
         required = definition.get('required_fields', ())
         optional = definition.get('optional_fields', ())

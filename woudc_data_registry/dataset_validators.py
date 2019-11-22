@@ -614,7 +614,6 @@ class UmkehrValidator(DatasetValidator):
 
         LOGGER.debug('Assessing order of #{}.Date column'.format(data_table))
 
-        timestamp1_date = extcsv.extcsv['TIMESTAMP']['Date']
         observation_valueline = extcsv.line_num(data_table) + 2
         dates_encountered = {}
 

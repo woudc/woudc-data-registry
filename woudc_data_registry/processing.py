@@ -62,6 +62,7 @@ from woudc_data_registry.parser import (DOMAINS, ExtendedCSV,
 from woudc_data_registry.dataset_validators import get_validator
 from woudc_data_registry.util import is_text_file, read_file
 
+
 LOGGER = logging.getLogger(__name__)
 
 with open(config.WDR_ALIAS_CONFIG) as alias_definitions:
@@ -1066,7 +1067,6 @@ class Process(object):
         dg_date_equal = dg_date == old_dg_date
         dg_date_before = dg_date < old_dg_date
         version_equal = version == old_version
-        version_before = version < old_version
 
         dg_date_ok = True
         version_ok = True
