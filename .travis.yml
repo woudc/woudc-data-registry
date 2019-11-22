@@ -22,6 +22,7 @@ env:
     - WDR_TABLE_SCHEMA=data/tables_schema.json
     - WDR_TABLE_CONFIG=data/tables.yaml
     - WDR_ERROR_CONFIG=data/errors.csv
+    - WDR_ALIAS_CONFIG=data/aliases.yaml
 
 addons:
   apt:
