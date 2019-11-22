@@ -19,6 +19,9 @@ env:
     - WDR_SEARCH_URL=http://localhost:9200/
     - WDR_WAF_BASEURL=https://woudc.org/archive/
     - WDR_WAF_BASEDIR=/tmp
+    - WDR_TABLE_SCHEMA=data/tables_schema.json
+    - WDR_TABLE_CONFIG=data/tables.yaml
+    - WDR_ERROR_CONFIG=data/errors.csv
 
 addons:
   apt:

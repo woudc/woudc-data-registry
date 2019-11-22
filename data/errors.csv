@@ -1,0 +1,118 @@
+1,Error,No core metadata tables found. Not an Extended CSV file
+2,Error,Missing required table {table}
+3,Error,Excess table #{table} does not belong in {dataset} file: removing
+4,Error,Missing required #{table} field {field}
+5,Error,Field name #{table}.{field} is not from approved list
+6,Error,Required value #{table}.{field} is empty
+7,Error,Table {table} has no fields
+8,Warning,Improper delimiter used '{separator}' corrected to '\,' (comma)
+9,Warning,Unexpected empty line between table name and fields
+10,Error,Unrecognized data {row}
+11,Error,Data row has more values than its table has columns
+12,Warning,#{table}.Time corrected from 12-hour clock to 24-hour YYYY-MM-DD format
+13,Warning,#{table}.Time hour is not within allowable range [00]-[23]
+14,Warning,#{table}.Time minute is not within allowable range [00]-[59]
+15,Warning,#{table}.Time second is not within allowable range [00]-[59]
+16,Warning,#{table}.Time separator '{separator}' corrected to ':' (colon)
+17,Error,#{table}.Time hour contains invalid characters
+18,Error,#{table}.Time minute contains invalid characters
+19,Error,#{table}.Time second contains invalid characters
+20,Warning,#{table}.Date separator '{separator}' corrected to '-' (hyphen)
+21,Error,#{table}.Date missing separators. Proper date format is YYYY-MM-DD
+22,Error,#{table}.Date incomplete
+23,Error,#{table}.Date has too many separators
+24,Error,#{table}.Date year contains invalid characters
+25,Error,#{table}.Date month contains invalid characters
+26,Error,#{table}.Date day contains invalid characters
+27,Warning,#{table}.Date year is not within allowable range [1940]-[PRESENT]
+28,Warning,#{table}.Date month is not within allowable range [01]-[12]
+29,Warning,#{table}.Date day is not within allowable range [01]-[31]
+30,Warning,#{table}.UTCOffset separator '{separator}' corrected to ':' (colon)
+31,Error,Missing #{table}.UTCOffset {component}\, defaulting to '00' (zero)
+32,Error,#{table}.UTCOffset {component} should be 2 digits long
+33,Error,Missing sign in #{table}.UTCOffset\, defaulting to '+' (positive)
+34,Error,Invalid sign in #{table}.UTCOffset\, correcting to '{replacement}'
+35,Error,Improperly formatted #{table}.UTCOffset
+36,Error,#{table}.UTCOffset is a series of zeroes\, correcting to '+00:00:00'
+37,Error,Failed to parse #{table}.{field} value due to: {error}
+38,Error,At least {lbound} occurrences of table {table} are required
+39,Error,Cannot have more than {ubound} occurrences of table {table}
+40,Error,Incorrectly formatted table: #{table}. Table must contain {range} lines
+41,Error,Required table #{table} is empty
+42,Warning,Optional table #{table} is empty
+43,Error,Capitalization of #{table} field {field} corrected to {newfield}
+44,Error,{field} corrected to {newvalue} using alias table
+45,Error,#TIMESTAMP.Date cannot be more recent than #DATA_GENERATION.Date
+46,Error,#{table}.Date cannot be more recent than #DATA_GENERATION.Date
+47,Warning,#DAILY.Date has a different year than #TIMESTAMP.Date
+48,Warning,Duplicate data ignored with non-unique #DAILY.Date
+49,Error,Found multiple observations under #DAILY.Date {datestamp}
+50,Warning,#DAILY.Date found in non-chronological order
+51,Warning,#OBSERVATIONS.Time found in non-chronological order
+52,Error,Found multiple observations with #OBSERVATIONS.Time {timestamp}
+53,Error,Missing #CONTENT.Class\, defaulting to 'WOUDC'
+54,Error,Project {project} not found in registry
+55,Error,Dataset {dataset} not found in registry
+56,Warning,Cannot assess dataset table schema: {value} unknown
+57,Warning,#CONTENT.Level = {orig_level} identified as level {new_level}
+58,Warning,Missing #CONTENT.Level resolved to {value}
+59,Error,Invalid characters found in #CONTENT.Level\, failed to parse
+60,Error,Unknown #CONTENT.Level for category {dataset}
+61,Warning,#CONTENT.Form = {orig_form} identified as form {new_form}
+62,Error,Cannot resolve empty or invalid #CONTENT.Form
+63,Error,Missing #DATA_GENERATION.Date\, resolved to processing date
+64,Error,Missing #DATA_GENERATION.Version\, defaulting to 1.0
+65,Error,Deployment {deployment} not found in registry
+66,Warning,#DATA_GENERATION.Version is not within allowable range [0.0]-[20.0]
+67,Warning,#DATA_GENERATION.Version corrected to one decimal place
+68,Error,#DATA_GENERATION.Version is empty or contains invalid characters
+71,Error,#INSTRUMENT.Name cannot be null or empty
+72,Error,#LOCATION.{field} contains invalid characters
+73,Warning,#LOCATION.Height contains invalid characters
+74,Error,#LOCATION.{field} is not within allowable range [{low}]-[{high}]
+75,Warning,#LOCATION.Height is not within allowable range [-50]-[5100]
+76,Error,#LOCATION.{field} in file does not match database
+77,Warning,#LOCATION.Height in file does not match database
+101,Error,Submitted file version and #DATA_GENERATION.Date identical to previously submitted file
+102,Error,Submitted file #DATA_GENERATION.Date is earlier than previously submitted version
+103,Warning,Ship #PLATFORM.Country corrected to 'XY' to meet ISO-3166 standards
+105,Error,Binary file detected
+106,Error,No non-core data tables found
+107,Error,No ozone data in #DAILY table
+110,Warning,First #TIMESTAMP.Time cannot be more recent than any other time(s)
+111,Warning,#TIMESTAMP.Date before #DAILY does not equal first date of #DAILY
+112,Warning,#TIMESTAMP.Date after #DAILY does not equal last date of #DAILY
+113,Warning,More than two #TIMESTAMP tables found in file\, removing excess tables
+114,Warning,#TIMESTAMP table after #DAILY is missing\, deriving based on requirements
+115,Warning,Inconsistent Time values between #TIMESTAMP tables
+116,Warning,Missing #MONTHLY table\, derived according to requirements
+117,Warning,#MONTHLY.{field} value differs from derived value\, correcting
+118,Warning,Missing value for #MONTHLY.{field} derived according to requirements
+119,Error,Cannot derive #MONTHLY table: #DAILY.ColumnO3 missing
+121,Warning,Duplicate data ignored with non-unique #{table}.Date
+122,Error,Found multiple observations under #{table}.Date {datestamp}
+123,Warning,#{table}.Date found in non-chronological order
+126,Error,Contributor {contributor} not found in registry
+127,Warning,#PLATFORM.ID is too short: left-padding with zeros
+128,Error,Station type {station_type} not found in registry
+129,Error,Station {station_id} not found in registry
+130,Error,Station name {name} does not match data for id {station_id}
+131,Error,Station country {country} does not match data for id {station_id}
+139,Error,Failed to validate instrument against registry
+141,Error,Submitted version number identical to previous file
+142,Error,Submitted file #DATA_GENERATION.Date identical to previously submitted version
+145,Warning,ECC instrument serial number different from previous submission
+146,Error,Required Lidar table #OZONE_PROFILE and #OZONE_SUMMARY counts {profile_count}\, {summary_count} are uneven
+147,Error,Required Spectral table #TIMESTAMP\, #GLOBAL\, and #{summary_table} counts {timestamp_count}\, {global_count}\, {summary_count} are uneven
+151,Warning,#TIMESTAMP.Date before #{table} does not equal first date of #{table}
+152,Warning,#TIMESTAMP.Date after #{table} does not equal last date of #{table}
+153,Warning,#TIMESTAMP table after #{table} is missing\, deriving based on requirements
+200,Warning,Data file successfully persisted
+201,Warning,New instrument added
+202,Warning,New deployment added
+203,Warning,New station name added
+996,Critical,Failed to read table definitions file
+997,Error,Failed to read table definitions schema\, cannot assure table definitions file validity
+998,Error,Table definitions schema failed to validate as a schema\, cannot assure table definitions file validity
+999,Critical,Table definitions file failed to validate against schema
+1000,Warning,Error message unassigned
