@@ -47,7 +47,7 @@ from datetime import date, datetime, time
 import os
 import unittest
 
-from woudc_data_registry import parser, processing, util
+from woudc_data_registry import parser, processing, registry, search, util
 from woudc_data_registry.parser import DOMAINS
 
 
@@ -71,15 +71,23 @@ class ParserTest(unittest.TestCase):
     def test_get_value_type(self):
         """test value typing"""
 
-        self.assertIsNone(parser._get_value_type('TEst', ''))
-        self.assertIsInstance(parser._get_value_type('TEST', 'foo'), str)
-        self.assertIsInstance(parser._get_value_type('test', '1'), int)
-        self.assertIsInstance(parser._get_value_type('test', '022'), str)
-        self.assertIsInstance(parser._get_value_type('test', '1.0'), float)
-        self.assertIsInstance(parser._get_value_type('test', '1.0-1'), str)
-        self.assertIsInstance(parser._get_value_type('date', '2011-11-11'),
-                              date)
-        self.assertIsInstance(parser._get_value_type('time', '11:11:11'), time)
+        dummy = parser.ExtendedCSV('')
+
+        self.assertIsNone(dummy.typecast_value('not_a_table', 'TEst', '', 0))
+        self.assertIsInstance(
+            dummy.typecast_value('not_a_table', 'TEST', 'foo', 0), str)
+        self.assertIsInstance(
+            dummy.typecast_value('not_a_table', 'test', '1', 0), int)
+        self.assertIsInstance(
+            dummy.typecast_value('not_a_table', 'test', '022', 0), str)
+        self.assertIsInstance(
+            dummy.typecast_value('not_a_table', 'test', '1.0', 0), float)
+        self.assertIsInstance(
+            dummy.typecast_value('not_a_table', 'test', '1.0-1', 0), str)
+        self.assertIsInstance(
+            dummy.typecast_value('not_a_table', 'date', '2011-11-11', 0), date)
+        self.assertIsInstance(
+            dummy.typecast_value('not_a_table', 'time', '11:11:11', 0), time)
 
     def test_ecsv(self):
         """test Extended CSV handling"""
@@ -89,6 +97,8 @@ class ParserTest(unittest.TestCase):
             'data/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
         self.assertEqual('20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv',
                          ecsv.gen_woudc_filename())
@@ -98,6 +108,8 @@ class ParserTest(unittest.TestCase):
             'data/ecsv-missing-instrument-number.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
         self.assertEqual('20111101.Brewer.MKIII.na.RMDA.csv',
                          ecsv.gen_woudc_filename())
@@ -106,26 +118,28 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/ecsv-space-in-instrument-name.csv'))
         ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
         self.assertEqual('20111101.Brewer-foo.MKIII.na.RMDA.csv',
                          ecsv.gen_woudc_filename())
 
         ecsv = parser.ExtendedCSV(contents)
-        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+        ecsv.validate_metadata_tables()
 
-        self.assertTrue(set(DOMAINS['metadata_tables'].keys()).issubset(
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+        self.assertTrue(set(DOMAINS['Common'].keys()).issubset(
                         set(ecsv.extcsv.keys())))
-        ecsv.validate_metadata()
 
         # good file, test special characters
         contents = util.read_file(resolve_test_data_path(
             'data/Brewer229_Daily_SEP2016.493'))
 
         ecsv = parser.ExtendedCSV(contents)
-        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+        ecsv.validate_metadata_tables()
 
-        self.assertTrue(set(DOMAINS['metadata_tables'].keys()).issubset(
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+        self.assertTrue(set(DOMAINS['Common'].keys()).issubset(
                         set(ecsv.extcsv.keys())))
-        ecsv.validate_metadata()
 
         self.assertEqual(ecsv.extcsv['PLATFORM']['Name'], 'Río Gallegos')
 
@@ -133,11 +147,9 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/not-an-ecsv.dat'))
 
-        ecsv = parser.ExtendedCSV(contents)
-        self.assertIsInstance(ecsv, parser.ExtendedCSV)
-
         with self.assertRaises(parser.NonStandardDataError):
-            ecsv.validate_metadata()
+            ecsv = parser.ExtendedCSV(contents)
+            ecsv.validate_metadata_tables()
 
         # bad file (missing table)
         contents = util.read_file(resolve_test_data_path(
@@ -147,40 +159,28 @@ class ParserTest(unittest.TestCase):
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
 
         with self.assertRaises(parser.MetadataValidationError):
-            ecsv.validate_metadata()
+            ecsv.validate_metadata_tables()
 
-        # bad file (missing data - LOCATION.Height)
+        # bad file (invalid location longitude)
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-missing-location-latitude.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        self.assertIsInstance(ecsv, parser.ExtendedCSV)
+
+        with self.assertRaises(parser.MetadataValidationError):
+            ecsv.validate_metadata_tables()
+
+        # file missing optional data - LOCATION.Height
         contents = util.read_file(resolve_test_data_path(
             'data/ecsv-missing-location-height.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
 
-        self.assertTrue(set(DOMAINS['metadata_tables'].keys()).issubset(
+        self.assertTrue(set(DOMAINS['Common'].keys()).issubset(
                         set(ecsv.extcsv.keys())))
-
-        with self.assertRaises(parser.MetadataValidationError):
-            ecsv.validate_metadata()
-
-        # bad file (invalid location latitude)
-        contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-invalid-location-latitude.csv'))
-
-        ecsv = parser.ExtendedCSV(contents)
-        self.assertIsInstance(ecsv, parser.ExtendedCSV)
-
-        with self.assertRaises(parser.MetadataValidationError):
-            ecsv.validate_metadata()
-
-        # bad file (invalid location longitude)
-        contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-invalid-location-longitude.csv'))
-
-        ecsv = parser.ExtendedCSV(contents)
-        self.assertIsInstance(ecsv, parser.ExtendedCSV)
-
-        with self.assertRaises(parser.MetadataValidationError):
-            ecsv.validate_metadata()
+        ecsv.validate_metadata_tables()
 
 
 class ProcessingTest(unittest.TestCase):
@@ -189,28 +189,20 @@ class ProcessingTest(unittest.TestCase):
     def test_process(self):
         """test value typing"""
 
-        p = processing.Process()
-        self.assertIsNone(p.status)
-        self.assertIsNone(p.code)
-        self.assertIsNone(p.message)
+        registry_ = registry.Registry()
+        elastic = search.SearchIndex()
+        p = processing.Process(registry_, elastic)
+
         self.assertIsInstance(p.process_start, datetime)
         self.assertIsNone(p.process_end)
 
-        result = p.process_data(resolve_test_data_path(
+        result = p.validate(resolve_test_data_path(
             'data/wmo_acronym_vertical_sm.jpg'))
-
         self.assertFalse(result)
-        self.assertEqual(p.status, 'failed')
-        self.assertEqual(p.code, 'NonStandardDataError')
-        self.assertEqual(p.message, 'binary file detected')
 
-        result = p.process_data(resolve_test_data_path(
+        result = p.validate(resolve_test_data_path(
             'data/euc-jp.dat'))
-
         self.assertFalse(result)
-        self.assertEqual(p.status, 'failed')
-        self.assertEqual(p.code, 'NonStandardDataError')
-        # self.assertEqual(p.message, 'binary file detected')
 
 
 class UtilTest(unittest.TestCase):

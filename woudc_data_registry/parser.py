@@ -60,6 +60,7 @@ from collections import OrderedDict
 from woudc_data_registry import config
 from woudc_data_registry.util import parse_integer_range
 
+
 LOGGER = logging.getLogger(__name__)
 
 with open(config.WDR_TABLE_SCHEMA) as table_schema_file:
@@ -71,14 +72,12 @@ try:
     jsonschema.validate(DOMAINS, table_schema)
 except jsonschema.SchemaError as err:
     LOGGER.critical('Failed to read table definition schema:'
-                    ' cannot process incoming files.\dResponsible error: {}'
-                    .format(err))
-    sys.exit(1)
+                    ' cannot process incoming files')
+    raise err
 except jsonschema.ValidationError as err:
     LOGGER.critical('Failed to read table definition file:'
-                    ' cannot process incoming files.\dResponsible error: {}'
-                    .format(err))
-    sys.exit(1)
+                    ' cannot process incoming files')
+    raise err
 
 
 def non_content_line(line):
@@ -185,6 +184,7 @@ class ExtendedCSV(object):
             else:
                 msg = 'Unrecognized data {}'.format(','.join(row))
                 self._error(9, line_num, msg)
+                success = False
 
         if not success:
             raise NonStandardDataError(self.errors)
@@ -828,20 +828,18 @@ class ExtendedCSV(object):
         if len(present_tables) == 0:
             msg = 'No core metadata tables found. Not an Extended CSV file'
             self._error(161, None, msg)
-            success = False
-        else:
+            raise NonStandardDataError(self.errors)
+        elif len(missing_tables) > 0:
             for missing in missing_tables:
                 msg = 'Missing required table: {}'.format(missing)
                 self._error(1, None, msg)
-                success = False
 
-        if success:
-            LOGGER.debug('No missing metadata tables.')
-        else:
             msg = 'Not an Extended CSV file'
             raise MetadataValidationError(msg, self.errors)
+        else:
+            LOGGER.debug('No missing metadata tables')
 
-        success |= self.check_table_occurrences(schema)
+        success &= self.check_table_occurrences(schema)
 
         for table in present_tables:
             table_type = table.rstrip('0123456789_')
@@ -851,8 +849,8 @@ class ExtendedCSV(object):
             arbitrary_column = next(iter(body.values()))
             num_rows = len(arbitrary_column)
 
-            success |= self.check_field_validity(table, definition)
-            success |= self.check_table_height(table, definition, num_rows)
+            success &= self.check_field_validity(table, definition)
+            success &= self.check_table_height(table, definition, num_rows)
 
         if success:
             self.collimate_tables(present_tables, schema)
