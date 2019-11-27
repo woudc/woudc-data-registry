@@ -794,6 +794,55 @@ class DatasetValidationTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             dv.get_validator('a generic string')
 
+    def test_totalozoneobs_checks(self):
+        """ Test that TotalOzoneObs checks produce expected warnings/errors """
+
+        # Test that out-of-order observation times are found and corrected
+        contents = util.read_file(resolve_test_data_path(
+            'data/totalozoneobs/totalozoneobs-disordered.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('TotalOzoneObs')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 1)
+
+        time_column = ecsv.extcsv['OBSERVATIONS']['Time']
+        self.assertEquals(len(time_column), 32)
+        self.assertEquals(time_column, sorted(list(set(time_column))))
+
+        # Test that duplicated observation times are removed
+        contents = util.read_file(resolve_test_data_path(
+            'data/totalozoneobs/totalozoneobs-duplicated.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('TotalOzoneObs')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 5)
+
+        time_column = ecsv.extcsv['OBSERVATIONS']['Time']
+        self.assertLessEqual(len(time_column), 33)
+        self.assertEquals(time_column, sorted(time_column))
+
+        # Test that no warnings/errors show up for a correct file
+        contents = util.read_file(resolve_test_data_path(
+            'data/totalozoneobs/totalozoneobs-correct.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('TotalOzoneObs')
+        self.assertTrue(validator.check_all(ecsv))
+        self.assertEquals(len(validator.warnings), 0)
+        self.assertEquals(len(validator.errors), 0)
+
     def test_spectral_checks(self):
         """ Test that Spectral checks produce warnings/errors when expected """
 

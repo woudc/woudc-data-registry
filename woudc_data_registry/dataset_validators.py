@@ -361,10 +361,12 @@ class TotalOzoneObsValidator(DatasetValidator):
 
         observations_valueline = extcsv.line_num('OBSERVATIONS') + 2
         times_encountered = {}
+        rows_to_remove = []
 
         in_order = True
         prev_time = None
-        for line_num, row in enumerate(observations, observations_valueline):
+        for index, row in enumerate(observations):
+            line_num = observations_valueline + index
             time = row[0]
 
             if prev_time and time < prev_time:
@@ -373,10 +375,21 @@ class TotalOzoneObsValidator(DatasetValidator):
 
             if time not in times_encountered:
                 times_encountered[time] = row
+            elif row == times_encountered[time]:
+                msg = 'Duplicate observations for #OBSERVATIONS.Time {}' \
+                      .format(time)
+                self._warning(1000, line_num, msg)
+
+                rows_to_remove.append(index)
             else:
-                msg = 'Found multiple observations with #OBSERVATIONS.Time' \
+                msg = 'Found non-unique observations with #OBSERVATIONS.Time' \
                       ' {}'.format(time)
                 self._warning(51, line_num, msg)
+
+        rows_to_remove.reverse()
+        for index in rows_to_remove:
+            for column in extcsv.extcsv['OBSERVATIONS'].values():
+                column.pop(index)
 
         if not in_order:
             msg = '#OBSERVATIONS.Time found in non-chronological order'
