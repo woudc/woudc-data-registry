@@ -48,6 +48,7 @@ import os
 import unittest
 
 from woudc_data_registry import parser, processing, registry, search, util
+from woudc_data_registry import dataset_validators as dv
 from woudc_data_registry.parser import DOMAINS
 
 
@@ -768,6 +769,30 @@ class UTCOffsetParsingTest(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             self._parse_offset('a generic string')
+
+
+class DatasetValidationTest(unittest.TestCase):
+    """ Test suite for dataset-specific validation checks and corrections """
+
+    def test_get_validator(self):
+        """ Test that get_validator returns the correct Validator classes """
+
+        datasets = ['Broad-band', 'Lidar', 'Multi-band', 'OzoneSonde',
+                    'RocketSonde', 'Spectral', 'TotalOzone', 'TotalOzoneObs']
+        for dataset in datasets:
+            validator_name = '{}Validator'.format(dataset.replace('-', ''))
+            validator = dv.get_validator(dataset)
+
+            if hasattr(dv, validator_name):
+                self.assertIsInstance(validator, getattr(dv, validator_name))
+            else:
+                self.assertIsInstance(validator, dv.DatasetValidator)
+
+        validator = dv.get_validator('UmkehrN14')
+        self.assertIsInstance(validator, dv.UmkehrValidator)
+
+        with self.assertRaises(ValueError):
+            dv.get_validator('a generic string')
 
 
 class ProcessingTest(unittest.TestCase):
