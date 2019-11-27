@@ -567,7 +567,9 @@ class ExtendedCSV(object):
                 self._warning(1000, line_num, msg)
                 second = second.rjust(2, '0')
 
-            if not sign:
+            if all([hour == '00', minute == '00', second == '00']):
+                sign = '+'
+            elif not sign:
                 msg = 'Missing sign in #{}.UTCOffset, default to +' \
                       .format(table)
                 self._warning(1000, line_num, msg)
@@ -583,11 +585,11 @@ class ExtendedCSV(object):
                 return '{}{}'.format(sign, magnitude)
             except (ValueError, TypeError) as err:
                 msg = 'Improperly formatted #{}.UTCOffset {}: {}' \
-                      .format(table, str(err))
+                      .format(table, utcoffset, str(err))
                 self._error(24, line_num, msg)
                 raise ValueError(msg)
 
-        template = '^{sign}[0]+{delim}?[0]*{delim}?[0]*' \
+        template = '^{sign}[0]+{delim}?[0]*{delim}?[0]*$' \
                    .format(sign=sign, delim=delim)
         match = re.findall(template, utcoffset)
 

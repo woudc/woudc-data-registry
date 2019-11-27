@@ -650,6 +650,126 @@ class DatestampParsingTest(unittest.TestCase):
             self._parse_datestamp('2019-06-30:16')
 
 
+class UTCOffsetParsingTest(unittest.TestCase):
+    """ Test suite for parser.ExtendedCSV._parse_utcoffset """
+
+    def setUp(self):
+        # Only need a dummy parser since no input is coming from files.
+        self.parser = parser.ExtendedCSV('')
+
+    def _parse_offset(self, raw_string):
+        return self.parser.parse_utcoffset('Dummy', raw_string, 0)
+
+    def test_success(self):
+        """ Test parsing valid UTC offsets """
+
+        candidates = [
+            '+09:00:00',
+            '-04:00:00',
+            '+01:30:00',
+            '+11:15:30',
+            '-03:00:45'
+        ]
+
+        for candidate in candidates:
+            self.assertEquals(self._parse_offset(candidate), candidate)
+
+    def test_sign_variation(self):
+        """ Test parsing UTC offsets with various signs (or lacks thereof) """
+        self.assertEquals(self._parse_offset('+05:30:00'), '+05:30:00')
+        self.assertEquals(self._parse_offset('05:30:00'), '+05:30:00')
+
+        self.assertEquals(self._parse_offset('-08:00:00'), '-08:00:00')
+        # The case below occasionally shows up during backfilling.
+        self.assertEquals(self._parse_offset('+-08:00:00'), '-08:00:00')
+
+        self.assertEquals(self._parse_offset('+00:00:00'), '+00:00:00')
+        self.assertEquals(self._parse_offset('-00:00:00'), '+00:00:00')
+        self.assertEquals(self._parse_offset('00:00:00'), '+00:00:00')
+
+    def test_missing_parts(self):
+        """ Test parsing UTC offsets where not all parts are provided. """
+
+        self.assertEquals(self._parse_offset('+13:00:'), '+13:00:00')
+        self.assertEquals(self._parse_offset('+13::'), '+13:00:00')
+        self.assertEquals(self._parse_offset('+13::00'), '+13:00:00')
+
+        self.assertEquals(self._parse_offset('-02:30:'), '-02:30:00')
+        self.assertEquals(self._parse_offset('-02::56'), '-02:00:56')
+
+        with self.assertRaises(ValueError):
+            self._parse_offset(':00:00')
+        with self.assertRaises(ValueError):
+            self._parse_offset('+:00:00')
+        with self.assertRaises(ValueError):
+            self._parse_offset('::')
+
+    def test_part_lengths(self):
+        """ Test parsing UTC offsets where some parts are not 2 digits long """
+
+        self.assertEquals(self._parse_offset('+0:00:00'), '+00:00:00')
+        self.assertEquals(self._parse_offset('+8:00:00'), '+08:00:00')
+        self.assertEquals(self._parse_offset('-6:00:00'), '-06:00:00')
+
+        self.assertEquals(self._parse_offset('+11:3:'), '+11:03:00')
+        self.assertEquals(self._parse_offset('-5:5:'), '-05:05:00')
+        self.assertEquals(self._parse_offset('-6:12:4'), '-06:12:04')
+
+        with self.assertRaises(ValueError):
+            self._parse_offset('+001:00:00')
+        with self.assertRaises(ValueError):
+            self._parse_offset('+00:350:00')
+        with self.assertRaises(ValueError):
+            self._parse_offset('-09:00:314159')
+
+    def test_out_of_range(self):
+        """ Test that UTC offsets with invalid numeric parts fail to parse """
+
+        with self.assertRaises(ValueError):
+            self._parse_offset('+60:00:00')
+        with self.assertRaises(ValueError):
+            self._parse_offset('-03:700:00')
+        with self.assertRaises(ValueError):
+            self._parse_offset('-00:00:10800')
+
+    def test_missing_separators(self):
+        """ Test parsing UTC offsets where there are fewer than 3 parts """
+
+        self.assertEquals(self._parse_offset('-03:30'), '-03:30:00')
+        self.assertEquals(self._parse_offset('06:15'), '+06:15:00')
+
+        self.assertEquals(self._parse_offset('-10'), '-10:00:00')
+        self.assertEquals(self._parse_offset('04'), '+04:00:00')
+
+        self.assertEquals(self._parse_offset('+0'), '+00:00:00')
+        self.assertEquals(self._parse_offset('0'), '+00:00:00')
+        self.assertEquals(self._parse_offset('000000'), '+00:00:00')
+        self.assertEquals(self._parse_offset('-000000'), '+00:00:00')
+
+    def test_bad_separators(self):
+        """ Test parsing dates with separators other than '-' """
+
+        self.assertEquals(self._parse_offset('+02|45|00'), '+02:45:00')
+        self.assertEquals(self._parse_offset('+02/45/00'), '+02:45:00')
+
+        self.assertEquals(self._parse_offset('+02:45/00'), '+02:45:00')
+        self.assertEquals(self._parse_offset('+02|45:00'), '+02:45:00')
+        self.assertEquals(self._parse_offset('+02/45|00'), '+02:45:00')
+
+    def test_invalid_parts(self):
+        """ Test parsing UTC offsets which contain non-numeric characters """
+
+        with self.assertRaises(ValueError):
+            self._parse_offset('-08:00:4A')
+        with self.assertRaises(ValueError):
+            self._parse_offset('-08:z1:00')
+        with self.assertRaises(ValueError):
+            self._parse_offset('-b4:10:4A')
+
+        with self.assertRaises(ValueError):
+            self._parse_offset('a generic string')
+
+
 class ProcessingTest(unittest.TestCase):
     """Test suite for processing.py"""
 
