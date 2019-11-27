@@ -177,7 +177,7 @@ class ParserTest(unittest.TestCase):
         """ Test that field names with incorrect capitalizations are fixed """
 
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-field-capitalization.csv'))
+            'data/general/ecsv-field-capitalization.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
@@ -260,7 +260,7 @@ class ParserTest(unittest.TestCase):
 
         # Error-free file
         contents = util.read_file(resolve_test_data_path(
-            'data/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv'))
+            'data/general/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
@@ -270,7 +270,7 @@ class ParserTest(unittest.TestCase):
 
         # Error-free file with a space in its instrument name
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-space-in-instrument-name.csv'))
+            'data/general/ecsv-space-in-instrument-name.csv'))
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
 
@@ -281,7 +281,7 @@ class ParserTest(unittest.TestCase):
 
         # Error-free file with special, non-ASCII characters
         contents = util.read_file(resolve_test_data_path(
-            'data/Brewer229_Daily_SEP2016.493'))
+            'data/general/Brewer229_Daily_SEP2016.493'))
 
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
@@ -295,7 +295,7 @@ class ParserTest(unittest.TestCase):
 
         # Text file is not in Extended CSV format
         contents = util.read_file(resolve_test_data_path(
-            'data/not-an-ecsv.dat'))
+            'data/general/not-an-ecsv.dat'))
 
         with self.assertRaises(parser.NonStandardDataError):
             ecsv = parser.ExtendedCSV(contents)
@@ -303,7 +303,7 @@ class ParserTest(unittest.TestCase):
 
         # Text file not in Extended CSV format, featuring non-ASCII characters
         contents = util.read_file(resolve_test_data_path(
-            'data/euc-jp.dat'))
+            'data/general/euc-jp.dat'))
 
         with self.assertRaises(parser.NonStandardDataError):
              ecsv = parser.ExtendedCSV(contents)
@@ -313,7 +313,7 @@ class ParserTest(unittest.TestCase):
         """ Test that files with missing required tables fail to parse """
 
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-missing-location-table.csv'))
+            'data/general/ecsv-missing-location-table.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
@@ -326,7 +326,7 @@ class ParserTest(unittest.TestCase):
 
         # File contains empty/null value for required field
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-missing-location-latitude.csv'))
+            'data/general/ecsv-missing-location-latitude.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         self.assertIsInstance(ecsv, parser.ExtendedCSV)
@@ -336,7 +336,7 @@ class ParserTest(unittest.TestCase):
 
         # Required column is entirely missing in the table
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-missing-instrument-number.csv'))
+            'data/general/ecsv-missing-instrument-number.csv'))
 
         with self.assertRaises(parser.MetadataValidationError):
             ecsv = parser.ExtendedCSV(contents)
@@ -346,7 +346,7 @@ class ParserTest(unittest.TestCase):
         """ Test that files with missing optional tables parse successfully """
 
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-missing-monthly-table.csv'))
+            'data/general/ecsv-missing-monthly-table.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
@@ -361,7 +361,7 @@ class ParserTest(unittest.TestCase):
 
         # File contains empty/null value for optional LOCATION.Height
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-missing-location-height.csv'))
+            'data/general/ecsv-missing-location-height.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
@@ -370,7 +370,7 @@ class ParserTest(unittest.TestCase):
 
         # File missing whole optional column - PLATFORM.GAW_ID
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-missing-platform-gawid.csv'))
+            'data/general/ecsv-missing-platform-gawid.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
@@ -382,14 +382,14 @@ class ParserTest(unittest.TestCase):
         """ Test that files fail to parse if a table has no rows of values """
 
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-empty-timestamp2-table.csv'))
+            'data/general/ecsv-empty-timestamp2-table.csv'))
 
         with self.assertRaises(parser.NonStandardDataError):
             ecsv = parser.ExtendedCSV(contents)
             ecsv.validate_metadata_tables()
 
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-empty-timestamp2-fields.csv'))
+            'data/general/ecsv-empty-timestamp2-fields.csv'))
 
         with self.assertRaises(parser.MetadataValidationError):
             ecsv = parser.ExtendedCSV(contents)
@@ -399,7 +399,7 @@ class ParserTest(unittest.TestCase):
         """ Test that files fail to parse if a table has too many rows """
 
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-excess-timestamp-table-rows.csv'))
+            'data/general/ecsv-excess-timestamp-table-rows.csv'))
 
         with self.assertRaises(parser.MetadataValidationError):
             ecsv = parser.ExtendedCSV(contents)
@@ -409,7 +409,7 @@ class ParserTest(unittest.TestCase):
         """ Test that files fail to parse if a table appears too many times """
 
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-excess-location-table.csv'))
+            'data/general/ecsv-excess-location-table.csv'))
 
         with self.assertRaises(parser.MetadataValidationError):
             ecsv = parser.ExtendedCSV(contents)
@@ -419,14 +419,14 @@ class ParserTest(unittest.TestCase):
         """ Test that files can parse no matter the space between tables """
 
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-no-spaced.csv'))
+            'data/general/ecsv-no-spaced.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
         self.assertTrue(set(DOMAINS['Common']).issubset(set(ecsv.extcsv)))
 
         contents = util.read_file(resolve_test_data_path(
-            'data/ecsv-double-spaced.csv'))
+            'data/general/ecsv-double-spaced.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
@@ -436,7 +436,7 @@ class ParserTest(unittest.TestCase):
         """ Test assigning a table definition version with multiple options """
 
         contents = util.read_file(resolve_test_data_path(
-            'data/20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'))
+            'data/general/20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
@@ -450,7 +450,7 @@ class ParserTest(unittest.TestCase):
                 self.assertIn(param, ecsv.extcsv)
 
         contents = util.read_file(resolve_test_data_path(
-            'data/20100109.Kipp_Zonen.UV-S-B-C.020579.ASM-ARG.csv'))
+            'data/general/20100109.Kipp_Zonen.UV-S-B-C.020579.ASM-ARG.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
@@ -784,11 +784,11 @@ class ProcessingTest(unittest.TestCase):
         self.assertIsNone(p.process_end)
 
         result = p.validate(resolve_test_data_path(
-            'data/wmo_acronym_vertical_sm.jpg'))
+            'data/general/wmo_acronym_vertical_sm.jpg'))
         self.assertFalse(result)
 
         result = p.validate(resolve_test_data_path(
-            'data/euc-jp.dat'))
+            'data/general/euc-jp.dat'))
         self.assertFalse(result)
 
 
@@ -799,12 +799,12 @@ class UtilTest(unittest.TestCase):
         """test reading files"""
 
         contents = util.read_file(resolve_test_data_path(
-            'data/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv'))
+            'data/general/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv'))
 
         self.assertIsInstance(contents, str)
 
         contents = util.read_file(resolve_test_data_path(
-            'data/wmo_acronym_vertical_sm.jpg'))
+            'data/general/wmo_acronym_vertical_sm.jpg'))
 
         self.assertIsInstance(contents, str)
 
@@ -820,10 +820,12 @@ class UtilTest(unittest.TestCase):
     def test_is_text_file(self):
         """test if file is text-based"""
 
-        res = resolve_test_data_path('data/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv')
+        res = resolve_test_data_path(
+            'data/general/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv')
         self.assertTrue(util.is_text_file(res))
 
-        res = resolve_test_data_path('data/wmo_acronym_vertical_sm.jpg')
+        res = resolve_test_data_path(
+            'data/general/wmo_acronym_vertical_sm.jpg')
         self.assertFalse(util.is_text_file(res))
 
     def test_point2geojsongeometry(self):
