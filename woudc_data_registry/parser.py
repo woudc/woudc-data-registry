@@ -134,7 +134,7 @@ class ExtendedCSV(object):
         success = True
         for line_num, row in lines:
             separators = []
-            for bad_sep in ['::', ';', '$', '%', '|', '/', '\\']:
+            for bad_sep in ['::', ';', '$', '%', '|', '\\']:
                 if not non_content_line(row) and bad_sep in row[0]:
                     separators.append(bad_sep)
 
@@ -149,13 +149,6 @@ class ExtendedCSV(object):
             if len(row) == 1 and row[0].startswith('#'):  # table name
                 parent_table = ''.join(row).lstrip('#').strip()
 
-                if parent_table not in self._table_count:
-                    self._table_count[parent_table] = 1
-                else:
-                    updated_count = self._table_count[parent_table] + 1
-                    self._table_count[parent_table] = updated_count
-                    parent_table += '_' + str(updated_count)
-
                 try:
                     LOGGER.debug('Found new table {}'.format(parent_table))
                     ln, fields = next(lines)
@@ -167,7 +160,8 @@ class ExtendedCSV(object):
 
                         ln, fields = next(lines)
 
-                    self.init_table(parent_table, fields, line_num)
+                    parent_table = self.init_table(parent_table, fields,
+                                                   line_num)
                 except StopIteration:
                     msg = 'Table {} has no fields'.format(parent_table)
                     self._error(6, line_num, msg)
@@ -227,19 +221,29 @@ class ExtendedCSV(object):
         Record an empty Extended CSV table named <table_name> with
         fields given in the list <fields>, which starts at line <line_num>.
 
-        Returns a list of errors encountered while recording the new table.
+        May change the name of the table if a table named <table_name>
+        already exists. Returns the table name that ends up being used.
 
         :param table_name: Name of the new table
         :param fields: List of column names in the new table
         :param line_num: Line number of the table's header (its name)
-        :returns: List of errors
+        :returns: Final name for the new table
         """
+
+        if table_name not in self._table_count:
+            self._table_count[table_name] = 1
+        else:
+            updated_count = self._table_count[table_name] + 1
+            self._table_count[table_name] = updated_count
+            table_name += '_' + str(updated_count)
 
         self.extcsv[table_name] = OrderedDict()
         self._line_num[table_name] = line_num
 
         for field in fields:
             self.extcsv[table_name][field.strip()] = []
+
+        return table_name
 
     def add_values_to_table(self, table_name, values, line_num):
         """
@@ -278,12 +282,12 @@ class ExtendedCSV(object):
         table_type = table_name.rstrip('0123456789_')
 
         self.extcsv.pop(table_name)
-        self.line_num.pop(table_name)
+        self._line_num.pop(table_name)
 
-        if self.table_count[table_type] > 1:
-            self.table_count[table_type] -= 1
+        if self._table_count[table_type] > 1:
+            self._table_count[table_type] -= 1
         else:
-            self.table_count.pop(table_type)
+            self._table_count.pop(table_type)
 
     def typecast_value(self, table, field, value, line_num):
         """
@@ -719,7 +723,8 @@ class ExtendedCSV(object):
         elif not lower <= num_rows <= upper:
             msg = 'Incorrectly formatted table: #{}. Table must contain' \
                   ' {} lines'.format(table, height_range)
-            self._warning(27, table_startline, msg)
+            self._error(27, table_startline, msg)
+            success = False
 
         return success
 

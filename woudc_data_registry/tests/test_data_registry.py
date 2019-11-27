@@ -99,6 +99,162 @@ class ParserTest(unittest.TestCase):
         self.assertEquals(
             dummy.typecast_value('Dum', 'utcoffset', bad_input, 0), bad_input)
 
+    def test_build_table(self):
+        """ Test table-management methods directly """
+
+        ecsv = parser.ExtendedCSV('')
+        fields = ['Class', 'Category', 'Level', 'Form']
+        values = ['WOUDC', 'Spectral', '1.0', '1']
+
+        self.assertEquals(ecsv.init_table('CONTENT', fields, 40), 'CONTENT')
+        self.assertEquals(ecsv.table_count('CONTENT'), 1)
+        self.assertEquals(ecsv.line_num('CONTENT'), 40)
+
+        self.assertIn('CONTENT', ecsv.extcsv)
+        for field in fields:
+            self.assertIn(field, ecsv.extcsv['CONTENT'])
+            self.assertEquals(ecsv.extcsv['CONTENT'][field], [])
+
+        ecsv.add_values_to_table('CONTENT', values, 41)
+
+        self.assertEquals(ecsv.line_num('CONTENT'), 40)
+        for field, value in zip(fields, values):
+            self.assertEquals(ecsv.extcsv['CONTENT'][field], [value])
+
+        self.assertEquals(ecsv.init_table('CONTENT', fields, 44), 'CONTENT_2')
+        self.assertEquals(ecsv.table_count('CONTENT'), 2)
+        self.assertEquals(ecsv.line_num('CONTENT'), 40)
+        self.assertEquals(ecsv.line_num('CONTENT_2'), 44)
+
+        self.assertIn('CONTENT', ecsv.extcsv)
+        self.assertIn('CONTENT_2', ecsv.extcsv)
+        for field, value in zip(fields, values):
+            self.assertIn(field, ecsv.extcsv['CONTENT'])
+            self.assertIn(field, ecsv.extcsv['CONTENT_2'])
+            self.assertEquals(ecsv.extcsv['CONTENT'][field], [value])
+            self.assertEquals(ecsv.extcsv['CONTENT_2'][field], [])
+
+        ecsv.add_values_to_table('CONTENT_2', values, 41)
+
+        for field, value in zip(fields, values):
+            self.assertEquals(ecsv.extcsv['CONTENT'][field], [value])
+            self.assertEquals(ecsv.extcsv['CONTENT_2'][field], [value])
+
+        ecsv.remove_table('CONTENT_2')
+        self.assertIn('CONTENT', ecsv.extcsv)
+        self.assertEquals(ecsv.table_count('CONTENT'), 1)
+        self.assertEquals(ecsv.line_num('CONTENT'), 40)
+
+        ecsv.remove_table('CONTENT')
+        self.assertEquals(ecsv.table_count('CONTENT'), 0)
+        self.assertIsNone(ecsv.line_num('CONTENT'))
+        self.assertEquals(ecsv.extcsv, {})
+
+    def test_row_filling(self):
+        """ Test that omitted columns in a row are filled in with nulls """
+
+        ecsv = parser.ExtendedCSV('')
+        ecsv.init_table('TIMESTAMP', ['UTCOffset', 'Date', 'Time'], 1)
+        ecsv.add_values_to_table('TIMESTAMP', ['+00:00:00', '2019-04-30'], 3)
+
+        self.assertIsInstance(ecsv.extcsv['TIMESTAMP']['Time'], list)
+        self.assertEquals(len(ecsv.extcsv['TIMESTAMP']['Time']), 1)
+        self.assertEquals(ecsv.extcsv['TIMESTAMP']['Time'][0], '')
+
+        # Test the all-too-common case where all table rows have 10 commas
+        instrument_fields = ['Name', 'Model', 'Number']
+        ten_commas = ['ECC', '6A', '2174', '', '', '', '', '', '', '', '']
+
+        ecsv.init_table('INSTRUMENT', instrument_fields, 12)
+        ecsv.add_values_to_table('INSTRUMENT', ten_commas, 14)
+
+        self.assertEquals(len(list(ecsv.extcsv['INSTRUMENT'].items())), 3)
+        for field in instrument_fields:
+            self.assertEquals(len(ecsv.extcsv['INSTRUMENT']['Name']), 1)
+            self.assertNotEquals(ecsv.extcsv['INSTRUMENT'][field][0], '')
+
+    def test_field_capitalization(self):
+        """ Test that field names with incorrect capitalizations are fixed """
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-field-capitalization.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+ 
+        content_fields = DOMAINS['Common']['CONTENT']['required_fields']
+        content_values = ['WOUDC', 'TotalOzone', 1.0, 1]
+        for field, value in zip(content_fields, content_values):
+            self.assertIn(field, ecsv.extcsv['CONTENT'])
+            self.assertEquals(ecsv.extcsv['CONTENT'][field], value)
+
+        platform_fields = DOMAINS['Common']['PLATFORM']['required_fields'] \
+            + DOMAINS['Common']['PLATFORM']['optional_fields']
+        platform_values = ['STN', '002', 'Tamanrasset', 'DZA', None]
+        for field, value in zip(platform_fields, platform_values):
+            self.assertIn(field, ecsv.extcsv['PLATFORM'])
+            self.assertEquals(ecsv.extcsv['PLATFORM'][field], value)
+
+        ecsv.validate_dataset_tables()
+
+        definition = DOMAINS['Datasets']['TotalOzone']['1.0']['1']
+        daily_fields = definition['DAILY']['required_fields'] \
+            + definition['DAILY'].get('optional_fields', [])
+        for field in daily_fields:
+            self.assertIn(field, ecsv.extcsv['DAILY'])
+            self.assertEquals(len(ecsv.extcsv['DAILY'][field]), 30)
+
+    def test_column_conversion(self):
+        """ Test that single-row tables are recognized and collimated """
+
+        content_fields = ['Class', 'Category', 'Level', 'Form']
+        content_values = ['WODUC', 'Broad-band', '1.0', '1']
+
+        global_fields = ['Time', 'Irradiance']
+        global_values = [
+            ['00:00:00', '0.1'],
+            ['00:00:02', '0.2'],
+            ['00:00:04', '0.3'],
+            ['00:00:06', '0.4'],
+            ['00:00:08', '0.5'],
+            ['00:00:10', '0.6'],
+        ]
+
+        ecsv = parser.ExtendedCSV('')
+        self.assertEquals(ecsv.init_table('CONTENT', content_fields, 1),
+                          'CONTENT')
+        ecsv.add_values_to_table('CONTENT', content_values, 3)
+        self.assertEquals(ecsv.init_table('GLOBAL', global_fields, 4),
+                          'GLOBAL')
+        for line_num, row in enumerate(global_values, 5):
+            ecsv.add_values_to_table('GLOBAL', row, line_num)
+
+        for field in content_fields:
+            self.assertIsInstance(ecsv.extcsv['CONTENT'][field], list)
+            self.assertEquals(len(ecsv.extcsv['CONTENT'][field]), 1)
+            for value in ecsv.extcsv['CONTENT'][field]:
+                self.assertIsInstance(value, str)
+        for field in global_fields:
+            self.assertIsInstance(ecsv.extcsv['GLOBAL'][field], list)
+            self.assertEquals(len(ecsv.extcsv['GLOBAL'][field]), 6)
+            for value in ecsv.extcsv['GLOBAL'][field]:
+                self.assertIsInstance(value, str)
+
+        ecsv.collimate_tables(['CONTENT'], DOMAINS['Common'])
+        self.assertIsInstance(ecsv.extcsv['CONTENT']['Class'], str)
+        self.assertIsInstance(ecsv.extcsv['CONTENT']['Category'], str)
+        self.assertIsInstance(ecsv.extcsv['CONTENT']['Level'], float)
+        self.assertIsInstance(ecsv.extcsv['CONTENT']['Form'], int)
+
+        ecsv.collimate_tables(['GLOBAL'], DOMAINS['Datasets']['Broad-band']['1.0']['1']['2'])  # noqa
+        self.assertIsInstance(ecsv.extcsv['GLOBAL']['Time'], list)
+        self.assertIsInstance(ecsv.extcsv['GLOBAL']['Irradiance'], list)
+
+        for value in ecsv.extcsv['GLOBAL']['Time']:
+            self.assertIsInstance(value, time)
+        for value in ecsv.extcsv['GLOBAL']['Irradiance']:
+            self.assertIsInstance(value, float)
+
     def test_submissions(self):
         """ Test parsing of previously submitted Extended CSV files """
 
@@ -221,6 +377,91 @@ class ParserTest(unittest.TestCase):
 
         self.assertIn('GAW_ID', ecsv.extcsv['PLATFORM'])
         self.assertIsNone(ecsv.extcsv['PLATFORM']['GAW_ID'])
+
+    def test_empty_tables(self):
+        """ Test that files fail to parse if a table has no rows of values """
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-empty-timestamp2-table.csv'))
+
+        with self.assertRaises(parser.NonStandardDataError):
+            ecsv = parser.ExtendedCSV(contents)
+            ecsv.validate_metadata_tables()
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-empty-timestamp2-fields.csv'))
+
+        with self.assertRaises(parser.MetadataValidationError):
+            ecsv = parser.ExtendedCSV(contents)
+            ecsv.validate_metadata_tables()
+
+    def test_table_height(self):
+        """ Test that files fail to parse if a table has too many rows """
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-excess-timestamp-table-rows.csv'))
+
+        with self.assertRaises(parser.MetadataValidationError):
+            ecsv = parser.ExtendedCSV(contents)
+            ecsv.validate_metadata_tables()
+
+    def test_table_occurrences(self):
+        """ Test that files fail to parse if a table appears too many times """
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-excess-location-table.csv'))
+
+        with self.assertRaises(parser.MetadataValidationError):
+            ecsv = parser.ExtendedCSV(contents)
+            ecsv.validate_metadata_tables()
+
+    def test_line_spacing(self):
+        """ Test that files can parse no matter the space between tables """
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-no-spaced.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        self.assertTrue(set(DOMAINS['Common']).issubset(set(ecsv.extcsv)))
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-double-spaced.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        self.assertTrue(set(DOMAINS['Common']).issubset(set(ecsv.extcsv)))
+
+    def test_determine_version_broadband(self):
+        """ Test assigning a table definition version with multiple options """
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        schema = DOMAINS['Datasets']['Broad-band']['1.0']['1']
+        version = ecsv.determine_version(schema)
+
+        self.assertEquals(version, '2')
+        for param in schema[version]:
+            if param != 'data_table':
+                self.assertIn(param, ecsv.extcsv)
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/20100109.Kipp_Zonen.UV-S-B-C.020579.ASM-ARG.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        schema = DOMAINS['Datasets']['Broad-band']['1.0']['1']
+        version = ecsv.determine_version(schema)
+
+        self.assertEquals(version, '1')
+        for param in schema[version]:
+            if param != 'data_table':
+                self.assertIn(param, ecsv.extcsv)
 
 
 class ProcessingTest(unittest.TestCase):
