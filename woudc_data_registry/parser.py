@@ -851,6 +851,10 @@ class ExtendedCSV(object):
             success &= self.check_field_validity(table, definition)
             success &= self.check_table_height(table, definition, num_rows)
 
+            for field in definition.get('optional_fields', []):
+                if field not in self.extcsv[table]:
+                    self.extcsv[table][field] = [''] * num_rows
+
         if success:
             self.collimate_tables(present_tables, schema)
             LOGGER.debug('All tables in file validated.')
