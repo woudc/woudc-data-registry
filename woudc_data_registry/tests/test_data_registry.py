@@ -464,6 +464,102 @@ class ParserTest(unittest.TestCase):
                 self.assertIn(param, ecsv.extcsv)
 
 
+class TimestampParsingTest(unittest.TestCase):
+    """ Test suite for parser.ExtendedCSV._parse_timestamp """
+
+    def setUp(self):
+        # Only need a dummy parser since no input is coming from files.
+        self.parser = parser.ExtendedCSV('')
+
+    def _parse_timestamp(self, raw_string):
+        return self.parser.parse_timestamp('Dummy', raw_string, 0)
+
+    def test_success(self):
+        """ Test parsing valid timestamps """
+
+        self.assertEquals(self._parse_timestamp('00:00:00'), time(hour=0))
+        self.assertEquals(self._parse_timestamp('12:00:00'), time(hour=12))
+
+        self.assertEquals(self._parse_timestamp('21:30:00'),
+                          time(hour=21, minute=30))
+        self.assertEquals(self._parse_timestamp('16:00:45'),
+                          time(hour=16, second=45))
+        self.assertEquals(self._parse_timestamp('11:10:30'),
+                          time(hour=11, minute=10, second=30))
+
+        self.assertEquals(self._parse_timestamp('0:30:00'),
+                          time(hour=0, minute=30))
+        self.assertEquals(self._parse_timestamp('9:15:00'),
+                          time(hour=9, minute=15))
+
+    def test_invalid_parts(self):
+        """ Test parsing timestamps fails with non-numeric characters """
+
+        with self.assertRaises(ValueError):
+            self._parse_timestamp('0a:00:00')
+        with self.assertRaises(ValueError):
+            self._parse_timestamp('z:00:00')
+        with self.assertRaises(ValueError):
+            self._parse_timestamp('12:a2:00')
+        with self.assertRaises(ValueError):
+            self._parse_timestamp('12:20:kb')
+
+        with self.assertRaises(ValueError):
+            self._parse_timestamp('A generic string')
+
+    def test_out_of_range(self):
+        """
+        Test parsing timestamps where components have
+        invalid numeric values
+        """
+
+        self.assertEquals(self._parse_timestamp('08:15:60'),
+                          time(hour=8, minute=16))
+        self.assertEquals(self._parse_timestamp('08:15:120'),
+                          time(hour=8, minute=17))
+        self.assertEquals(self._parse_timestamp('08:15:90'),
+                          time(hour=8, minute=16, second=30))
+
+        self.assertEquals(self._parse_timestamp('08:60:00'), time(hour=9))
+        self.assertEquals(self._parse_timestamp('08:75:00'),
+                          time(hour=9, minute=15))
+        self.assertEquals(self._parse_timestamp('08:120:00'), time(hour=10))
+
+        self.assertEquals(self._parse_timestamp('08:84:60'),
+                          time(hour=9, minute=25))
+        self.assertEquals(self._parse_timestamp('08:84:150'),
+                          time(hour=9, minute=26, second=30))
+        self.assertEquals(self._parse_timestamp('08:85:36001'),
+                          time(hour=19, minute=25, second=1))
+
+    def test_bad_separators(self):
+        """ Test parsing timestamps with separators other than ':' """
+
+        self.assertEquals(self._parse_timestamp('01-30-00'),
+                          time(hour=1, minute=30))
+        self.assertEquals(self._parse_timestamp('01/30/00'),
+                          time(hour=1, minute=30))
+
+        self.assertEquals(self._parse_timestamp('01:30-00'),
+                          time(hour=1, minute=30))
+        self.assertEquals(self._parse_timestamp('01-30:00'),
+                          time(hour=1, minute=30))
+
+    def test_12_hour_clock(self):
+        """ Test parsing timestamps which use am/pm format """
+
+        self.assertEquals(self._parse_timestamp('01:00:00 am'), time(hour=1))
+        self.assertEquals(self._parse_timestamp('01:00:00 pm'), time(hour=13))
+
+        self.assertEquals(self._parse_timestamp('05:30:00 am'),
+                          time(hour=5, minute=30))
+        self.assertEquals(self._parse_timestamp('05:30:00 pm'),
+                          time(hour=17, minute=30))
+
+        self.assertEquals(self._parse_timestamp('12:00:00 am'), time(hour=0))
+        self.assertEquals(self._parse_timestamp('12:00:00 pm'), time(hour=12))
+
+
 class ProcessingTest(unittest.TestCase):
     """Test suite for processing.py"""
 

@@ -347,7 +347,7 @@ class ExtendedCSV(object):
         :returns: The timestamp converted to a time object.
         """
 
-        if timestamp[-2] in ['am', 'pm']:
+        if timestamp[-2:] in ['am', 'pm']:
             noon_indicator = timestamp[-2:]
             timestamp = timestamp[:-2].strip()
         else:
@@ -386,16 +386,16 @@ class ExtendedCSV(object):
             msg = '#{}.Time second contains invalid characters'.format(table)
             self._error(16, line_num, msg)
 
-        if noon_indicator == 'am' and hour == 12:
+        if noon_indicator == 'am' and hour_numeric == 12:
             msg = '#{}.Time corrected from 12-hour clock to 24-hour' \
                   ' YYYY-mm-dd format'.format(table)
             self._warning(11, line_num, msg)
-            hour = 0
-        elif noon_indicator == 'pm' and hour != 12:
+            hour_numeric = 0
+        elif noon_indicator == 'pm' and hour_numeric not in [12, None]:
             msg = '#{}.Time corrected from 12-hour clock to 24-hour' \
                   ' YYYY-mm-dd format'.format(table)
             self._warning(11, line_num, msg)
-            hour += 12
+            hour_numeric += 12
 
         if second_numeric is not None and second_numeric not in range(0, 60):
             msg = '#{}.Time second is not within allowable range [00]-[59]' \
