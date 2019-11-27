@@ -794,6 +794,49 @@ class DatasetValidationTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             dv.get_validator('a generic string')
 
+    def test_lidar_checks(self):
+        """ Test that Lidar checks produce warnings/errors when expected """
+
+        # Test that an excess profile table is detected
+        contents = util.read_file(resolve_test_data_path(
+            'data/lidar/lidar-extra-profile.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('Lidar')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 1)
+
+        # Refresh and test again with a different file with an extra table
+        contents = util.read_file(resolve_test_data_path(
+            'data/lidar/lidar-extra-summary.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('Lidar')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 1)
+
+        # Refresh and test again with a third correct file
+        contents = util.read_file(resolve_test_data_path(
+            'data/lidar/lidar-correct.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('Lidar')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 0)
+
+
 
 class ProcessingTest(unittest.TestCase):
     """Test suite for processing.py"""
