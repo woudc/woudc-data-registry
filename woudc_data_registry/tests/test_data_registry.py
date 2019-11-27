@@ -794,6 +794,61 @@ class DatasetValidationTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             dv.get_validator('a generic string')
 
+    def test_spectral_checks(self):
+        """ Test that Spectral checks produce warnings/errors when expected """
+
+        # Test that an excess profile table is detected
+        contents = util.read_file(resolve_test_data_path(
+            'data/spectral/spectral-extra-profile.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('Spectral')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 1)
+
+        # Refresh and test again with a different file, still with extra tables
+        validator = dv.get_validator('Spectral')
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/spectral/spectral-extra-timestamp.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator.check_all(ecsv)
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 1)
+
+        # Refresh and test again with all tables having different counts
+        contents = util.read_file(resolve_test_data_path(
+            'data/spectral/spectral-all-different.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('Spectral')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 1)
+
+        # Refresh and test again with a good file
+        contents = util.read_file(resolve_test_data_path(
+            'data/spectral/spectral-correct.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('Spectral')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 0)
+
     def test_lidar_checks(self):
         """ Test that Lidar checks produce warnings/errors when expected """
 
@@ -835,7 +890,6 @@ class DatasetValidationTest(unittest.TestCase):
 
         messages = validator.warnings + validator.errors
         self.assertEquals(len(messages), 0)
-
 
 
 class ProcessingTest(unittest.TestCase):
