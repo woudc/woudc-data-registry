@@ -8,12 +8,12 @@ Date,Agency,Version,ScientificAuthority
 2012-01-04,RMDA,0.0
 
 #PLATFORM
-Type,ID,Name,Country,GAW_ID
+Type,ID,Name,Country
 STN,002,Tamanrasset,DZA
 
 #INSTRUMENT
 Name,Model,Number
-Brewer foo,MKIII,201
+Brewer,MKIII,201
 
 #LOCATION
 Latitude,Longitude,Height

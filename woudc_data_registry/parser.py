@@ -805,8 +805,8 @@ class ExtendedCSV(object):
         for field in required:
             column = self.extcsv[table][field]
 
-            if None in column:
-                line = table_valueline + column.index(None)
+            if '' in column:
+                line = table_valueline + column.index('')
                 msg = 'Required value #{}.{} is empty'.format(table, field)
                 self._error(5, line, msg)
                 success = False
@@ -1021,16 +1021,3 @@ class MetadataValidationError(Exception):
         """set error list/stack"""
         super(MetadataValidationError, self).__init__(message)
         self.errors = errors
-
-
-if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print('Usage: {} <file>'.format(sys.argv[0]))
-        sys.exit(1)
-
-    with open(sys.argv[1]) as fh:
-        ecsv = ExtendedCSV(fh.read())
-    try:
-        ecsv.validate_metadata_tables()
-    except MetadataValidationError as err:
-        print(err.errors)

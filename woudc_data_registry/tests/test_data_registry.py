@@ -118,7 +118,7 @@ class ParserTest(unittest.TestCase):
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
 
-        self.assertEqual('20111101.Brewer-foo.MKIII.na.RMDA.csv',
+        self.assertEqual('20111101.Brewer-foo.MKIII.201.RMDA.csv',
                          ecsv.gen_woudc_filename())
         self.assertTrue(set(DOMAINS['Common'].keys()).issubset(
                         set(ecsv.extcsv.keys())))
@@ -178,16 +178,27 @@ class ParserTest(unittest.TestCase):
         with self.assertRaises(parser.MetadataValidationError):
             ecsv.validate_metadata_tables()
 
-        # File contains empty/null value for required field
+        # Required column is entirely missing in the table
         contents = util.read_file(resolve_test_data_path(
             'data/ecsv-missing-instrument-number.csv'))
+
+        with self.assertRaises(parser.MetadataValidationError):
+            ecsv = parser.ExtendedCSV(contents)
+            ecsv.validate_metadata_tables()
+
+    def test_missing_optional_table(self):
+        """ Test that files with missing optional tables parse successfully """
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-missing-monthly-table.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
 
-        self.assertIsInstance(ecsv, parser.ExtendedCSV)
-        self.assertEqual('20111101.Brewer.MKIII.na.RMDA.csv',
-                         ecsv.gen_woudc_filename())
+        ecsv.validate_dataset_tables()
+        self.assertNotIn('MONTHLY', ecsv.extcsv)
+        self.assertTrue(set(DOMAINS['Common']).issubset(
+                        set(ecsv.extcsv.keys())))
 
     def test_missing_optional_value(self):
         """ Test that files with missing optional values parse successfully """
@@ -200,6 +211,16 @@ class ParserTest(unittest.TestCase):
         ecsv.validate_metadata_tables()
 
         self.assertIsNone(ecsv.extcsv['LOCATION']['Height'])
+
+        # File missing whole optional column - PLATFORM.GAW_ID
+        contents = util.read_file(resolve_test_data_path(
+            'data/ecsv-missing-platform-gawid.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertIn('GAW_ID', ecsv.extcsv['PLATFORM'])
+        self.assertIsNone(ecsv.extcsv['PLATFORM']['GAW_ID'])
 
 
 class ProcessingTest(unittest.TestCase):
