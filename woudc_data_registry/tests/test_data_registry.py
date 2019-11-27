@@ -560,6 +560,96 @@ class TimestampParsingTest(unittest.TestCase):
         self.assertEquals(self._parse_timestamp('12:00:00 pm'), time(hour=12))
 
 
+class DatestampParsingTest(unittest.TestCase):
+    """ Test suite for parser.ExtendedCSV._parse_datestamp """
+
+    def setUp(self):
+        # Only need a dummy parser since no input is coming from files.
+        self.parser = parser.ExtendedCSV('')
+
+    def _parse_datestamp(self, raw_string):
+        return self.parser.parse_datestamp('Dummy', raw_string, 0)
+
+    def test_success(self):
+        """ Test parsing valid dates """
+
+        self.assertEquals(self._parse_datestamp('2013-05-01'),
+                          date(year=2013, month=5, day=1))
+        self.assertEquals(self._parse_datestamp('1968-12-31'),
+                          date(year=1968, month=12, day=31))
+
+        self.assertEquals(self._parse_datestamp('1940-01-01'),
+                          date(year=1940, month=1, day=1))
+        self.assertEquals(self._parse_datestamp('2000-02-28'),
+                          date(year=2000, month=2, day=28))
+
+        present = date.today()
+        self.assertEquals(self._parse_datestamp(present.strftime('%Y-%m-%d')),
+                          present)
+
+    def test_invalid_parts(self):
+        """ Test parsing dates fails with non-numeric characters """
+
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('2019AD-10-31')
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('z-02-14')
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('2016-1a-00')
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('1994-0k-gb')
+
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('A generic string')
+
+    def test_out_of_range(self):
+        """ Test parsing dates where components have invalid numeric values """
+
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('2001-04-35')
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('2014-06-00')
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('1971-02-30')
+
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('1996-31-12')
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('2003-00-01')
+
+    def test_bad_separators(self):
+        """ Test parsing dates with separators other than '-' """
+
+        self.assertEquals(self._parse_datestamp('2019/01/24'),
+                          date(year=2019, month=1, day=24))
+        self.assertEquals(self._parse_datestamp('2019:01:24'),
+                          date(year=2019, month=1, day=24))
+
+        self.assertEquals(self._parse_datestamp('2019:01/24'),
+                          date(year=2019, month=1, day=24))
+        self.assertEquals(self._parse_datestamp('2019-01/24'),
+                          date(year=2019, month=1, day=24))
+        self.assertEquals(self._parse_datestamp('2019:01-24'),
+                          date(year=2019, month=1, day=24))
+
+    def test_number_of_parts(self):
+        """ Test parsing dates with incorrect numbers of components """
+
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('20190124')
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('2019-0124')
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('201901-24')
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('2019')
+
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('2019-01-24-12-30')
+        with self.assertRaises(ValueError):
+            self._parse_datestamp('2019-06-30:16')
+
+
 class ProcessingTest(unittest.TestCase):
     """Test suite for processing.py"""
 
