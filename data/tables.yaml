@@ -453,20 +453,20 @@ Datasets:
             - WLCode
             - ObsCode
             - ColumnO3
-            - N600
-            - N650
-            - N700
-            - N740
-            - N750
-            - N770
-            - N800
-            - N830
-            - N840
-            - N850
-            - N865
-            - N880
-            - N890
-            - N900
+            - N_600
+            - N_650
+            - N_700
+            - N_740
+            - N_750
+            - N_770
+            - N_800
+            - N_830
+            - N_840
+            - N_850
+            - N_865
+            - N_880
+            - N_890
+            - N_900
           optional_fields:
             - W
         data_table: N14_VALUES

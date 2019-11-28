@@ -534,11 +534,73 @@ class UmkehrValidator(DatasetValidator):
 
         LOGGER.info('Beginning Umkehr-specific checks')
 
-        timestamps_ok = self.check_timestamps(extcsv)
         time_series_ok = self.check_time_series(extcsv)
+        timestamps_ok = self.check_timestamps(extcsv)
 
         LOGGER.info('Umkehr-specific checks complete')
         return timestamps_ok and time_series_ok
+
+    def check_time_series(self, extcsv):
+        """
+        Assess the ordering of dates in the data table (#N14_VALUES or
+        #C_PROFILE) in <extcsv>. Returns True iff no errors were found.
+
+        :param extcsv: A parsed Extended CSV file of Umkehr data.
+        :returns: True iff the ordering of observation dates is error-free.
+        """
+
+        level = extcsv.extcsv['CONTENT']['Level']
+        data_table = 'N14_VALUES' if level == 1.0 else 'C_PROFILE'
+
+        LOGGER.debug('Assessing order of #{}.Date column'.format(data_table))
+
+        observations_valueline = extcsv.line_num(data_table) + 2
+        dates_encountered = {}
+        rows_to_remove = []
+
+        columns = zip(*extcsv.extcsv[data_table].values())
+
+        in_order = True
+        prev_date = None
+        for index, row in enumerate(columns):
+            line_num = observations_valueline + index
+            observation_date = row[0]
+
+            if prev_date and observation_date < prev_date:
+                in_order = False
+            prev_date = observation_date
+
+            if observation_date not in dates_encountered:
+                dates_encountered[observation_date] = row
+            elif row == dates_encountered[observation_date]:
+                msg = 'Duplicate data ignored with non-unique #{}.Date' \
+                      .format(data_table)
+                self._warning(47, line_num, msg)
+
+                rows_to_remove.append(index)
+            else:
+                msg = '#Found multiple observations under #DAILY.Date {}' \
+                      .format(observation_date)
+                self._error(48, line_num, msg)
+
+        rows_to_remove.reverse()
+        for index in rows_to_remove:
+            for column in extcsv.extcsv[data_table].values():
+                column.pop(index)
+
+        if not in_order:
+            msg = '#{}.Date found in non-chronological order' \
+                  .format(data_table)
+            self._warning(49, observations_valueline, msg)
+
+            sorted_dates = sorted(extcsv.extcsv[data_table]['Date'])
+            sorted_rows = [dates_encountered[date_] for date_ in sorted_dates]
+
+            for fieldnum, field in enumerate(extcsv.extcsv[data_table].keys()):
+                column = list(map(lambda row: row[fieldnum], sorted_rows))
+                extcsv.extcsv[data_table][field] = column
+
+        return True
 
     def check_timestamps(self, extcsv):
         """
@@ -610,58 +672,5 @@ class UmkehrValidator(DatasetValidator):
             for ind in range(3, timestamp_count + 1):
                 table_name = 'TIMESTAMP_' + str(ind)
                 extcsv.remove_table(table_name)
-
-        return True
-
-    def check_time_series(self, extcsv):
-        """
-        Assess the ordering of dates in the data table (#N14_VALUES or
-        #C_PROFILE) in <extcsv>. Returns True iff no errors were found.
-
-        :param extcsv: A parsed Extended CSV file of Umkehr data.
-        :returns: True iff the ordering of observation dates is error-free.
-        """
-
-        level = extcsv.extcsv['CONTENT']['Level']
-        data_table = 'N14_VALUES' if level == 1.0 else 'C_PROFILE'
-
-        LOGGER.debug('Assessing order of #{}.Date column'.format(data_table))
-
-        observation_valueline = extcsv.line_num(data_table) + 2
-        dates_encountered = {}
-
-        columns = zip(*extcsv.extcsv[data_table].values())
-
-        in_order = True
-        prev_date = None
-        for line_num, row in enumerate(columns, observation_valueline):
-            observation_date = row[0]
-
-            if prev_date and observation_date < prev_date:
-                in_order = False
-            prev_date = observation_date
-
-            if observation_date not in dates_encountered:
-                dates_encountered[observation_date] = row
-            elif row == dates_encountered[observation_date]:
-                msg = 'Duplicate data ignored with non-unique #{}.Date' \
-                      .format(data_table)
-                self._warning(47, line_num, msg)
-            else:
-                msg = '#Found multiple observations under #DAILY.Date {}' \
-                      .format(observation_date)
-                self._error(48, line_num, msg)
-
-        if not in_order:
-            msg = '#{}.Date found in non-chronological order' \
-                  .format(data_table)
-            self._warning(49, observation_valueline, msg)
-
-            sorted_dates = sorted(extcsv.extcsv[data_table]['Date'])
-            sorted_rows = [dates_encountered[date_] for date_ in sorted_dates]
-
-            for fieldnum, field in enumerate(extcsv.extcsv[data_table].keys()):
-                column = list(map(lambda row: row[fieldnum], sorted_rows))
-                extcsv.extcsv[data_table][field] = column
 
         return True

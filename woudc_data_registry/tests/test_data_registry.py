@@ -940,6 +940,125 @@ class DatasetValidationTest(unittest.TestCase):
         messages = validator.warnings + validator.errors
         self.assertEquals(len(messages), 0)
 
+    def _helper_test_umkehr(self, level):
+        """
+        Test that Umkehr fils checks produce warnings/errors when expected,
+        in an Umkehr Level <level> file.
+        """
+
+        if float(level) == 1.0:
+            prefix = 'umkehr1'
+            data_table = 'N14_VALUES'
+        elif float(level) == 2.0:
+            prefix = 'umkehr2'
+            data_table = 'C_PROFILE'
+
+        # Test a file with unique, out-of-order dates
+        contents = util.read_file(resolve_test_data_path(
+            'data/umkehr/{}-disordered.csv'.format(prefix)))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('UmkehrN14')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        date_column = ecsv.extcsv[data_table]['Date']
+
+        self.assertEquals(len(messages), 1)
+        self.assertEquals(len(date_column), 13)
+        self.assertEquals(date_column, sorted(list(set(date_column))))
+
+        # Test a file with non-unique (and out-of-order) dates
+        contents = util.read_file(resolve_test_data_path(
+            'data/umkehr/{}-duplicated.csv'.format(prefix)))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('UmkehrN14')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        date_column = ecsv.extcsv[data_table]['Date']
+
+        self.assertEquals(len(messages), 5)
+        self.assertLessEqual(len(date_column), 14)
+        self.assertEquals(date_column, sorted(date_column))
+
+        # Test file where each TIMESTAMP.Date disagrees with the data table
+        contents = util.read_file(resolve_test_data_path(
+            'data/umkehr/{}-mismatch-timestamp-date.csv'.format(prefix)))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('UmkehrN14')
+        if validator.check_all(ecsv):
+            self.assertEquals(ecsv.extcsv['TIMESTAMP']['Date'],
+                              ecsv.extcsv[data_table]['Date'][0])
+            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['Date'],
+                              ecsv.extcsv[data_table]['Date'][-1])
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 2)
+
+        # Test file where TIMESTAMP.Times do not match between tables
+        contents = util.read_file(resolve_test_data_path(
+            'data/umkehr/{}-mismatch-timestamp-time.csv'.format(prefix)))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('UmkehrN14')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 1)
+
+        # Test that missing second TIMESTAMP table is detected/filled in
+        contents = util.read_file(resolve_test_data_path(
+            'data/umkehr/{}-missing-timestamp.csv'.format(prefix)))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('UmkehrN14')
+        if validator.check_all(ecsv):
+            self.assertIn('TIMESTAMP_2', ecsv.extcsv)
+            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['Date'],
+                              ecsv.extcsv[data_table]['Date'][-1])
+            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['UTCOffset'],
+                              ecsv.extcsv['TIMESTAMP']['UTCOffset'])
+            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['Time'],
+                              ecsv.extcsv['TIMESTAMP']['Time'])
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 1)
+
+        # Test a file with no issues
+        contents = util.read_file(resolve_test_data_path(
+            'data/umkehr/{}-correct.csv'.format(prefix)))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('UmkehrN14')
+        self.assertTrue(validator.check_all(ecsv))
+        self.assertEquals(len(validator.warnings), 0)
+        self.assertEquals(len(validator.errors), 0)
+
+    def test_umkehr_level1_checks(self):
+        """ Test that expected warnings/errors are found in Umkehr Level 1 """
+
+        self._helper_test_umkehr(1.0)
+
+    def test_umkehr_level2_checks(self):
+        """ Test that expected warnings/errors are found in Umkehr Level 2 """
+
+        self._helper_test_umkehr(2.0)
+
 
 class ProcessingTest(unittest.TestCase):
     """Test suite for processing.py"""
