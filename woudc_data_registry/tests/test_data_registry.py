@@ -794,6 +794,105 @@ class DatasetValidationTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             dv.get_validator('a generic string')
 
+    def test_totalozone_checks(self):
+        """ Test that TotalOzone checks produce expected warnings/errors """
+
+        # Test a file with unique, out-of-order dates
+        contents = util.read_file(resolve_test_data_path(
+            'data/totalozone/totalozone-disordered.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('TotalOzone')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        date_column = ecsv.extcsv['DAILY']['Date']
+
+        self.assertEquals(len(messages), 1)
+        self.assertEquals(len(date_column), 15)
+        self.assertEquals(date_column, sorted(list(set(date_column))))
+
+        # Test a file with non-unique (and out-of-order) dates
+        contents = util.read_file(resolve_test_data_path(
+            'data/totalozone/totalozone-duplicated.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('TotalOzone')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        date_column = ecsv.extcsv['DAILY']['Date']
+
+        self.assertEquals(len(messages), 5)
+        self.assertLessEqual(len(date_column), 16)
+        self.assertEquals(date_column, sorted(date_column))
+
+        # Test file where each TIMESTAMP.Date disagrees with the data table
+        contents = util.read_file(resolve_test_data_path(
+            'data/totalozone/totalozone-mismatch-timestamp-date.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('TotalOzone')
+        if validator.check_all(ecsv):
+            self.assertEquals(ecsv.extcsv['TIMESTAMP']['Date'],
+                              ecsv.extcsv['DAILY']['Date'][0])
+            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['Date'],
+                              ecsv.extcsv['DAILY']['Date'][-1])
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 2)
+
+        # Test file where TIMESTAMP.Times do not match between tables
+        contents = util.read_file(resolve_test_data_path(
+            'data/totalozone/totalozone-mismatch-timestamp-time.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('TotalOzone')
+        validator.check_all(ecsv)
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 1)
+
+        # Test that missing second TIMESTAMP table is detected/filled in
+        contents = util.read_file(resolve_test_data_path(
+            'data/totalozone/totalozone-missing-timestamp.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('TotalOzone')
+        if validator.check_all(ecsv):
+            self.assertIn('TIMESTAMP_2', ecsv.extcsv)
+            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['Date'],
+                              ecsv.extcsv['DAILY']['Date'][-1])
+            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['UTCOffset'],
+                              ecsv.extcsv['TIMESTAMP']['UTCOffset'])
+            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['Time'],
+                              ecsv.extcsv['TIMESTAMP']['Time'])
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 1)
+
+        # Test a file with no issues
+        contents = util.read_file(resolve_test_data_path(
+            'data/totalozone/totalozone-correct.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('TotalOzone')
+        self.assertTrue(validator.check_all(ecsv))
+        self.assertEquals(len(validator.warnings), 0)
+        self.assertEquals(len(validator.errors), 0)
+
     def test_totalozoneobs_checks(self):
         """ Test that TotalOzoneObs checks produce expected warnings/errors """
 

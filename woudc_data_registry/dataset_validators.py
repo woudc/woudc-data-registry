@@ -103,12 +103,78 @@ class TotalOzoneValidator(DatasetValidator):
 
         LOGGER.info('Beginning TotalOzone-specific checks')
 
-        timestamps_ok = self.check_timestamps(extcsv)
         time_series_ok = self.check_time_series(extcsv)
+        timestamps_ok = self.check_timestamps(extcsv)
         monthly_ok = self.check_monthly(extcsv)
 
         LOGGER.info('TotalOzone-specific checks complete')
         return all([timestamps_ok, time_series_ok, monthly_ok])
+
+    def check_time_series(self, extcsv):
+        """
+        Assess the ordering of Dates in the #DAILY table in <extcsv>.
+        Returns True iff no errors were found.
+
+        :param extcsv: A parsed Extended CSV file of TotalOzone data.
+        :returns: True iff the ordering of #DAILY Dates is error-free.
+        """
+
+        LOGGER.debug('Assessing order of #DAILY.Date column')
+
+        timestamp1_date = extcsv.extcsv['TIMESTAMP']['Date']
+        daily_start = extcsv.line_num('DAILY') + 2
+        dates_encountered = {}
+        rows_to_remove = []
+
+        daily_columns = zip(*extcsv.extcsv['DAILY'].values())
+        sequence_ok = True
+
+        in_order = True
+        prev_date = None
+        for index, row in enumerate(daily_columns):
+            line_num = daily_start + index
+            daily_date = row[0]
+
+            if daily_date.year != timestamp1_date.year:
+                msg = '#DAILY.Date has a different year than #TIMESTAMP.Date'
+                self._warning(42, line_num, msg)
+
+            if prev_date and daily_date < prev_date:
+                in_order = False
+            prev_date = daily_date
+
+            if daily_date not in dates_encountered:
+                dates_encountered[daily_date] = row
+            elif row == dates_encountered[daily_date]:
+                msg = 'Duplicate data ignored with non-unique #DAILY.Date'
+                self._warning(47, line_num, msg)
+
+                rows_to_remove.append(index)
+            else:
+                msg = '#Found multiple observations under #DAILY.Date {}' \
+                      .format(daily_date)
+                self._error(48, line_num, msg)
+                sequence_ok = False
+
+        rows_to_remove.reverse()
+        for index in rows_to_remove:
+            for column in extcsv.extcsv['DAILY'].values():
+                column.pop(index)
+
+        if not sequence_ok:
+            return False
+        elif not in_order:
+            msg = '#DAILY.Date found in non-chronological order'
+            self._warning(49, daily_start, msg)
+
+            sorted_dates = sorted(extcsv.extcsv['DAILY']['Date'])
+            sorted_daily = [dates_encountered[date_] for date_ in sorted_dates]
+
+            for field_num, field in enumerate(extcsv.extcsv['DAILY'].keys()):
+                column = list(map(lambda row: row[field_num], sorted_daily))
+                extcsv.extcsv['DAILY'][field] = column
+
+        return True
 
     def check_timestamps(self, extcsv):
         """
@@ -177,63 +243,6 @@ class TotalOzoneValidator(DatasetValidator):
             for ind in range(3, timestamp_count + 1):
                 table_name = 'TIMESTAMP_' + str(ind)
                 extcsv.remove_table(table_name)
-
-        return True
-
-    def check_time_series(self, extcsv):
-        """
-        Assess the ordering of Dates in the #DAILY table in <extcsv>.
-        Returns True iff no errors were found.
-
-        :param extcsv: A parsed Extended CSV file of TotalOzone data.
-        :returns: True iff the ordering of #DAILY Dates is error-free.
-        """
-
-        LOGGER.debug('Assessing order of #DAILY.Date column')
-
-        timestamp1_date = extcsv.extcsv['TIMESTAMP']['Date']
-        daily_start = extcsv.line_num('DAILY') + 2
-        dates_encountered = {}
-
-        daily_columns = zip(*extcsv.extcsv['DAILY'].values())
-        sequence_ok = True
-
-        in_order = True
-        prev_date = None
-        for line_num, row in enumerate(daily_columns, daily_start):
-            daily_date = row[0]
-
-            if daily_date.year != timestamp1_date.year:
-                msg = '#DAILY.Date has a different year than #TIMESTAMP.Date'
-                self._warning(42, line_num, msg)
-
-            if prev_date and daily_date < prev_date:
-                in_order = False
-            prev_date = daily_date
-
-            if daily_date not in dates_encountered:
-                dates_encountered[daily_date] = row
-            elif row == dates_encountered[daily_date]:
-                msg = 'Duplicate data ignored with non-unique #DAILY.Date'
-                self._warning(47, line_num, msg)
-            else:
-                msg = '#Found multiple observations under #DAILY.Date {}' \
-                      .format(daily_date)
-                self._error(48, line_num, msg)
-                sequence_ok = False
-
-        if not sequence_ok:
-            return False
-        elif not in_order:
-            msg = '#DAILY.Date found in non-chronological order'
-            self._warning(49, daily_start, msg)
-
-            sorted_dates = sorted(extcsv.extcsv['DAILY']['Date'])
-            sorted_daily = [dates_encountered[date_] for date_ in sorted_dates]
-
-            for field_num, field in enumerate(extcsv.extcsv['DAILY'].keys()):
-                column = list(map(lambda row: row[field_num], sorted_daily))
-                extcsv.extcsv['DAILY'][field] = column
 
         return True
 
