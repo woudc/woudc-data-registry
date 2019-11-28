@@ -182,7 +182,7 @@ class ParserTest(unittest.TestCase):
 
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
- 
+
         content_fields = DOMAINS['Common']['CONTENT']['required_fields']
         content_values = ['WOUDC', 'TotalOzone', 1.0, 1]
         for field, value in zip(content_fields, content_values):
@@ -307,8 +307,8 @@ class ParserTest(unittest.TestCase):
             'data/general/euc-jp.dat'))
 
         with self.assertRaises(parser.NonStandardDataError):
-             ecsv = parser.ExtendedCSV(contents)
-             ecsv.validate_metadata_tables()
+            ecsv = parser.ExtendedCSV(contents)
+            ecsv.validate_metadata_tables()
 
     def test_missing_required_table(self):
         """ Test that files with missing required tables fail to parse """

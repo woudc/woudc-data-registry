@@ -43,12 +43,11 @@
 #
 # =================================================================
 
-import re
-import sys
-
 import csv
 import json
 import yaml
+
+import re
 
 import jsonschema
 import logging
