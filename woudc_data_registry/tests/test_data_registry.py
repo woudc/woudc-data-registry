@@ -893,6 +893,32 @@ class DatasetValidationTest(unittest.TestCase):
         self.assertEquals(len(validator.warnings), 0)
         self.assertEquals(len(validator.errors), 0)
 
+    def test_totalozone_monthly_generation(self):
+        """ Test derivation and checks related to TotalOzone MONTHLY table """
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/totalozone/totalozone-all300.csv'))
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+
+        validator = dv.get_validator('TotalOzone')
+        derived = validator.derive_monthly_from_daily(ecsv)
+
+        self.assertEquals(derived['Date'], ecsv.extcsv['TIMESTAMP']['Date'])
+        self.assertEquals(derived['ColumnO3'], 300)
+        self.assertEquals(derived['StdDevO3'], 0)
+        self.assertEquals(derived['Npts'], 15)
+
+        # Check that incorrect MONTHLY in file is detected and fixed
+        if validator.check_all(ecsv):
+            self.assertEquals(ecsv.extcsv['MONTHLY']['ColumnO3'], 300)
+            self.assertEquals(ecsv.extcsv['MONTHLY']['StdDevO3'], 0)
+            self.assertEquals(ecsv.extcsv['MONTHLY']['Npts'], 15)
+
+        messages = validator.warnings + validator.errors
+        self.assertEquals(len(messages), 2)
+
     def test_totalozoneobs_checks(self):
         """ Test that TotalOzoneObs checks produce expected warnings/errors """
 
