@@ -1,7 +1,7 @@
 
 #CONTENT
 Class,Category,Level,Form
-WOUDC,TotalOzone,1.0,1
+WOUDC,TotalOzoneFOO,1.0,1
 
 #DATA_GENERATION
 Date,Agency,Version,ScientificAuthority
@@ -17,14 +17,14 @@ Brewer,MKIII,201
 
 #LOCATION
 Latitude,Longitude,Height
-22.780,95.520
+22.780,95.520,1384
 
 #TIMESTAMP
 UTCOffset,Date,Time
 00:00:00,2011-11-01
 
 #DAILY
-Date,WLCode,ObsCode,ColumnO3,StdDevO3,UTC_Begin,UTC_End,UTC_Mean,NObs,mMu,ColumnSO2
+Date,WLCode,ObsCode,ColumnO3,StdDevO3,UTC_Begin,UTC_End,UTC_Mean,nObs,mMu,ColumnSO2
 2011-11-01,9,DS,265.8,2.4,6.37,16.32,11.15,91,1.785,-7.6
 2011-11-02,9,DS,266.6,2.2,6.37,16.20,11.27,99,1.754,-7.9
 2011-11-03,9,DS,273.2,3.4,6.38,16.38,11.47,99,1.782,-7.8

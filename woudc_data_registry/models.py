@@ -49,9 +49,10 @@ import logging
 import click
 import csv
 import json
+import codecs
 from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
                         Float, Enum, ForeignKey, Integer, String, Time,
-                        UniqueConstraint)
+                        UniqueConstraint, ForeignKeyConstraint)
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -78,18 +79,19 @@ class Country(base):
 
     __tablename__ = 'countries'
 
-    identifier = Column(String, nullable=False, primary_key=True)
-    country_name = Column(String, nullable=False, unique=True)
-    french_name = Column(String, nullable=False, unique=True)
+    country_id = Column(String, nullable=False, primary_key=True)
+    name_en = Column(String, nullable=False, unique=True)
+    name_fr = Column(String, nullable=False, unique=True)
     wmo_region_id = Column(WMO_REGION_ENUM, nullable=False)
     regional_involvement = Column(String, nullable=False)
     wmo_membership = Column(Date, nullable=True)
     link = Column(String, nullable=False)
 
     def __init__(self, dict_):
-        self.identifier = dict_['id']
-        self.country_name = dict_['country_name']
-        self.french_name = dict_['french_name']
+        self.country_id = dict_['id']
+        self.name_en = dict_['country_name']
+        self.name_fr = dict_['french_name']
+
         self.wmo_region_id = dict_['wmo_region_id']
         self.regional_involvement = dict_['regional_involvement']
         self.link = dict_['link']
@@ -105,11 +107,11 @@ class Country(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.identifier,
+            'id': self.country_id,
             'type': 'Feature',
             'properties': {
-                'country_name': self.country_name,
-                'french_name': self.french_name,
+                'country_name': self.name_en,
+                'french_name': self.name_fr,
                 'wmo_region_id': self.wmo_region_id,
                 'wmo_membership': self.wmo_membership,
                 'regional_involvement': self.regional_involvement,
@@ -118,20 +120,23 @@ class Country(base):
         }
 
     def __repr__(self):
-        return 'Country ({}, {})'.format(self.identifier, self.country_name)
+        return 'Country ({}, {})'.format(self.country_id, self.name_en)
 
 
 class Contributor(base):
     """Data Registry Contributor"""
 
     __tablename__ = 'contributors'
-    __table_args__ = (UniqueConstraint('identifier'),)
+    __table_args__ = (UniqueConstraint('contributor_id'),
+                      UniqueConstraint('acronym', 'project_id'))
 
-    identifier = Column(String, primary_key=True)
+    contributor_id = Column(String, primary_key=True)
     name = Column(String, nullable=False)
-    country_id = Column(String, ForeignKey('countries.identifier'),
+    acronym = Column(String, nullable=False)
+    country_id = Column(String, ForeignKey('countries.country_id'),
                         nullable=False)
-    project = Column(String, nullable=False, default='WOUDC')
+    project_id = Column(String, ForeignKey('projects.project_id'),
+                        nullable=False, default='WOUDC')
     wmo_region_id = Column(WMO_REGION_ENUM, nullable=False)
     url = Column(String, nullable=False)
     email = Column(String, nullable=False)
@@ -149,14 +154,18 @@ class Contributor(base):
     def __init__(self, dict_):
         """serializer"""
 
-        self.identifier = dict_['identifier']
-        self.name = dict_['name']
+        self.contributor_id = dict_['identifier']
         self.country_id = dict_['country_id']
-        self.project = dict_['project']
+        self.project_id = dict_['project_id']
+
+        self.name = dict_['name']
+        self.acronym = dict_['acronym']
+
         self.wmo_region_id = dict_['wmo_region_id']
         self.url = dict_['url']
         self.email = dict_['email']
         self.ftp_username = dict_['ftp_username']
+
         self.last_validated_datetime = datetime.datetime.utcnow()
         self.x = dict_['x']
         self.y = dict_['y']
@@ -164,7 +173,7 @@ class Contributor(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.identifier,
+            'id': self.contributor_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y),
             'properties': {
@@ -180,7 +189,7 @@ class Contributor(base):
         }
 
     def __repr__(self):
-        return 'Contributor ({}, {})'.format(self.identifier, self.name)
+        return 'Contributor ({}, {})'.format(self.contributor_id, self.name)
 
 
 class Dataset(base):
@@ -188,20 +197,20 @@ class Dataset(base):
 
     __tablename__ = 'datasets'
 
-    identifier = Column(String, primary_key=True)
+    dataset_id = Column(String, primary_key=True)
 
     def __init__(self, dict_):
-        self.identifier = dict_['identifier']
+        self.dataset_id = dict_['identifier']
 
     @property
     def __geo_interface__(self):
         return {
-            'id': self.identifier,
+            'id': self.dataset_id,
             'type': 'Feature'
         }
 
     def __repr__(self):
-        return 'Dataset ({})'.format(self.identifier)
+        return 'Dataset ({})'.format(self.dataset_id)
 
 
 class Instrument(base):
@@ -209,10 +218,10 @@ class Instrument(base):
 
     __tablename__ = 'instruments'
 
-    identifier = Column(String, primary_key=True)
-    station_id = Column(String, ForeignKey('stations.identifier'),
+    instrument_id = Column(String, primary_key=True)
+    station_id = Column(String, ForeignKey('stations.station_id'),
                         nullable=False)
-    dataset_id = Column(String, ForeignKey('datasets.identifier'),
+    dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
                         nullable=False)
     name = Column(String, nullable=False)
     model = Column(String, nullable=False)
@@ -225,12 +234,14 @@ class Instrument(base):
     dataset = relationship('Dataset', backref=__tablename__)
 
     def __init__(self, dict_):
-        self.identifier = dict_['identifier']
+        self.instrument_id = dict_['identifier']
         self.station_id = dict_['station_id']
         self.dataset_id = dict_['dataset_id']
+
         self.name = dict_['name']
         self.model = dict_['model']
         self.serial = dict_['serial']
+
         self.x = dict_['x']
         self.y = dict_['y']
         self.z = dict_['z']
@@ -238,7 +249,7 @@ class Instrument(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.identifier,
+            'id': self.instrument_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
@@ -250,7 +261,7 @@ class Instrument(base):
         }
 
     def __repr__(self):
-        return 'Instrument ({})'.format(self.identifier)
+        return 'Instrument ({})'.format(self.instrument_id)
 
 
 class Project(base):
@@ -258,35 +269,37 @@ class Project(base):
 
     __tablename__ = 'projects'
 
-    identifier = Column(String, primary_key=True)
+    project_id = Column(String, primary_key=True)
 
     def __init__(self, dict_):
-        self.identifier = dict_['identifier']
+        self.project_id = dict_['identifier']
 
     @property
     def __geo_interface__(self):
         return {
-            'id': self.identifier,
+            'id': self.project_id,
             'type': 'Feature'
         }
 
     def __repr__(self):
-        return 'Project ({})'.format(self.identifier)
+        return 'Project ({})'.format(self.project_id)
 
 
 class Station(base):
     """Data Registry Station"""
 
     __tablename__ = 'stations'
-    __table_args__ = (UniqueConstraint('identifier'),)
+    __table_args__ = (UniqueConstraint('station_id'),)
 
     stn_type_enum = Enum('STN', 'SHP', name='type')
 
-    identifier = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    # stn_type = Column(stn_type_enum, nullable=False)
+    station_id = Column(String, primary_key=True)
+    station_name_id = Column(String,
+                             ForeignKey('station_names.station_name_id'),
+                             nullable=False)
+    station_type = Column(stn_type_enum, nullable=False)
     gaw_id = Column(String, nullable=True)
-    country_id = Column(String, ForeignKey('countries.identifier'),
+    country_id = Column(String, ForeignKey('countries.country_id'),
                         nullable=False)
     wmo_region_id = Column(WMO_REGION_ENUM, nullable=False)
     active = Column(Boolean, nullable=False, default=True)
@@ -300,15 +313,18 @@ class Station(base):
 
     # relationships
     country = relationship('Country', backref=__tablename__)
+    station_name = relationship('StationName', backref=__tablename__)
 
     def __init__(self, dict_):
         """serializer"""
 
-        self.identifier = dict_['identifier']
-        self.name = dict_['name']
-        # self.stn_type = dict_['stn_type']
+        self.station_id = dict_['identifier']
+        self.station_name_id = '{}:{}'.format(self.station_id, dict_['name'])
+        self.station_type = dict_['station_type']
+
         if dict_['gaw_id'] != '':
             self.gaw_id = dict_['gaw_id']
+
         self.country_id = dict_['country_id']
         self.wmo_region_id = dict_['wmo_region_id']
         self.last_validated_datetime = datetime.datetime.utcnow()
@@ -320,14 +336,14 @@ class Station(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.identifier,
+            'id': self.station_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
-                'name': self.name,
-                # 'stn_type': self.stn_type,
+                'name': self.station_name,
+                'type': self.station_type,
                 'gaw_id': self.gaw_id,
-                'country': self.country.country_name,
+                'country': self.country.name_en,
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
                 'last_validated_datetime': self.last_validated_datetime,
@@ -335,19 +351,45 @@ class Station(base):
         }
 
     def __repr__(self):
-        return 'Station ({}, {})'.format(self.identifier, self.name)
+        return 'Station ({}, {})'.format(self.station_id,
+                                         self.station_name.name)
+
+
+class StationName(base):
+    """Data Registry Station Alternative Name"""
+
+    __tablename__ = 'station_names'
+    __table_args__ = (UniqueConstraint('station_name_id'),)
+
+    station_name_id = Column(String, primary_key=True)
+    station_id = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
+
+    def __init__(self, dict_):
+        self.station_name_id = dict_['identifier']
+        self.station_id = dict_['station_id']
+        self.name = dict_['name']
+
+        self.start_date = dict_['first_seen']
+        self.end_date = dict_.get('last_seen', None)
+
+    def __repr__(self):
+        return 'Station name ({}, {})'.format(self.station_id, self.name)
 
 
 class Deployment(base):
     """Data Registry Deployment"""
 
     __tablename__ = 'deployments'
-    __table_args__ = (UniqueConstraint('identifier'),)
+    __table_args__ = (UniqueConstraint('deployment_id'),)
 
-    identifier = Column(String, primary_key=True)
-    station_id = Column(String, ForeignKey('stations.identifier'),
+    deployment_id = Column(String, primary_key=True)
+    station_id = Column(String, ForeignKey('stations.station_id'),
                         nullable=False)
-    contributor_id = Column(String, ForeignKey('contributors.identifier'),
+    contributor_id = Column(String, ForeignKey('contributors.contributor_id'),
                             nullable=False)
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=True)
@@ -359,16 +401,18 @@ class Deployment(base):
     def __init__(self, dict_):
         """serializer"""
 
-        self.identifier = dict_['identifier']
+        self.deployment_id = dict_['identifier']
         self.station_id = dict_['station_id']
         self.contributor_id = dict_['contributor_id']
+
         try:
             if isinstance(dict_['start_date'], datetime.date):
                 self.start_date = dict_['start_date']
             else:
                 self.start_date = datetime.datetime.strptime(
                     dict_['start_date'], '%Y-%m-%d').date()
-            if isinstance(dict_['end_date'], datetime.date):
+            if dict_['end_date'] is None \
+               or isinstance(dict_['end_date'], datetime.date):
                 self.end_date = dict_['end_date']
             else:
                 self.end_date = datetime.datetime.strptime(
@@ -379,7 +423,7 @@ class Deployment(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.identifier,
+            'id': self.deployment_id,
             'type': 'Feature',
             'properties': {
                 'station_id': self.station_id,
@@ -390,20 +434,27 @@ class Deployment(base):
         }
 
     def __repr__(self):
-        return 'Deployment ({})'.format(self.identifier)
+        return 'Deployment ({})'.format(self.deployment_id)
 
 
 class DataRecord(base):
     """Data Registry Data Record"""
 
     __tablename__ = 'data_records'
+    __table_args__ = (
+       ForeignKeyConstraint(
+           ['data_generation_agency', 'content_class'],
+           ['contributors.acronym', 'contributors.project_id']),
+    )
 
-    identifier = Column(String, primary_key=True)
+    data_record_id = Column(String, primary_key=True)
 
     # Extended CSV core fields
 
-    content_class = Column(String, nullable=False)
-    content_category = Column(String, nullable=False)
+    content_class = Column(String, ForeignKey('projects.project_id'),
+                           nullable=False)
+    content_category = Column(String, ForeignKey('datasets.dataset_id'),
+                              nullable=False)
     content_level = Column(String, nullable=False)
     content_form = Column(String, nullable=False)
 
@@ -412,15 +463,10 @@ class DataRecord(base):
     data_generation_version = Column(String, nullable=False)
     data_generation_scientific_authority = Column(String, nullable=True)
 
-    platform_type = Column(String, default='STN', nullable=False)
-    platform_id = Column(String, nullable=False)
-    platform_name = Column(String, nullable=False)
-    platform_country = Column(String, nullable=False)
-    platform_gaw_id = Column(String, nullable=True)
-
-    instrument_name = Column(String, nullable=False)
-    instrument_model = Column(String, nullable=False)
-    instrument_number = Column(String, nullable=False)
+    station_id = Column(String, ForeignKey('stations.station_id'),
+                        nullable=False)
+    instrument_id = Column(String, ForeignKey('instruments.instrument_id'),
+                           nullable=False)
 
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
@@ -454,6 +500,9 @@ class DataRecord(base):
     url = Column(String, nullable=False)
     es_id = Column(String, nullable=False)
 
+    # Relationships
+    instrument = relationship('Instrument', backref=__tablename__)
+
     def __init__(self, ecsv):
         """serializer"""
 
@@ -472,16 +521,21 @@ class DataRecord(base):
                 ecsv.extcsv['DATA_GENERATION']['ScientificAuthority']
 
         self.platform_type = ecsv.extcsv['PLATFORM']['Type']
-        self.platform_id = str(ecsv.extcsv['PLATFORM']['ID'])
         self.platform_name = ecsv.extcsv['PLATFORM']['Name']
         self.platform_country = ecsv.extcsv['PLATFORM']['Country']
-
-        if 'GAW_ID' in ecsv.extcsv['PLATFORM']:
-            self.platform_gaw_id = ecsv.extcsv['PLATFORM']['GAW_ID']
+        self.platform_gaw_id = ecsv.extcsv['PLATFORM'].get('GAW_ID', None)
+        self.station_id = str(ecsv.extcsv['PLATFORM']['ID'])
 
         self.instrument_name = ecsv.extcsv['INSTRUMENT']['Name']
-        self.instrument_model = ecsv.extcsv['INSTRUMENT']['Model']
+        self.instrument_model = str(ecsv.extcsv['INSTRUMENT']['Model'])
         self.instrument_number = str(ecsv.extcsv['INSTRUMENT']['Number'])
+        self.instrument_id = ':'.join([
+            self.instrument_name,
+            self.instrument_model,
+            self.instrument_number,
+            self.station_id,
+            self.content_category
+        ])
 
         self.timestamp_utcoffset = ecsv.extcsv['TIMESTAMP']['UTCOffset']
         self.timestamp_date = ecsv.extcsv['TIMESTAMP']['Date']
@@ -494,13 +548,13 @@ class DataRecord(base):
         self.z = ecsv.extcsv['LOCATION']['Height']
 
         self.extcsv = ecsv.extcsv
-
-        self.identifier = self.get_urn()
-        self.es_id = self.get_esid()
-        self.filename = "TODO"
-        self.url = self.get_waf_path('https://woudc.org/archive')
-
         self.number_of_observations = ecsv.number_of_observations
+
+        self.data_record_id = self.get_urn()
+        self.es_id = self.get_esid()
+
+        self.filename = 'TODO'
+        self.url = 'TODO'
 
     def get_urn(self):
         """generate data record URN"""
@@ -508,9 +562,11 @@ class DataRecord(base):
         urn_tokens = [
             self.content_class,
             self.content_category,
+            self.content_level,
+            self.content_form,
             self.data_generation_agency,
             self.platform_type,
-            self.platform_id,
+            self.station_id,
             self.instrument_name,
             self.instrument_model,
             self.instrument_number,
@@ -526,14 +582,17 @@ class DataRecord(base):
         tokens = [
             self.content_class,
             self.content_category,
+            self.content_level,
+            self.content_form,
             self.data_generation_agency,
             self.platform_type,
-            self.platform_id,
+            self.station_id,
             self.instrument_name,
             self.instrument_model,
             self.instrument_number,
             self.timestamp_date
         ]
+
         return ':'.join(map(str, tokens)).lower()
 
     def get_waf_path(self, basepath):
@@ -547,7 +606,7 @@ class DataRecord(base):
             basepath.rstrip('/'),
             'Archive-NewFormat',
             datasetdirname,
-            '{}{}'.format(self.platform_type.lower(), self.platform_id),
+            '{}{}'.format(self.platform_type.lower(), self.station_id),
             self.instrument_name.lower(),
             self.timestamp_date.strftime('%Y'),
             self.filename
@@ -573,7 +632,7 @@ class DataRecord(base):
                 'data_generation_scientific_authority': self.data_generation_scientific_authority,  # noqa
 
                 'platform_type': self.platform_type,
-                'platform_id': self.platform_id,
+                'platform_id': self.station_id,
                 'platform_name': self.platform_name,
                 'platform_country': self.platform_country,
                 'platform_gaw_id': self.platform_gaw_id,
@@ -601,7 +660,43 @@ class DataRecord(base):
         }
 
     def __repr__(self):
-        return 'DataRecord({}, {})'.format(self.identifier, self.url)
+        return 'DataRecord({}, {})'.format(self.data_record_id, self.url)
+
+
+def unpack_station_names(rows):
+    """
+    Collects CSV data on station names from the iterable <rows>
+    and returns an iterable of station name records.
+
+    Station names that are equivalent but appear separately in the input
+    (e.g. the same name in multiple capitalizations and/or encodings)
+    are corrected and start/end dates adjusted accordingly.
+
+    :param rows: Iterable of rows of CSV input data.
+    :returns: Iterable of station name records (dictionaries).
+    """
+
+    tracker = {}
+    decode_hex = codecs.getdecoder('hex_codec')
+
+    for row in rows:
+        name = row['name']
+        station = row['station_id']
+
+        if name.startswith('\\x'):
+            name = decode_hex(name[2:])[0].decode('utf-8')
+            row['name'] = name
+            row['identifier'] = ':'.join([station, name])
+        if name not in tracker:
+            tracker[name] = row
+        else:
+            tracker[name]['first_seen'] = min(tracker[name]['first_seen'],
+                                              row['first_seen'])
+            tracker[name]['last_seen'] = '' \
+                if '' in [tracker[name]['last_seen'], row['last_seen']] \
+                else max(tracker[name]['last_seen'], row['last_seen'])
+
+    return tracker.values()
 
 
 @click.group()
@@ -662,6 +757,7 @@ def init(ctx, datadir):
     contributors = os.path.join(datadir, 'contributors.csv')
     stations = os.path.join(datadir, 'stations.csv')
     ships = os.path.join(datadir, 'ships.csv')
+    station_names = os.path.join(datadir, 'station-names.csv')
     datasets = os.path.join(datadir, 'datasets.csv')
     projects = os.path.join(datadir, 'projects.csv')
     instruments = os.path.join(datadir, 'instruments.csv')
@@ -708,6 +804,16 @@ def init(ctx, datadir):
             registry_.save(contributor)
 
     click.echo('Loading stations metadata')
+    with open(station_names) as csvfile:
+        reader = csv.DictReader(csvfile)
+        records = unpack_station_names(reader)
+        for obj in records:
+            for field in obj:
+                if obj[field] == '':
+                    obj[field] = None
+            station_name = StationName(obj)
+            registry_.save(station_name)
+
     with open(stations) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:

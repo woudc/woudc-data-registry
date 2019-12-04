@@ -45,8 +45,8 @@
 
 import logging
 
-from sqlalchemy import create_engine
-from sqlalchemy.exc import DataError
+from sqlalchemy import func, create_engine
+from sqlalchemy.exc import DataError, SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
 from woudc_data_registry import config
@@ -80,44 +80,77 @@ class Registry(object):
 
         return values
 
-    def query_by_field(self, obj, obj_instance, by):
+    def query_by_field(self, obj, by, value, case_insensitive=False):
         """
         query data by field
 
-        :param obj: object (field) to be queried
-        :param obj_instance: object instance to be queried
-        :param by: value to be queried
-
-        :returns: query results
+        :param obj: Object instance of the table to query in
+        :param by: Field name to be queried
+        :param value: Value of the field in any query results
+        :param case_insensitive: Whether to query strings case-insensitively
+        :returns: Query results
         """
 
         field = getattr(obj, by)
-        value = getattr(obj_instance, by)
 
-        LOGGER.debug('Querying for {}={}'.format(field, value))
-        results = self.session.query(obj).filter(field == value).all()
+        if case_insensitive:
+            LOGGER.debug('Querying for LOWER({}) = LOWER({})'
+                         .format(field, value))
+            condition = func.lower(field) == value.lower()
+        else:
+            LOGGER.debug('Querying for {} = {}'.format(field, value))
+            condition = field == value
 
-        return results
+        return self.session.query(obj).filter(condition).all()
 
-    def query_multiple_fields(self, table, values, fields=None):
+    def query_by_pattern(self, obj, by, pattern, case_insensitive=False):
+        """
+        Query data using a single field's value, matching results based on
+        a regex pattern.
+
+        :param obj: Class of table to query in.
+        :param by: Field name to be queried.
+        :param pattern: Wildcard pattern that any result's value must match.
+        :param case_insensitive: Whether to query strings case-insensitively.
+        :returns: One element of query results.
+        """
+
+        field = getattr(obj, by)
+
+        if case_insensitive:
+            LOGGER.debug('Querying for LOWER({}) LIKE {}'
+                         .format(field, pattern.lower()))
+            condition = func.lower(field).like(pattern.lower())
+        else:
+            LOGGER.debug('Querying for {} LIKE {}'.format(field, pattern))
+            condition = field.like(pattern)
+
+        return self.session.query(obj).filter(condition).first()
+
+    def query_multiple_fields(self, table, values, fields=None,
+                              case_insensitive=()):
         """
         query a table by multiple fields
 
         :param table: table to be queried
         :param instance: dictionary with query values
         :param fields: fields to be filtered by
+        :param case_insensitive: Collection of string fields that should be
+                                 queried case-insensitively
 
         :returns: query results
         """
 
         conditions = []
+        target_fields = fields or values.keys()
 
-        if fields is None:
-            for field in values:
-                conditions.append(getattr(table, field) == values[field])
-        else:
-            for field in fields:
-                conditions.append(getattr(table, field) == values[field])
+        for field in target_fields:
+            table_field = getattr(table, field)
+            if field in case_insensitive:
+                condition = func.lower(table_field) == values[field].lower()
+                conditions.append(condition)
+            else:
+                conditions.append(table_field == values[field])
 
         results = self.session.query(table).filter(*conditions).first()
 
@@ -137,8 +170,15 @@ class Registry(object):
             if obj is not None:
                 self.session.add(obj)
                 # self.session.merge(obj)
-            self.session.commit()
-            self.session.close()
+            try:
+                self.session.commit()
+            except SQLAlchemyError as err:
+                LOGGER.error('Failed to persist {} due to: {}'
+                             .format(obj, err))
+                self.session.rollback()
         except DataError as err:
             LOGGER.error('Failed to save to registry: {}'.format(err))
             self.session.rollback()
+
+    def close_session(self):
+        self.session.close()

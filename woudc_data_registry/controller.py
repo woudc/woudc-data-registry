@@ -49,17 +49,21 @@ import click
 
 from woudc_data_registry.processing import Process
 
+from woudc_data_registry.registry import Registry
+from woudc_data_registry.search import SearchIndex
 
-def orchestrate(file_, directory, verify_only=False, bypass=False):
+
+def orchestrate(file_, directory, metadata_only=False,
+                verify_only=False, bypass=False):
     """
-    core orchestation workflow
+    Core orchestation workflow
 
-    :param file_: file to process
-    :param directory: directory to process (recursive)
-    :param verify_only: whether to verify the file for correctness without
-                        processing
-
-    :returns: void
+    :param file_: File to process.
+    :param directory: Directory to process (recursive).
+    :param metadata_only: Whether to verify only the common metadata tables.
+    :param verify_only: Whether to verify the file for correctness without
+                        processing.
+    :param bypass: Whether to skip permission prompts for adding new records.
     """
 
     files_to_process = []
@@ -71,23 +75,45 @@ def orchestrate(file_, directory, verify_only=False, bypass=False):
             for f in files:
                 files_to_process.append(os.path.join(root, f))
 
+    files_to_process.sort()
+
+    passed = []
+    failed = []
+
+    registry = Registry()
+    search_engine = SearchIndex()
+
     with click.progressbar(files_to_process, label='Processing files') as run_:
         for file_to_process in run_:
             click.echo('Processing filename: {}'.format(file_to_process))
-            p = Process()
+            p = Process(registry, search_engine)
             try:
-                result = p.process_data(file_to_process,
-                                        verify_only=verify_only, bypass=bypass)
+                if p.validate(file_to_process, metadata_only=metadata_only,
+                              bypass=bypass):
 
-                if result:  # processed
                     if verify_only:
                         click.echo('Verified but not ingested')
                     else:
+                        p.persist()
                         click.echo('Ingested successfully')
+                    passed.append(file_to_process)
                 else:
                     click.echo('Not ingested')
+                    failed.append(file_to_process)
             except Exception as err:
                 click.echo('Processing failed: {}'.format(err))
+                failed.append(file_to_process)
+
+    registry.close_session()
+
+    for name in files_to_process:
+        if name in passed:
+            click.echo('Pass: {}'.format(name))
+        elif name in failed:
+            click.echo('Fail: {}'.format(name))
+
+    click.echo('({}/{} files passed)'
+               .format(len(passed), len(files_to_process)))
 
 
 @click.group()
@@ -105,9 +131,11 @@ def data():
               type=click.Path(exists=True, resolve_path=True,
                               dir_okay=True, file_okay=False),
               help='Path to directory of data records')
-@click.option('--bypass', '-b', 'bypass', is_flag=True,
+@click.option('--lax', '-l', 'lax', is_flag=True,
+              help='Only validate core metadata tables')
+@click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-def ingest(ctx, file_, directory, bypass):
+def ingest(ctx, file_, directory, lax, bypass):
     """ingest a single data submission or directory of files"""
 
     if file_ is not None and directory is not None:
@@ -118,10 +146,7 @@ def ingest(ctx, file_, directory, bypass):
         msg = 'One of --file or --directory is required'
         raise click.ClickException(msg)
 
-    if bypass:
-        orchestrate(file_, directory, bypass=True)
-    else:
-        orchestrate(file_, directory)
+    orchestrate(file_, directory, metadata_only=lax, bypass=bypass)
 
 
 @click.command()
@@ -133,7 +158,11 @@ def ingest(ctx, file_, directory, bypass):
               type=click.Path(exists=True, resolve_path=True,
                               dir_okay=True, file_okay=False),
               help='Path to directory of data records')
-def verify(ctx, file_, directory):
+@click.option('--lax', '-l', 'lax', is_flag=True,
+              help='Only validate core metadata tables')
+@click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
+              help='Bypass permission prompts while ingesting')
+def verify(ctx, file_, directory, lax, bypass):
     """verify a single data submission or directory of files"""
 
     if file_ is not None and directory is not None:
@@ -144,7 +173,8 @@ def verify(ctx, file_, directory):
         msg = 'One of --file or --directory is required'
         raise click.ClickException(msg)
 
-    orchestrate(file_, directory, verify_only=True)
+    orchestrate(file_, directory, metadata_only=lax, verify_only=True,
+                bypass=bypass)
 
 
 data.add_command(ingest)
