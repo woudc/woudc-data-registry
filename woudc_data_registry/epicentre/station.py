@@ -51,10 +51,31 @@ import click
 
 from woudc_data_registry.epicentre.metadata import (
     add_metadata, get_metadata, update_metadata, delete_metadata)
-from woudc_data_registry.models import Station
+from woudc_data_registry.models import Station, StationName
 from woudc_data_registry.util import json_serial
 
 LOGGER = logging.getLogger(__name__)
+
+
+def build_station_name(ecsv):
+    """
+    Creates and returns a StationName instance from the contents of <ecsv>
+    """
+
+    station_id = str(ecsv.extcsv['PLATFORM']['ID'])
+    station_name = ecsv.extcsv['PLATFORM']['Name']
+    name_id = '{}:{}'.format(station_id, station_name)
+
+    observation_time = self.extcsv.extcsv['TIMESTAMP']['Date']
+    model = {
+        'identifier': name_id,
+        'station_id': station_id,
+        'name': station_name,
+        'first_seen': observation_time,
+        'last_seen': observation_time
+    }
+
+    return StationName(model)
 
 
 @click.group()

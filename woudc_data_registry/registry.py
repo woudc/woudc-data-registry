@@ -84,7 +84,7 @@ class Registry(object):
         """
         query data by field
 
-        :param obj: Class of table to query in
+        :param obj: Object instance of the table to query in
         :param by: Field name to be queried
         :param value: Value of the field in any query results
         :param case_insensitive: Whether to query strings case-insensitively

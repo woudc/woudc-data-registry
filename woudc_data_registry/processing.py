@@ -62,6 +62,10 @@ from woudc_data_registry.parser import (DOMAINS, ExtendedCSV,
 from woudc_data_registry.dataset_validators import get_validator
 from woudc_data_registry.util import is_text_file, read_file
 
+from woudc_data_registry.epicentre.station import build_station_name
+from woudc_data_registry.epicentre.instrument import build_instrument
+from woudc_data_registry.epicentre.deployment import build_deployment
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -234,51 +238,39 @@ class Process(object):
                            ' values with errors')
             instrument_ok = False
         else:
-            instrument_ok = self.check_instrument()
+            instrument_model_ok = self.check_instrument_name_and_model()
 
-            if not instrument_ok:
-                # Attempt to fix the serial by left-stripping zeroes
-                old_serial = str(self.extcsv.extcsv['INSTRUMENT']['Number'])
-                new_serial = old_serial.lstrip('0') or '0'
+            if not instrument_model_ok:
+                LOGGER.warning('Instrument name and model failed to validate;'
+                               ' aborting instrument checks')
+                instrument_ok = False
+            else:
+                instrument_ok = self.check_instrument()
 
-                if old_serial != new_serial:
-                    LOGGER.debug('Attempting to search instrument serial'
-                                 ' number {}'.format(new_serial))
+                if not instrument_ok:
+                    # Attempt to fix the serial by left-stripping zeroes
+                    old_serial = \
+                        str(self.extcsv.extcsv['INSTRUMENT']['Number'])
+                    new_serial = old_serial.lstrip('0') or '0'
 
-                    self.extcsv.extcsv['INSTRUMENT']['Number'] = new_serial
-                    instrument_ok = self.check_instrument()
+                    if old_serial != new_serial:
+                        LOGGER.debug('Attempting to search instrument serial'
+                                     ' number {}'.format(new_serial))
 
-            if not instrument_ok:
-                # Attempt to add a new record with the new serial number
-                # using name and model from the registry
-                LOGGER.warning('No instrument with serial {} found in registry'
-                               .format(old_serial))
-                self.extcsv.extcsv['INSTRUMENT']['Number'] = old_serial
-                instrument_ok = self.add_instrument()
+                        self.extcsv.extcsv['INSTRUMENT']['Number'] = new_serial
+                        instrument_ok = self.check_instrument()
 
-                if instrument_ok:
-                    msg = 'New instrument serial number queued'
-                    self._warning(201, None, msg)
+                if not instrument_ok:
+                    # Attempt to add a new record with the new serial number
+                    # using name and model from the registry
+                    LOGGER.warning('No instrument with serial {} found'
+                                   ' in registry'.format(old_serial))
+                    self.extcsv.extcsv['INSTRUMENT']['Number'] = old_serial
+                    instrument_ok = self.add_instrument(bypass=False)
 
-            instrument_args = [
-                self.extcsv.extcsv['INSTRUMENT']['Name'],
-                str(self.extcsv.extcsv['INSTRUMENT']['Model']),
-                str(self.extcsv.extcsv['INSTRUMENT']['Number']),
-                str(self.extcsv.extcsv['PLATFORM']['ID']),
-                self.extcsv.extcsv['CONTENT']['Category']]
-            instrument_id = ':'.join(instrument_args)
-
-            if not instrument_ok:
-                # Attempt to force the new instrument name/model
-                # into the registry
-                response = input('Instrument {} not found. Add? [y/n] '
-                                 .format(instrument_id))
-                if response.lower() in ['y', 'yes']:
-                    if self.add_instrument(force=True):
-                        msg = 'New instrument name, model, and serial queued'
-                        self._warning(1000, None, msg)
-
-                        instrument_ok = True
+                    if instrument_ok:
+                        msg = 'New instrument serial number queued'
+                        self._warning(201, None, msg)
 
         if not instrument_ok:
             msg = 'Failed to validate instrument against registry'
@@ -287,7 +279,7 @@ class Process(object):
 
             location_ok = False
         else:
-            location_ok = self.check_location(instrument_id)
+            location_ok = self.check_location()
 
         content_ok = self.check_content()
         data_generation_ok = self.check_data_generation()
@@ -368,22 +360,9 @@ class Process(object):
         to be saved next time the publish method is called.
         """
 
-        station = str(self.extcsv.extcsv['PLATFORM']['ID'])
-        agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
-        project = self.extcsv.extcsv['CONTENT']['Class']
-        timestamp_date = self.extcsv.extcsv['TIMESTAMP']['Date']
+        deployment = build_deployment(self.extcsv)
 
-        contributor_id = ':'.join([agency, project])
-        deployment_id = ':'.join([station, agency, project])
-        deployment_model = {
-            'identifier': deployment_id,
-            'station_id': station,
-            'contributor_id': contributor_id,
-            'start_date': timestamp_date,
-            'end_date': timestamp_date
-        }
-
-        deployment = Deployment(deployment_model)
+        LOGGER.info('Queueing new deployment...')
         self._registry_updates.append(deployment)
 
     def add_station_name(self, bypass=False):
@@ -400,94 +379,51 @@ class Process(object):
         :returns: Whether the operation was successful.
         """
 
-        station_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
-        station_name = self.extcsv.extcsv['PLATFORM']['Name']
-        name_id = '{}:{}'.format(station_id, station_name)
+        station_name_object = build_station_name(self.extcsv)
 
         if bypass:
             LOGGER.info('Bypass mode. Skipping permission check')
             permission = True
         else:
             response = input('Station name {} not found. Add? [y/n] '
-                             .format(name_id))
+                             .format(station_name_object.station_name_id))
             permission = response.lower() in ['y', 'yes']
 
         if not permission:
             return False
         else:
-            observation_time = self.extcsv.extcsv['TIMESTAMP']['Date']
-            model = {
-                'identifier': name_id,
-                'station_id': station_id,
-                'name': station_name,
-                'first_seen': observation_time,
-                'last_seen': observation_time
-            }
+            LOGGER.info('Queueing new station name...')
 
-            station_name_object = StationName(model)
             self._registry_updates.append(station_name_object)
             return True
 
-    def add_instrument(self, force=False):
+    def add_instrument(self, bypass=False):
         """
         Create a new instrument record from the input Extended CSV file's
         #INSTRUMENT table and queue it to be saved next time the publish
         method is called.
 
-        Unless <force> is True, the operation will only complete if the
-        instrument's name and model are both in the registry already.
-        Returns whether the operation was successful.
+        Unless <bypass> is provided and True, there will be a permission
+        prompt before a record is created. If permission is denied, no
+        new instrument will be queued and False will be returned.
 
-        :param force: Whether to insert if name or model are not found
-                      in the registry.
+        :param bypass: Whether to skip permission checks to add the instrument.
         :returns: Whether the operation was successful.
         """
 
-        name = self.extcsv.extcsv['INSTRUMENT']['Name']
-        model = str(self.extcsv.extcsv['INSTRUMENT']['Model'])
-        serial = str(self.extcsv.extcsv['INSTRUMENT']['Number'])
-        station = str(self.extcsv.extcsv['PLATFORM']['ID'])
-        dataset = self.extcsv.extcsv['CONTENT']['Category']
-        location = [self.extcsv.extcsv['LOCATION'].get(f, None)
-                    for f in ['Longitude', 'Latitude', 'Height']]
+        instrument = build_instrument(self.extcsv)
 
-        instrument_id = ':'.join([name, model, serial, station, dataset])
-        model = {
-            'identifier': instrument_id,
-            'name': name,
-            'model': model,
-            'serial': serial,
-            'station_id': station,
-            'dataset_id': dataset,
-            'x': location[0],
-            'y': location[1],
-            'z': location[2]
-        }
-
-        if force:
-            LOGGER.debug('Force-adding instrument. Skipping name/model check')
+        if bypass:
+            LOGGER.info('Bypass mode. Skipping permission check')
             permission = True
         else:
-            fields = ['name', 'model', 'station_id', 'dataset_id']
-            case_insensitive = ['name', 'model']
-            response = self.registry.query_multiple_fields(Instrument, model,
-                                                           fields,
-                                                           case_insensitive)
-            if response:
-                model['name'] = response.name
-                model['model'] = response.model
-                self.extcsv.extcsv['INSTRUMENT']['Name'] = response.name
-                self.extcsv.extcsv['INSTRUMENT']['Model'] = response.model
-
-                LOGGER.debug('All other instrument data matches.')
-                permission = True
-            else:
-                permission = False
+            response = input('Instrument {} not found. Add? [y/n] '
+                             .format(instrument.instrument_id))
+            permission = response.lower() in ['y', 'yes']
 
         if permission:
-            LOGGER.info('Creating instrument with new serial number...')
+            LOGGER.info('Queueing new instrument...')
 
-            instrument = Instrument(model)
             self._registry_updates.append(instrument)
             self._search_engine_updates.append(instrument)
             return True
@@ -724,6 +660,62 @@ class Process(object):
                 LOGGER.debug('Deployment end date updated.')
             return True
 
+    def check_instrument_name_and_model(self):
+        """
+        Validates the instance's Extended CSV source vile's #INSTRUMENT.Name
+        and #INSTRUMENT.Model and returns True if no errors are found.
+
+        Adjusts the Extended CSV contents if necessary to form a match.
+        """
+
+        name_ok = True
+        model_ok = True
+
+        name = self.extcsv.extcsv['INSTRUMENT']['Name']
+        model = self.extcsv.extcsv['INSTRUMENT']['Model']
+
+        instrument_valueline = self.extcsv.line_num('INSTRUMENT') + 2
+
+        if not name or name.lower() in ['na', 'n/a']:
+            msg = '#INSTRUMENT.Name is null or empty'
+            self._error(72, instrument_valueline, msg)
+            name_ok = False
+
+            self.extcsv.extcsv['INSTRUMENT']['Name'] = name = 'UNKNOWN'
+        if not model or str(model).lower() in ['na', 'n/a']:
+            msg = '#INSTRUMENT.Model is null or empty'
+            self._error(1000, instrument_valueline, msg)
+            model_ok = False
+
+            self.extcsv.extcsv['INSTRUMENT']['Model'] = model = 'na'
+
+        if not name_ok or not model_ok:
+            return False
+
+        # Check data registry for matching instrument name
+        response = self.registry.query_by_field(Instrument, 'name', name,
+                                                case_insensitive=True)
+        if response:
+            name = response[0].name
+            self.extcsv.extcsv['INSTRUMENT']['Name'] = response[0].name
+        else:
+            msg = 'No match found for #INSTRUMENT.Name = {}'.format(name)
+            self._error(1000, instrument_valueline, msg)
+            name_ok = False
+
+        # Check data registry for matching instrument model
+        response = self.registry.query_by_field(Instrument, 'model', model,
+                                                case_insensitive=True)
+        if response:
+            model = response[0].model
+            self.extcsv.extcsv['INSTRUMENT']['Model'] = response[0].model
+        else:
+            msg = 'No match found for #INSTRUMENT.Model = {}'.format(model)
+            self._error(1000, instrument_valueline, msg)
+            model_ok = False
+
+        return name_ok and model_ok
+
     def check_instrument(self):
         """
         Validates the instance's Extended CSV source file's #INSTRUMENT table
@@ -731,64 +723,43 @@ class Process(object):
 
         Adjusts the Extended CSV contents if necessary to form a match.
 
-        Prerequisite: #PLATFORM.ID and
+        Prerequisite: #INSTRUMENT.Name,
+                      #INSTRUMENT.Model,
+                      #PLATFORM.ID and
                       #CONTENT.Category are all trusted values.
         """
 
-        name = self.extcsv.extcsv['INSTRUMENT']['Name']
-        model = self.extcsv.extcsv['INSTRUMENT']['Model']
         serial = self.extcsv.extcsv['INSTRUMENT']['Number']
-        station = str(self.extcsv.extcsv['PLATFORM']['ID'])
-        dataset = self.extcsv.extcsv['CONTENT']['Category']
-
-        if not name or name.lower() in ['na', 'n/a']:
-            self.extcsv.extcsv['INSTRUMENT']['Name'] = name = 'UNKNOWN'
-        if not model or str(model).lower() in ['na', 'n/a']:
-            self.extcsv.extcsv['INSTRUMENT']['Model'] = model = 'na'
         if not serial or str(serial).lower() in ['na', 'n/a']:
             self.extcsv.extcsv['INSTRUMENT']['Number'] = serial = 'na'
 
-        model = str(model)
-        serial = str(serial)
-
-        values_line = self.extcsv.line_num('INSTRUMENT') + 2
-        if name == 'UNKNOWN':
-            msg = '#INSTRUMENT.Name must not be null'
-            self._error(72, values_line, msg)
-            return False
-
-        instrument_id = ':'.join([name, model, serial, station, dataset])
-        instrument = {
-            'name': name,
-            'model': model,
-            'serial': serial,
-            'station_id': station,
-            'dataset_id': dataset
-        }
-
-        fields = list(instrument.keys())
+        instrument = build_instrument(self.extcsv)
+        fields = ['name', 'model', 'serial', 'station_id', 'dataset_id']
         case_insensitive = ['name', 'model', 'serial']
-        result = self.registry.query_multiple_fields(Instrument, instrument,
-                                                     fields, case_insensitive)
-        if not result:
+
+        model = {field: getattr(instrument, field) for field in fields}
+        response = self.registry.query_multiple_fields(
+            Instrument, model, fields, case_insensitive)
+
+        if not response:
             LOGGER.warning('No instrument {} found in registry'
-                           .format(instrument_id))
+                           .format(instrument.instrument_id))
             return False
         else:
             LOGGER.debug('Found instrument match for {}'
-                         .format(instrument_id))
+                         .format(instrument.instrument_id))
 
-            self.extcsv.extcsv['INSTRUMENT']['Name'] = result.name
-            self.extcsv.extcsv['INSTRUMENT']['Model'] = result.model
-            self.extcsv.extcsv['INSTRUMENT']['Number'] = result.serial
+            self.extcsv.extcsv['INSTRUMENT']['Number'] = response.serial
             return True
 
-    def check_location(self, instrument_id):
+    def check_location(self):
         """
         Validates the instance's Extended CSV source file's #LOCATION table
-        against the location of the instrument with ID <instrument_id>
-        and returns True if no errors are found.
+        against the location of the instrument from the file, and returns
+        True if no errors are found.
         """
+
+        instrument_id = build_instrument(self.extcsv).instrument_id
 
         lat = self.extcsv.extcsv['LOCATION']['Latitude']
         lon = self.extcsv.extcsv['LOCATION']['Longitude']
