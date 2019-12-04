@@ -1,6 +1,6 @@
 click
 elasticsearch
+jsonschema
+pyyaml
 requests
 sqlalchemy
-pyyaml
-jsonschema
