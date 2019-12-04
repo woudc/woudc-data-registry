@@ -365,6 +365,47 @@ Datasets:
             - dNO2sr
             - dNO2ss
         data_table: DAILY
+    "2.0":
+      "1":
+        DAILY:
+          rows: 1+
+          occurrences: 1
+          required_fields:
+            - Date
+          optional_fields:
+            - WLCode
+            - ObsCode
+            - ColumnO3
+            - StdDevO3
+            - UTC_Begin
+            - UTC_End
+            - UTC_Mean
+            - nObs
+            - mMu
+            - ColumnSO2
+        MONTHLY:
+          rows: 1
+          occurrences: 0-1
+          optional_fields:
+            - Date
+            - ColumnO3
+            - StdDevO3
+            - Npts
+        SAOZ_DATA_V2:
+          rows: 1+
+          occurrences: 0-1
+          optional_fields:
+            - Date
+            - Jday
+            - O3sr
+            - O3ss
+            - dO3sr
+            - dO3ss
+            - NO2sr
+            - NO2ss
+            - dNO2sr
+            - dNO2ss
+        data_table: DAILY
   TotalOzoneObs:
     "1.0":
       "1":
