@@ -313,6 +313,7 @@ class Station(base):
 
     # relationships
     country = relationship('Country', backref=__tablename__)
+    station_name = relationship('StationName', backref=__tablename__)
 
     def __init__(self, dict_):
         """serializer"""
@@ -320,8 +321,10 @@ class Station(base):
         self.station_id = dict_['identifier']
         self.station_name_id = '{}:{}'.format(self.station_id, dict_['name'])
         self.station_type = dict_['station_type']
+
         if dict_['gaw_id'] != '':
             self.gaw_id = dict_['gaw_id']
+
         self.country_id = dict_['country_id']
         self.wmo_region_id = dict_['wmo_region_id']
         self.last_validated_datetime = datetime.datetime.utcnow()
@@ -337,7 +340,7 @@ class Station(base):
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
-                'name': self.current_name,
+                'name': self.station_name,
                 'type': self.station_type,
                 'gaw_id': self.gaw_id,
                 'country': self.country.name_en,
@@ -348,11 +351,12 @@ class Station(base):
         }
 
     def __repr__(self):
-        return 'Station ({}, {})'.format(self.station_id, self.current_name)
+        return 'Station ({}, {})'.format(self.station_id,
+                                         self.station_name.name)
 
 
 class StationName(base):
-    """ Data Registry Station Alternative Name """
+    """Data Registry Station Alternative Name"""
 
     __tablename__ = 'station_names'
     __table_args__ = (UniqueConstraint('station_name_id'),)
