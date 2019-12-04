@@ -64,7 +64,7 @@ def get_metadata(entity, identifier=None):
     """
 
     LOGGER.debug('Querying metadata objects {}'.format(entity))
-    prop = getattr(entity, 'identifier')
+    prop = getattr(entity, entity.id_field)
     if identifier is None:
         res = REGISTRY.session.query(entity).order_by(prop)
     else:
@@ -106,19 +106,19 @@ def add_metadata(entity, dict_):
             LOGGER.error(msg)
             raise ValueError(msg)
 
-        dict_['country_id'] = results[0].identifier
+        dict_['country_id'] = getattr(results[0], Country.id_field)
 
     if 'contributor_id' in dict_:
         LOGGER.debug('Querying for matching contributor')
         results = REGISTRY.session.query(Contributor).filter(
-            Contributor.identifier == dict_['contributor_id'])
+            Contributor.contributor_id == dict_['contributor_id'])
 
         if results.count() == 0:
             msg = 'Invalid contributor: {}'.format(dict_['contributor_id'])
             LOGGER.error(msg)
             raise ValueError(msg)
 
-        dict_['contributor_id'] = results[0].identifier
+        dict_['contributor_id'] = getattr(results[0], Contributor.id_field)
 
     c = entity(dict_)
     REGISTRY.save(c)
@@ -139,7 +139,7 @@ def update_metadata(entity, identifier, dict_):
 
     LOGGER.debug('Updating metadata entity {}, identifier {}'.format(
         entity, identifier))
-    prop = getattr(entity, 'identifier')
+    prop = getattr(entity, entity.id_field)
     r = REGISTRY.session.query(entity).filter(
         prop == identifier).update(dict_)
 
@@ -163,7 +163,7 @@ def delete_metadata(entity, identifier):
 
     LOGGER.debug('Updating metadata entity {}, identifier {}'.format(
         entity, identifier))
-    prop = getattr(entity, 'identifier')
+    prop = getattr(entity, entity.id_field)
     REGISTRY.session.query(entity).filter(prop == identifier).delete()
 
     REGISTRY.save()

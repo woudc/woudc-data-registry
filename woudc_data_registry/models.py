@@ -79,6 +79,8 @@ class Country(base):
 
     __tablename__ = 'countries'
 
+    id_field = 'country_id'
+
     country_id = Column(String, nullable=False, primary_key=True)
     name_en = Column(String, nullable=False, unique=True)
     name_fr = Column(String, nullable=False, unique=True)
@@ -129,6 +131,8 @@ class Contributor(base):
     __tablename__ = 'contributors'
     __table_args__ = (UniqueConstraint('contributor_id'),
                       UniqueConstraint('acronym', 'project_id'))
+
+    id_field = 'contributor_id'
 
     contributor_id = Column(String, primary_key=True)
     name = Column(String, nullable=False)
@@ -197,6 +201,7 @@ class Dataset(base):
 
     __tablename__ = 'datasets'
 
+    id_field = 'dataset_id'
     dataset_id = Column(String, primary_key=True)
 
     def __init__(self, dict_):
@@ -217,6 +222,8 @@ class Instrument(base):
     """Data Registry Instrument"""
 
     __tablename__ = 'instruments'
+
+    id_field = 'instrument_id'
 
     instrument_id = Column(String, primary_key=True)
     station_id = Column(String, ForeignKey('stations.station_id'),
@@ -269,6 +276,7 @@ class Project(base):
 
     __tablename__ = 'projects'
 
+    id_field = 'project_id'
     project_id = Column(String, primary_key=True)
 
     def __init__(self, dict_):
@@ -291,6 +299,7 @@ class Station(base):
     __tablename__ = 'stations'
     __table_args__ = (UniqueConstraint('station_id'),)
 
+    id_field = 'station_id'
     stn_type_enum = Enum('STN', 'SHP', name='type')
 
     station_id = Column(String, primary_key=True)
@@ -361,6 +370,8 @@ class StationName(base):
     __tablename__ = 'station_names'
     __table_args__ = (UniqueConstraint('station_name_id'),)
 
+    id_field = 'station_name_id'
+
     station_name_id = Column(String, primary_key=True)
     station_id = Column(String, nullable=False)
     name = Column(String, nullable=False)
@@ -385,6 +396,8 @@ class Deployment(base):
 
     __tablename__ = 'deployments'
     __table_args__ = (UniqueConstraint('deployment_id'),)
+
+    id_field = 'deployment_id'
 
     deployment_id = Column(String, primary_key=True)
     station_id = Column(String, ForeignKey('stations.station_id'),
@@ -446,6 +459,8 @@ class DataRecord(base):
            ['data_generation_agency', 'content_class'],
            ['contributors.acronym', 'contributors.project_id']),
     )
+
+    id_field = 'data_record_id'
 
     data_record_id = Column(String, primary_key=True)
 
