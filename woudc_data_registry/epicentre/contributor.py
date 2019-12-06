@@ -117,8 +117,8 @@ def add(ctx, name, acronym, country, project, wmo_region,
         'url': url,
         'email': email,
         'ftp_username': ftp_username,
-        'x': geom_tokens[0],
-        'y': geom_tokens[1]
+        'x': geom_tokens[1],
+        'y': geom_tokens[0]
     }
 
     result = add_metadata(Contributor, contributor_)
@@ -164,8 +164,8 @@ def update(ctx, identifier, name, acronym, country, project,
         contributor_['ftp_username'] = ftp_username
     if geometry:
         geom_tokens = geometry.split(',')
-        contributor_['x'] = geom_tokens[0]
-        contributor_['y'] = geom_tokens[1]
+        contributor_['x'] = geom_tokens[1]
+        contributor_['y'] = geom_tokens[0]
 
     if len(contributor_.keys()) == 1:
         click.echo('No updates specified')
