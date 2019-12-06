@@ -1,0 +1,4 @@
+.. _publishing:
+
+Publishing
+==========

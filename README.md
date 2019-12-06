@@ -130,12 +130,25 @@ woudc-data-registry data verify -d /path/to/dir
 woudc-data-registry data verify -f foo.dat
 ```
 
-### Running Tests
+### Development
 
 ```bash
 # install dev requirements
 pip install -r requirements-dev.txt
+```
 
+#### Building the Documentation
+
+```bash
+# build local copy of https://woudc.github.io/woudc-data-registry
+cd docs
+make html
+python -m http.server  # view on http://localhost:8000/
+```
+
+#### Running Tests
+
+```bash
 # run tests like this:
 cd woudc_data_registry/tests
 python test_data_registry.py
@@ -148,7 +161,7 @@ coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.
 coverage report -m
 ```
 
-### Code Conventions
+#### Code Conventions
 
 * [PEP8](https://www.python.org/dev/peps/pep-0008)
 

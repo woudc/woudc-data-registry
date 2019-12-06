@@ -25,9 +25,6 @@ env:
     - WDR_ALIAS_CONFIG=data/aliases.yml
 
 addons:
-  apt:
-    packages:
-      - pandoc
   postgresql: "9.3"
 
 services:
@@ -43,7 +40,7 @@ install:
 script:
   - python setup.py test
   - find . -type f -name "*.py" | xargs flake8
-  - python setup.py --long-description | rst2html5.py
+  - cd docs && make html && cd ..
 
 after_success:
   - coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_data_registry
