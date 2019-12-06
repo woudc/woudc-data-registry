@@ -72,8 +72,6 @@ def show(ctx, identifier):
 
 
 @click.command('add')
-@click.option('-id', '--identifier', 'identifier', required=True,
-              help='identifier')
 @click.option('-st', '--station', 'station', required=True,
               help='station ID')
 @click.option('-d', '--dataset', 'dataset', required=True, help='dataset')
@@ -85,7 +83,7 @@ def show(ctx, identifier):
 @click.option('-g', '--geometry', 'geometry', required=True,
               help='latitude,longitude[,height]')
 @click.pass_context
-def add(ctx, identifier, station, dataset, name, model, serial, geometry):
+def add(ctx, station, dataset, name, model, serial, geometry):
     """Add an instrument"""
 
     geom_tokens = geometry.split(',')
@@ -93,7 +91,6 @@ def add(ctx, identifier, station, dataset, name, model, serial, geometry):
         geom_tokens.append(None)
 
     instrument_ = {
-        'identifier': identifier,
         'station_id': station,
         'dataset_id': dataset,
         'name': name,
@@ -104,20 +101,36 @@ def add(ctx, identifier, station, dataset, name, model, serial, geometry):
         'z': geom_tokens[2]
     }
 
-    add_metadata(Instrument, instrument_)
-    click.echo('Instrument {} added'.format(identifier))
+    result = add_metadata(Instrument, instrument_)
+    click.echo('Instrument {} added'.format(result.instrument_id))
 
 
 @click.command('update')
 @click.option('-id', '--identifier', 'identifier', required=True,
               help='identifier')
+@click.option('-st', '--station', 'station', help='station ID')
+@click.option('-d', '--dataset', 'dataset', help='dataset')
+@click.option('-n', '--name', 'name', help='instrument name')
+@click.option('-m', '--model', 'model', help='instrument model')
+@click.option('-s', '--serial', 'serial', help='instrument serial number')
 @click.option('-g', '--geometry', 'geometry',
               help='latitude,longitude[,height]')
 @click.pass_context
-def update(ctx, identifier, geometry):
+def update(ctx, identifier, station, dataset, name, model, serial, geometry):
     """Update instrument information"""
 
     instrument_ = {}
+
+    if station:
+        instrument_['station_id'] = station
+    if dataset:
+        instrument_['dataset_id'] = dataset
+    if name:
+        instrument_['name'] = name
+    if model:
+        instrument_['model'] = model
+    if serial:
+        instrument_['serial'] = serial
 
     if geometry:
         geom_tokens = geometry.split(',')

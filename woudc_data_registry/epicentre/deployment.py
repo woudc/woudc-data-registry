@@ -65,8 +65,6 @@ def show(ctx, identifier):
 
 
 @click.command('add')
-@click.option('-id', '--identifier', 'identifier', required=True,
-              help='identifier')
 @click.option('-s', '--station', 'station', required=True, help='station')
 @click.option('-c', '--contributor', 'contributor', required=True,
               help='contributor')
@@ -76,7 +74,7 @@ def show(ctx, identifier):
 @click.option('--end', 'end_date', required=False, default=None,
               type=click.DateTime(['%Y-%m-%d']), help='deployment end date')
 @click.pass_context
-def add(ctx, identifier, station, contributor, start_date, end_date):
+def add(ctx, station, contributor, start_date, end_date):
     """Add a deployment"""
 
     start_date = start_date.date()
@@ -84,30 +82,35 @@ def add(ctx, identifier, station, contributor, start_date, end_date):
         end_date = end_date.date()
 
     deployment_ = {
-        'identifier': identifier,
         'station_id': station,
         'contributor_id': contributor,
         'start_date': start_date,
         'end_date': end_date
     }
 
-    add_metadata(Deployment, deployment_)
-    click.echo('Deployment {} added'.format(identifier))
+    result = add_metadata(Deployment, deployment_)
+    click.echo('Deployment {} added'.format(result.deployment_id))
 
 
 @click.command('update')
 @click.option('-id', '--identifier', 'identifier', required=True,
               help='identifier')
+@click.option('-s', '--station', 'station', help='station')
+@click.option('-c', '--contributor', 'contributor', help='contributor')
 @click.option('--start', 'start_date', type=click.DateTime(['%Y-%m-%d']),
               help='deployment start date')
 @click.option('--end', 'end_date', type=click.DateTime(['%Y-%m-%d']),
               help='deployment end date')
 @click.pass_context
-def update(ctx, identifier, start_date, end_date):
+def update(ctx, identifier, station, contributor, start_date, end_date):
     """Update deployment information"""
 
     deployment_ = {}
 
+    if station:
+        deployment_['station_id'] = station
+    if contributor:
+        deployment_['contributor_id'] = contributor
     if start_date:
         deployment_['start_date'] = start_date.date()
     if end_date:

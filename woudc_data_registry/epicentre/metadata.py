@@ -43,10 +43,11 @@
 #
 # =================================================================
 
+from datetime import date
 import logging
 
 from woudc_data_registry import registry
-from woudc_data_registry.models import Contributor, Country
+from woudc_data_registry.models import Contributor, Country, StationName
 from woudc_data_registry.util import is_plural
 
 LOGGER = logging.getLogger(__name__)
@@ -99,7 +100,7 @@ def add_metadata(entity, dict_):
     if 'country_id' in dict_:
         LOGGER.debug('Querying for matching country')
         results = REGISTRY.session.query(Country).filter(
-            Country.country_name == dict_['country_id'])
+            Country.name_en == dict_['country_id'])
 
         if results.count() == 0:
             msg = 'Invalid country: {}'.format(dict_['country_id'])
@@ -118,12 +119,21 @@ def add_metadata(entity, dict_):
             LOGGER.error(msg)
             raise ValueError(msg)
 
-        dict_['contributor_id'] = getattr(results[0], Contributor.id_field)
+    if 'station_name' in dict_ and 'station_id' in dict_:
+        station_id, name = dict_['station_id'], dict_['station_name']
+        name_id = ':'.join([station_id, name])
+
+        if not get_metadata(StationName, name_id):
+            add_metadata(StationName, {
+                'station_id': station_id,
+                'name': name,
+                'first_seen': date.today()
+            })
 
     c = entity(dict_)
     REGISTRY.save(c)
 
-    return True
+    return c
 
 
 def update_metadata(entity, identifier, dict_):
@@ -137,18 +147,42 @@ def update_metadata(entity, identifier, dict_):
     :returns: `bool` of status/result
     """
 
-    LOGGER.debug('Updating metadata entity {}, identifier {}'.format(
-        entity, identifier))
-    prop = getattr(entity, entity.id_field)
-    r = REGISTRY.session.query(entity).filter(
-        prop == identifier).update(dict_)
+    l = get_metadata(entity, identifier)
 
-    if r == 0:
+    if len(l) == 0:
         msg = 'identifier {} not found'.format(identifier)
         LOGGER.warning(msg)
         raise ValueError(msg)
+    else:
+        LOGGER.debug('Updating metadata entity {}, identifier {}'
+                     .format(entity, identifier))
+        obj = l[0]
 
-    REGISTRY.save()
+        if 'station_name' in dict_ and 'station_id' in dict_:
+            station_id, name = dict_['station_id'], dict_['station_name']
+            name_id = ':'.join([station_id, name])
+
+            if not get_metadata(StationName, name_id):
+                add_metadata(StationName, {
+                    'station_id': station_id,
+                    'name': name,
+                    'first_seen': date.today()
+                })
+
+            del dict_['station_name']
+            dict_['station_name_id'] = name_id
+
+        for field, value in dict_.items():
+            setattr(obj, field, value)
+
+        try:
+            obj.generate_ids()
+        except Exception as err:
+            LOGGER.warning('Unable to generate IDS due to: {}'
+                           .format(str(err)))
+
+        REGISTRY.save(obj)
+        return True
 
 
 def delete_metadata(entity, identifier):
