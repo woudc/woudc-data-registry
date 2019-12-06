@@ -79,6 +79,9 @@ class Country(base):
 
     __tablename__ = 'countries'
 
+    id_field = 'country_id'
+    id_dependencies = []  # No ID dependencies
+
     country_id = Column(String, nullable=False, primary_key=True)
     name_en = Column(String, nullable=False, unique=True)
     name_fr = Column(String, nullable=False, unique=True)
@@ -130,13 +133,18 @@ class Contributor(base):
     __table_args__ = (UniqueConstraint('contributor_id'),
                       UniqueConstraint('acronym', 'project_id'))
 
+    id_field = 'contributor_id'
+    id_dependencies = ['acronym', 'project_id']
+
     contributor_id = Column(String, primary_key=True)
+
     name = Column(String, nullable=False)
     acronym = Column(String, nullable=False)
     country_id = Column(String, ForeignKey('countries.country_id'),
                         nullable=False)
     project_id = Column(String, ForeignKey('projects.project_id'),
                         nullable=False, default='WOUDC')
+
     wmo_region_id = Column(WMO_REGION_ENUM, nullable=False)
     url = Column(String, nullable=False)
     email = Column(String, nullable=False)
@@ -154,12 +162,13 @@ class Contributor(base):
     def __init__(self, dict_):
         """serializer"""
 
-        self.contributor_id = dict_['identifier']
         self.country_id = dict_['country_id']
         self.project_id = dict_['project_id']
 
         self.name = dict_['name']
         self.acronym = dict_['acronym']
+
+        self.generate_ids()
 
         self.wmo_region_id = dict_['wmo_region_id']
         self.url = dict_['url']
@@ -191,11 +200,23 @@ class Contributor(base):
     def __repr__(self):
         return 'Contributor ({}, {})'.format(self.contributor_id, self.name)
 
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.contributor_id = ':'.join(map(str, components))
+
 
 class Dataset(base):
     """Data Registry Dataset"""
 
     __tablename__ = 'datasets'
+
+    id_field = 'dataset_id'
+    id_dependencies = []  # No ID dependencies
 
     dataset_id = Column(String, primary_key=True)
 
@@ -218,6 +239,9 @@ class Instrument(base):
 
     __tablename__ = 'instruments'
 
+    id_field = 'instrument_id'
+    id_dependencies = ['name', 'model', 'serial', 'station_id', 'dataset_id']
+
     instrument_id = Column(String, primary_key=True)
     station_id = Column(String, ForeignKey('stations.station_id'),
                         nullable=False)
@@ -230,17 +254,19 @@ class Instrument(base):
     y = Column(Float, nullable=False)
     z = Column(Float, nullable=False)
 
+    # relationships
     station = relationship('Station', backref=__tablename__)
     dataset = relationship('Dataset', backref=__tablename__)
 
     def __init__(self, dict_):
-        self.instrument_id = dict_['identifier']
         self.station_id = dict_['station_id']
         self.dataset_id = dict_['dataset_id']
 
         self.name = dict_['name']
         self.model = dict_['model']
         self.serial = dict_['serial']
+
+        self.generate_ids()
 
         self.x = dict_['x']
         self.y = dict_['y']
@@ -263,11 +289,23 @@ class Instrument(base):
     def __repr__(self):
         return 'Instrument ({})'.format(self.instrument_id)
 
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.instrument_id = ':'.join(map(str, components))
+
 
 class Project(base):
     """Data Registry Project"""
 
     __tablename__ = 'projects'
+
+    id_field = 'project_id'
+    id_dependencies = []  # No ID dependencies
 
     project_id = Column(String, primary_key=True)
 
@@ -291,6 +329,8 @@ class Station(base):
     __tablename__ = 'stations'
     __table_args__ = (UniqueConstraint('station_id'),)
 
+    id_field = 'station_id'
+    id_dependencies = []  # No ID dependencies
     stn_type_enum = Enum('STN', 'SHP', name='type')
 
     station_id = Column(String, primary_key=True)
@@ -318,8 +358,9 @@ class Station(base):
     def __init__(self, dict_):
         """serializer"""
 
-        self.station_id = dict_['identifier']
-        self.station_name_id = '{}:{}'.format(self.station_id, dict_['name'])
+        self.station_id = dict_['station_id']
+        self.station_name_id = '{}:{}' \
+            .format(self.station_id, dict_['station_name'])
         self.station_type = dict_['station_type']
 
         if dict_['gaw_id'] != '':
@@ -340,7 +381,7 @@ class Station(base):
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
-                'name': self.station_name,
+                'name': self.station_name.name,
                 'type': self.station_type,
                 'gaw_id': self.gaw_id,
                 'country': self.country.name_en,
@@ -361,6 +402,9 @@ class StationName(base):
     __tablename__ = 'station_names'
     __table_args__ = (UniqueConstraint('station_name_id'),)
 
+    id_field = 'station_name_id'
+    id_dependencies = ['station_id', 'name']
+
     station_name_id = Column(String, primary_key=True)
     station_id = Column(String, nullable=False)
     name = Column(String, nullable=False)
@@ -369,9 +413,10 @@ class StationName(base):
     end_date = Column(Date, nullable=True)
 
     def __init__(self, dict_):
-        self.station_name_id = dict_['identifier']
         self.station_id = dict_['station_id']
         self.name = dict_['name']
+
+        self.generate_ids()
 
         self.start_date = dict_['first_seen']
         self.end_date = dict_.get('last_seen', None)
@@ -379,12 +424,24 @@ class StationName(base):
     def __repr__(self):
         return 'Station name ({}, {})'.format(self.station_id, self.name)
 
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.station_name_id = ':'.join(map(str, components))
+
 
 class Deployment(base):
     """Data Registry Deployment"""
 
     __tablename__ = 'deployments'
     __table_args__ = (UniqueConstraint('deployment_id'),)
+
+    id_field = 'deployment_id'
+    id_dependencies = ['station_id', 'contributor_id']
 
     deployment_id = Column(String, primary_key=True)
     station_id = Column(String, ForeignKey('stations.station_id'),
@@ -401,9 +458,10 @@ class Deployment(base):
     def __init__(self, dict_):
         """serializer"""
 
-        self.deployment_id = dict_['identifier']
         self.station_id = dict_['station_id']
         self.contributor_id = dict_['contributor_id']
+
+        self.generate_ids()
 
         try:
             if isinstance(dict_['start_date'], datetime.date):
@@ -436,6 +494,15 @@ class Deployment(base):
     def __repr__(self):
         return 'Deployment ({})'.format(self.deployment_id)
 
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.deployment_id = ':'.join(map(str, components))
+
 
 class DataRecord(base):
     """Data Registry Data Record"""
@@ -447,10 +514,25 @@ class DataRecord(base):
            ['contributors.acronym', 'contributors.project_id']),
     )
 
+    id_field = 'data_record_id'
+    id_dependencies = [
+            'content_class',
+            'content_category',
+            'content_level',
+            'content_form',
+            'data_generation_agency',
+            'platform_type',
+            'station_id',
+            'instrument_name',
+            'instrument_model',
+            'instrument_number',
+            'timestamp_date',
+            'data_generation_version'
+        ]
+
     data_record_id = Column(String, primary_key=True)
 
     # Extended CSV core fields
-
     content_class = Column(String, ForeignKey('projects.project_id'),
                            nullable=False)
     content_category = Column(String, ForeignKey('datasets.dataset_id'),
@@ -547,53 +629,39 @@ class DataRecord(base):
         self.y = ecsv.extcsv['LOCATION']['Latitude']
         self.z = ecsv.extcsv['LOCATION']['Height']
 
+        self.generate_ids()
+
         self.extcsv = ecsv.extcsv
         self.number_of_observations = ecsv.number_of_observations
-
-        self.data_record_id = self.get_urn()
-        self.es_id = self.get_esid()
 
         self.filename = 'TODO'
         self.url = 'TODO'
 
+    def generate_ids(self):
+        """Builds and sets class ID fields from other attributes"""
+
+        self.data_record_id = self.get_urn()
+        self.es_id = self.get_esid()
+
     def get_urn(self):
         """generate data record URN"""
 
-        urn_tokens = [
-            self.content_class,
-            self.content_category,
-            self.content_level,
-            self.content_form,
-            self.data_generation_agency,
-            self.platform_type,
-            self.station_id,
-            self.instrument_name,
-            self.instrument_model,
-            self.instrument_number,
-            self.timestamp_date,
-            self.data_generation_version
-        ]
-
-        return ':'.join(map(str, urn_tokens)).lower()
+        if all([hasattr(self, field) for field in self.id_dependencies]):
+            tokens = [getattr(self, field) for field in self.id_dependencies]
+            return ':'.join(map(str, tokens)).lower()
+        else:
+            return None
 
     def get_esid(self):
         """generate data record ES identifier"""
 
-        tokens = [
-            self.content_class,
-            self.content_category,
-            self.content_level,
-            self.content_form,
-            self.data_generation_agency,
-            self.platform_type,
-            self.station_id,
-            self.instrument_name,
-            self.instrument_model,
-            self.instrument_number,
-            self.timestamp_date
-        ]
+        dependencies = self.id_dependencies[:-1]
 
-        return ':'.join(map(str, tokens)).lower()
+        if all([hasattr(self, field) for field in dependencies]):
+            tokens = [getattr(self, field) for field in dependencies]
+            return ':'.join(map(str, tokens)).lower()
+        else:
+            return None
 
     def get_waf_path(self, basepath):
         """generate WAF URL"""

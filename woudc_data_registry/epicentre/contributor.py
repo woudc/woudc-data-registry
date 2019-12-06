@@ -69,7 +69,7 @@ def list_(ctx):
     """List all contributors"""
 
     for c in get_metadata(Contributor):
-        click.echo('{} {}'.format(c.identifier.ljust(15), c.name))
+        click.echo('{} {}'.format(c.contributor_id.ljust(24), c.name))
 
 
 @click.command('show')
@@ -89,10 +89,10 @@ def show(ctx, identifier):
 
 
 @click.command('add')
-@click.option('-id', '--identifier', 'identifier', required=True,
-              help='acronym')
 @click.option('-n', '--name', 'name', required=True, help='name')
+@click.option('-a', '--acronym', 'acronym', required=True, help='acronym')
 @click.option('-c', '--country', 'country', required=True, help='country')
+@click.option('-p', '--project', 'project', required=True, help='project')
 @click.option('-w', '--wmo-region', 'wmo_region', required=True,
               help='WMO region')
 @click.option('-u', '--url', 'url', required=True, help='URL')
@@ -102,17 +102,18 @@ def show(ctx, identifier):
 @click.option('-g', '--geometry', 'geometry', required=True,
               help='latitude,longitude')
 @click.pass_context
-def add(ctx, identifier, name, country, wmo_region, url, email,
-        ftp_username, geometry):
+def add(ctx, name, acronym, country, project, wmo_region,
+        url, email, ftp_username, geometry):
     """Add a contributor"""
 
     geom_tokens = geometry.split(',')
 
     contributor_ = {
-        'identifier': identifier,
         'name': name,
+        'acronym': acronym,
         'country_id': country,
-        'wmo_region': wmo_region,
+        'project_id': project,
+        'wmo_region_id': wmo_region,
         'url': url,
         'email': email,
         'ftp_username': ftp_username,
@@ -120,23 +121,25 @@ def add(ctx, identifier, name, country, wmo_region, url, email,
         'y': geom_tokens[1]
     }
 
-    add_metadata(Contributor, contributor_)
-    click.echo('Contributor {} added'.format(name))
+    result = add_metadata(Contributor, contributor_)
+    click.echo('Contributor {} added'.format(result.contributor_id))
 
 
 @click.command('update')
 @click.option('-id', '--identifier', 'identifier', required=True,
               help='acronym')
 @click.option('-n', '--name', 'name', help='name')
+@click.option('-a', '--acronym', 'acronym', help='acronym')
 @click.option('-c', '--country', 'country', help='country')
+@click.option('-p', '--project', 'project', help='project')
 @click.option('-w', '--wmo-region', 'wmo_region', help='WMO region')
 @click.option('-u', '--url', 'url', help='URL')
 @click.option('-e', '--email', 'email', help='email')
 @click.option('-f', '--ftp-username', 'ftp_username', help='FTP username')
 @click.option('-g', '--geometry', 'geometry', help='latitude,longitude')
 @click.pass_context
-def update(ctx, identifier, name, country, wmo_region, url, email,
-           ftp_username, geometry):
+def update(ctx, identifier, name, acronym, country, project,
+           wmo_region, url, email, ftp_username, geometry):
     """Update contributor information"""
 
     contributor_ = {
@@ -145,8 +148,14 @@ def update(ctx, identifier, name, country, wmo_region, url, email,
 
     if name:
         contributor_['name'] = name
+    if acronym:
+        contributor_['acronym'] = acronym
+    if country:
+        contributor_['country_id'] = country
+    if project:
+        contributor_['project_id'] = project
     if wmo_region:
-        contributor_['wmo_region'] = wmo_region
+        contributor_['wmo_region_id'] = wmo_region
     if url:
         contributor_['url'] = url
     if email:

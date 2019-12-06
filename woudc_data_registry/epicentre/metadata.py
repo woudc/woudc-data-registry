@@ -43,10 +43,11 @@
 #
 # =================================================================
 
+from datetime import date
 import logging
 
 from woudc_data_registry import registry
-from woudc_data_registry.models import Contributor, Country
+from woudc_data_registry.models import Contributor, Country, StationName
 from woudc_data_registry.util import is_plural
 
 LOGGER = logging.getLogger(__name__)
@@ -64,7 +65,7 @@ def get_metadata(entity, identifier=None):
     """
 
     LOGGER.debug('Querying metadata objects {}'.format(entity))
-    prop = getattr(entity, 'identifier')
+    prop = getattr(entity, entity.id_field)
     if identifier is None:
         res = REGISTRY.session.query(entity).order_by(prop)
     else:
@@ -99,31 +100,40 @@ def add_metadata(entity, dict_):
     if 'country_id' in dict_:
         LOGGER.debug('Querying for matching country')
         results = REGISTRY.session.query(Country).filter(
-            Country.country_name == dict_['country_id'])
+            Country.name_en == dict_['country_id'])
 
         if results.count() == 0:
             msg = 'Invalid country: {}'.format(dict_['country_id'])
             LOGGER.error(msg)
             raise ValueError(msg)
 
-        dict_['country_id'] = results[0].identifier
+        dict_['country_id'] = getattr(results[0], Country.id_field)
 
     if 'contributor_id' in dict_:
         LOGGER.debug('Querying for matching contributor')
         results = REGISTRY.session.query(Contributor).filter(
-            Contributor.identifier == dict_['contributor_id'])
+            Contributor.contributor_id == dict_['contributor_id'])
 
         if results.count() == 0:
             msg = 'Invalid contributor: {}'.format(dict_['contributor_id'])
             LOGGER.error(msg)
             raise ValueError(msg)
 
-        dict_['contributor_id'] = results[0].identifier
+    if 'station_name' in dict_ and 'station_id' in dict_:
+        station_id, name = dict_['station_id'], dict_['station_name']
+        name_id = ':'.join([station_id, name])
+
+        if not get_metadata(StationName, name_id):
+            add_metadata(StationName, {
+                'station_id': station_id,
+                'name': name,
+                'first_seen': date.today()
+            })
 
     c = entity(dict_)
     REGISTRY.save(c)
 
-    return True
+    return c
 
 
 def update_metadata(entity, identifier, dict_):
@@ -137,18 +147,42 @@ def update_metadata(entity, identifier, dict_):
     :returns: `bool` of status/result
     """
 
-    LOGGER.debug('Updating metadata entity {}, identifier {}'.format(
-        entity, identifier))
-    prop = getattr(entity, 'identifier')
-    r = REGISTRY.session.query(entity).filter(
-        prop == identifier).update(dict_)
+    records = get_metadata(entity, identifier)
 
-    if r == 0:
+    if len(records) == 0:
         msg = 'identifier {} not found'.format(identifier)
         LOGGER.warning(msg)
         raise ValueError(msg)
+    else:
+        LOGGER.debug('Updating metadata entity {}, identifier {}'
+                     .format(entity, identifier))
+        obj = records[0]
 
-    REGISTRY.save()
+        if 'station_name' in dict_ and 'station_id' in dict_:
+            station_id, name = dict_['station_id'], dict_['station_name']
+            name_id = ':'.join([station_id, name])
+
+            if not get_metadata(StationName, name_id):
+                add_metadata(StationName, {
+                    'station_id': station_id,
+                    'name': name,
+                    'first_seen': date.today()
+                })
+
+            del dict_['station_name']
+            dict_['station_name_id'] = name_id
+
+        for field, value in dict_.items():
+            setattr(obj, field, value)
+
+        try:
+            obj.generate_ids()
+        except Exception as err:
+            LOGGER.warning('Unable to generate IDS due to: {}'
+                           .format(str(err)))
+
+        REGISTRY.save(obj)
+        return True
 
 
 def delete_metadata(entity, identifier):
@@ -163,7 +197,7 @@ def delete_metadata(entity, identifier):
 
     LOGGER.debug('Updating metadata entity {}, identifier {}'.format(
         entity, identifier))
-    prop = getattr(entity, 'identifier')
+    prop = getattr(entity, entity.id_field)
     REGISTRY.session.query(entity).filter(prop == identifier).delete()
 
     REGISTRY.save()

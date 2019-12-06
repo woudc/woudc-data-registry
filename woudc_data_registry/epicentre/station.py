@@ -90,7 +90,7 @@ def list_(ctx):
     """List all stations"""
 
     for c in get_metadata(Station):
-        click.echo('{} {}'.format(c.identifier.ljust(3), c.name))
+        click.echo('{} {}'.format(c.station_id.ljust(3), c.station_name.name))
 
 
 @click.command('show')
@@ -112,11 +112,11 @@ def show(ctx, identifier):
 @click.command('add')
 @click.option('-id', '--identifier', 'identifier', required=True,
               help='acronym')
+@click.option('-t', '--type', 'type_', required=False, default='STN',
+              help='station type')
 @click.option('-n', '--name', 'name', required=True, help='name')
-@click.option('-ci', '--contributor', 'contributor', required=True,
-              help='contributor')
 @click.option('-gi', '--gaw-id', 'gaw_id', required=True, help='GAW ID')
-@click.option('-co', '--country', 'country', required=True, help='country')
+@click.option('-c', '--country', 'country', required=True, help='country')
 @click.option('-w', '--wmo-region', 'wmo_region', required=True,
               help='WMO region')
 @click.option('-sd', '--start-date', 'start_date', required=True,
@@ -126,65 +126,67 @@ def show(ctx, identifier):
 @click.option('-g', '--geometry', 'geometry', required=True,
               help='latitude,longitude,elevation')
 @click.pass_context
-def add(ctx, identifier, name, contributor, gaw_id, country, wmo_region,
-        start_date, end_date, geometry):
+def add(ctx, identifier, name, type_, gaw_id, country,
+        wmo_region, start_date, end_date, geometry):
     """Add a station"""
 
     geom_tokens = geometry.split(',')
 
     station_ = {
-        'identifier': identifier,
-        'name': name,
-        'contributor_id': contributor,
+        'station_id': identifier,
+        'station_name': name,
+        'station_type': type_,
         'gaw_id': gaw_id,
         'country_id': country,
-        'wmo_region': wmo_region,
-        'active_start_date': start_date,
-        'active_end_date': end_date,
+        'wmo_region_id': wmo_region,
+        'start_date': start_date,
+        'end_date': end_date,
         'x': geom_tokens[0],
         'y': geom_tokens[1],
         'z': geom_tokens[2]
     }
 
     add_metadata(Station, station_)
-    click.echo('Station {} added'.format(name))
+    click.echo('Station {} added'.format(identifier))
 
 
 @click.command('update')
 @click.option('-id', '--identifier', 'identifier', required=True,
               help='acronym')
+@click.option('-t', '--type', 'type_', help='station type')
 @click.option('-n', '--name', 'name', help='name')
-@click.option('-ci', '--contributor', 'contributor', help='contributor')
 @click.option('-gi', '--gaw-id', 'gaw_id', help='GAW ID')
-@click.option('-co', '--country', 'country', help='country')
+@click.option('-c', '--country', 'country', help='country')
 @click.option('-w', '--wmo-region', 'wmo_region', help='WMO region')
 @click.option('-sd', '--start-date', 'start_date', help='start date')
 @click.option('-ed', '--end-date', 'end_date', help='end date')
 @click.option('-g', '--geometry', 'geometry',
               help='latitude,longitude,elevation')
 @click.pass_context
-def update(ctx, identifier, name, contributor, gaw_id, country, wmo_region,
-           start_date, end_date, geometry):
+def update(ctx, identifier, name, type_, gaw_id, country,
+           wmo_region, start_date, end_date, geometry):
     """Update station information"""
 
     station_ = {
+        'station_id': identifier,
         'last_validated_datetime': datetime.utcnow()
     }
 
     if name:
-        station_['name'] = name
-    if contributor:
-        station_['contributor'] = contributor
+        station_['station_name'] = name
+    if type_:
+        station_['station_type'] = type_
     if gaw_id:
         station_['gaw_id'] = gaw_id
     if country:
-        station_['country'] = country
+        station_['country_id'] = country
     if wmo_region:
-        station_['wmo_region'] = wmo_region
+        station_['wmo_region_id'] = wmo_region
     if start_date:
         station_['start_date'] = start_date
     if end_date:
         station_['end_date'] = end_date
+
     if geometry:
         geom_tokens = geometry.split(',')
         station_['x'] = geom_tokens[0]
