@@ -46,12 +46,13 @@
 from datetime import date
 import logging
 
-from woudc_data_registry import registry
+from woudc_data_registry import registry, search
 from woudc_data_registry.models import Contributor, Country, StationName
 from woudc_data_registry.util import is_plural
 
 LOGGER = logging.getLogger(__name__)
 REGISTRY = registry.Registry()
+SEARCH_INDEX = search.SearchIndex()
 
 
 def get_metadata(entity, identifier=None):
@@ -87,7 +88,7 @@ def get_metadata(entity, identifier=None):
     return res
 
 
-def add_metadata(entity, dict_):
+def add_metadata(entity, dict_, psql=True, es=True):
     """
     Add a metadata object
 
@@ -128,15 +129,18 @@ def add_metadata(entity, dict_):
                 'station_id': station_id,
                 'name': name,
                 'first_seen': date.today()
-            })
+            }, es=False)
 
     c = entity(dict_)
-    REGISTRY.save(c)
+    if psql:
+        REGISTRY.save(c)
+    if es:
+        SEARCH_INDEX.index(entity, c.__geo_interface__)
 
     return c
 
 
-def update_metadata(entity, identifier, dict_):
+def update_metadata(entity, identifier, dict_, psql=True, es=True):
     """
     Update metadata object
 
@@ -167,7 +171,7 @@ def update_metadata(entity, identifier, dict_):
                     'station_id': station_id,
                     'name': name,
                     'first_seen': date.today()
-                })
+                }, es=False)
 
             del dict_['station_name']
             dict_['station_name_id'] = name_id
@@ -181,11 +185,17 @@ def update_metadata(entity, identifier, dict_):
             LOGGER.warning('Unable to generate IDS due to: {}'
                            .format(str(err)))
 
-        REGISTRY.save(obj)
+        if es and getattr(obj, entity.id_field) != identifier:
+            SEARCH_INDEX.unindex(entity, identifier)
+
+        if psql:
+            REGISTRY.save(obj)
+        if es:
+            SEARCH_INDEX.index(entity, obj.__geo_interface__)
         return True
 
 
-def delete_metadata(entity, identifier):
+def delete_metadata(entity, identifier, psql=True, es=True):
     """
     Delete metadata object
 
@@ -197,9 +207,13 @@ def delete_metadata(entity, identifier):
 
     LOGGER.debug('Updating metadata entity {}, identifier {}'.format(
         entity, identifier))
-    prop = getattr(entity, entity.id_field)
-    REGISTRY.session.query(entity).filter(prop == identifier).delete()
 
-    REGISTRY.save()
+    if psql:
+        prop = getattr(entity, entity.id_field)
+        REGISTRY.session.query(entity).filter(prop == identifier).delete()
+
+        REGISTRY.save()
+    if es:
+        SEARCH_INDEX.unindex(entity, identifier)
 
     return True

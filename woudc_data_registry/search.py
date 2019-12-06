@@ -453,14 +453,11 @@ class SearchIndex(object):
                 'doc_as_upsert': True
             }
 
-            try:
-                LOGGER.debug('Indexing 1 document into {}'.format(index))
-                response = self.connection.update(index=index, id=target['id'],
-                                                  doc_type='FeatureCollection',
-                                                  body=wrapper)
-            except TransportError as err:
-                LOGGER.error(err)
-                raise SearchIndexError(err)
+            LOGGER.debug('Indexing 1 document into {}'.format(index))
+            response = self.connection.update(index=index, id=target['id'],
+                                              doc_type='FeatureCollection',
+                                              body=wrapper)
+
         else:
             # Index/update multiple documents using bulk API.
             wrapper = [{
@@ -490,13 +487,22 @@ class SearchIndex(object):
 
         index = MAPPINGS[domain.__tablename__]['index']
 
-        if isinstance(target, dict):
+        if isinstance(target, str):
+            # <target> is a document ID, delete normally.
+            result = self.connection.delete(index=index, id=target,
+                                            doc_type='FeatureCollection')
+
+            if not result['found']:
+                msg = 'Data record {} does not exist'.format(target)
+                LOGGER.error(msg)
+                raise SearchIndexError(msg)
+        elif isinstance(target, dict):
             # <target> is the single GeoJSON object to delete.
             result = self.connection.delete(index=index, id=target['id'],
                                             doc_type='FeatureCollection')
 
-            if result.status_code == 404:
-                msg = 'Data record {} does not exist'.format(identifier)
+            if not result['found']:
+                msg = 'Data record {} does not exist'.format(target['id'])
                 LOGGER.error(msg)
                 raise SearchIndexError(msg)
         else:

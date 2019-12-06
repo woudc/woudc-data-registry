@@ -176,6 +176,7 @@ class Contributor(base):
         self.email = dict_['email']
         self.ftp_username = dict_['ftp_username']
 
+        self.active = dict_.get('active', True)
         self.last_validated_datetime = datetime.datetime.utcnow()
         self.x = dict_['x']
         self.y = dict_['y']
@@ -385,8 +386,8 @@ class Station(base):
             'properties': {
                 'name': self.station_name.name,
                 'type': self.station_type,
-                'gaw_id': self.gaw_id,
                 'woudc_id': self.station_id,
+                'gaw_id': self.gaw_id,
                 'country_code': self.country.country_id,
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
