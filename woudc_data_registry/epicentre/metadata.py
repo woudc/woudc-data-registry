@@ -147,16 +147,16 @@ def update_metadata(entity, identifier, dict_):
     :returns: `bool` of status/result
     """
 
-    l = get_metadata(entity, identifier)
+    records = get_metadata(entity, identifier)
 
-    if len(l) == 0:
+    if len(records) == 0:
         msg = 'identifier {} not found'.format(identifier)
         LOGGER.warning(msg)
         raise ValueError(msg)
     else:
         LOGGER.debug('Updating metadata entity {}, identifier {}'
                      .format(entity, identifier))
-        obj = l[0]
+        obj = records[0]
 
         if 'station_name' in dict_ and 'station_id' in dict_:
             station_id, name = dict_['station_id'], dict_['station_name']
