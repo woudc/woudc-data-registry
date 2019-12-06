@@ -113,8 +113,9 @@ class Country(base):
             'id': self.country_id,
             'type': 'Feature',
             'properties': {
-                'country_name': self.name_en,
-                'french_name': self.name_fr,
+                'country_code': self.country_id,
+                'country_name_en': self.name_en,
+                'country_name_fr': self.name_fr,
                 'wmo_region_id': self.wmo_region_id,
                 'wmo_membership': self.wmo_membership,
                 'regional_involvement': self.regional_involvement,
@@ -187,7 +188,7 @@ class Contributor(base):
             'geometry': point2geojsongeometry(self.x, self.y),
             'properties': {
                 'name': self.name,
-                'country_id': self.country_id,
+                'country_code': self.country_id,
                 'wmo_region_id': self.wmo_region_id,
                 'url': self.url,
                 'email': self.email,
@@ -280,6 +281,7 @@ class Instrument(base):
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
                 'station_id': self.station_id,
+                'dataset': self.dataset_id,
                 'name': self.name,
                 'model': self.model,
                 'serial': self.serial,
@@ -384,7 +386,8 @@ class Station(base):
                 'name': self.station_name.name,
                 'type': self.station_type,
                 'gaw_id': self.gaw_id,
-                'country': self.country.name_en,
+                'woudc_id': self.station_id,
+                'country_code': self.country.country_id,
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
                 'last_validated_datetime': self.last_validated_datetime,
@@ -485,7 +488,7 @@ class Deployment(base):
             'type': 'Feature',
             'properties': {
                 'station_id': self.station_id,
-                'contributor_id': self.contributor_id,
+                'contributor': self.contributor_id,
                 'start_date': self.start_date,
                 'end_date': self.end_date
             }
