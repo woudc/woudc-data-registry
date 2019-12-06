@@ -64,16 +64,153 @@ typedefs = {
 }
 
 MAPPINGS = {
-    'contributor': {
-        'index': 'woudc-data-registry.contributor'
+    'countries': {
+        'index': 'woudc-data-registry.country',
+        'properties': {
+            'country_code': {
+                'type': 'text',
+               'fields': {'keyword': typedefs['keyword']}
+            },
+            'country_name_en': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'country_name_fr': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'wmo_region_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'wmo_membership': {
+                'type': 'date'
+            },
+            'regional_involvement': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'link': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            }
+        }
     },
-    'station': {
-        'index': 'woudc-data-registry.station'
+    'contributors': {
+        'index': 'woudc-data-registry.contributor',
+        'properties': {
+            'name': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'country_code': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'wmo_region_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'url': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'email': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'ftp_username': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'active': {
+                'type': 'boolean'
+            },
+            'last_validated_datetime': {
+                'type': 'date'
+            }
+        }
     },
-    'instrument': {
-        'index': 'woudc-data-registry.instrument'
+    'stations': {
+        'index': 'woudc-data-registry.station',
+        'properties': {
+            'name': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'type': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'woudc_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'gaw_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'country_code': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'wmo_region_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'active': {
+                'type': 'boolean'
+            },
+            'last_validated_datetime': {
+                'type': 'date'
+            }
+        }
     },
-    'data_record': {
+    'instruments': {
+        'index': 'woudc-data-registry.instrument',
+        'properties': {
+            'station_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'dataset': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'name': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'model': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'serial': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            }
+        }
+    },
+    'deployments': {
+        'index': 'woudc-data-registry.deployment',
+        'properties': {
+            'station_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'contributor': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'start_date': {
+                'type': 'date'
+            },
+            'end_date': {
+                'type': 'date'
+            }
+        }
+    },
+    'data_records': {
         'index': 'woudc-data-registry.data_record',
         'properties': {
             'content_class': {
@@ -275,10 +412,10 @@ class SearchIndex(object):
         """
 
         try:
-            index = MAPPINGS['data_record']['index']
+            index = MAPPINGS['data_records']['index']
             result = self.connection.get(index=index,
                                          doc_type='FeatureCollection',
-                                         id=identifier,)
+                                         id=identifier)
             return result['_source']['properties']['data_generation_version']
         except NotFoundError:
             return None
@@ -292,7 +429,7 @@ class SearchIndex(object):
         :returns: `bool` status of indexing result
         """
 
-        index = MAPPINGS['data_record']['index']
+        index = MAPPINGS['data_records']['index']
         identifier = data['id']
 
         try:
@@ -330,7 +467,7 @@ class SearchIndex(object):
         :returns: `bool` status of un-indexing result
         """
 
-        index = MAPPINGS['data_record']['index']
+        index = MAPPINGS['data_records']['index']
         result = self.connection.delete(index=index,
                                         doc_type='FeatureCollection',
                                         id=identifier)
