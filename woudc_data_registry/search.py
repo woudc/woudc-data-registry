@@ -434,62 +434,81 @@ class SearchIndex(object):
         except NotFoundError:
             return None
 
-    def index_data_record(self, data):
+    def index(self, domain, target):
         """
-        index or update a document
+        Index (or update if already present) one or more documents in
+        <target> that belong to the index associated with <domain>.
 
-        :param data: `dict` of GeoJSON representation
-
-        :returns: `bool` status of indexing result
+        :param domain: A model class that all entries in <target> belong to.
+        :param target: GeoJSON dictionary of model data or a list of them.
+        :returns: Whether the operation was successful.
         """
 
-        index = MAPPINGS['data_records']['index']
-        identifier = data['id']
+        index = MAPPINGS[domain.__tablename__]['index']
 
-        try:
-            result = self.connection.get(index=index,
-                                         doc_type='FeatureCollection',
-                                         id=identifier)
-            LOGGER.debug('existing record, updating')
-            data_ = json.dumps({'doc': data}, default=json_serial)
-            result = self.connection.update(index=index,
-                                            doc_type='FeatureCollection',
-                                            id=identifier, body=data_)
-            LOGGER.debug('Result: {}'.format(result))
-        except NotFoundError as err:  # index new
-            LOGGER.debug(err)
-            LOGGER.info('new record, indexing')
-            data_ = json.dumps(data, default=json_serial)
-            LOGGER.debug('indexing {}'.format(identifier))
+        if isinstance(target, dict):
+            # Index/update single document the normal way.
+            wrapper = {
+                'doc': target,
+                'doc_as_upsert': True
+            }
+
             try:
-                result = self.connection.index(index=index,
-                                               doc_type='FeatureCollection',
-                                               id=identifier, body=data_)
-                LOGGER.debug('Result: {}'.format(result))
-            except RequestError as err:
+                LOGGER.debug('Indexing 1 document into {}'.format(index))
+                response = self.connection.update(index=index, id=target['id'],
+                                                  doc_type='FeatureCollection',
+                                                  body=wrapper)
+            except TransportError as err:
                 LOGGER.error(err)
                 raise SearchIndexError(err)
+        else:
+            # Index/update multiple documents using bulk API.
+            wrapper = [{
+                '_op_type': 'update',
+                '_index': index,
+                '_type': document['type'],
+                '_id': document['id'],
+                'doc': document,
+                'doc_as_upsert': True
+            } for document in target]
+
+            LOGGER.debug('Indexing {} documents into {}'
+                         .format(len(target), index))
+            helpers.bulk(self.connection, wrapper)
 
         return True
 
-    def unindex_data_record(self, identifier):
+    def unindex(self, domain, target):
         """
-        delete document from index
+        Delete one or more documents, referred to by <target>,
+        that belong to the index associated with <domain>.
 
-        :param identifier: identifier of data record
-
-        :returns: `bool` status of un-indexing result
+        :param domain: A model class that all entries in <target> belong to.
+        :param target: GeoJSON dictionary of model data or a list of them.
+        :returns: Whether the operation was successful.
         """
 
-        index = MAPPINGS['data_records']['index']
-        result = self.connection.delete(index=index,
-                                        doc_type='FeatureCollection',
-                                        id=identifier)
+        index = MAPPINGS[domain.__tablename__]['index']
 
-        if result.status_code == 404:
-            msg = 'Data record {} does not exist'.format(identifier)
-            LOGGER.error(msg)
-            raise SearchIndexError(msg)
+        if isinstance(target, dict):
+            # <target> is the single GeoJSON object to delete.
+            result = self.connection.delete(index=index, id=target['id'],
+                                            doc_type='FeatureCollection')
+
+            if result.status_code == 404:
+                msg = 'Data record {} does not exist'.format(identifier)
+                LOGGER.error(msg)
+                raise SearchIndexError(msg)
+        else:
+            # Delete multiple documents using bulk API.
+            wrapper = [{
+                '_op_type': 'delete',
+                '_index': 'index',
+                '_type': document['type'],
+                '_id': document['id']
+            } for document in target]
+
+            helpers.bulk(self.connection, wrapper)
 
         return True
 

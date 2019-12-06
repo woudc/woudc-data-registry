@@ -336,13 +336,14 @@ class Process(object):
         LOGGER.info('Saving data record to registry')
         self.registry.save(self.data_record)
 
-        prev_version = \
-            self.search_engine.get_record_version(self.data_record.es_id)
-        if not prev_version \
-           or self.data_record.data_generation_version > prev_version:
+        esid = self.data_record.es_id
+        prev_version = self.search_engine.get_record_version(esid)
+        now_version = self.data_record.data_generation_version
+
+        if not prev_version or now_version > prev_version:
             LOGGER.info('Saving data record to search index')
-            self.search_engine.index_data_record(
-                self.data_record.__geo_interface__)
+            self.search_engine.index(
+                DataRecord, self.data_record.__geo_interface__)
 
         LOGGER.info('Saving data record CSV to WAF')
         waf_filepath = self.data_record.get_waf_path(config.WDR_WAF_BASEDIR)
