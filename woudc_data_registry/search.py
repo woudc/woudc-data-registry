@@ -66,6 +66,7 @@ typedefs = {
 MAPPINGS = {
     'countries': {
         'index': 'woudc-data-registry.country',
+        'enabled': False,
         'properties': {
             'country_code': {
                 'type': 'text',
@@ -98,6 +99,7 @@ MAPPINGS = {
     },
     'contributors': {
         'index': 'woudc-data-registry.contributor',
+        'enabled': True,
         'properties': {
             'name': {
                 'type': 'text',
@@ -133,6 +135,7 @@ MAPPINGS = {
     },
     'stations': {
         'index': 'woudc-data-registry.station',
+        'enabled': True,
         'properties': {
             'name': {
                 'type': 'text',
@@ -168,6 +171,7 @@ MAPPINGS = {
     },
     'instruments': {
         'index': 'woudc-data-registry.instrument',
+        'enabled': True,
         'properties': {
             'station_id': {
                 'type': 'text',
@@ -193,6 +197,7 @@ MAPPINGS = {
     },
     'deployments': {
         'index': 'woudc-data-registry.deployment',
+        'enabled': False,
         'properties': {
             'station_id': {
                 'type': 'text',
@@ -212,6 +217,7 @@ MAPPINGS = {
     },
     'data_records': {
         'index': 'woudc-data-registry.data_record',
+        'enabled': True,
         'properties': {
             'content_class': {
                 'type': 'text',
@@ -358,6 +364,10 @@ class SearchIndex(object):
         """create search indexes"""
 
         for definition in MAPPINGS.values():
+            # Skip indexes that have been manually disabled.
+            if not definition['enabled']:
+                continue
+
             index_name = definition['index']
 
             settings = {
@@ -394,6 +404,10 @@ class SearchIndex(object):
         """delete search indexes"""
 
         for definition in MAPPINGS.values():
+            # Skip indexes that have been manually disabled.
+            if not definition['enabled']:
+                continue
+
             index_name = definition['index']
 
             try:
