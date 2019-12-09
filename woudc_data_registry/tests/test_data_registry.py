@@ -93,11 +93,11 @@ class ParserTest(unittest.TestCase):
             dummy.typecast_value('Dummy', 'utcoffset', '+00:00:00', 0), str)
 
         bad_input = 'a generic string'
-        self.assertEquals(
+        self.assertEqual(
             dummy.typecast_value('Dummy', 'date', bad_input, 0), bad_input)
-        self.assertEquals(
+        self.assertEqual(
             dummy.typecast_value('Dummy', 'time', bad_input, 0), bad_input)
-        self.assertEquals(
+        self.assertEqual(
             dummy.typecast_value('Dum', 'utcoffset', bad_input, 0), bad_input)
 
     def test_build_table(self):
@@ -107,49 +107,49 @@ class ParserTest(unittest.TestCase):
         fields = ['Class', 'Category', 'Level', 'Form']
         values = ['WOUDC', 'Spectral', '1.0', '1']
 
-        self.assertEquals(ecsv.init_table('CONTENT', fields, 40), 'CONTENT')
-        self.assertEquals(ecsv.table_count('CONTENT'), 1)
-        self.assertEquals(ecsv.line_num('CONTENT'), 40)
+        self.assertEqual(ecsv.init_table('CONTENT', fields, 40), 'CONTENT')
+        self.assertEqual(ecsv.table_count('CONTENT'), 1)
+        self.assertEqual(ecsv.line_num('CONTENT'), 40)
 
         self.assertIn('CONTENT', ecsv.extcsv)
         for field in fields:
             self.assertIn(field, ecsv.extcsv['CONTENT'])
-            self.assertEquals(ecsv.extcsv['CONTENT'][field], [])
+            self.assertEqual(ecsv.extcsv['CONTENT'][field], [])
 
         ecsv.add_values_to_table('CONTENT', values, 41)
 
-        self.assertEquals(ecsv.line_num('CONTENT'), 40)
+        self.assertEqual(ecsv.line_num('CONTENT'), 40)
         for field, value in zip(fields, values):
-            self.assertEquals(ecsv.extcsv['CONTENT'][field], [value])
+            self.assertEqual(ecsv.extcsv['CONTENT'][field], [value])
 
-        self.assertEquals(ecsv.init_table('CONTENT', fields, 44), 'CONTENT_2')
-        self.assertEquals(ecsv.table_count('CONTENT'), 2)
-        self.assertEquals(ecsv.line_num('CONTENT'), 40)
-        self.assertEquals(ecsv.line_num('CONTENT_2'), 44)
+        self.assertEqual(ecsv.init_table('CONTENT', fields, 44), 'CONTENT_2')
+        self.assertEqual(ecsv.table_count('CONTENT'), 2)
+        self.assertEqual(ecsv.line_num('CONTENT'), 40)
+        self.assertEqual(ecsv.line_num('CONTENT_2'), 44)
 
         self.assertIn('CONTENT', ecsv.extcsv)
         self.assertIn('CONTENT_2', ecsv.extcsv)
         for field, value in zip(fields, values):
             self.assertIn(field, ecsv.extcsv['CONTENT'])
             self.assertIn(field, ecsv.extcsv['CONTENT_2'])
-            self.assertEquals(ecsv.extcsv['CONTENT'][field], [value])
-            self.assertEquals(ecsv.extcsv['CONTENT_2'][field], [])
+            self.assertEqual(ecsv.extcsv['CONTENT'][field], [value])
+            self.assertEqual(ecsv.extcsv['CONTENT_2'][field], [])
 
         ecsv.add_values_to_table('CONTENT_2', values, 41)
 
         for field, value in zip(fields, values):
-            self.assertEquals(ecsv.extcsv['CONTENT'][field], [value])
-            self.assertEquals(ecsv.extcsv['CONTENT_2'][field], [value])
+            self.assertEqual(ecsv.extcsv['CONTENT'][field], [value])
+            self.assertEqual(ecsv.extcsv['CONTENT_2'][field], [value])
 
         ecsv.remove_table('CONTENT_2')
         self.assertIn('CONTENT', ecsv.extcsv)
-        self.assertEquals(ecsv.table_count('CONTENT'), 1)
-        self.assertEquals(ecsv.line_num('CONTENT'), 40)
+        self.assertEqual(ecsv.table_count('CONTENT'), 1)
+        self.assertEqual(ecsv.line_num('CONTENT'), 40)
 
         ecsv.remove_table('CONTENT')
-        self.assertEquals(ecsv.table_count('CONTENT'), 0)
+        self.assertEqual(ecsv.table_count('CONTENT'), 0)
         self.assertIsNone(ecsv.line_num('CONTENT'))
-        self.assertEquals(ecsv.extcsv, {})
+        self.assertEqual(ecsv.extcsv, {})
 
     def test_row_filling(self):
         """ Test that omitted columns in a row are filled in with nulls """
@@ -159,8 +159,8 @@ class ParserTest(unittest.TestCase):
         ecsv.add_values_to_table('TIMESTAMP', ['+00:00:00', '2019-04-30'], 3)
 
         self.assertIsInstance(ecsv.extcsv['TIMESTAMP']['Time'], list)
-        self.assertEquals(len(ecsv.extcsv['TIMESTAMP']['Time']), 1)
-        self.assertEquals(ecsv.extcsv['TIMESTAMP']['Time'][0], '')
+        self.assertEqual(len(ecsv.extcsv['TIMESTAMP']['Time']), 1)
+        self.assertEqual(ecsv.extcsv['TIMESTAMP']['Time'][0], '')
 
         # Test the all-too-common case where all table rows have 10 commas
         instrument_fields = ['Name', 'Model', 'Number']
@@ -169,10 +169,10 @@ class ParserTest(unittest.TestCase):
         ecsv.init_table('INSTRUMENT', instrument_fields, 12)
         ecsv.add_values_to_table('INSTRUMENT', ten_commas, 14)
 
-        self.assertEquals(len(list(ecsv.extcsv['INSTRUMENT'].items())), 3)
+        self.assertEqual(len(list(ecsv.extcsv['INSTRUMENT'].items())), 3)
         for field in instrument_fields:
-            self.assertEquals(len(ecsv.extcsv['INSTRUMENT']['Name']), 1)
-            self.assertNotEquals(ecsv.extcsv['INSTRUMENT'][field][0], '')
+            self.assertEqual(len(ecsv.extcsv['INSTRUMENT']['Name']), 1)
+            self.assertNotEqual(ecsv.extcsv['INSTRUMENT'][field][0], '')
 
     def test_field_capitalization(self):
         """ Test that field names with incorrect capitalizations are fixed """
@@ -187,14 +187,14 @@ class ParserTest(unittest.TestCase):
         content_values = ['WOUDC', 'TotalOzone', 1.0, 1]
         for field, value in zip(content_fields, content_values):
             self.assertIn(field, ecsv.extcsv['CONTENT'])
-            self.assertEquals(ecsv.extcsv['CONTENT'][field], value)
+            self.assertEqual(ecsv.extcsv['CONTENT'][field], value)
 
         platform_fields = DOMAINS['Common']['PLATFORM']['required_fields'] \
             + DOMAINS['Common']['PLATFORM']['optional_fields']
         platform_values = ['STN', '002', 'Tamanrasset', 'DZA', None]
         for field, value in zip(platform_fields, platform_values):
             self.assertIn(field, ecsv.extcsv['PLATFORM'])
-            self.assertEquals(ecsv.extcsv['PLATFORM'][field], value)
+            self.assertEqual(ecsv.extcsv['PLATFORM'][field], value)
 
         ecsv.validate_dataset_tables()
 
@@ -203,7 +203,7 @@ class ParserTest(unittest.TestCase):
             + definition['DAILY'].get('optional_fields', [])
         for field in daily_fields:
             self.assertIn(field, ecsv.extcsv['DAILY'])
-            self.assertEquals(len(ecsv.extcsv['DAILY'][field]), 30)
+            self.assertEqual(len(ecsv.extcsv['DAILY'][field]), 30)
 
     def test_column_conversion(self):
         """ Test that single-row tables are recognized and collimated """
@@ -222,22 +222,22 @@ class ParserTest(unittest.TestCase):
         ]
 
         ecsv = parser.ExtendedCSV('')
-        self.assertEquals(ecsv.init_table('CONTENT', content_fields, 1),
-                          'CONTENT')
+        self.assertEqual(ecsv.init_table('CONTENT', content_fields, 1),
+                         'CONTENT')
         ecsv.add_values_to_table('CONTENT', content_values, 3)
-        self.assertEquals(ecsv.init_table('GLOBAL', global_fields, 4),
-                          'GLOBAL')
+        self.assertEqual(ecsv.init_table('GLOBAL', global_fields, 4),
+                         'GLOBAL')
         for line_num, row in enumerate(global_values, 5):
             ecsv.add_values_to_table('GLOBAL', row, line_num)
 
         for field in content_fields:
             self.assertIsInstance(ecsv.extcsv['CONTENT'][field], list)
-            self.assertEquals(len(ecsv.extcsv['CONTENT'][field]), 1)
+            self.assertEqual(len(ecsv.extcsv['CONTENT'][field]), 1)
             for value in ecsv.extcsv['CONTENT'][field]:
                 self.assertIsInstance(value, str)
         for field in global_fields:
             self.assertIsInstance(ecsv.extcsv['GLOBAL'][field], list)
-            self.assertEquals(len(ecsv.extcsv['GLOBAL'][field]), 6)
+            self.assertEqual(len(ecsv.extcsv['GLOBAL'][field]), 6)
             for value in ecsv.extcsv['GLOBAL'][field]:
                 self.assertIsInstance(value, str)
 
@@ -445,7 +445,7 @@ class ParserTest(unittest.TestCase):
         schema = DOMAINS['Datasets']['Broad-band']['1.0']['1']
         version = ecsv.determine_version(schema)
 
-        self.assertEquals(version, '2')
+        self.assertEqual(version, '2')
         for param in schema[version]:
             if param != 'data_table':
                 self.assertIn(param, ecsv.extcsv)
@@ -459,7 +459,7 @@ class ParserTest(unittest.TestCase):
         schema = DOMAINS['Datasets']['Broad-band']['1.0']['1']
         version = ecsv.determine_version(schema)
 
-        self.assertEquals(version, '1')
+        self.assertEqual(version, '1')
         for param in schema[version]:
             if param != 'data_table':
                 self.assertIn(param, ecsv.extcsv)
@@ -478,20 +478,20 @@ class TimestampParsingTest(unittest.TestCase):
     def test_success(self):
         """ Test parsing valid timestamps """
 
-        self.assertEquals(self._parse_timestamp('00:00:00'), time(hour=0))
-        self.assertEquals(self._parse_timestamp('12:00:00'), time(hour=12))
+        self.assertEqual(self._parse_timestamp('00:00:00'), time(hour=0))
+        self.assertEqual(self._parse_timestamp('12:00:00'), time(hour=12))
 
-        self.assertEquals(self._parse_timestamp('21:30:00'),
-                          time(hour=21, minute=30))
-        self.assertEquals(self._parse_timestamp('16:00:45'),
-                          time(hour=16, second=45))
-        self.assertEquals(self._parse_timestamp('11:10:30'),
-                          time(hour=11, minute=10, second=30))
+        self.assertEqual(self._parse_timestamp('21:30:00'),
+                         time(hour=21, minute=30))
+        self.assertEqual(self._parse_timestamp('16:00:45'),
+                         time(hour=16, second=45))
+        self.assertEqual(self._parse_timestamp('11:10:30'),
+                         time(hour=11, minute=10, second=30))
 
-        self.assertEquals(self._parse_timestamp('0:30:00'),
-                          time(hour=0, minute=30))
-        self.assertEquals(self._parse_timestamp('9:15:00'),
-                          time(hour=9, minute=15))
+        self.assertEqual(self._parse_timestamp('0:30:00'),
+                         time(hour=0, minute=30))
+        self.assertEqual(self._parse_timestamp('9:15:00'),
+                         time(hour=9, minute=15))
 
     def test_invalid_parts(self):
         """ Test parsing timestamps fails with non-numeric characters """
@@ -514,51 +514,51 @@ class TimestampParsingTest(unittest.TestCase):
         invalid numeric values
         """
 
-        self.assertEquals(self._parse_timestamp('08:15:60'),
-                          time(hour=8, minute=16))
-        self.assertEquals(self._parse_timestamp('08:15:120'),
-                          time(hour=8, minute=17))
-        self.assertEquals(self._parse_timestamp('08:15:90'),
-                          time(hour=8, minute=16, second=30))
+        self.assertEqual(self._parse_timestamp('08:15:60'),
+                         time(hour=8, minute=16))
+        self.assertEqual(self._parse_timestamp('08:15:120'),
+                         time(hour=8, minute=17))
+        self.assertEqual(self._parse_timestamp('08:15:90'),
+                         time(hour=8, minute=16, second=30))
 
-        self.assertEquals(self._parse_timestamp('08:60:00'), time(hour=9))
-        self.assertEquals(self._parse_timestamp('08:75:00'),
-                          time(hour=9, minute=15))
-        self.assertEquals(self._parse_timestamp('08:120:00'), time(hour=10))
+        self.assertEqual(self._parse_timestamp('08:60:00'), time(hour=9))
+        self.assertEqual(self._parse_timestamp('08:75:00'),
+                         time(hour=9, minute=15))
+        self.assertEqual(self._parse_timestamp('08:120:00'), time(hour=10))
 
-        self.assertEquals(self._parse_timestamp('08:84:60'),
-                          time(hour=9, minute=25))
-        self.assertEquals(self._parse_timestamp('08:84:150'),
-                          time(hour=9, minute=26, second=30))
-        self.assertEquals(self._parse_timestamp('08:85:36001'),
-                          time(hour=19, minute=25, second=1))
+        self.assertEqual(self._parse_timestamp('08:84:60'),
+                         time(hour=9, minute=25))
+        self.assertEqual(self._parse_timestamp('08:84:150'),
+                         time(hour=9, minute=26, second=30))
+        self.assertEqual(self._parse_timestamp('08:85:36001'),
+                         time(hour=19, minute=25, second=1))
 
     def test_bad_separators(self):
         """ Test parsing timestamps with separators other than ':' """
 
-        self.assertEquals(self._parse_timestamp('01-30-00'),
-                          time(hour=1, minute=30))
-        self.assertEquals(self._parse_timestamp('01/30/00'),
-                          time(hour=1, minute=30))
+        self.assertEqual(self._parse_timestamp('01-30-00'),
+                         time(hour=1, minute=30))
+        self.assertEqual(self._parse_timestamp('01/30/00'),
+                         time(hour=1, minute=30))
 
-        self.assertEquals(self._parse_timestamp('01:30-00'),
-                          time(hour=1, minute=30))
-        self.assertEquals(self._parse_timestamp('01-30:00'),
-                          time(hour=1, minute=30))
+        self.assertEqual(self._parse_timestamp('01:30-00'),
+                         time(hour=1, minute=30))
+        self.assertEqual(self._parse_timestamp('01-30:00'),
+                         time(hour=1, minute=30))
 
     def test_12_hour_clock(self):
         """ Test parsing timestamps which use am/pm format """
 
-        self.assertEquals(self._parse_timestamp('01:00:00 am'), time(hour=1))
-        self.assertEquals(self._parse_timestamp('01:00:00 pm'), time(hour=13))
+        self.assertEqual(self._parse_timestamp('01:00:00 am'), time(hour=1))
+        self.assertEqual(self._parse_timestamp('01:00:00 pm'), time(hour=13))
 
-        self.assertEquals(self._parse_timestamp('05:30:00 am'),
-                          time(hour=5, minute=30))
-        self.assertEquals(self._parse_timestamp('05:30:00 pm'),
-                          time(hour=17, minute=30))
+        self.assertEqual(self._parse_timestamp('05:30:00 am'),
+                         time(hour=5, minute=30))
+        self.assertEqual(self._parse_timestamp('05:30:00 pm'),
+                         time(hour=17, minute=30))
 
-        self.assertEquals(self._parse_timestamp('12:00:00 am'), time(hour=0))
-        self.assertEquals(self._parse_timestamp('12:00:00 pm'), time(hour=12))
+        self.assertEqual(self._parse_timestamp('12:00:00 am'), time(hour=0))
+        self.assertEqual(self._parse_timestamp('12:00:00 pm'), time(hour=12))
 
 
 class DatestampParsingTest(unittest.TestCase):
@@ -574,19 +574,19 @@ class DatestampParsingTest(unittest.TestCase):
     def test_success(self):
         """ Test parsing valid dates """
 
-        self.assertEquals(self._parse_datestamp('2013-05-01'),
-                          date(year=2013, month=5, day=1))
-        self.assertEquals(self._parse_datestamp('1968-12-31'),
-                          date(year=1968, month=12, day=31))
+        self.assertEqual(self._parse_datestamp('2013-05-01'),
+                         date(year=2013, month=5, day=1))
+        self.assertEqual(self._parse_datestamp('1968-12-31'),
+                         date(year=1968, month=12, day=31))
 
-        self.assertEquals(self._parse_datestamp('1940-01-01'),
-                          date(year=1940, month=1, day=1))
-        self.assertEquals(self._parse_datestamp('2000-02-28'),
-                          date(year=2000, month=2, day=28))
+        self.assertEqual(self._parse_datestamp('1940-01-01'),
+                         date(year=1940, month=1, day=1))
+        self.assertEqual(self._parse_datestamp('2000-02-28'),
+                         date(year=2000, month=2, day=28))
 
         present = date.today()
-        self.assertEquals(self._parse_datestamp(present.strftime('%Y-%m-%d')),
-                          present)
+        self.assertEqual(self._parse_datestamp(present.strftime('%Y-%m-%d')),
+                         present)
 
     def test_invalid_parts(self):
         """ Test parsing dates fails with non-numeric characters """
@@ -621,17 +621,17 @@ class DatestampParsingTest(unittest.TestCase):
     def test_bad_separators(self):
         """ Test parsing dates with separators other than '-' """
 
-        self.assertEquals(self._parse_datestamp('2019/01/24'),
-                          date(year=2019, month=1, day=24))
-        self.assertEquals(self._parse_datestamp('2019:01:24'),
-                          date(year=2019, month=1, day=24))
+        self.assertEqual(self._parse_datestamp('2019/01/24'),
+                         date(year=2019, month=1, day=24))
+        self.assertEqual(self._parse_datestamp('2019:01:24'),
+                         date(year=2019, month=1, day=24))
 
-        self.assertEquals(self._parse_datestamp('2019:01/24'),
-                          date(year=2019, month=1, day=24))
-        self.assertEquals(self._parse_datestamp('2019-01/24'),
-                          date(year=2019, month=1, day=24))
-        self.assertEquals(self._parse_datestamp('2019:01-24'),
-                          date(year=2019, month=1, day=24))
+        self.assertEqual(self._parse_datestamp('2019:01/24'),
+                         date(year=2019, month=1, day=24))
+        self.assertEqual(self._parse_datestamp('2019-01/24'),
+                         date(year=2019, month=1, day=24))
+        self.assertEqual(self._parse_datestamp('2019:01-24'),
+                         date(year=2019, month=1, day=24))
 
     def test_number_of_parts(self):
         """ Test parsing dates with incorrect numbers of components """
@@ -673,30 +673,30 @@ class UTCOffsetParsingTest(unittest.TestCase):
         ]
 
         for candidate in candidates:
-            self.assertEquals(self._parse_offset(candidate), candidate)
+            self.assertEqual(self._parse_offset(candidate), candidate)
 
     def test_sign_variation(self):
         """ Test parsing UTC offsets with various signs (or lacks thereof) """
-        self.assertEquals(self._parse_offset('+05:30:00'), '+05:30:00')
-        self.assertEquals(self._parse_offset('05:30:00'), '+05:30:00')
+        self.assertEqual(self._parse_offset('+05:30:00'), '+05:30:00')
+        self.assertEqual(self._parse_offset('05:30:00'), '+05:30:00')
 
-        self.assertEquals(self._parse_offset('-08:00:00'), '-08:00:00')
+        self.assertEqual(self._parse_offset('-08:00:00'), '-08:00:00')
         # The case below occasionally shows up during backfilling.
-        self.assertEquals(self._parse_offset('+-08:00:00'), '-08:00:00')
+        self.assertEqual(self._parse_offset('+-08:00:00'), '-08:00:00')
 
-        self.assertEquals(self._parse_offset('+00:00:00'), '+00:00:00')
-        self.assertEquals(self._parse_offset('-00:00:00'), '+00:00:00')
-        self.assertEquals(self._parse_offset('00:00:00'), '+00:00:00')
+        self.assertEqual(self._parse_offset('+00:00:00'), '+00:00:00')
+        self.assertEqual(self._parse_offset('-00:00:00'), '+00:00:00')
+        self.assertEqual(self._parse_offset('00:00:00'), '+00:00:00')
 
     def test_missing_parts(self):
         """ Test parsing UTC offsets where not all parts are provided. """
 
-        self.assertEquals(self._parse_offset('+13:00:'), '+13:00:00')
-        self.assertEquals(self._parse_offset('+13::'), '+13:00:00')
-        self.assertEquals(self._parse_offset('+13::00'), '+13:00:00')
+        self.assertEqual(self._parse_offset('+13:00:'), '+13:00:00')
+        self.assertEqual(self._parse_offset('+13::'), '+13:00:00')
+        self.assertEqual(self._parse_offset('+13::00'), '+13:00:00')
 
-        self.assertEquals(self._parse_offset('-02:30:'), '-02:30:00')
-        self.assertEquals(self._parse_offset('-02::56'), '-02:00:56')
+        self.assertEqual(self._parse_offset('-02:30:'), '-02:30:00')
+        self.assertEqual(self._parse_offset('-02::56'), '-02:00:56')
 
         with self.assertRaises(ValueError):
             self._parse_offset(':00:00')
@@ -708,13 +708,13 @@ class UTCOffsetParsingTest(unittest.TestCase):
     def test_part_lengths(self):
         """ Test parsing UTC offsets where some parts are not 2 digits long """
 
-        self.assertEquals(self._parse_offset('+0:00:00'), '+00:00:00')
-        self.assertEquals(self._parse_offset('+8:00:00'), '+08:00:00')
-        self.assertEquals(self._parse_offset('-6:00:00'), '-06:00:00')
+        self.assertEqual(self._parse_offset('+0:00:00'), '+00:00:00')
+        self.assertEqual(self._parse_offset('+8:00:00'), '+08:00:00')
+        self.assertEqual(self._parse_offset('-6:00:00'), '-06:00:00')
 
-        self.assertEquals(self._parse_offset('+11:3:'), '+11:03:00')
-        self.assertEquals(self._parse_offset('-5:5:'), '-05:05:00')
-        self.assertEquals(self._parse_offset('-6:12:4'), '-06:12:04')
+        self.assertEqual(self._parse_offset('+11:3:'), '+11:03:00')
+        self.assertEqual(self._parse_offset('-5:5:'), '-05:05:00')
+        self.assertEqual(self._parse_offset('-6:12:4'), '-06:12:04')
 
         with self.assertRaises(ValueError):
             self._parse_offset('+001:00:00')
@@ -736,26 +736,26 @@ class UTCOffsetParsingTest(unittest.TestCase):
     def test_missing_separators(self):
         """ Test parsing UTC offsets where there are fewer than 3 parts """
 
-        self.assertEquals(self._parse_offset('-03:30'), '-03:30:00')
-        self.assertEquals(self._parse_offset('06:15'), '+06:15:00')
+        self.assertEqual(self._parse_offset('-03:30'), '-03:30:00')
+        self.assertEqual(self._parse_offset('06:15'), '+06:15:00')
 
-        self.assertEquals(self._parse_offset('-10'), '-10:00:00')
-        self.assertEquals(self._parse_offset('04'), '+04:00:00')
+        self.assertEqual(self._parse_offset('-10'), '-10:00:00')
+        self.assertEqual(self._parse_offset('04'), '+04:00:00')
 
-        self.assertEquals(self._parse_offset('+0'), '+00:00:00')
-        self.assertEquals(self._parse_offset('0'), '+00:00:00')
-        self.assertEquals(self._parse_offset('000000'), '+00:00:00')
-        self.assertEquals(self._parse_offset('-000000'), '+00:00:00')
+        self.assertEqual(self._parse_offset('+0'), '+00:00:00')
+        self.assertEqual(self._parse_offset('0'), '+00:00:00')
+        self.assertEqual(self._parse_offset('000000'), '+00:00:00')
+        self.assertEqual(self._parse_offset('-000000'), '+00:00:00')
 
     def test_bad_separators(self):
         """ Test parsing dates with separators other than '-' """
 
-        self.assertEquals(self._parse_offset('+02|45|00'), '+02:45:00')
-        self.assertEquals(self._parse_offset('+02/45/00'), '+02:45:00')
+        self.assertEqual(self._parse_offset('+02|45|00'), '+02:45:00')
+        self.assertEqual(self._parse_offset('+02/45/00'), '+02:45:00')
 
-        self.assertEquals(self._parse_offset('+02:45/00'), '+02:45:00')
-        self.assertEquals(self._parse_offset('+02|45:00'), '+02:45:00')
-        self.assertEquals(self._parse_offset('+02/45|00'), '+02:45:00')
+        self.assertEqual(self._parse_offset('+02:45/00'), '+02:45:00')
+        self.assertEqual(self._parse_offset('+02|45:00'), '+02:45:00')
+        self.assertEqual(self._parse_offset('+02/45|00'), '+02:45:00')
 
     def test_invalid_parts(self):
         """ Test parsing UTC offsets which contain non-numeric characters """
@@ -810,9 +810,9 @@ class DatasetValidationTest(unittest.TestCase):
         messages = validator.warnings + validator.errors
         date_column = ecsv.extcsv['DAILY']['Date']
 
-        self.assertEquals(len(messages), 1)
-        self.assertEquals(len(date_column), 15)
-        self.assertEquals(date_column, sorted(list(set(date_column))))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(len(date_column), 15)
+        self.assertEqual(date_column, sorted(list(set(date_column))))
 
         # Test a file with non-unique (and out-of-order) dates
         contents = util.read_file(resolve_test_data_path(
@@ -827,9 +827,9 @@ class DatasetValidationTest(unittest.TestCase):
         messages = validator.warnings + validator.errors
         date_column = ecsv.extcsv['DAILY']['Date']
 
-        self.assertEquals(len(messages), 5)
+        self.assertEqual(len(messages), 5)
         self.assertLessEqual(len(date_column), 16)
-        self.assertEquals(date_column, sorted(date_column))
+        self.assertEqual(date_column, sorted(date_column))
 
         # Test file where each TIMESTAMP.Date disagrees with the data table
         contents = util.read_file(resolve_test_data_path(
@@ -840,13 +840,13 @@ class DatasetValidationTest(unittest.TestCase):
 
         validator = dv.get_validator('TotalOzone')
         if validator.check_all(ecsv):
-            self.assertEquals(ecsv.extcsv['TIMESTAMP']['Date'],
-                              ecsv.extcsv['DAILY']['Date'][0])
-            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['Date'],
-                              ecsv.extcsv['DAILY']['Date'][-1])
+            self.assertEqual(ecsv.extcsv['TIMESTAMP']['Date'],
+                             ecsv.extcsv['DAILY']['Date'][0])
+            self.assertEqual(ecsv.extcsv['TIMESTAMP_2']['Date'],
+                             ecsv.extcsv['DAILY']['Date'][-1])
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 2)
+        self.assertEqual(len(messages), 2)
 
         # Test file where TIMESTAMP.Times do not match between tables
         contents = util.read_file(resolve_test_data_path(
@@ -859,7 +859,7 @@ class DatasetValidationTest(unittest.TestCase):
         validator.check_all(ecsv)
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 1)
+        self.assertEqual(len(messages), 1)
 
         # Test that missing second TIMESTAMP table is detected/filled in
         contents = util.read_file(resolve_test_data_path(
@@ -871,15 +871,15 @@ class DatasetValidationTest(unittest.TestCase):
         validator = dv.get_validator('TotalOzone')
         if validator.check_all(ecsv):
             self.assertIn('TIMESTAMP_2', ecsv.extcsv)
-            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['Date'],
-                              ecsv.extcsv['DAILY']['Date'][-1])
-            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['UTCOffset'],
-                              ecsv.extcsv['TIMESTAMP']['UTCOffset'])
-            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['Time'],
-                              ecsv.extcsv['TIMESTAMP']['Time'])
+            self.assertEqual(ecsv.extcsv['TIMESTAMP_2']['Date'],
+                             ecsv.extcsv['DAILY']['Date'][-1])
+            self.assertEqual(ecsv.extcsv['TIMESTAMP_2']['UTCOffset'],
+                             ecsv.extcsv['TIMESTAMP']['UTCOffset'])
+            self.assertEqual(ecsv.extcsv['TIMESTAMP_2']['Time'],
+                             ecsv.extcsv['TIMESTAMP']['Time'])
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 1)
+        self.assertEqual(len(messages), 1)
 
         # Test a file with no issues
         contents = util.read_file(resolve_test_data_path(
@@ -890,8 +890,8 @@ class DatasetValidationTest(unittest.TestCase):
 
         validator = dv.get_validator('TotalOzone')
         self.assertTrue(validator.check_all(ecsv))
-        self.assertEquals(len(validator.warnings), 0)
-        self.assertEquals(len(validator.errors), 0)
+        self.assertEqual(len(validator.warnings), 0)
+        self.assertEqual(len(validator.errors), 0)
 
     def test_totalozone_monthly_generation(self):
         """ Test derivation and checks related to TotalOzone MONTHLY table """
@@ -905,19 +905,19 @@ class DatasetValidationTest(unittest.TestCase):
         validator = dv.get_validator('TotalOzone')
         derived = validator.derive_monthly_from_daily(ecsv)
 
-        self.assertEquals(derived['Date'], ecsv.extcsv['TIMESTAMP']['Date'])
-        self.assertEquals(derived['ColumnO3'], 300)
-        self.assertEquals(derived['StdDevO3'], 0)
-        self.assertEquals(derived['Npts'], 15)
+        self.assertEqual(derived['Date'], ecsv.extcsv['TIMESTAMP']['Date'])
+        self.assertEqual(derived['ColumnO3'], 300)
+        self.assertEqual(derived['StdDevO3'], 0)
+        self.assertEqual(derived['Npts'], 15)
 
         # Check that incorrect MONTHLY in file is detected and fixed
         if validator.check_all(ecsv):
-            self.assertEquals(ecsv.extcsv['MONTHLY']['ColumnO3'], 300)
-            self.assertEquals(ecsv.extcsv['MONTHLY']['StdDevO3'], 0)
-            self.assertEquals(ecsv.extcsv['MONTHLY']['Npts'], 15)
+            self.assertEqual(ecsv.extcsv['MONTHLY']['ColumnO3'], 300)
+            self.assertEqual(ecsv.extcsv['MONTHLY']['StdDevO3'], 0)
+            self.assertEqual(ecsv.extcsv['MONTHLY']['Npts'], 15)
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 2)
+        self.assertEqual(len(messages), 2)
 
     def test_totalozoneobs_checks(self):
         """ Test that TotalOzoneObs checks produce expected warnings/errors """
@@ -933,11 +933,11 @@ class DatasetValidationTest(unittest.TestCase):
         validator.check_all(ecsv)
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 1)
+        self.assertEqual(len(messages), 1)
 
         time_column = ecsv.extcsv['OBSERVATIONS']['Time']
-        self.assertEquals(len(time_column), 32)
-        self.assertEquals(time_column, sorted(list(set(time_column))))
+        self.assertEqual(len(time_column), 32)
+        self.assertEqual(time_column, sorted(list(set(time_column))))
 
         # Test that duplicated observation times are removed
         contents = util.read_file(resolve_test_data_path(
@@ -950,11 +950,11 @@ class DatasetValidationTest(unittest.TestCase):
         validator.check_all(ecsv)
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 5)
+        self.assertEqual(len(messages), 5)
 
         time_column = ecsv.extcsv['OBSERVATIONS']['Time']
         self.assertLessEqual(len(time_column), 33)
-        self.assertEquals(time_column, sorted(time_column))
+        self.assertEqual(time_column, sorted(time_column))
 
         # Test that no warnings/errors show up for a correct file
         contents = util.read_file(resolve_test_data_path(
@@ -965,8 +965,8 @@ class DatasetValidationTest(unittest.TestCase):
 
         validator = dv.get_validator('TotalOzoneObs')
         self.assertTrue(validator.check_all(ecsv))
-        self.assertEquals(len(validator.warnings), 0)
-        self.assertEquals(len(validator.errors), 0)
+        self.assertEqual(len(validator.warnings), 0)
+        self.assertEqual(len(validator.errors), 0)
 
     def test_spectral_checks(self):
         """ Test that Spectral checks produce warnings/errors when expected """
@@ -982,7 +982,7 @@ class DatasetValidationTest(unittest.TestCase):
         validator.check_all(ecsv)
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 1)
+        self.assertEqual(len(messages), 1)
 
         # Refresh and test again with a different file, still with extra tables
         validator = dv.get_validator('Spectral')
@@ -995,7 +995,7 @@ class DatasetValidationTest(unittest.TestCase):
 
         validator.check_all(ecsv)
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 1)
+        self.assertEqual(len(messages), 1)
 
         # Refresh and test again with all tables having different counts
         contents = util.read_file(resolve_test_data_path(
@@ -1008,7 +1008,7 @@ class DatasetValidationTest(unittest.TestCase):
         validator.check_all(ecsv)
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 1)
+        self.assertEqual(len(messages), 1)
 
         # Refresh and test again with a good file
         contents = util.read_file(resolve_test_data_path(
@@ -1021,7 +1021,7 @@ class DatasetValidationTest(unittest.TestCase):
         validator.check_all(ecsv)
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 0)
+        self.assertEqual(len(messages), 0)
 
     def test_lidar_checks(self):
         """ Test that Lidar checks produce warnings/errors when expected """
@@ -1037,7 +1037,7 @@ class DatasetValidationTest(unittest.TestCase):
         validator.check_all(ecsv)
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 1)
+        self.assertEqual(len(messages), 1)
 
         # Refresh and test again with a different file with an extra table
         contents = util.read_file(resolve_test_data_path(
@@ -1050,7 +1050,7 @@ class DatasetValidationTest(unittest.TestCase):
         validator.check_all(ecsv)
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 1)
+        self.assertEqual(len(messages), 1)
 
         # Refresh and test again with a third correct file
         contents = util.read_file(resolve_test_data_path(
@@ -1063,7 +1063,7 @@ class DatasetValidationTest(unittest.TestCase):
         validator.check_all(ecsv)
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 0)
+        self.assertEqual(len(messages), 0)
 
     def _helper_test_umkehr(self, level):
         """
@@ -1091,9 +1091,9 @@ class DatasetValidationTest(unittest.TestCase):
         messages = validator.warnings + validator.errors
         date_column = ecsv.extcsv[data_table]['Date']
 
-        self.assertEquals(len(messages), 1)
-        self.assertEquals(len(date_column), 13)
-        self.assertEquals(date_column, sorted(list(set(date_column))))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(len(date_column), 13)
+        self.assertEqual(date_column, sorted(list(set(date_column))))
 
         # Test a file with non-unique (and out-of-order) dates
         contents = util.read_file(resolve_test_data_path(
@@ -1108,9 +1108,9 @@ class DatasetValidationTest(unittest.TestCase):
         messages = validator.warnings + validator.errors
         date_column = ecsv.extcsv[data_table]['Date']
 
-        self.assertEquals(len(messages), 5)
+        self.assertEqual(len(messages), 5)
         self.assertLessEqual(len(date_column), 14)
-        self.assertEquals(date_column, sorted(date_column))
+        self.assertEqual(date_column, sorted(date_column))
 
         # Test file where each TIMESTAMP.Date disagrees with the data table
         contents = util.read_file(resolve_test_data_path(
@@ -1121,13 +1121,13 @@ class DatasetValidationTest(unittest.TestCase):
 
         validator = dv.get_validator('UmkehrN14')
         if validator.check_all(ecsv):
-            self.assertEquals(ecsv.extcsv['TIMESTAMP']['Date'],
-                              ecsv.extcsv[data_table]['Date'][0])
-            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['Date'],
-                              ecsv.extcsv[data_table]['Date'][-1])
+            self.assertEqual(ecsv.extcsv['TIMESTAMP']['Date'],
+                             ecsv.extcsv[data_table]['Date'][0])
+            self.assertEqual(ecsv.extcsv['TIMESTAMP_2']['Date'],
+                             ecsv.extcsv[data_table]['Date'][-1])
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 2)
+        self.assertEqual(len(messages), 2)
 
         # Test file where TIMESTAMP.Times do not match between tables
         contents = util.read_file(resolve_test_data_path(
@@ -1140,7 +1140,7 @@ class DatasetValidationTest(unittest.TestCase):
         validator.check_all(ecsv)
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 1)
+        self.assertEqual(len(messages), 1)
 
         # Test that missing second TIMESTAMP table is detected/filled in
         contents = util.read_file(resolve_test_data_path(
@@ -1152,15 +1152,15 @@ class DatasetValidationTest(unittest.TestCase):
         validator = dv.get_validator('UmkehrN14')
         if validator.check_all(ecsv):
             self.assertIn('TIMESTAMP_2', ecsv.extcsv)
-            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['Date'],
-                              ecsv.extcsv[data_table]['Date'][-1])
-            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['UTCOffset'],
-                              ecsv.extcsv['TIMESTAMP']['UTCOffset'])
-            self.assertEquals(ecsv.extcsv['TIMESTAMP_2']['Time'],
-                              ecsv.extcsv['TIMESTAMP']['Time'])
+            self.assertEqual(ecsv.extcsv['TIMESTAMP_2']['Date'],
+                             ecsv.extcsv[data_table]['Date'][-1])
+            self.assertEqual(ecsv.extcsv['TIMESTAMP_2']['UTCOffset'],
+                             ecsv.extcsv['TIMESTAMP']['UTCOffset'])
+            self.assertEqual(ecsv.extcsv['TIMESTAMP_2']['Time'],
+                             ecsv.extcsv['TIMESTAMP']['Time'])
 
         messages = validator.warnings + validator.errors
-        self.assertEquals(len(messages), 1)
+        self.assertEqual(len(messages), 1)
 
         # Test a file with no issues
         contents = util.read_file(resolve_test_data_path(
@@ -1171,8 +1171,8 @@ class DatasetValidationTest(unittest.TestCase):
 
         validator = dv.get_validator('UmkehrN14')
         self.assertTrue(validator.check_all(ecsv))
-        self.assertEquals(len(validator.warnings), 0)
-        self.assertEquals(len(validator.errors), 0)
+        self.assertEqual(len(validator.warnings), 0)
+        self.assertEqual(len(validator.errors), 0)
 
     def test_umkehr_level1_checks(self):
         """ Test that expected warnings/errors are found in Umkehr Level 1 """

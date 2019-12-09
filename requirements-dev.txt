@@ -1,6 +1,5 @@
 alembic
 coverage
-docutils
 flake8
-pypandoc
+sphinx
 wheel
