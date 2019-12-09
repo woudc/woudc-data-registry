@@ -444,6 +444,11 @@ class SearchIndex(object):
         :returns: Whether the operation was successful.
         """
 
+        if not MAPPINGS[domain.__tablename__]['enabled']:
+            msg = '{} index is currently frozen'.format(domain.__tablename__)
+            LOGGER.warning(msg)
+            return False
+
         index = MAPPINGS[domain.__tablename__]['index']
 
         if isinstance(target, dict):
@@ -484,6 +489,11 @@ class SearchIndex(object):
         :param target: GeoJSON dictionary of model data or a list of them.
         :returns: Whether the operation was successful.
         """
+
+        if not MAPPINGS[domain.__tablename__]['enabled']:
+            msg = '{} index is currently frozen'.format(domain.__tablename__)
+            LOGGER.warning(msg)
+            return False
 
         index = MAPPINGS[domain.__tablename__]['index']
 

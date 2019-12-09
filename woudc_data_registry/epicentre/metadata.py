@@ -47,7 +47,8 @@ from datetime import date
 import logging
 
 from woudc_data_registry import registry, search
-from woudc_data_registry.models import Contributor, Country, StationName
+from woudc_data_registry.models import Contributor, Country, \
+                                       Station, StationName
 from woudc_data_registry.util import is_plural
 
 LOGGER = logging.getLogger(__name__)
@@ -208,10 +209,16 @@ def delete_metadata(entity, identifier, psql=True, es=True):
     LOGGER.debug('Updating metadata entity {}, identifier {}'.format(
         entity, identifier))
 
-    if psql:
-        prop = getattr(entity, entity.id_field)
-        REGISTRY.session.query(entity).filter(prop == identifier).delete()
+    prop = getattr(entity, entity.id_field)
+    REGISTRY.session.query(entity).filter(prop == identifier).delete()
 
+    if entity == Station:
+        print(identifier)
+        REGISTRY.session.query(StationName) \
+                        .filter(StationName.station_id == identifier) \
+                        .delete()
+
+    if psql:
         REGISTRY.save()
     if es:
         SEARCH_INDEX.unindex(entity, identifier)
