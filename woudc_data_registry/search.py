@@ -528,6 +528,33 @@ class SearchIndex(object):
 
         return True
 
+    def retain(self, domain, targets):
+        """
+        Deletes all documents from the index associated with <domain>
+        that have no matching identifier in <targets>
+
+        :param domain: A model class that all entries in <target> belong to.
+        :param target: List of GeoJSON model data.
+        :returns: Whether the operation was successful.
+        """
+
+        index = MAPPINGS[domain.__tablename__]['index']
+        ids = [document['id'] for document in targets]
+
+        query = {
+            'query': {
+                'bool': {
+                    'mustNot': {
+                        'ids': {
+                            'values': ids
+                        }
+                    }
+                }
+            }
+        }
+
+        self.connection.delete_by_query(index, query)
+
 
 class SearchIndexError(Exception):
     """custom exception handler"""
