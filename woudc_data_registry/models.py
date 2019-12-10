@@ -876,7 +876,9 @@ def teardown(ctx):
 @click.option('--datadir', '-d',
               type=click.Path(exists=True, resolve_path=True),
               help='Path to core metadata files')
-def init(ctx, datadir):
+@click.option('--init-es', is_flag=True,
+              help='Causes records to be indexed to ES')
+def init(ctx, datadir, init_es):
     """initialize core system metadata"""
 
     import os
@@ -893,47 +895,55 @@ def init(ctx, datadir):
     datasets = os.path.join(datadir, 'datasets.csv')
     projects = os.path.join(datadir, 'projects.csv')
     instruments = os.path.join(datadir, 'instruments.csv')
+    deployments = os.path.join(datadir, 'deployments.csv')
 
-    registry_ = registry.Registry()
+    psql = registry.Registry()
+
+    project_models = []
+    dataset_models = []
+    country_models = []
+    contributor_models = []
+    station_models = []
+    station_name_models = []
+    instrument_models = []
+    deployment_models = []
 
     click.echo('Loading countries metadata')
     with open(wmo_countries) as jsonfile:
         countries_data = json.load(jsonfile)
         for row in countries_data['countries']:
             country_data = countries_data['countries'][row]
-            if country_data['id'] == 'NUL':
-                continue
-            country = Country(country_data)
-            registry_.save(country)
+            if country_data['id'] != 'NUL':
+                country = Country(country_data)
+                country_models.append(country)
     with open(countries) as jsonfile:
         countries_data = json.load(jsonfile)
         for row in countries_data:
             country_data = countries_data[row]
             if country_data['id'] == 'NUL':
-                continue
-            country = Country(country_data)
-            registry_.save(country)
+                country = Country(country_data)
+                country_models.append(country)
 
     click.echo('Loading datasets metadata')
     with open(datasets) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             dataset = Dataset(row)
-            registry_.save(dataset)
+            dataset_models.append(dataset)
 
     click.echo('Loading projects metadata')
     with open(projects) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             project = Project(row)
-            registry_.save(project)
+            project_models.append(project)
 
     click.echo('Loading contributors metadata')
     with open(contributors) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             contributor = Contributor(row)
-            registry_.save(contributor)
+            contributor_models.append(contributor)
 
     click.echo('Loading stations metadata')
     with open(station_names) as csvfile:
@@ -944,13 +954,13 @@ def init(ctx, datadir):
                 if obj[field] == '':
                     obj[field] = None
             station_name = StationName(obj)
-            registry_.save(station_name)
+            station_name_models.append(station_name)
 
     with open(stations) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             station = Station(row)
-            registry_.save(station)
+            station_models.append(station)
     with open(ships) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -958,14 +968,76 @@ def init(ctx, datadir):
                 if row[field] == '':
                     row[field] = None
             ship = Station(row)
-            registry_.save(ship)
+            station_name_models.append(ship)
 
     click.echo('Loading instruments metadata')
     with open(instruments) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             instrument = Instrument(row)
-            registry_.save(instrument)
+            instrument_models.append(instrument)
+
+    click.echo('Loading deployments metadata')
+    with open(deployments) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            deployment = Deployment(row)
+            deployment_models.append(deployment)
+
+    click.echo('Storing projects in data registry')
+    for model in project_models:
+        psql.save(model)
+    click.echo('Storing datasets in data registry')
+    for model in dataset_models:
+        psql.save(model)
+    click.echo('Storing countrys in data registry')
+    for model in country_models:
+        psql.save(model)
+    click.echo('Storing contributors in data registry')
+    for model in contributor_models:
+        psql.save(model)
+    click.echo('Storing station names in data registry')
+    for model in station_name_models:
+        psql.save(model)
+    click.echo('Storing stations in data registry')
+    for model in dataset_models:
+        psql.save(model)
+    click.echo('Storing instruments in data registry')
+    for model in instrument_models:
+        psql.save(model)
+    click.echo('Storing deployment records in data registry')
+    for model in dataset_models:
+        psql.save(model)
+
+    if init_es:
+        es = SearchIndex()
+
+        project_docs = [model.__geo_interface__ for model in project_models]
+        dataset_docs = [model.__geo_interface__ for model in dataset_models]
+        country_docs = [model.__geo_interface__ for model in country_models]
+        station_docs = [model.__geo_interface__ for model in station_models]
+
+        contributor_docs = \
+            [model.__geo_interface__ for model in contributor_models]
+        instrument_docs = \
+            [model.__geo_interface__ for model in instrument_models]
+        deployment_docs = \
+            [model.__geo_interface__ for model in deployment_models]
+
+        click.echo('Indexing projects in search index')
+        es.index(Project, project_docs)
+        click.echo('Indexing datasets in search index')
+        es.index(Dataset, dataset_docs)
+        click.echo('Indexing countries in search index')
+        es.index(Country, country_docs)
+        click.echo('Indexing contributors in search index')
+        es.index(Contributor, contributor_docs)
+        click.echo('Indexing stations in search index')
+        es.index(Station, station_docs)
+        click.echo('Indexing instruments in search index')
+        es.index(Instrument, instrument_docs)
+        click.echo('Indexing deployments in search index')
+        es.index(Deployment, deployment_docs)
 
 
 @click.command('sync')
