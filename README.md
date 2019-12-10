@@ -89,26 +89,30 @@ eval "$(_WOUDC_DATA_REGISTRY_COMPLETE=source woudc-data-registry)"
 #### Core Metadata Management
 
 ```bash
-# list all projects
-woudc-data-registry project list
+# list all instances of foo (where foo is one of:
+#  project|dataset|contributor|country|station|instrument|deployment)
+woudc-data-registry <foo> list
 
-# list all datasets
-woudc-data-registry dataset list
+# show a specific instance of foo with a given registry identifier
+woudc-data-registry <foo> show <identifier>
 
-# list all contributors
-woudc-data-registry contributor list
+# add a new instance of foo (contributor|country|station|instrument|deployment)
+woudc-data-registry <foo> add <options>
 
-# show a single contributor details
-woudc-data-registry contributor show MSC
-
-# add a contributor
+# for example:
 woudc-data-registry contributor add -id foo -n "Contributor name" -c Canada -w IV -u https://example.org -e you@example.org -f foouser -g -75,45
 
-# update a contributor
-woudc-data-registry contributor update -id foo -n "New Contributor name"
+# update an existing instance of foo with a given registry identifier
+woudc-data-registry <foo> update -id <identifier> <options>
 
-# delete a contributor
-woudc-data-registry contributor delete foo
+# for example:
+woudc-data-registry station update -n "New station name"
+
+# delete an instance of foo with a given registry identifier
+woudc-data-registry <foo> delete <identifier>
+
+# for more information about options on operation (add|update):
+woudc-data-registry <foo> <operation> --help
 ```
 
 #### Data Processing
@@ -118,16 +122,22 @@ woudc-data-registry contributor delete foo
 woudc-data-registry data ingest -d /path/to/dir
 
 # ingest single file
-woudc-data-registry data ingest -f foo.dat -b
+woudc-data-registry data ingest -f foo.dat
 
-# ingest without asking for permissions
-woudc-data-registry data ingest -d /path/to/dir -b
+# ingest without asking permission checks
+woudc-data-registry data ingest -f foo.dat -y
 
 # verify directory of files (walks directory recursively)
 woudc-data-registry data verify -d /path/to/dir
 
 # verify single file
 woudc-data-registry data verify -f foo.dat
+
+# verify core metadata only
+woudc-data-registry data verify -f foo.dat -l
+
+# ingest with only core metadata checks
+woudc-data-registry data ingest -d /path/to/dir -l
 ```
 
 ### Development
