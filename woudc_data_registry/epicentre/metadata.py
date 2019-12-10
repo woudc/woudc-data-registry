@@ -47,8 +47,8 @@ from datetime import date
 import logging
 
 from woudc_data_registry import registry, search
-from woudc_data_registry.models import Contributor, Country, \
-                                       Station, StationName
+from woudc_data_registry.models import (Contributor, Country,
+    Station, StationName)
 from woudc_data_registry.util import is_plural
 
 LOGGER = logging.getLogger(__name__)
