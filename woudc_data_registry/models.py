@@ -876,9 +876,9 @@ def teardown(ctx):
 @click.option('--datadir', '-d',
               type=click.Path(exists=True, resolve_path=True),
               help='Path to core metadata files')
-@click.option('--init-es', is_flag=True,
-              help='Causes records to be indexed to ES')
-def init(ctx, datadir, init_es):
+@click.option('--init-search-index', is_flag=True,
+              help='Causes records to be stored in the search index as well')
+def init(ctx, datadir, init_search_index):
     """initialize core system metadata"""
 
     import os
@@ -897,7 +897,7 @@ def init(ctx, datadir, init_es):
     instruments = os.path.join(datadir, 'instruments.csv')
     deployments = os.path.join(datadir, 'deployments.csv')
 
-    psql = registry.Registry()
+    registry_ = registry.Registry()
 
     project_models = []
     dataset_models = []
@@ -986,31 +986,31 @@ def init(ctx, datadir, init_es):
 
     click.echo('Storing projects in data registry')
     for model in project_models:
-        psql.save(model)
+        registry_.save(model)
     click.echo('Storing datasets in data registry')
     for model in dataset_models:
-        psql.save(model)
+        registry_.save(model)
     click.echo('Storing countrys in data registry')
     for model in country_models:
-        psql.save(model)
+        registry_.save(model)
     click.echo('Storing contributors in data registry')
     for model in contributor_models:
-        psql.save(model)
+        registry_.save(model)
     click.echo('Storing station names in data registry')
     for model in station_name_models:
-        psql.save(model)
+        registry_.save(model)
     click.echo('Storing stations in data registry')
     for model in dataset_models:
-        psql.save(model)
+        registry_.save(model)
     click.echo('Storing instruments in data registry')
     for model in instrument_models:
-        psql.save(model)
+        registry_.save(model)
     click.echo('Storing deployment records in data registry')
     for model in dataset_models:
-        psql.save(model)
+        registry_.save(model)
 
-    if init_es:
-        es = SearchIndex()
+    if init_search_index:
+        search_index = SearchIndex()
 
         project_docs = [model.__geo_interface__ for model in project_models]
         dataset_docs = [model.__geo_interface__ for model in dataset_models]
@@ -1024,20 +1024,20 @@ def init(ctx, datadir, init_es):
         deployment_docs = \
             [model.__geo_interface__ for model in deployment_models]
 
-        click.echo('Indexing projects in search index')
-        es.index(Project, project_docs)
-        click.echo('Indexing datasets in search index')
-        es.index(Dataset, dataset_docs)
-        click.echo('Indexing countries in search index')
-        es.index(Country, country_docs)
-        click.echo('Indexing contributors in search index')
-        es.index(Contributor, contributor_docs)
-        click.echo('Indexing stations in search index')
-        es.index(Station, station_docs)
-        click.echo('Indexing instruments in search index')
-        es.index(Instrument, instrument_docs)
-        click.echo('Indexing deployments in search index')
-        es.index(Deployment, deployment_docs)
+        click.echo('Storing projects in search index')
+        search_index.index(Project, project_docs)
+        click.echo('Storing datasets in search index')
+        search_index.index(Dataset, dataset_docs)
+        click.echo('Storing countries in search index')
+        search_index.index(Country, country_docs)
+        click.echo('Storing contributors in search index')
+        search_index.index(Contributor, contributor_docs)
+        click.echo('Storing stations in search index')
+        search_index.index(Station, station_docs)
+        click.echo('Storing instruments in search index')
+        search_index.index(Instrument, instrument_docs)
+        click.echo('Storing deployments in search index')
+        search_index.index(Deployment, deployment_docs)
 
 
 @click.command('sync')
@@ -1056,8 +1056,8 @@ def sync(ctx):
         DataRecord
     ]
 
-    psql = registry.Registry()
-    es = SearchIndex()
+    registry_ = registry.Registry()
+    search_index = SearchIndex()
 
     click.echo('Begin data registry backend sync on ', nl=False)
     for clazz in model_classes:
@@ -1066,13 +1066,13 @@ def sync(ctx):
 
         click.echo('{}...'.format(plural_caps))
 
-        registry_contents = psql.query_full_index(clazz)
+        registry_contents = registry_.query_full_index(clazz)
         registry_docs = [obj.__geo_interface__ for obj in registry_contents]
 
-        click.echo('Indexing documents...')
-        es.index(clazz, registry_docs)
-        click.echo('Purging excess documents...')
-        es.retain(clazz, registry_docs)
+        click.echo('Sending models to search index...')
+        search_index.index(clazz, registry_docs)
+        click.echo('Purging excess models...')
+        search_index.retain(clazz, registry_docs)
 
     click.echo('Done')
 
