@@ -58,7 +58,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
 from woudc_data_registry import registry
-from woudc_data_registry.search import search
+from woudc_data_registry.search import SearchIndex, search
 from woudc_data_registry.util import point2geojsongeometry
 
 base = declarative_base()
@@ -699,6 +699,7 @@ class DataRecord(base):
             return self._instrument_number
         else:
             return self.instrument.serial
+
     def generate_ids(self):
         """Builds and sets class ID fields from other attributes"""
 
@@ -773,7 +774,8 @@ class DataRecord(base):
 
                 'timestamp_utcoffset': self.timestamp_utcoffset,
                 'timestamp_date': self.timestamp_date,
-                'timestamp_time': self.timestamp_time,
+                'timestamp_time': None if self.timestamp_time is None
+                                  else self.timestamp_time.isoformat(),
 
                 'published': self.published,
                 'received_datetime': self.received_datetime,
@@ -965,6 +967,45 @@ def init(ctx, datadir):
             instrument = Instrument(row)
             registry_.save(instrument)
 
+
+@click.command('sync')
+@click.pass_context
+def sync(ctx):
+    """ sync search index with data registry """
+
+    model_classes = [
+        Project,
+        Dataset,
+        Country,
+        Contributor,
+        Station,
+        Instrument,
+        Deployment,
+        DataRecord
+    ]
+
+    psql = registry.Registry()
+    es = SearchIndex()
+
+    click.echo('Begin data registry backend sync on ', nl=False)
+    for clazz in model_classes:
+        plural_name = clazz.__tablename__
+        plural_caps = ''.join(map(str.capitalize, plural_name.split('_')))
+
+        click.echo('{}...'.format(plural_caps))
+
+        registry_contents = psql.query_full_index(clazz)
+        registry_docs = [obj.__geo_interface__ for obj in registry_contents]
+
+        click.echo('Indexing documents...')
+        es.index(clazz, registry_docs)
+        click.echo('Purging excess documents...')
+        es.retain(clazz, registry_docs)
+
+    click.echo('Done')
+
+
+search.add_command(sync)
 
 admin.add_command(setup)
 admin.add_command(teardown)

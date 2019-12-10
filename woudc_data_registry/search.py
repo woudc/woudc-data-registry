@@ -43,16 +43,14 @@
 #
 # =================================================================
 
-import json
 import logging
 from urllib.parse import urlparse
 
 import click
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, helpers
 from elasticsearch.exceptions import (ConnectionError, NotFoundError,
                                       RequestError)
 from woudc_data_registry import config
-from woudc_data_registry.util import json_serial
 
 LOGGER = logging.getLogger(__name__)
 
@@ -64,13 +62,21 @@ typedefs = {
 }
 
 MAPPINGS = {
+    'projects': {
+        'index': 'woudc-data-registry.project',
+        'enabled': False
+    },
+    'datasets': {
+        'index': 'woudc-data-registry.dataset',
+        'enabled': False,
+    },
     'countries': {
         'index': 'woudc-data-registry.country',
         'enabled': False,
         'properties': {
             'country_code': {
                 'type': 'text',
-               'fields': {'keyword': typedefs['keyword']}
+                'fields': {'keyword': typedefs['keyword']}
             },
             'country_name_en': {
                 'type': 'text',
@@ -459,16 +465,16 @@ class SearchIndex(object):
             }
 
             LOGGER.debug('Indexing 1 document into {}'.format(index))
-            response = self.connection.update(index=index, id=target['id'],
-                                              doc_type='FeatureCollection',
-                                              body=wrapper)
+            self.connection.update(index=index, id=target['id'],
+                                   doc_type='FeatureCollection',
+                                   body=wrapper)
 
         else:
             # Index/update multiple documents using bulk API.
             wrapper = [{
                 '_op_type': 'update',
                 '_index': index,
-                '_type': document['type'],
+                '_type': 'FeatureCollection',
                 '_id': document['id'],
                 'doc': document,
                 'doc_as_upsert': True
@@ -538,6 +544,11 @@ class SearchIndex(object):
         :returns: Whether the operation was successful.
         """
 
+        if not MAPPINGS[domain.__tablename__]['enabled']:
+            msg = '{} index is currently frozen'.format(domain.__tablename__)
+            LOGGER.warning(msg)
+            return False
+
         index = MAPPINGS[domain.__tablename__]['index']
         ids = [document['id'] for document in targets]
 
@@ -554,6 +565,7 @@ class SearchIndex(object):
         }
 
         self.connection.delete_by_query(index, query)
+        return True
 
 
 class SearchIndexError(Exception):

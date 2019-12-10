@@ -66,6 +66,19 @@ class Registry(object):
         Session = sessionmaker(bind=engine, expire_on_commit=False)
         self.session = Session()
 
+    def query_full_index(self, domain):
+        """
+        Queries for the entire contents of the index of model class <domain>.
+
+        :param domain: A model class.
+        :returns: List of all objects of that class in the registry.
+        """
+
+        LOGGER.debug('Querying all records for {}'.format(domain))
+        values = self.session.query(domain).all()
+
+        return values
+
     def query_distinct(self, domain):
         """
         queries for distinct values
