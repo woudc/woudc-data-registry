@@ -366,6 +366,8 @@ class Station(base):
             .format(self.station_id, dict_['station_name'])
         self.station_type = dict_['station_type']
 
+        self._name = dict_['station_name']
+
         if dict_['gaw_id'] != '':
             self.gaw_id = dict_['gaw_id']
 
@@ -376,6 +378,13 @@ class Station(base):
         self.x = dict_['x']
         self.y = dict_['y']
         self.z = dict_['z']
+
+    @property
+    def name(self):
+        if hasattr(self, '_name'):
+            return self._name
+        else:
+            return self.station_name.name
 
     @property
     def __geo_interface__(self):
@@ -587,6 +596,7 @@ class DataRecord(base):
     es_id = Column(String, nullable=False)
 
     # Relationships
+    station = relationship('Station', backref=__tablename__)
     instrument = relationship('Instrument', backref=__tablename__)
 
     def __init__(self, ecsv):
@@ -606,15 +616,15 @@ class DataRecord(base):
             self.data_generation_scientific_authority = \
                 ecsv.extcsv['DATA_GENERATION']['ScientificAuthority']
 
-        self.platform_type = ecsv.extcsv['PLATFORM']['Type']
-        self.platform_name = ecsv.extcsv['PLATFORM']['Name']
-        self.platform_country = ecsv.extcsv['PLATFORM']['Country']
-        self.platform_gaw_id = ecsv.extcsv['PLATFORM'].get('GAW_ID', None)
+        self._platform_type = ecsv.extcsv['PLATFORM']['Type']
+        self._platform_name = ecsv.extcsv['PLATFORM']['Name']
+        self._platform_country = ecsv.extcsv['PLATFORM']['Country']
+        self._platform_gaw_id = ecsv.extcsv['PLATFORM'].get('GAW_ID', None)
         self.station_id = str(ecsv.extcsv['PLATFORM']['ID'])
 
-        self.instrument_name = ecsv.extcsv['INSTRUMENT']['Name']
-        self.instrument_model = str(ecsv.extcsv['INSTRUMENT']['Model'])
-        self.instrument_number = str(ecsv.extcsv['INSTRUMENT']['Number'])
+        self._instrument_name = ecsv.extcsv['INSTRUMENT']['Name']
+        self._instrument_model = str(ecsv.extcsv['INSTRUMENT']['Model'])
+        self._instrument_number = str(ecsv.extcsv['INSTRUMENT']['Number'])
         self.instrument_id = ':'.join([
             self.instrument_name,
             self.instrument_model,
@@ -641,6 +651,54 @@ class DataRecord(base):
         self.filename = 'TODO'
         self.url = 'TODO'
 
+    @property
+    def platform_type(self):
+        if hasattr(self, '_platform_type'):
+            return self._platform_type
+        else:
+            return self.station.station_type
+
+    @property
+    def platform_name(self):
+        if hasattr(self, '_platform_name'):
+            return self._platform_name
+        else:
+            return self.station.name
+
+    @property
+    def platform_country(self):
+        if hasattr(self, '_platform_country'):
+            return self._platform_country
+        else:
+            return self.station.country_id
+
+    @property
+    def platform_gaw_id(self):
+        if hasattr(self, '_platform_gaw_id'):
+            return self._platform_gaw_id
+        else:
+            return self.station.gaw_id
+
+    @property
+    def instrument_name(self):
+        if hasattr(self, '_instrument_name'):
+            return self._instrument_name
+        else:
+            return self.instrument.name
+
+    @property
+    def instrument_model(self):
+        if hasattr(self, '_instrument_model'):
+            return self._instrument_model
+        else:
+            return self.instrument.model
+
+    @property
+    def instrument_number(self):
+        if hasattr(self, '_instrument_number'):
+            return self._instrument_number
+        else:
+            return self.instrument.serial
     def generate_ids(self):
         """Builds and sets class ID fields from other attributes"""
 
