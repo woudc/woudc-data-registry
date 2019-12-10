@@ -64,15 +64,15 @@ typedefs = {
 MAPPINGS = {
     'projects': {
         'index': 'woudc-data-registry.project',
-        'enabled': False
+        'enabled': True
     },
     'datasets': {
         'index': 'woudc-data-registry.dataset',
-        'enabled': False,
+        'enabled': True
     },
     'countries': {
         'index': 'woudc-data-registry.country',
-        'enabled': False,
+        'enabled': True,
         'properties': {
             'country_code': {
                 'type': 'text',
@@ -203,7 +203,7 @@ MAPPINGS = {
     },
     'deployments': {
         'index': 'woudc-data-registry.deployment',
-        'enabled': False,
+        'enabled': True,
         'properties': {
             'station_id': {
                 'type': 'text',
