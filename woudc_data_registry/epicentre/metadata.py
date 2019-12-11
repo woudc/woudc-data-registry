@@ -89,14 +89,14 @@ def get_metadata(entity, identifier=None):
     return res
 
 
-def add_metadata(entity, dict_, registry=True, search_index=True):
+def add_metadata(entity, dict_, save_to_registry=True, save_to_index=True):
     """
     Add a metadata object
 
     :param entity: A model class.
     :param dict_: Dictionary of model data to initialize the object.
-    :param registry: Whether to load object to the data registry.
-    :param search_index: Whether to load object to the search index.
+    :param save_to_registry: Whether to load object to the data registry.
+    :param save_to_index: Whether to load object to the search index.
     :returns: The model object created.
     """
 
@@ -134,24 +134,24 @@ def add_metadata(entity, dict_, registry=True, search_index=True):
             }, es=False)
 
     c = entity(dict_)
-    if registry:
+    if save_to_registry:
         REGISTRY.save(c)
-    if search_index:
+    if save_to_search_index:
         SEARCH_INDEX.index(entity, c.__geo_interface__)
 
     return c
 
 
 def update_metadata(entity, identifier, dict_,
-                    registry=True, search_index=True):
+                    save_to_registry=True, save_to_index=True):
     """
     Update metadata object
 
     :param entity: A model class.
     :param identifier: Identifier of target object.
     :param dict_: Dictionary of model data to initialize the object.
-    :param registry: Whether to update object in the data registry.
-    :param search_index: Whether to update object in the search index.
+    :param save_to_registry: Whether to update object in the data registry.
+    :param save_to_index: Whether to update object in the search index.
     :returns: Whether the operation was successful.
     """
 
@@ -175,7 +175,7 @@ def update_metadata(entity, identifier, dict_,
                     'station_id': station_id,
                     'name': name,
                     'first_seen': date.today()
-                }, search_index=False)
+                }, save_to_index=False)
 
             del dict_['station_name']
             dict_['station_name_id'] = name_id
@@ -189,24 +189,25 @@ def update_metadata(entity, identifier, dict_,
             LOGGER.warning('Unable to generate IDS due to: {}'
                            .format(str(err)))
 
-        if search_index and getattr(obj, entity.id_field) != identifier:
+        if save_to_index and getattr(obj, entity.id_field) != identifier:
             SEARCH_INDEX.unindex(entity, identifier)
 
-        if registry:
+        if save_to_registry:
             REGISTRY.save(obj)
-        if search_index:
+        if save_to_index:
             SEARCH_INDEX.index(entity, obj.__geo_interface__)
         return True
 
 
-def delete_metadata(entity, identifier, registry=True, search_index=True):
+def delete_metadata(entity, identifier,
+                    save_to_registry=True, save_to_index=True):
     """
     Delete metadata object
 
     :param entity: A model class.
     :param identifier: Data registry identifier of target object.
-    :param registry: Whether changes should apply to the data registry.
-    :param search_index: Whether changes should apply to the search_index.
+    :param save_to_registry: Whether changes should apply to the data registry.
+    :param save_to_index: Whether changes should apply to the search_index.
     :returns: Whether the operation was successful.
     """
 
@@ -216,14 +217,14 @@ def delete_metadata(entity, identifier, registry=True, search_index=True):
     prop = getattr(entity, entity.id_field)
     REGISTRY.session.query(entity).filter(prop == identifier).delete()
 
-    if entity == Station:
+    if save_to_registry and entity == Station:
         REGISTRY.session.query(StationName) \
                         .filter(StationName.station_id == identifier) \
                         .delete()
 
-    if registry:
+    if save_to_registry:
         REGISTRY.save()
-    if search_index:
+    if save_to_index:
         SEARCH_INDEX.unindex(entity, identifier)
 
     return True

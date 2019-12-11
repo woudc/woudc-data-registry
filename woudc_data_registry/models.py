@@ -1072,7 +1072,7 @@ def sync(ctx):
         click.echo('Sending models to search index...')
         search_index.index(clazz, registry_docs)
         click.echo('Purging excess models...')
-        search_index.retain(clazz, registry_docs)
+        search_index.unindex_except(clazz, registry_docs)
 
     click.echo('Done')
 

@@ -534,7 +534,7 @@ class SearchIndex(object):
 
         return True
 
-    def retain(self, domain, targets):
+    def unindex_except(self, domain, targets):
         """
         Deletes all documents from the index associated with <domain>
         that have no matching identifier in <targets>
