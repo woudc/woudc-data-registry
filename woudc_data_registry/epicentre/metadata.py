@@ -136,7 +136,7 @@ def add_metadata(entity, dict_, save_to_registry=True, save_to_index=True):
     c = entity(dict_)
     if save_to_registry:
         REGISTRY.save(c)
-    if save_to_search_index:
+    if save_to_index:
         SEARCH_INDEX.index(entity, c.__geo_interface__)
 
     return c
