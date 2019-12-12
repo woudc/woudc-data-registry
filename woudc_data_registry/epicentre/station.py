@@ -141,8 +141,8 @@ def add(ctx, identifier, name, type_, gaw_id, country,
         'wmo_region_id': wmo_region,
         'start_date': start_date,
         'end_date': end_date,
-        'x': geom_tokens[0],
-        'y': geom_tokens[1],
+        'x': geom_tokens[1],
+        'y': geom_tokens[0],
         'z': geom_tokens[2]
     }
 
@@ -189,8 +189,8 @@ def update(ctx, identifier, name, type_, gaw_id, country,
 
     if geometry:
         geom_tokens = geometry.split(',')
-        station_['x'] = geom_tokens[0]
-        station_['y'] = geom_tokens[1]
+        station_['x'] = geom_tokens[1]
+        station_['y'] = geom_tokens[0]
         station_['z'] = geom_tokens[2]
 
     if len(station_.keys()) == 1:
