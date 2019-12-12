@@ -1031,7 +1031,7 @@ class Process(object):
         dg_valueline = self.extcsv.line_num('DATA_GENERATION') + 2
 
         id_components = data_record.data_record_id.split(':')
-        id_components[-1] = '%.%'
+        id_components[-1] = r'.*\..*'  # Pattern for floating-point number
         identifier_pattern = ':'.join(id_components)
 
         LOGGER.debug('Verifying if URN already exists')

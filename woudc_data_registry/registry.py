@@ -44,6 +44,7 @@
 # =================================================================
 
 import logging
+import re
 
 from sqlalchemy import func, create_engine
 from sqlalchemy.exc import DataError, SQLAlchemyError
@@ -127,6 +128,12 @@ class Registry(object):
         :param case_insensitive: Whether to query strings case-insensitively.
         :returns: One element of query results.
         """
+
+        # Change regular expression notation to SQL notation.
+        pattern = pattern.replace('.*', '%')
+        pattern = pattern.replace('.+', '_%')
+        pattern = re.sub(r'(?<!\\)\.', '_', pattern)
+        pattern = pattern.replace(r'\.', '.')
 
         field = getattr(obj, by)
 
