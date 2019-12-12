@@ -881,8 +881,8 @@ class DataRecord(base):
 
                 'timestamp_utcoffset': self.timestamp_utcoffset,
                 'timestamp_date': self.timestamp_date,
-                'timestamp_time': None if self.timestamp_time is None
-                                  else self.timestamp_time.isoformat(),
+                'timestamp_time': None if self.timestamp_time is None \
+                    else self.timestamp_time.isoformat(),
 
                 'published': self.published,
                 'received_datetime': self.received_datetime,
