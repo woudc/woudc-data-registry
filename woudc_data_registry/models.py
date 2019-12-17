@@ -100,8 +100,12 @@ class Country(base):
         self.link = dict_['link']
 
         if 'wmo_membership' in dict_:
-            wmo_membership_ = datetime.datetime.strptime(
-                dict_['wmo_membership'], '%Y-%m-%d').date()
+            try:
+                wmo_membership_ = datetime.datetime.strptime(
+                    dict_['wmo_membership'], '%Y-%m-%d').date()
+            except ValueError as err:
+                LOGGER.warning(err)
+                wmo_membership_ = None
         else:
             wmo_membership_ = None
 
@@ -223,7 +227,7 @@ class Dataset(base):
     dataset_id = Column(String, primary_key=True)
 
     def __init__(self, dict_):
-        self.dataset_id = dict_['identifier']
+        self.dataset_id = dict_['dataset_id']
 
     @property
     def __geo_interface__(self):
@@ -313,7 +317,7 @@ class Project(base):
     project_id = Column(String, primary_key=True)
 
     def __init__(self, dict_):
-        self.project_id = dict_['identifier']
+        self.project_id = dict_['project_id']
 
     @property
     def __geo_interface__(self):
@@ -347,6 +351,9 @@ class Station(base):
     wmo_region_id = Column(WMO_REGION_ENUM, nullable=False)
     active = Column(Boolean, nullable=False, default=True)
 
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
+
     last_validated_datetime = Column(DateTime, nullable=False,
                                      default=datetime.datetime.utcnow())
 
@@ -373,6 +380,24 @@ class Station(base):
 
         self.country_id = dict_['country_id']
         self.wmo_region_id = dict_['wmo_region_id']
+
+        try:
+            if isinstance(dict_['start_date'], datetime.date):
+                self.start_date = dict_['start_date']
+            else:
+                self.start_date = datetime.datetime.strptime(
+                    dict_['start_date'], '%Y-%m-%d').date()
+            if dict_['end_date'] is None \
+               or isinstance(dict_['end_date'], datetime.date):
+                self.end_date = dict_['end_date']
+            elif not dict_['end_date']:
+                pass
+            else:
+                self.end_date = datetime.datetime.strptime(
+                    dict_['end_date'], '%Y-%m-%d').date()
+        except Exception as err:
+            LOGGER.error(err)
+
         self.last_validated_datetime = datetime.datetime.utcnow()
 
         self.x = dict_['x']
@@ -388,6 +413,7 @@ class Station(base):
 
     @property
     def __geo_interface__(self):
+
         return {
             'id': self.station_id,
             'type': 'Feature',
@@ -397,7 +423,7 @@ class Station(base):
                 'type': self.station_type,
                 'woudc_id': self.station_id,
                 'gaw_id': self.gaw_id,
-                'country_code': self.country.country_id,
+                'country_code': self.country_id,
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
                 'last_validated_datetime': self.last_validated_datetime,
@@ -422,17 +448,11 @@ class StationName(base):
     station_id = Column(String, nullable=False)
     name = Column(String, nullable=False)
 
-    start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=True)
-
     def __init__(self, dict_):
         self.station_id = dict_['station_id']
         self.name = dict_['name']
 
         self.generate_ids()
-
-        self.start_date = dict_['first_seen']
-        self.end_date = dict_.get('last_seen', None)
 
     def __repr__(self):
         return 'Station name ({}, {})'.format(self.station_id, self.name)
@@ -485,6 +505,8 @@ class Deployment(base):
             if dict_['end_date'] is None \
                or isinstance(dict_['end_date'], datetime.date):
                 self.end_date = dict_['end_date']
+            elif not dict_['end_date']:
+                pass
             else:
                 self.end_date = datetime.datetime.strptime(
                     dict_['end_date'], '%Y-%m-%d').date()
@@ -787,6 +809,7 @@ class DataRecord(base):
 
                 'ingest_filepath': self.ingest_filepath,
                 'filename': self.filename,
+
                 'url': self.url
             }
         }
@@ -818,7 +841,7 @@ def unpack_station_names(rows):
         if name.startswith('\\x'):
             name = decode_hex(name[2:])[0].decode('utf-8')
             row['name'] = name
-            row['identifier'] = ':'.join([station, name])
+            row['station_name_id'] = ':'.join([station, name])
         if name not in tracker:
             tracker[name] = row
         else:
@@ -908,7 +931,7 @@ def init(ctx, datadir, init_search_index):
     instrument_models = []
     deployment_models = []
 
-    click.echo('Loading countries metadata')
+    click.echo('Loading WMO countries metadata')
     with open(wmo_countries) as jsonfile:
         countries_data = json.load(jsonfile)
         for row in countries_data['countries']:
@@ -916,13 +939,14 @@ def init(ctx, datadir, init_search_index):
             if country_data['id'] != 'NUL':
                 country = Country(country_data)
                 country_models.append(country)
+
+    click.echo('Loading local country updates metadata')
     with open(countries) as jsonfile:
         countries_data = json.load(jsonfile)
         for row in countries_data:
             country_data = countries_data[row]
-            if country_data['id'] == 'NUL':
-                country = Country(country_data)
-                country_models.append(country)
+            country = Country(country_data)
+            country_models.append(country)
 
     click.echo('Loading datasets metadata')
     with open(datasets) as csvfile:
@@ -945,7 +969,7 @@ def init(ctx, datadir, init_search_index):
             contributor = Contributor(row)
             contributor_models.append(contributor)
 
-    click.echo('Loading stations metadata')
+    click.echo('Loading station names metadata')
     with open(station_names) as csvfile:
         reader = csv.DictReader(csvfile)
         records = unpack_station_names(reader)
@@ -956,11 +980,13 @@ def init(ctx, datadir, init_search_index):
             station_name = StationName(obj)
             station_name_models.append(station_name)
 
+    click.echo('Loading stations and ships metadata')
     with open(stations) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             station = Station(row)
             station_models.append(station)
+
     with open(ships) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -968,7 +994,7 @@ def init(ctx, datadir, init_search_index):
                 if row[field] == '':
                     row[field] = None
             ship = Station(row)
-            station_name_models.append(ship)
+            station_models.append(ship)
 
     click.echo('Loading instruments metadata')
     with open(instruments) as csvfile:
@@ -990,7 +1016,7 @@ def init(ctx, datadir, init_search_index):
     click.echo('Storing datasets in data registry')
     for model in dataset_models:
         registry_.save(model)
-    click.echo('Storing countrys in data registry')
+    click.echo('Storing countries in data registry')
     for model in country_models:
         registry_.save(model)
     click.echo('Storing contributors in data registry')
@@ -1000,13 +1026,13 @@ def init(ctx, datadir, init_search_index):
     for model in station_name_models:
         registry_.save(model)
     click.echo('Storing stations in data registry')
-    for model in dataset_models:
+    for model in station_models:
         registry_.save(model)
     click.echo('Storing instruments in data registry')
     for model in instrument_models:
         registry_.save(model)
     click.echo('Storing deployment records in data registry')
-    for model in dataset_models:
+    for model in deployment_models:
         registry_.save(model)
 
     if init_search_index:

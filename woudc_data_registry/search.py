@@ -314,14 +314,6 @@ MAPPINGS = {
             'number_of_observations': {
                 'type': 'integer'
             },
-            'ingest_filepath': {
-                'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
-            },
-            'filename': {
-                'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
-            },
             'url': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
