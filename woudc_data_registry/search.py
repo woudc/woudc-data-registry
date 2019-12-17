@@ -449,6 +449,7 @@ class SearchIndex(object):
         try:
             index_name = self.generate_index_name(
                 MAPPINGS['data_records']['index'])
+
             result = self.connection.get(index=index_name,
                                          doc_type='FeatureCollection',
                                          id=identifier)
