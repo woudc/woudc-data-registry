@@ -1,0 +1,6 @@
+identifier,name,station_type,gaw_id,country_id,wmo_region_id,x,y,z
+146,USNS ELTANIN,SHP,,USA,International Waters,22.5,-90,-1
+188,Polish Research Ship,SHP,,XY,International Waters,63.8,12.5,2
+212,R/V A.K.SHIRSHOV,SHP,,DEU,International Waters,-15,75,-1
+440,R H Brown Research Ship,SHP,,XY,International Waters,-95,29.68,2
+521,USS Croatan,SHP,,XY,International Waters,-58,-78,0

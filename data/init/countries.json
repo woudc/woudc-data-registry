@@ -1,0 +1,82 @@
+{
+    "ASM": {
+        "id": "ASM",
+        "country_name": "American Samoa",
+        "french_name": "Samoa Américaines",
+        "wmo_region_id": "V",
+        "regional_involvement": "V",
+        "link": "https://en.wikipedia.org/wiki/American_Samoa"
+    },
+    "ATA": {
+        "id": "ATA",
+        "country_name": "Antarctica",
+        "french_name": "Antarctique",
+        "wmo_region_id": "the Antarctic",
+        "regional_involvement": "Antarctica",
+        "link": "https://www.wmo.int/pages/prog/www/Antarctica/Purpose.html"
+    },
+    "FLK": {
+        "id": "FLK",
+        "country_name": "Falkland Islands (Malvinas)",
+        "french_name": "Îles Falkland (Malvinas)",
+        "wmo_region_id": "III",
+        "regional_involvement": "III",
+        "link": "https://en.wikipedia.org/wiki/Falkland_Islands"
+    },
+    "GRL": {
+        "id": "GRL",
+        "country_name": "Greenland",
+        "french_name": "Groenland",
+        "wmo_region_id": "VI",
+        "regional_involvement": "VI",
+        "link": "https://en.wikipedia.org/wiki/Greenland"
+    },
+    "XY": {
+        "id": "XY",
+        "country_name": "International Waters",
+        "french_name": "Eaux Internationales",
+        "wmo_region_id": "International Waters",
+        "regional_involvement": "International Waters",
+        "link": "https://en.wikipedia.org/wiki/International_waters"
+    },
+    "SGS": {
+        "id": "SGS",
+        "country_name": "South Georgia and the South Sandwich Islands",
+        "french_name": "Géorgie du Sud-et-les îles Sandwich du Sud",
+        "wmo_region_id": "III",
+        "regional_involvement": "III",
+        "link": "https://en.wikipedia.org/wiki/South_Georgia_and_the_South_Sandwich_Islands"
+    },
+    "SHN": {
+        "id": "SHN",
+        "country_name": "Saint Helena, Ascension and Tristan da Cunha",
+        "french_name": "Sainte Hélène, Ascension et Tristan da Cunha",
+        "wmo_region_id": "I",
+        "regional_involvement": "I",
+        "link": "https://en.wikipedia.org/wiki/Saint_Helena"
+    },
+    "TWN": {
+        "id": "TWN",
+        "country_name": "Taiwan",
+        "french_name": "Taïwan",
+        "wmo_region_id": "II",
+        "regional_involvement": "II",
+        "link": "https://en.wikipedia.org/wiki/Taiwan"
+    },
+    "VIR": {
+        "id": "VIR",
+        "country_name": "Virgin Islands, U.S.",
+        "french_name": "Îles Vierges américaines",
+        "wmo_region_id": "VI",
+        "regional_involvement": "VI",
+        "link": "https://en.wikipedia.org/wiki/United_States_Virgin_Islands"
+    },
+    "Unknown": {
+        "id": "Unknown",
+        "country_name": "Unknown",
+        "french_name": "Unknown",
+        "wmo_region_id": "I",
+        "regional_involvement": "I",
+        "link": ""
+    }
+}
