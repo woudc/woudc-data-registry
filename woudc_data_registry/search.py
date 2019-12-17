@@ -63,15 +63,15 @@ typedefs = {
 
 MAPPINGS = {
     'projects': {
-        'index': 'woudc-data-registry.project',
+        'index': 'project',
         'enabled': True
     },
     'datasets': {
-        'index': 'woudc-data-registry.dataset',
+        'index': 'dataset',
         'enabled': True
     },
     'countries': {
-        'index': 'woudc-data-registry.country',
+        'index': 'country',
         'enabled': True,
         'properties': {
             'country_code': {
@@ -104,7 +104,7 @@ MAPPINGS = {
         }
     },
     'contributors': {
-        'index': 'woudc-data-registry.contributor',
+        'index': 'contributor',
         'enabled': True,
         'properties': {
             'name': {
@@ -140,7 +140,7 @@ MAPPINGS = {
         }
     },
     'stations': {
-        'index': 'woudc-data-registry.station',
+        'index': 'station',
         'enabled': True,
         'properties': {
             'name': {
@@ -176,7 +176,7 @@ MAPPINGS = {
         }
     },
     'instruments': {
-        'index': 'woudc-data-registry.instrument',
+        'index': 'instrument',
         'enabled': True,
         'properties': {
             'station_id': {
@@ -202,7 +202,7 @@ MAPPINGS = {
         }
     },
     'deployments': {
-        'index': 'woudc-data-registry.deployment',
+        'index': 'deployment',
         'enabled': True,
         'properties': {
             'station_id': {
@@ -222,7 +222,7 @@ MAPPINGS = {
         }
     },
     'data_records': {
-        'index': 'woudc-data-registry.data_record',
+        'index': 'data_record',
         'enabled': True,
         'properties': {
             'content_class': {
@@ -339,6 +339,7 @@ class SearchIndex(object):
 
         self.type = config.WDR_SEARCH_TYPE
         self.url = config.WDR_SEARCH_URL
+        self.index_basename = config.WDR_SEARCH_INDEX_BASENAME
 
         LOGGER.debug('Connecting to Elasticsearch')
 
@@ -353,7 +354,7 @@ class SearchIndex(object):
             port = url_parsed.port
 
         url_settings = {
-            'host': url_parsed.netloc,
+            'host': url_parsed.hostname,
             'port': port
         }
 
@@ -366,6 +367,20 @@ class SearchIndex(object):
 
         self.headers = {'Content-Type': 'application/json'}
 
+    def generate_index_name(self, index_name):
+        """
+        Generates index name with prefix if specified in config/environment
+
+        :param index_name: ES index name
+
+        :returns: fully qualified index name
+        """
+
+        if self.index_basename is not None:
+            return '{}.{}'.format(self.index_basename, index_name)
+
+        return index_name
+
     def create(self):
         """create search indexes"""
 
@@ -374,7 +389,7 @@ class SearchIndex(object):
             if not definition['enabled']:
                 continue
 
-            index_name = definition['index']
+            index_name = self.generate_index_name(definition['index'])
 
             settings = {
                 'mappings': {
@@ -414,7 +429,7 @@ class SearchIndex(object):
             if not definition['enabled']:
                 continue
 
-            index_name = definition['index']
+            index_name = self.generate_index_name(definition['index'])
 
             try:
                 self.connection.indices.delete(index_name)
@@ -432,8 +447,10 @@ class SearchIndex(object):
         """
 
         try:
-            index = MAPPINGS['data_records']['index']
-            result = self.connection.get(index=index,
+            index_name = self.generate_index_name(
+                MAPPINGS['data_records']['index'])
+
+            result = self.connection.get(index=index_name,
                                          doc_type='FeatureCollection',
                                          id=identifier)
             return result['_source']['properties']['data_generation_version']
@@ -455,7 +472,8 @@ class SearchIndex(object):
             LOGGER.warning(msg)
             return False
 
-        index = MAPPINGS[domain.__tablename__]['index']
+        index_name = self.generate_index_name(
+            MAPPINGS[domain.__tablename__]['index'])
 
         if isinstance(target, dict):
             # Index/update single document the normal way.
@@ -464,8 +482,8 @@ class SearchIndex(object):
                 'doc_as_upsert': True
             }
 
-            LOGGER.debug('Indexing 1 document into {}'.format(index))
-            self.connection.update(index=index, id=target['id'],
+            LOGGER.debug('Indexing 1 document into {}'.format(index_name))
+            self.connection.update(index=index_name, id=target['id'],
                                    doc_type='FeatureCollection',
                                    body=wrapper)
 
@@ -473,7 +491,7 @@ class SearchIndex(object):
             # Index/update multiple documents using bulk API.
             wrapper = [{
                 '_op_type': 'update',
-                '_index': index,
+                '_index': index_name,
                 '_type': 'FeatureCollection',
                 '_id': document['id'],
                 'doc': document,
@@ -481,7 +499,7 @@ class SearchIndex(object):
             } for document in target]
 
             LOGGER.debug('Indexing {} documents into {}'
-                         .format(len(target), index))
+                         .format(len(target), index_name))
             helpers.bulk(self.connection, wrapper)
 
         return True
@@ -501,11 +519,12 @@ class SearchIndex(object):
             LOGGER.warning(msg)
             return False
 
-        index = MAPPINGS[domain.__tablename__]['index']
+        index_name = self.generate_index_name(
+            MAPPINGS[domain.__tablename__]['index'])
 
         if isinstance(target, str):
             # <target> is a document ID, delete normally.
-            result = self.connection.delete(index=index, id=target,
+            result = self.connection.delete(index=index_name, id=target,
                                             doc_type='FeatureCollection')
 
             if not result['found']:
@@ -514,7 +533,7 @@ class SearchIndex(object):
                 raise SearchIndexError(msg)
         elif isinstance(target, dict):
             # <target> is the single GeoJSON object to delete.
-            result = self.connection.delete(index=index, id=target['id'],
+            result = self.connection.delete(index=index_name, id=target['id'],
                                             doc_type='FeatureCollection')
 
             if not result['found']:
@@ -525,7 +544,7 @@ class SearchIndex(object):
             # Delete multiple documents using bulk API.
             wrapper = [{
                 '_op_type': 'delete',
-                '_index': 'index',
+                '_index': index_name,
                 '_type': document['type'],
                 '_id': document['id']
             } for document in target]
@@ -549,7 +568,9 @@ class SearchIndex(object):
             LOGGER.warning(msg)
             return False
 
-        index = MAPPINGS[domain.__tablename__]['index']
+        index_name = self.generate_index_name(
+            MAPPINGS[domain.__tablename__]['index'])
+
         ids = [document['id'] for document in targets]
 
         query = {
@@ -564,7 +585,7 @@ class SearchIndex(object):
             }
         }
 
-        self.connection.delete_by_query(index, query)
+        self.connection.delete_by_query(index_name, query)
         return True
 
 
