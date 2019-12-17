@@ -63,15 +63,15 @@ typedefs = {
 
 MAPPINGS = {
     'projects': {
-        'index': 'woudc-data-registry.project',
+        'index': 'project',
         'enabled': True
     },
     'datasets': {
-        'index': 'woudc-data-registry.dataset',
+        'index': 'dataset',
         'enabled': True
     },
     'countries': {
-        'index': 'woudc-data-registry.country',
+        'index': 'country',
         'enabled': True,
         'properties': {
             'country_code': {
@@ -104,7 +104,7 @@ MAPPINGS = {
         }
     },
     'contributors': {
-        'index': 'woudc-data-registry.contributor',
+        'index': 'contributor',
         'enabled': True,
         'properties': {
             'name': {
@@ -140,7 +140,7 @@ MAPPINGS = {
         }
     },
     'stations': {
-        'index': 'woudc-data-registry.station',
+        'index': 'station',
         'enabled': True,
         'properties': {
             'name': {
@@ -176,7 +176,7 @@ MAPPINGS = {
         }
     },
     'instruments': {
-        'index': 'woudc-data-registry.instrument',
+        'index': 'instrument',
         'enabled': True,
         'properties': {
             'station_id': {
@@ -202,7 +202,7 @@ MAPPINGS = {
         }
     },
     'deployments': {
-        'index': 'woudc-data-registry.deployment',
+        'index': 'deployment',
         'enabled': True,
         'properties': {
             'station_id': {
@@ -222,7 +222,7 @@ MAPPINGS = {
         }
     },
     'data_records': {
-        'index': 'woudc-data-registry.data_record',
+        'index': 'data_record',
         'enabled': True,
         'properties': {
             'content_class': {
@@ -353,7 +353,7 @@ class SearchIndex(object):
             port = url_parsed.port
 
         url_settings = {
-            'host': url_parsed.netloc,
+            'host': url_parsed.hostname,
             'port': port
         }
 
@@ -374,7 +374,8 @@ class SearchIndex(object):
             if not definition['enabled']:
                 continue
 
-            index_name = definition['index']
+            index_name = '{}.{}'.format(config.WDR_SEARCH_INDEX_BASENAME,
+                                        definition['index'])
 
             settings = {
                 'mappings': {
@@ -414,7 +415,8 @@ class SearchIndex(object):
             if not definition['enabled']:
                 continue
 
-            index_name = definition['index']
+            index_name = '{}.{}'.format(config.WDR_SEARCH_INDEX_BASENAME,
+                                        definition['index'])
 
             try:
                 self.connection.indices.delete(index_name)
