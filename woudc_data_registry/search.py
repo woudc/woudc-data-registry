@@ -43,16 +43,14 @@
 #
 # =================================================================
 
-import json
 import logging
 from urllib.parse import urlparse
 
 import click
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, helpers
 from elasticsearch.exceptions import (ConnectionError, NotFoundError,
                                       RequestError)
 from woudc_data_registry import config
-from woudc_data_registry.util import json_serial
 
 LOGGER = logging.getLogger(__name__)
 
@@ -64,17 +62,168 @@ typedefs = {
 }
 
 MAPPINGS = {
-    'contributor': {
-        'index': 'woudc-data-registry.contributor'
+    'projects': {
+        'index': 'woudc-data-registry.project',
+        'enabled': True
     },
-    'station': {
-        'index': 'woudc-data-registry.station'
+    'datasets': {
+        'index': 'woudc-data-registry.dataset',
+        'enabled': True
     },
-    'instrument': {
-        'index': 'woudc-data-registry.instrument'
+    'countries': {
+        'index': 'woudc-data-registry.country',
+        'enabled': True,
+        'properties': {
+            'country_code': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'country_name_en': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'country_name_fr': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'wmo_region_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'wmo_membership': {
+                'type': 'date'
+            },
+            'regional_involvement': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'link': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            }
+        }
     },
-    'data_record': {
+    'contributors': {
+        'index': 'woudc-data-registry.contributor',
+        'enabled': True,
+        'properties': {
+            'name': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'country_code': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'wmo_region_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'url': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'email': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'ftp_username': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'active': {
+                'type': 'boolean'
+            },
+            'last_validated_datetime': {
+                'type': 'date'
+            }
+        }
+    },
+    'stations': {
+        'index': 'woudc-data-registry.station',
+        'enabled': True,
+        'properties': {
+            'name': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'type': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'woudc_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'gaw_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'country_code': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'wmo_region_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'active': {
+                'type': 'boolean'
+            },
+            'last_validated_datetime': {
+                'type': 'date'
+            }
+        }
+    },
+    'instruments': {
+        'index': 'woudc-data-registry.instrument',
+        'enabled': True,
+        'properties': {
+            'station_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'dataset': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'name': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'model': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'serial': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            }
+        }
+    },
+    'deployments': {
+        'index': 'woudc-data-registry.deployment',
+        'enabled': True,
+        'properties': {
+            'station_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'contributor': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'start_date': {
+                'type': 'date'
+            },
+            'end_date': {
+                'type': 'date'
+            }
+        }
+    },
+    'data_records': {
         'index': 'woudc-data-registry.data_record',
+        'enabled': True,
         'properties': {
             'content_class': {
                 'type': 'text',
@@ -221,6 +370,10 @@ class SearchIndex(object):
         """create search indexes"""
 
         for definition in MAPPINGS.values():
+            # Skip indexes that have been manually disabled.
+            if not definition['enabled']:
+                continue
+
             index_name = definition['index']
 
             settings = {
@@ -257,6 +410,10 @@ class SearchIndex(object):
         """delete search indexes"""
 
         for definition in MAPPINGS.values():
+            # Skip indexes that have been manually disabled.
+            if not definition['enabled']:
+                continue
+
             index_name = definition['index']
 
             try:
@@ -275,71 +432,139 @@ class SearchIndex(object):
         """
 
         try:
-            index = MAPPINGS['data_record']['index']
+            index = MAPPINGS['data_records']['index']
             result = self.connection.get(index=index,
                                          doc_type='FeatureCollection',
-                                         id=identifier,)
+                                         id=identifier)
             return result['_source']['properties']['data_generation_version']
         except NotFoundError:
             return None
 
-    def index_data_record(self, data):
+    def index(self, domain, target):
         """
-        index or update a document
+        Index (or update if already present) one or more documents in
+        <target> that belong to the index associated with <domain>.
 
-        :param data: `dict` of GeoJSON representation
-
-        :returns: `bool` status of indexing result
+        :param domain: A model class that all entries in <target> belong to.
+        :param target: GeoJSON dictionary of model data or a list of them.
+        :returns: Whether the operation was successful.
         """
 
-        index = MAPPINGS['data_record']['index']
-        identifier = data['id']
+        if not MAPPINGS[domain.__tablename__]['enabled']:
+            msg = '{} index is currently frozen'.format(domain.__tablename__)
+            LOGGER.warning(msg)
+            return False
 
-        try:
-            result = self.connection.get(index=index,
-                                         doc_type='FeatureCollection',
-                                         id=identifier)
-            LOGGER.debug('existing record, updating')
-            data_ = json.dumps({'doc': data}, default=json_serial)
-            result = self.connection.update(index=index,
-                                            doc_type='FeatureCollection',
-                                            id=identifier, body=data_)
-            LOGGER.debug('Result: {}'.format(result))
-        except NotFoundError as err:  # index new
-            LOGGER.debug(err)
-            LOGGER.info('new record, indexing')
-            data_ = json.dumps(data, default=json_serial)
-            LOGGER.debug('indexing {}'.format(identifier))
-            try:
-                result = self.connection.index(index=index,
-                                               doc_type='FeatureCollection',
-                                               id=identifier, body=data_)
-                LOGGER.debug('Result: {}'.format(result))
-            except RequestError as err:
-                LOGGER.error(err)
-                raise SearchIndexError(err)
+        index = MAPPINGS[domain.__tablename__]['index']
+
+        if isinstance(target, dict):
+            # Index/update single document the normal way.
+            wrapper = {
+                'doc': target,
+                'doc_as_upsert': True
+            }
+
+            LOGGER.debug('Indexing 1 document into {}'.format(index))
+            self.connection.update(index=index, id=target['id'],
+                                   doc_type='FeatureCollection',
+                                   body=wrapper)
+
+        else:
+            # Index/update multiple documents using bulk API.
+            wrapper = [{
+                '_op_type': 'update',
+                '_index': index,
+                '_type': 'FeatureCollection',
+                '_id': document['id'],
+                'doc': document,
+                'doc_as_upsert': True
+            } for document in target]
+
+            LOGGER.debug('Indexing {} documents into {}'
+                         .format(len(target), index))
+            helpers.bulk(self.connection, wrapper)
 
         return True
 
-    def unindex_data_record(self, identifier):
+    def unindex(self, domain, target):
         """
-        delete document from index
+        Delete one or more documents, referred to by <target>,
+        that belong to the index associated with <domain>.
 
-        :param identifier: identifier of data record
-
-        :returns: `bool` status of un-indexing result
+        :param domain: A model class that all entries in <target> belong to.
+        :param target: GeoJSON dictionary of model data or a list of them.
+        :returns: Whether the operation was successful.
         """
 
-        index = MAPPINGS['data_record']['index']
-        result = self.connection.delete(index=index,
-                                        doc_type='FeatureCollection',
-                                        id=identifier)
+        if not MAPPINGS[domain.__tablename__]['enabled']:
+            msg = '{} index is currently frozen'.format(domain.__tablename__)
+            LOGGER.warning(msg)
+            return False
 
-        if result.status_code == 404:
-            msg = 'Data record {} does not exist'.format(identifier)
-            LOGGER.error(msg)
-            raise SearchIndexError(msg)
+        index = MAPPINGS[domain.__tablename__]['index']
 
+        if isinstance(target, str):
+            # <target> is a document ID, delete normally.
+            result = self.connection.delete(index=index, id=target,
+                                            doc_type='FeatureCollection')
+
+            if not result['found']:
+                msg = 'Data record {} does not exist'.format(target)
+                LOGGER.error(msg)
+                raise SearchIndexError(msg)
+        elif isinstance(target, dict):
+            # <target> is the single GeoJSON object to delete.
+            result = self.connection.delete(index=index, id=target['id'],
+                                            doc_type='FeatureCollection')
+
+            if not result['found']:
+                msg = 'Data record {} does not exist'.format(target['id'])
+                LOGGER.error(msg)
+                raise SearchIndexError(msg)
+        else:
+            # Delete multiple documents using bulk API.
+            wrapper = [{
+                '_op_type': 'delete',
+                '_index': 'index',
+                '_type': document['type'],
+                '_id': document['id']
+            } for document in target]
+
+            helpers.bulk(self.connection, wrapper)
+
+        return True
+
+    def unindex_except(self, domain, targets):
+        """
+        Deletes all documents from the index associated with <domain>
+        that have no matching identifier in <targets>
+
+        :param domain: A model class that all entries in <target> belong to.
+        :param target: List of GeoJSON model data.
+        :returns: Whether the operation was successful.
+        """
+
+        if not MAPPINGS[domain.__tablename__]['enabled']:
+            msg = '{} index is currently frozen'.format(domain.__tablename__)
+            LOGGER.warning(msg)
+            return False
+
+        index = MAPPINGS[domain.__tablename__]['index']
+        ids = [document['id'] for document in targets]
+
+        query = {
+            'query': {
+                'bool': {
+                    'mustNot': {
+                        'ids': {
+                            'values': ids
+                        }
+                    }
+                }
+            }
+        }
+
+        self.connection.delete_by_query(index, query)
         return True
 
 

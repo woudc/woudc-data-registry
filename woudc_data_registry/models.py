@@ -58,7 +58,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
 from woudc_data_registry import registry
-from woudc_data_registry.search import search
+from woudc_data_registry.search import SearchIndex, search
 from woudc_data_registry.util import point2geojsongeometry
 
 base = declarative_base()
@@ -113,8 +113,9 @@ class Country(base):
             'id': self.country_id,
             'type': 'Feature',
             'properties': {
-                'country_name': self.name_en,
-                'french_name': self.name_fr,
+                'country_code': self.country_id,
+                'country_name_en': self.name_en,
+                'country_name_fr': self.name_fr,
                 'wmo_region_id': self.wmo_region_id,
                 'wmo_membership': self.wmo_membership,
                 'regional_involvement': self.regional_involvement,
@@ -175,6 +176,7 @@ class Contributor(base):
         self.email = dict_['email']
         self.ftp_username = dict_['ftp_username']
 
+        self.active = dict_.get('active', True)
         self.last_validated_datetime = datetime.datetime.utcnow()
         self.x = dict_['x']
         self.y = dict_['y']
@@ -187,7 +189,7 @@ class Contributor(base):
             'geometry': point2geojsongeometry(self.x, self.y),
             'properties': {
                 'name': self.name,
-                'country_id': self.country_id,
+                'country_code': self.country_id,
                 'wmo_region_id': self.wmo_region_id,
                 'url': self.url,
                 'email': self.email,
@@ -280,6 +282,7 @@ class Instrument(base):
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
                 'station_id': self.station_id,
+                'dataset': self.dataset_id,
                 'name': self.name,
                 'model': self.model,
                 'serial': self.serial,
@@ -363,6 +366,8 @@ class Station(base):
             .format(self.station_id, dict_['station_name'])
         self.station_type = dict_['station_type']
 
+        self._name = dict_['station_name']
+
         if dict_['gaw_id'] != '':
             self.gaw_id = dict_['gaw_id']
 
@@ -375,6 +380,13 @@ class Station(base):
         self.z = dict_['z']
 
     @property
+    def name(self):
+        if hasattr(self, '_name'):
+            return self._name
+        else:
+            return self.station_name.name
+
+    @property
     def __geo_interface__(self):
         return {
             'id': self.station_id,
@@ -383,8 +395,9 @@ class Station(base):
             'properties': {
                 'name': self.station_name.name,
                 'type': self.station_type,
+                'woudc_id': self.station_id,
                 'gaw_id': self.gaw_id,
-                'country': self.country.name_en,
+                'country_code': self.country.country_id,
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
                 'last_validated_datetime': self.last_validated_datetime,
@@ -485,7 +498,7 @@ class Deployment(base):
             'type': 'Feature',
             'properties': {
                 'station_id': self.station_id,
-                'contributor_id': self.contributor_id,
+                'contributor': self.contributor_id,
                 'start_date': self.start_date,
                 'end_date': self.end_date
             }
@@ -583,6 +596,7 @@ class DataRecord(base):
     es_id = Column(String, nullable=False)
 
     # Relationships
+    station = relationship('Station', backref=__tablename__)
     instrument = relationship('Instrument', backref=__tablename__)
 
     def __init__(self, ecsv):
@@ -602,15 +616,15 @@ class DataRecord(base):
             self.data_generation_scientific_authority = \
                 ecsv.extcsv['DATA_GENERATION']['ScientificAuthority']
 
-        self.platform_type = ecsv.extcsv['PLATFORM']['Type']
-        self.platform_name = ecsv.extcsv['PLATFORM']['Name']
-        self.platform_country = ecsv.extcsv['PLATFORM']['Country']
-        self.platform_gaw_id = ecsv.extcsv['PLATFORM'].get('GAW_ID', None)
+        self._platform_type = ecsv.extcsv['PLATFORM']['Type']
+        self._platform_name = ecsv.extcsv['PLATFORM']['Name']
+        self._platform_country = ecsv.extcsv['PLATFORM']['Country']
+        self._platform_gaw_id = ecsv.extcsv['PLATFORM'].get('GAW_ID', None)
         self.station_id = str(ecsv.extcsv['PLATFORM']['ID'])
 
-        self.instrument_name = ecsv.extcsv['INSTRUMENT']['Name']
-        self.instrument_model = str(ecsv.extcsv['INSTRUMENT']['Model'])
-        self.instrument_number = str(ecsv.extcsv['INSTRUMENT']['Number'])
+        self._instrument_name = ecsv.extcsv['INSTRUMENT']['Name']
+        self._instrument_model = str(ecsv.extcsv['INSTRUMENT']['Model'])
+        self._instrument_number = str(ecsv.extcsv['INSTRUMENT']['Number'])
         self.instrument_id = ':'.join([
             self.instrument_name,
             self.instrument_model,
@@ -636,6 +650,55 @@ class DataRecord(base):
 
         self.filename = 'TODO'
         self.url = 'TODO'
+
+    @property
+    def platform_type(self):
+        if hasattr(self, '_platform_type'):
+            return self._platform_type
+        else:
+            return self.station.station_type
+
+    @property
+    def platform_name(self):
+        if hasattr(self, '_platform_name'):
+            return self._platform_name
+        else:
+            return self.station.name
+
+    @property
+    def platform_country(self):
+        if hasattr(self, '_platform_country'):
+            return self._platform_country
+        else:
+            return self.station.country_id
+
+    @property
+    def platform_gaw_id(self):
+        if hasattr(self, '_platform_gaw_id'):
+            return self._platform_gaw_id
+        else:
+            return self.station.gaw_id
+
+    @property
+    def instrument_name(self):
+        if hasattr(self, '_instrument_name'):
+            return self._instrument_name
+        else:
+            return self.instrument.name
+
+    @property
+    def instrument_model(self):
+        if hasattr(self, '_instrument_model'):
+            return self._instrument_model
+        else:
+            return self.instrument.model
+
+    @property
+    def instrument_number(self):
+        if hasattr(self, '_instrument_number'):
+            return self._instrument_number
+        else:
+            return self.instrument.serial
 
     def generate_ids(self):
         """Builds and sets class ID fields from other attributes"""
@@ -711,7 +774,8 @@ class DataRecord(base):
 
                 'timestamp_utcoffset': self.timestamp_utcoffset,
                 'timestamp_date': self.timestamp_date,
-                'timestamp_time': self.timestamp_time,
+                'timestamp_time': None if self.timestamp_time is None
+                                  else self.timestamp_time.isoformat(),
 
                 'published': self.published,
                 'received_datetime': self.received_datetime,
@@ -812,7 +876,9 @@ def teardown(ctx):
 @click.option('--datadir', '-d',
               type=click.Path(exists=True, resolve_path=True),
               help='Path to core metadata files')
-def init(ctx, datadir):
+@click.option('--init-search-index', is_flag=True,
+              help='Causes records to be stored in the search index as well')
+def init(ctx, datadir, init_search_index):
     """initialize core system metadata"""
 
     import os
@@ -829,47 +895,55 @@ def init(ctx, datadir):
     datasets = os.path.join(datadir, 'datasets.csv')
     projects = os.path.join(datadir, 'projects.csv')
     instruments = os.path.join(datadir, 'instruments.csv')
+    deployments = os.path.join(datadir, 'deployments.csv')
 
     registry_ = registry.Registry()
+
+    project_models = []
+    dataset_models = []
+    country_models = []
+    contributor_models = []
+    station_models = []
+    station_name_models = []
+    instrument_models = []
+    deployment_models = []
 
     click.echo('Loading countries metadata')
     with open(wmo_countries) as jsonfile:
         countries_data = json.load(jsonfile)
         for row in countries_data['countries']:
             country_data = countries_data['countries'][row]
-            if country_data['id'] == 'NUL':
-                continue
-            country = Country(country_data)
-            registry_.save(country)
+            if country_data['id'] != 'NUL':
+                country = Country(country_data)
+                country_models.append(country)
     with open(countries) as jsonfile:
         countries_data = json.load(jsonfile)
         for row in countries_data:
             country_data = countries_data[row]
             if country_data['id'] == 'NUL':
-                continue
-            country = Country(country_data)
-            registry_.save(country)
+                country = Country(country_data)
+                country_models.append(country)
 
     click.echo('Loading datasets metadata')
     with open(datasets) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             dataset = Dataset(row)
-            registry_.save(dataset)
+            dataset_models.append(dataset)
 
     click.echo('Loading projects metadata')
     with open(projects) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             project = Project(row)
-            registry_.save(project)
+            project_models.append(project)
 
     click.echo('Loading contributors metadata')
     with open(contributors) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             contributor = Contributor(row)
-            registry_.save(contributor)
+            contributor_models.append(contributor)
 
     click.echo('Loading stations metadata')
     with open(station_names) as csvfile:
@@ -880,13 +954,13 @@ def init(ctx, datadir):
                 if obj[field] == '':
                     obj[field] = None
             station_name = StationName(obj)
-            registry_.save(station_name)
+            station_name_models.append(station_name)
 
     with open(stations) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             station = Station(row)
-            registry_.save(station)
+            station_models.append(station)
     with open(ships) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -894,15 +968,116 @@ def init(ctx, datadir):
                 if row[field] == '':
                     row[field] = None
             ship = Station(row)
-            registry_.save(ship)
+            station_name_models.append(ship)
 
     click.echo('Loading instruments metadata')
     with open(instruments) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             instrument = Instrument(row)
-            registry_.save(instrument)
+            instrument_models.append(instrument)
 
+    click.echo('Loading deployments metadata')
+    with open(deployments) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            deployment = Deployment(row)
+            deployment_models.append(deployment)
+
+    click.echo('Storing projects in data registry')
+    for model in project_models:
+        registry_.save(model)
+    click.echo('Storing datasets in data registry')
+    for model in dataset_models:
+        registry_.save(model)
+    click.echo('Storing countrys in data registry')
+    for model in country_models:
+        registry_.save(model)
+    click.echo('Storing contributors in data registry')
+    for model in contributor_models:
+        registry_.save(model)
+    click.echo('Storing station names in data registry')
+    for model in station_name_models:
+        registry_.save(model)
+    click.echo('Storing stations in data registry')
+    for model in dataset_models:
+        registry_.save(model)
+    click.echo('Storing instruments in data registry')
+    for model in instrument_models:
+        registry_.save(model)
+    click.echo('Storing deployment records in data registry')
+    for model in dataset_models:
+        registry_.save(model)
+
+    if init_search_index:
+        search_index = SearchIndex()
+
+        project_docs = [model.__geo_interface__ for model in project_models]
+        dataset_docs = [model.__geo_interface__ for model in dataset_models]
+        country_docs = [model.__geo_interface__ for model in country_models]
+        station_docs = [model.__geo_interface__ for model in station_models]
+
+        contributor_docs = \
+            [model.__geo_interface__ for model in contributor_models]
+        instrument_docs = \
+            [model.__geo_interface__ for model in instrument_models]
+        deployment_docs = \
+            [model.__geo_interface__ for model in deployment_models]
+
+        click.echo('Storing projects in search index')
+        search_index.index(Project, project_docs)
+        click.echo('Storing datasets in search index')
+        search_index.index(Dataset, dataset_docs)
+        click.echo('Storing countries in search index')
+        search_index.index(Country, country_docs)
+        click.echo('Storing contributors in search index')
+        search_index.index(Contributor, contributor_docs)
+        click.echo('Storing stations in search index')
+        search_index.index(Station, station_docs)
+        click.echo('Storing instruments in search index')
+        search_index.index(Instrument, instrument_docs)
+        click.echo('Storing deployments in search index')
+        search_index.index(Deployment, deployment_docs)
+
+
+@click.command('sync')
+@click.pass_context
+def sync(ctx):
+    """ sync search index with data registry """
+
+    model_classes = [
+        Project,
+        Dataset,
+        Country,
+        Contributor,
+        Station,
+        Instrument,
+        Deployment,
+        DataRecord
+    ]
+
+    registry_ = registry.Registry()
+    search_index = SearchIndex()
+
+    click.echo('Begin data registry backend sync on ', nl=False)
+    for clazz in model_classes:
+        plural_name = clazz.__tablename__
+        plural_caps = ''.join(map(str.capitalize, plural_name.split('_')))
+
+        click.echo('{}...'.format(plural_caps))
+
+        registry_contents = registry_.query_full_index(clazz)
+        registry_docs = [obj.__geo_interface__ for obj in registry_contents]
+
+        click.echo('Sending models to search index...')
+        search_index.index(clazz, registry_docs)
+        click.echo('Purging excess models...')
+        search_index.unindex_except(clazz, registry_docs)
+
+    click.echo('Done')
+
+
+search.add_command(sync)
 
 admin.add_command(setup)
 admin.add_command(teardown)

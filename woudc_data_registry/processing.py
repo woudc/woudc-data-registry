@@ -85,7 +85,7 @@ class Process(object):
     - index
     """
 
-    def __init__(self, registry_conn, search_engine_conn):
+    def __init__(self, registry_conn, search_index_conn):
         """constructor"""
 
         self.status = None
@@ -94,11 +94,10 @@ class Process(object):
         self.process_start = datetime.utcnow()
         self.process_end = None
         self.registry = registry_conn
-        self.search_engine = search_engine_conn
+        self.search_index = search_index_conn
 
         self._registry_updates = []
-        self._search_engine_updates = []
-        self.data_record = None
+        self._search_index_updates = []
 
         self.warnings = []
         self.errors = []
@@ -303,17 +302,19 @@ class Process(object):
                 return False
 
         LOGGER.info('Validating data record')
-        self.data_record = DataRecord(self.extcsv)
-        self.data_record.ingest_filepath = infile
-        self.data_record.filename = os.path.basename(infile)
-        self.data_record.url = self.data_record.get_waf_path(
-            config.WDR_WAF_BASEURL)
+        data_record = DataRecord(self.extcsv)
+        data_record.ingest_filepath = infile
+        data_record.filename = os.path.basename(infile)
+        data_record.url = data_record.get_waf_path(config.WDR_WAF_BASEURL)
         self.process_end = datetime.utcnow()
 
-        data_record_ok = self.check_data_record()
+        data_record_ok = self.check_data_record(data_record)
 
         if data_record_ok:
             LOGGER.info('Data record is valid and verified')
+            self._registry_updates.append(data_record)
+            self._search_index_updates.append(data_record)
+
         return data_record_ok
 
     def persist(self):
@@ -323,31 +324,39 @@ class Process(object):
         Copies the input file to the WAF.
         """
 
+        data_records = []
+
         LOGGER.info('Beginning persistence to data registry')
         for model in self._registry_updates:
             LOGGER.debug('Saving {} to registry'.format(str(model)))
             self.registry.save(model)
 
-        # TODO
-        # LOGGER.info('Beginning persistence to search engine')
-        # for model in self._search_engine_updates:
-        #     LOGGER.debug('Saving {} to search engine')
+            if isinstance(model, DataRecord):
+                data_records.append(model)
 
-        LOGGER.info('Saving data record to registry')
-        self.registry.save(self.data_record)
+        LOGGER.info('Beginning persistence to search index')
+        for model in self._search_index_updates:
+            if not isinstance(model, DataRecord):
+                permission = True
+            else:
+                # Do not persist older versions of data records.
+                esid = model.es_id
+                prev_version = self.search_index.get_record_version(esid)
+                now_version = model.data_generation_version
 
-        prev_version = \
-            self.search_engine.get_record_version(self.data_record.es_id)
-        if not prev_version \
-           or self.data_record.data_generation_version > prev_version:
-            LOGGER.info('Saving data record to search index')
-            self.search_engine.index_data_record(
-                self.data_record.__geo_interface__)
+                permission = not prev_version or now_version > prev_version
+                if permission:
+                    data_records.append(model)
 
-        LOGGER.info('Saving data record CSV to WAF')
-        waf_filepath = self.data_record.get_waf_path(config.WDR_WAF_BASEDIR)
-        os.makedirs(os.path.dirname(waf_filepath), exist_ok=True)
-        shutil.copy2(self.data_record.ingest_filepath, waf_filepath)
+            if permission:
+                LOGGER.debug('Saving {} to search index'.format(str(model)))
+                self.search_index.index(type(model), model.__geo_interface__)
+
+        for record in data_records:
+            LOGGER.info('Saving data record CSV to WAF')
+            waf_filepath = record.get_waf_path(config.WDR_WAF_BASEDIR)
+            os.makedirs(os.path.dirname(waf_filepath), exist_ok=True)
+            shutil.copy2(record.ingest_filepath, waf_filepath)
 
         LOGGER.info('Persistence complete')
         self._registry_updates = []
@@ -364,6 +373,7 @@ class Process(object):
 
         LOGGER.info('Queueing new deployment...')
         self._registry_updates.append(deployment)
+        self._search_index_updates.append(deployment)
 
     def add_station_name(self, bypass=False):
         """
@@ -425,7 +435,7 @@ class Process(object):
             LOGGER.info('Queueing new instrument...')
 
             self._registry_updates.append(instrument)
-            self._search_engine_updates.append(instrument)
+            self._search_index_updates.append(instrument)
             return True
         else:
             return False
@@ -1003,7 +1013,7 @@ class Process(object):
 
         return dates_ok
 
-    def check_data_record(self):
+    def check_data_record(self, data_record):
         """
         Validate the data record made from the input Extended CSV file,
         and look for collisions with any previous submissions of the
@@ -1020,9 +1030,9 @@ class Process(object):
         version = self.extcsv.extcsv['DATA_GENERATION']['Version']
         dg_valueline = self.extcsv.line_num('DATA_GENERATION') + 2
 
-        components = self.data_record.data_record_id.split(':')
-        components[-1] = '%.%'
-        identifier_pattern = ':'.join(components)
+        id_components = data_record.data_record_id.split(':')
+        id_components[-1] = r'.*\..*'  # Pattern for floating-point number
+        identifier_pattern = ':'.join(id_components)
 
         LOGGER.debug('Verifying if URN already exists')
 

@@ -44,6 +44,7 @@
 # =================================================================
 
 import logging
+import re
 
 from sqlalchemy import func, create_engine
 from sqlalchemy.exc import DataError, SQLAlchemyError
@@ -65,6 +66,19 @@ class Registry(object):
                                echo=config.WDR_DB_DEBUG)
         Session = sessionmaker(bind=engine, expire_on_commit=False)
         self.session = Session()
+
+    def query_full_index(self, domain):
+        """
+        Queries for the entire contents of the index of model class <domain>.
+
+        :param domain: A model class.
+        :returns: List of all objects of that class in the registry.
+        """
+
+        LOGGER.debug('Querying all records for {}'.format(domain))
+        values = self.session.query(domain).all()
+
+        return values
 
     def query_distinct(self, domain):
         """
@@ -114,6 +128,12 @@ class Registry(object):
         :param case_insensitive: Whether to query strings case-insensitively.
         :returns: One element of query results.
         """
+
+        # Change regular expression notation to SQL notation.
+        pattern = pattern.replace('.*', '%')
+        pattern = pattern.replace('.+', '_%')
+        pattern = re.sub(r'(?<!\\)\.', '_', pattern)
+        pattern = pattern.replace(r'\.', '.')
 
         field = getattr(obj, by)
 
