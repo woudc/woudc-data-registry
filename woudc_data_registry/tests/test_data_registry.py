@@ -464,6 +464,81 @@ class ParserTest(unittest.TestCase):
             if param != 'data_table':
                 self.assertIn(param, ecsv.extcsv)
 
+    def test_number_of_observations(self):
+        """ Test counting of observation rows in a generic file """
+
+        # Test throughout various datasets with different data table names.
+        contents = util.read_file(resolve_test_data_path(
+            'data/general/20111101.Brewer.MKIII.201.RMDA.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertEquals(ecsv.number_of_observations(), 30)
+
+        # Umkehr
+        contents = util.read_file(resolve_test_data_path(
+            'data/umkehr/umkehr2-correct.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertEquals(ecsv.number_of_observations(), 13)
+
+        # Broad-band
+        contents = util.read_file(resolve_test_data_path(
+            'data/general/20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertEquals(ecsv.number_of_observations(), 719)
+
+    def test_number_of_observations_large(self):
+        """ Test counting of observation rows in a file with large tables """
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/general/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertEquals(ecsv.number_of_observations(), 5295)
+
+    def test_number_of_observations_duplicates(self):
+        """ Test counting of observation rows in a file with duplicate rows """
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/umkehr/umkehr1-duplicated.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertLessEqual(ecsv.number_of_observations(), 14)
+
+    def test_number_of_observations_multiple_tables(self):
+        """
+        Test counting of observation rows in a file with multiple data tables
+        """
+
+        # Lidar
+        contents = util.read_file(resolve_test_data_path(
+            'data/lidar/lidar-correct.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertEquals(ecsv.number_of_observations(), 336)
+
+        # Spectral
+        contents = util.read_file(resolve_test_data_path(
+            'data/spectral/spectral-extra-profile.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertEquals(ecsv.number_of_observations(), 387)
+
 
 class TimestampParsingTest(unittest.TestCase):
     """ Test suite for parser.ExtendedCSV._parse_timestamp """
