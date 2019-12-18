@@ -96,7 +96,7 @@ package:
 
 setup:
 	woudc-data-registry admin setup
-	woudc-data-registry admin search create-index
+	woudc-data-registry admin search create-indexes
 
 setup_data:
 	mkdir -p data
@@ -104,7 +104,7 @@ setup_data:
 
 teardown:
 	woudc-data-registry admin teardown
-	woudc-data-registry admin search delete-index
+	woudc-data-registry admin search delete-indexes
 
 test:
 	python setup.py test
