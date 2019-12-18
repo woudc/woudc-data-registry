@@ -390,9 +390,7 @@ class Station(base):
             if dict_['end_date'] is None \
                or isinstance(dict_['end_date'], datetime.date):
                 self.end_date = dict_['end_date']
-            elif not dict_['end_date']:
-                pass
-            else:
+            elif dict_['end_date']:
                 self.end_date = datetime.datetime.strptime(
                     dict_['end_date'], '%Y-%m-%d').date()
         except Exception as err:
@@ -505,9 +503,7 @@ class Deployment(base):
             if dict_['end_date'] is None \
                or isinstance(dict_['end_date'], datetime.date):
                 self.end_date = dict_['end_date']
-            elif not dict_['end_date']:
-                pass
-            else:
+            elif dict_['end_date']:
                 self.end_date = datetime.datetime.strptime(
                     dict_['end_date'], '%Y-%m-%d').date()
         except Exception as err:
@@ -841,15 +837,8 @@ def unpack_station_names(rows):
         if name.startswith('\\x'):
             name = decode_hex(name[2:])[0].decode('utf-8')
             row['name'] = name
-            row['station_name_id'] = ':'.join([station, name])
         if name not in tracker:
             tracker[name] = row
-        else:
-            tracker[name]['first_seen'] = min(tracker[name]['first_seen'],
-                                              row['first_seen'])
-            tracker[name]['last_seen'] = '' \
-                if '' in [tracker[name]['last_seen'], row['last_seen']] \
-                else max(tracker[name]['last_seen'], row['last_seen'])
 
     return tracker.values()
 
