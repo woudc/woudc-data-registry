@@ -209,14 +209,13 @@ class Process(object):
 
                 if bypass:
                     LOGGER.info('Bypass mode. Skipping permission check')
-                    go_ahead_for_deployment_addition = True
+                    allow_add_deployment = True
                 else:
                     response = input('Deployment {} not found. Add? (y/n) [n]: '  # noqa
                                      .format(deployment_name))
-                    go_ahead_for_deployment_addition = \
-                        response.lower() in ['y', 'yes']
+                    allow_add_deployment = response.lower() in ['y', 'yes']
 
-                if go_ahead_for_deployment_addition:
+                if allow_add_deployment:
                     self.add_deployment()
                     deployment_ok = True
 
@@ -340,19 +339,20 @@ class Process(object):
         LOGGER.info('Beginning persistence to search index')
         for model in self._search_index_updates:
             if not isinstance(model, DataRecord):
-                go_ahead_for_addition = True
+                allow_update_model = True
             else:
                 # Do not persist older versions of data records.
                 esid = model.es_id
                 prev_version = self.search_index.get_record_version(esid)
                 now_version = model.data_generation_version
 
-                go_ahead_for_addition = \
-                    not prev_version or now_version > prev_version
-                if go_ahead_for_addition:
+                if prev_version or now_version > prev_version:
+                    allow_update_model = True
                     data_records.append(model)
+                else:
+                    allow_update_model = False
 
-            if go_ahead_for_addition:
+            if allow_update_model:
                 LOGGER.debug('Saving {} to search index'.format(str(model)))
                 self.search_index.index(type(model), model.__geo_interface__)
 
@@ -396,13 +396,13 @@ class Process(object):
 
         if bypass:
             LOGGER.info('Bypass mode. Skipping permission check')
-            go_ahead_for_stn_name_addition = True
+            allow_add_station_name = True
         else:
             response = input('Station name {} not found. Add? (y/n) [n]: '
                              .format(station_name_object.station_name_id))
-            go_ahead_for_stn_name_addition = response.lower() in ['y', 'yes']
+            allow_add_station_name = response.lower() in ['y', 'yes']
 
-        if not go_ahead_for_stn_name_addition:
+        if not allow_add_station_name:
             return False
         else:
             LOGGER.info('Queueing new station name...')
@@ -428,13 +428,13 @@ class Process(object):
 
         if bypass:
             LOGGER.info('Bypass mode. Skipping permission check')
-            go_ahead_for_instrument_addition = True
+            allow_add_instrument = True
         else:
             response = input('Instrument {} not found. Add? (y/n) [n]: '
                              .format(instrument.instrument_id))
-            go_ahead_for_instrument_addition = response.lower() in ['y', 'yes']
+            allow_add_instrument = response.lower() in ['y', 'yes']
 
-        if go_ahead_for_instrument_addition:
+        if allow_add_instrument:
             LOGGER.info('Queueing new instrument...')
 
             self._registry_updates.append(instrument)
