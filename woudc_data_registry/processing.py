@@ -356,9 +356,8 @@ class Process(object):
 
         for record in data_records:
             LOGGER.info('Saving data record CSV to WAF')
-            waf_filepath = record.get_waf_path(config.WDR_WAF_BASEDIR)
-            os.makedirs(os.path.dirname(waf_filepath), exist_ok=True)
-            shutil.copy2(record.ingest_filepath, waf_filepath)
+            os.makedirs(os.path.dirname(record.output_filepath), exist_ok=True)
+            shutil.copy2(record.ingest_filepath, record.output_filepath)
 
         LOGGER.info('Persistence complete')
         self._registry_updates = []
