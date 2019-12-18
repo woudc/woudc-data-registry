@@ -113,7 +113,6 @@ class ExtendedCSV(object):
         """
 
         self.extcsv = {}
-        self.number_of_observations = 0
         self._raw = None
 
         self._table_count = {}
@@ -121,6 +120,9 @@ class ExtendedCSV(object):
 
         self.warnings = []
         self.errors = []
+
+        self._noncore_table_schema = None
+        self._observations_table = None
 
         LOGGER.debug('Reading into csv')
         self._raw = content
@@ -819,6 +821,33 @@ class ExtendedCSV(object):
 
         return success
 
+    def number_of_observations(self):
+        """
+        Returns the total number of unique rows in the Extended CSV's
+        data table(s).
+
+        :returns: Number of unique data rows in the file.
+        """
+
+        if not self._observations_table:
+            try:
+                self._determine_noncore_schema()
+            except (NonStandardDataError, MetadataValidationError) as err:
+                LOGGER.warning('Cannot identify data table due to: {}'
+                               .format(err))
+                return 0
+
+        # Count lines in the file's data table(s)
+        data_rows = set()
+        for i in range(1, self.table_count(self._observations_table) + 1):
+            table_name = self._observations_table + '_' + str(i) \
+                if i > 1 else self._observations_table
+
+            rows = zip(*self.extcsv[table_name].values())
+            data_rows.update(rows)
+
+        return len(data_rows)
+
     def validate_metadata_tables(self):
         """validate core metadata tables and fields"""
 
@@ -867,7 +896,15 @@ class ExtendedCSV(object):
         else:
             raise MetadataValidationError('Invalid metadata', self.errors)
 
-    def validate_dataset_tables(self):
+    def _determine_noncore_schema(self):
+        """
+        Sets the table definitions schema and observations data table
+        for this Extended CSV instance, based on its CONTENT fields
+        and which tables are present.
+
+        :returns: void
+        """
+
         tables = DOMAINS['Datasets']
         curr_dict = tables
         fields_line = self.line_num('CONTENT') + 1
@@ -883,21 +920,19 @@ class ExtendedCSV(object):
                 msg = 'Cannot assess dataset table schema:' \
                       ' {} unknown'.format(field_name)
                 self._warning(56, fields_line, msg)
-                return False
+
+                raise MetadataValidationError(msg, self.errors)
 
         if '1' in curr_dict.keys():
-            version = self.determine_version(curr_dict)
+            version = self._determine_version(curr_dict)
             LOGGER.info('Identified version as {}'.format(version))
 
             curr_dict = curr_dict[version]
 
-        if self.check_dataset(curr_dict):
-            LOGGER.debug('All dataset tables in file validated')
-        else:
-            raise MetadataValidationError('Dataset tables failed validation',
-                                          self.errors)
+        self._noncore_table_schema = {k: v for k, v in curr_dict.items()}
+        self._observations_table = self._noncore_table_schema.pop('data_table')
 
-    def determine_version(self, schema):
+    def _determine_version(self, schema):
         """
         Attempt to determine which of multiple possible table definitions
         contained in <schema> fits the instance's Extended CSV file best,
@@ -943,9 +978,14 @@ class ExtendedCSV(object):
                 if rating(version) == best_match:
                     return version
 
-    def check_dataset(self, schema):
+    def validate_dataset_tables(self):
+        """Validate tables and fields beyond the core metadata tables"""
+
+        if not self._noncore_table_schema:
+            self._determine_noncore_schema()
+
+        schema = self._noncore_table_schema
         success = True
-        observations_table = schema.pop('data_table')
 
         required_tables = [name for name, body in schema.items()
                            if 'required_fields' in body]
@@ -997,17 +1037,13 @@ class ExtendedCSV(object):
                 LOGGER.warning('Optional table {} is not in file.'.format(
                                table))
 
-        for i in range(1, self.table_count(observations_table) + 1):
-            table_name = observations_table + '_' + str(i) \
-                if i > 1 else observations_table
-            arbitrary_column = next(iter(self.extcsv[table_name].values()))
-
-            self.number_of_observations += len(arbitrary_column)
-
         self.collimate_tables(present_tables, schema)
 
-        schema['data_table'] = observations_table
-        return success
+        if success:
+            LOGGER.debug('All dataset tables in file validated')
+        else:
+            raise MetadataValidationError('Dataset tables failed validation',
+                                          self.errors)
 
 
 class NonStandardDataError(Exception):
