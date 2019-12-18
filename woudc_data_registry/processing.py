@@ -106,6 +106,11 @@ class Process(object):
         """
         Record <message> as an error with code <error_code> that took place
         at line <line> in the input file.
+
+        :param error_code: Numeric error code from the error definition files.
+        :param line: Line number in the input file where the error was found.
+        :param message: String message describing the error.
+        :returns: void
         """
 
         LOGGER.warning(message)
@@ -115,6 +120,11 @@ class Process(object):
         """
         Record <message> as an error with code <error_code> that took place
         at line <line> in the input file.
+
+        :param error_code: Numeric error code from the error definition files.
+        :param line: Line number in the input file where the error was found.
+        :param message: String message describing the error.
+        :returns: void
         """
 
         LOGGER.error(message)
@@ -127,8 +137,7 @@ class Process(object):
         :param infile: Path to incoming data file.
         :param metadata_only: Whether to only verify common metadata tables.
         :param bypass: Whether to skip permission prompts to add records.
-
-        :returns: `bool` of processing result
+        :returns: Whether the operation was successful.
         """
 
         # detect incoming data file
@@ -324,6 +333,8 @@ class Process(object):
         Publish all changes from the previous file parse to the data registry
         and ElasticSearch index, including instrument/deployment updates.
         Copies the input file to the WAF.
+
+        :returns: void
         """
 
         data_records = []
@@ -370,6 +381,8 @@ class Process(object):
         Create a new deployment instance for the input Extended CSV file's
         #PLATFORM and #DATA_GENERATION.Agency. Queues the new deployment
         to be saved next time the publish method is called.
+
+        :returns: void
         """
 
         deployment = build_deployment(self.extcsv)
@@ -447,6 +460,8 @@ class Process(object):
         """
         Validates the instance's Extended CSV source file's #CONTENT.Class,
         and returns True if no errors are found.
+
+        :returns: Whether the input file's project validated successfully.
         """
 
         project = self.extcsv.extcsv['CONTENT']['Class']
@@ -470,7 +485,10 @@ class Process(object):
         and returns True if no errors are found.
 
         Adjusts the Extended CSV contents if necessary to form a match.
+
+        :returns: Whether the input file's dataset validated successfully.
         """
+
         dataset = self.extcsv.extcsv['CONTENT']['Category']
 
         LOGGER.debug('Validating dataset {}'.format(dataset))
@@ -498,6 +516,8 @@ class Process(object):
         Adjusts the Extended CSV contents if necessary to form a match.
 
         Prerequisite: #CONTENT.Class is a trusted value.
+
+        :returns: Whether the input file's contributor validated successfully.
         """
 
         agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
@@ -543,6 +563,8 @@ class Process(object):
         and returns True if no errors are found.
 
         Adjusts the Extended CSV contents if necessary to form a match.
+
+        :returns: Whether the input file's station validated successfully.
         """
 
         identifier = str(self.extcsv.extcsv['PLATFORM']['ID'])
@@ -646,6 +668,9 @@ class Process(object):
         Prerequisite: #DATA_GENERATION.Agency,
                       #PLATFORM_ID, and
                       #CONTENT.Class are all trusted values.
+
+        :returns: Whether the input file's station-contributor pairing
+                  validated successfully.
         """
 
         station = str(self.extcsv.extcsv['PLATFORM']['ID'])
@@ -679,6 +704,9 @@ class Process(object):
         and #INSTRUMENT.Model and returns True if no errors are found.
 
         Adjusts the Extended CSV contents if necessary to form a match.
+
+        :returns: Whether the input file's instrument name and model
+                  validated successfully.
         """
 
         name_ok = True
@@ -744,6 +772,9 @@ class Process(object):
                       #INSTRUMENT.Model,
                       #PLATFORM.ID and
                       #CONTENT.Category are all trusted values.
+
+        :returns: Whether the input file's instrument collectively
+                  validated successfully.
         """
 
         serial = self.extcsv.extcsv['INSTRUMENT']['Number']
@@ -774,6 +805,8 @@ class Process(object):
         Validates the instance's Extended CSV source file's #LOCATION table
         against the location of the instrument from the file, and returns
         True if no errors are found.
+
+        :returns: Whether the input file's location validated successfully.
         """
 
         instrument_id = build_instrument(self.extcsv).instrument_id
@@ -868,6 +901,9 @@ class Process(object):
         Fill is the Extended CSV with missing values if possible.
 
         Prerequisite: #CONTENT.Category is a trusted value.
+
+        :returns: Whether the input file's #CONTENT table collectively
+                  validated successfully.
         """
 
         dataset = self.extcsv.extcsv['CONTENT']['Category']
@@ -928,6 +964,9 @@ class Process(object):
         with other tables. Returns True if no errors were encountered.
 
         Fill in the Extended CSV with missing values if possible.
+
+        :returns: Whether the input file's #DATA_GENERATION table collectively
+                  validated successfully.
         """
 
         dg_date = self.extcsv.extcsv['DATA_GENERATION'].get('Date', None)
@@ -983,6 +1022,9 @@ class Process(object):
         """
         Validate the input Extended CSV source file's dates across all tables
         to ensure that no date is more recent that #DATA_GENERATION.Date.
+
+        :returns: Whether the input file's time fields collectively
+                  validated successfully.
         """
 
         dg_date = self.extcsv.extcsv['DATA_GENERATION']['Date']
@@ -1031,6 +1073,8 @@ class Process(object):
                       #INSTRUMENT.Name,
                       and #INSTRUMENT.Number are all trusted values
                       and self.data_record exists.
+
+        :returns: Whether the data record metadata validated successfully.
         """
 
         dg_date = self.extcsv.extcsv['DATA_GENERATION']['Date']

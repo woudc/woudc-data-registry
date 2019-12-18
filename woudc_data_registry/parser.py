@@ -83,6 +83,9 @@ def non_content_line(line):
     """
     Returns True iff <line> represents a non-content line of an Extended CSV
     file, i.e. a blank line or a comment.
+
+    :param line: List of comma-separated components in an input line.
+    :returns: False iff the line contains data.
     """
 
     if len(line) == 0:
@@ -108,7 +111,6 @@ class ExtendedCSV(object):
         read WOUDC Extended CSV file
 
         :param content: buffer of Extended CSV data
-
         :returns: `woudc_data_registry.parser.ExtendedCSV`
         """
 
@@ -188,6 +190,10 @@ class ExtendedCSV(object):
         """
         Returns the line in the source file at which <table> started.
         If there is no table in the file named <table>, returns None instead.
+
+        :param table: Name of an Extended CSV table.
+        :returns: The line number where the table occurs, or None if
+                  the table never occurs.
         """
 
         return self._line_num.get(table, None)
@@ -195,6 +201,9 @@ class ExtendedCSV(object):
     def table_count(self, table_type):
         """
         Returns the number of tables named <table_type> in the source file.
+
+        :param table_type: Name of an Extended CSV table without suffixes.
+        :returns: Number of tables named <table_type> in the input file.
         """
 
         return self._table_count.get(table_type, 0)
@@ -203,6 +212,11 @@ class ExtendedCSV(object):
         """
         Record <message> as an error with code <error_code> that took place
         at line <line> in the input file.
+
+        :param error_code: Numeric error code from the error definition files.
+        :param line: Line number in the input file where the error was found.
+        :param message: String message describing the error.
+        :returns: void
         """
 
         LOGGER.warning(message)
@@ -212,6 +226,11 @@ class ExtendedCSV(object):
         """
         Record <message> as an error with code <error_code> that took place
         at line <line> in the input file.
+
+        :param error_code: Numeric error code from the error definition files.
+        :param line: Line number in the input file where the error was found.
+        :param message: String message describing the error.
+        :returns: void
         """
 
         LOGGER.error(message)
@@ -251,12 +270,10 @@ class ExtendedCSV(object):
         Add the raw strings in <values> to the bottom of the columns
         in the tabled named <table_name>.
 
-        Returns a list of errors encountered while adding the new values.
-
         :param table_name: Name of the table the values fall under
         :param values: A list of values from one row in the table
         :param line_num: Line number the row occurs at
-        :returns: List of errors
+        :returns: void
         """
 
         fields = self.extcsv[table_name].keys()
@@ -278,6 +295,7 @@ class ExtendedCSV(object):
         Does not alter the source file in any way.
 
         :param table_name: Name of the table to delete.
+        :returns: void
         """
 
         table_type = table_name.rstrip('0123456789_')
@@ -642,6 +660,7 @@ class ExtendedCSV(object):
 
         :param tables: List of tables in which to process columns.
         :param schema: A series of table definitions for the input file.
+        :returns: void
         """
 
         for table_name in tables:
@@ -943,6 +962,7 @@ class ExtendedCSV(object):
 
         :param schema: Dictionary with nested dictionaries of
                        table definitions as values.
+        :returns: Version number for the best-fitting table definition.
         """
 
         versions = set(schema.keys())

@@ -364,7 +364,6 @@ class SearchIndex(object):
         Generates index name with prefix if specified in config/environment
 
         :param index_name: ES index name
-
         :returns: fully qualified index name
         """
 
@@ -434,7 +433,6 @@ class SearchIndex(object):
         get version of data record
 
         :param identifier: identifier of data record
-
         :returns: `float` version of data record
         """
 

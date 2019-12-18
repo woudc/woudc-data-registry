@@ -62,7 +62,6 @@ def get_metadata(entity, identifier=None):
 
     :param entity: metadata entity
     :param identifier: identifier filter (default no filter)
-
     :returns: `list` of all matching objects
     """
 

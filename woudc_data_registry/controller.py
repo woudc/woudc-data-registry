@@ -64,6 +64,7 @@ def orchestrate(file_, directory, metadata_only=False,
     :param verify_only: Whether to verify the file for correctness without
                         processing.
     :param bypass: Whether to skip permission prompts for adding new records.
+    :returns: void
     """
 
     files_to_process = []

@@ -57,7 +57,6 @@ def point2geojsongeometry(x, y, z=None):
     :param x: x coordinate
     :param y: y coordinate
     :param z: y coordinate (default=None)
-
     :returns: `dict` of GeoJSON geometry
     """
 
@@ -85,7 +84,6 @@ def read_file(filename, encoding='utf-8'):
 
     :param filename: filename
     :param encoding: encoding (default=utf-8)
-
     :returns: buffer of file contents
     """
 
@@ -107,7 +105,6 @@ def str2bool(value):
     type (source: https://stackoverflow.com/a/715468)
 
     :param value: value to be evaluated
-
     :returns: `bool` of whether the value is boolean-ish
     """
 
@@ -147,7 +144,6 @@ def is_text_file(file_):
     detect if file is of type text
 
     :param file_: file to be tested
-
     :returns: `bool` of whether the file is text
     """
 
@@ -162,7 +158,6 @@ def is_binary_string(string_):
     detect if string is binary (https://stackoverflow.com/a/7392391)
 
     :param string_: `str` to be evaluated
-
     :returns: `bool` of whether the string is binary
     """
 
@@ -180,7 +175,6 @@ def json_serial(obj):
     types (source: https://stackoverflow.com/a/22238613)
 
     :param obj: `object` to be evaluate
-
     :returns: JSON non-default type to `str`
     """
 
@@ -198,7 +192,6 @@ def is_plural(value):
     helps function to determine whether a value is plural or singular
 
     :param value: value to be evaluated
-
     :returns: `bool` of whether the value is plural
     """
 

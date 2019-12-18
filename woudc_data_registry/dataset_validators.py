@@ -54,6 +54,11 @@ class DatasetValidator(object):
         """
         Record <message> as an error with code <error_code> that took place
         at line <line> in the input file.
+
+        :param error_code: Numeric error code from the error definition files.
+        :param line: Line number in the input file where the error was found.
+        :param message: String message describing the error.
+        :returns: void
         """
 
         LOGGER.warning(message)
@@ -63,6 +68,11 @@ class DatasetValidator(object):
         """
         Record <message> as an error with code <error_code> that took place
         at line <line> in the input file.
+
+        :param error_code: Numeric error code from the error definition files.
+        :param line: Line number in the input file where the error was found.
+        :param message: String message describing the error.
+        :returns: void
         """
 
         LOGGER.error(message)
