@@ -979,7 +979,7 @@ class ExtendedCSV(object):
                     return version
 
     def validate_dataset_tables(self):
-        """ Validate tables and fields beyond the core metadata tables """
+        """Validate tables and fields beyond the core metadata tables"""
 
         if not self._noncore_table_schema:
             self._determine_noncore_schema()
