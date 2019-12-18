@@ -85,7 +85,7 @@ def non_content_line(line):
     file, i.e. a blank line or a comment.
 
     :param line: List of comma-separated components in an input line.
-    :returns: False iff the line contains data.
+    :returns: `bool` of whether the line contains no data.
     """
 
     if len(line) == 0:
@@ -687,7 +687,8 @@ class ExtendedCSV(object):
         Returns True iff all tables occur an acceptable number of times.
 
         :param schema: A series of table definitions for the input file.
-        :returns: Whether all tables are within the expected occurrence range.
+        :returns: `bool` of whether all tables are within the expected
+                  occurrence range.
         """
 
         success = True
@@ -722,7 +723,8 @@ class ExtendedCSV(object):
         :param table: Name of a table in the input file.
         :param definition: Schema definition of <table>.
         :param num_rows: The number of rows in <table>.
-        :returns: Whether all tables are in the expected height range.
+        :returns: `bool` of whether all tables are in the expected
+                  height range.
         """
 
         height_range = str(definition['rows'])
@@ -761,7 +763,7 @@ class ExtendedCSV(object):
 
         :param table: Name of a table in the input file.
         :param definition: Schema definition for the table.
-        :returns: Whether fields satisfy the table's definition.
+        :returns: `bool` of whether fields satisfy the table's definition.
         """
 
         success = True

@@ -100,7 +100,8 @@ class Registry(object):
         :param obj: Object instance of the table to query in
         :param by: Field name to be queried
         :param value: Value of the field in any query results
-        :param case_insensitive: Whether to query strings case-insensitively
+        :param case_insensitive: `bool` of whether to query strings
+                                 case-insensitively
         :returns: Query results
         """
 
@@ -124,7 +125,8 @@ class Registry(object):
         :param obj: Class of table to query in.
         :param by: Field name to be queried.
         :param pattern: Wildcard pattern that any result's value must match.
-        :param case_insensitive: Whether to query strings case-insensitively.
+        :param case_insensitive: `bool` of whether to query strings
+                                 case-insensitively.
         :returns: One element of query results.
         """
 

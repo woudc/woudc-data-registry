@@ -60,10 +60,12 @@ def orchestrate(file_, directory, metadata_only=False,
 
     :param file_: File to process.
     :param directory: Directory to process (recursive).
-    :param metadata_only: Whether to verify only the common metadata tables.
-    :param verify_only: Whether to verify the file for correctness without
-                        processing.
-    :param bypass: Whether to skip permission prompts for adding new records.
+    :param metadata_only: `bool` of whether to verify only the
+                          common metadata tables.
+    :param verify_only: `bool` of whether to verify the file for correctness
+                        without processing.
+    :param bypass: `bool` of whether to skip permission prompts for adding
+                   new records.
     :returns: void
     """
 

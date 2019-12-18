@@ -135,9 +135,11 @@ class Process(object):
         Process incoming data record.
 
         :param infile: Path to incoming data file.
-        :param metadata_only: Whether to only verify common metadata tables.
-        :param bypass: Whether to skip permission prompts to add records.
-        :returns: Whether the operation was successful.
+        :param metadata_only: `bool` of whether to only verify common
+                              metadata tables.
+        :param bypass: `bool` of whether to skip permission prompts
+                        to add records.
+        :returns: `bool` of whether the operation was successful.
         """
 
         # detect incoming data file
@@ -401,8 +403,9 @@ class Process(object):
         prompt before a record is created. If permission is denied, no
         station name will be queued and False will be returned.
 
-        :param bypass: Whether to skip permission checks to add the name.
-        :returns: Whether the operation was successful.
+        :param bypass: `bool` of whether to skip permission checks
+                       to add the name.
+        :returns: `bool` of whether the operation was successful.
         """
 
         station_name_object = build_station_name(self.extcsv)
@@ -433,8 +436,9 @@ class Process(object):
         prompt before a record is created. If permission is denied, no
         new instrument will be queued and False will be returned.
 
-        :param bypass: Whether to skip permission checks to add the instrument.
-        :returns: Whether the operation was successful.
+        :param bypass: `bool` of whether to skip permission checks
+                       to add the instrument.
+        :returns: `bool` of whether the operation was successful.
         """
 
         instrument = build_instrument(self.extcsv)
@@ -461,7 +465,8 @@ class Process(object):
         Validates the instance's Extended CSV source file's #CONTENT.Class,
         and returns True if no errors are found.
 
-        :returns: Whether the input file's project validated successfully.
+        :returns: `bool` of whether the input file's project
+                  validated successfully.
         """
 
         project = self.extcsv.extcsv['CONTENT']['Class']
@@ -486,7 +491,8 @@ class Process(object):
 
         Adjusts the Extended CSV contents if necessary to form a match.
 
-        :returns: Whether the input file's dataset validated successfully.
+        :returns: `bool` of whether the input file's dataset
+                  validated successfully.
         """
 
         dataset = self.extcsv.extcsv['CONTENT']['Category']
@@ -517,7 +523,8 @@ class Process(object):
 
         Prerequisite: #CONTENT.Class is a trusted value.
 
-        :returns: Whether the input file's contributor validated successfully.
+        :returns: `bool` of whether the input file's contributor
+                  validated successfully.
         """
 
         agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
@@ -564,7 +571,8 @@ class Process(object):
 
         Adjusts the Extended CSV contents if necessary to form a match.
 
-        :returns: Whether the input file's station validated successfully.
+        :returns: `bool` of whether the input file's station
+                  validated successfully.
         """
 
         identifier = str(self.extcsv.extcsv['PLATFORM']['ID'])
@@ -669,8 +677,8 @@ class Process(object):
                       #PLATFORM_ID, and
                       #CONTENT.Class are all trusted values.
 
-        :returns: Whether the input file's station-contributor pairing
-                  validated successfully.
+        :returns: `bool` of whether the input file's station-contributor
+                  pairing validated successfully.
         """
 
         station = str(self.extcsv.extcsv['PLATFORM']['ID'])
@@ -705,7 +713,7 @@ class Process(object):
 
         Adjusts the Extended CSV contents if necessary to form a match.
 
-        :returns: Whether the input file's instrument name and model
+        :returns: `bool` of whether the input file's instrument name and model
                   validated successfully.
         """
 
@@ -773,7 +781,7 @@ class Process(object):
                       #PLATFORM.ID and
                       #CONTENT.Category are all trusted values.
 
-        :returns: Whether the input file's instrument collectively
+        :returns: `bool` of whether the input file's instrument collectively
                   validated successfully.
         """
 
@@ -806,7 +814,8 @@ class Process(object):
         against the location of the instrument from the file, and returns
         True if no errors are found.
 
-        :returns: Whether the input file's location validated successfully.
+        :returns: `bool` of whether the input file's location
+                  validated successfully.
         """
 
         instrument_id = build_instrument(self.extcsv).instrument_id
@@ -902,8 +911,8 @@ class Process(object):
 
         Prerequisite: #CONTENT.Category is a trusted value.
 
-        :returns: Whether the input file's #CONTENT table collectively
-                  validated successfully.
+        :returns: `bool` of whether the input file's #CONTENT table
+                  collectively validated successfully.
         """
 
         dataset = self.extcsv.extcsv['CONTENT']['Category']
@@ -965,8 +974,8 @@ class Process(object):
 
         Fill in the Extended CSV with missing values if possible.
 
-        :returns: Whether the input file's #DATA_GENERATION table collectively
-                  validated successfully.
+        :returns: `bool` of whether the input file's #DATA_GENERATION table
+                  collectively validated successfully.
         """
 
         dg_date = self.extcsv.extcsv['DATA_GENERATION'].get('Date', None)
@@ -1023,7 +1032,7 @@ class Process(object):
         Validate the input Extended CSV source file's dates across all tables
         to ensure that no date is more recent that #DATA_GENERATION.Date.
 
-        :returns: Whether the input file's time fields collectively
+        :returns: `bool` of whether the input file's time fields collectively
                   validated successfully.
         """
 
@@ -1074,7 +1083,8 @@ class Process(object):
                       and #INSTRUMENT.Number are all trusted values
                       and self.data_record exists.
 
-        :returns: Whether the data record metadata validated successfully.
+        :returns: `bool` of whether the data record metadata validated
+                  successfully.
         """
 
         dg_date = self.extcsv.extcsv['DATA_GENERATION']['Date']

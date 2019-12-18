@@ -454,7 +454,7 @@ class SearchIndex(object):
 
         :param domain: A model class that all entries in <target> belong to.
         :param target: GeoJSON dictionary of model data or a list of them.
-        :returns: Whether the operation was successful.
+        :returns: `bool` of whether the operation was successful.
         """
 
         if not MAPPINGS[domain.__tablename__]['enabled']:
@@ -501,7 +501,7 @@ class SearchIndex(object):
 
         :param domain: A model class that all entries in <target> belong to.
         :param target: GeoJSON dictionary of model data or a list of them.
-        :returns: Whether the operation was successful.
+        :returns: `bool` of whether the operation was successful.
         """
 
         if not MAPPINGS[domain.__tablename__]['enabled']:
@@ -550,7 +550,7 @@ class SearchIndex(object):
 
         :param domain: A model class that all entries in <target> belong to.
         :param target: List of GeoJSON model data.
-        :returns: Whether the operation was successful.
+        :returns: `bool` of whether the operation was successful.
         """
 
         if not MAPPINGS[domain.__tablename__]['enabled']:
