@@ -51,12 +51,11 @@ LOGGER = logging.getLogger(__name__)
 
 def setup_logger(loglevel, logfile=None):
     """
-    Setup configuration
+    Setup global logging configuration.
 
     :param loglevel: logging level
     :param logfile: logfile location
-
-    :returns: void (creates logging instance)
+    :returns: void
     """
 
     log_format = \

@@ -11,9 +11,7 @@ from woudc_data_registry.util import json_serial
 
 
 def build_deployment(ecsv):
-    """
-    Creates and returns a Deployment instance from the contents of <ecsv>
-    """
+    """Creates and returns a Deployment instance from the contents of <ecsv>"""
 
     station = str(ecsv.extcsv['PLATFORM']['ID'])
     agency = ecsv.extcsv['DATA_GENERATION']['Agency']
