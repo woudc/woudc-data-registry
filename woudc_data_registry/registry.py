@@ -85,7 +85,6 @@ class Registry(object):
         queries for distinct values
 
         :param domain: domain to be queried
-
         :returns: list of distinct values
         """
 
@@ -101,7 +100,8 @@ class Registry(object):
         :param obj: Object instance of the table to query in
         :param by: Field name to be queried
         :param value: Value of the field in any query results
-        :param case_insensitive: Whether to query strings case-insensitively
+        :param case_insensitive: `bool` of whether to query strings
+                                 case-insensitively
         :returns: Query results
         """
 
@@ -125,7 +125,8 @@ class Registry(object):
         :param obj: Class of table to query in.
         :param by: Field name to be queried.
         :param pattern: Wildcard pattern that any result's value must match.
-        :param case_insensitive: Whether to query strings case-insensitively.
+        :param case_insensitive: `bool` of whether to query strings
+                                 case-insensitively.
         :returns: One element of query results.
         """
 
@@ -157,7 +158,6 @@ class Registry(object):
         :param fields: fields to be filtered by
         :param case_insensitive: Collection of string fields that should be
                                  queried case-insensitively
-
         :returns: query results
         """
 
@@ -181,7 +181,6 @@ class Registry(object):
         helper function to save object to registry
 
         :param obj: object to save (defualt None)
-
         :returns: void
         """
 
@@ -201,4 +200,6 @@ class Registry(object):
             self.session.rollback()
 
     def close_session(self):
+        """Close the registry's database connection and resources"""
+
         self.session.close()

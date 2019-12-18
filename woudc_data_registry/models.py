@@ -1056,7 +1056,7 @@ def init(ctx, datadir, init_search_index):
 @click.command('sync')
 @click.pass_context
 def sync(ctx):
-    """ sync search index with data registry """
+    """Sync search index with data registry"""
 
     model_classes = [
         Project,

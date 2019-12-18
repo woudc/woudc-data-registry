@@ -54,6 +54,11 @@ class DatasetValidator(object):
         """
         Record <message> as an error with code <error_code> that took place
         at line <line> in the input file.
+
+        :param error_code: Numeric error code from the error definition files.
+        :param line: Line number in the input file where the error was found.
+        :param message: String message describing the error.
+        :returns: void
         """
 
         LOGGER.warning(message)
@@ -63,6 +68,11 @@ class DatasetValidator(object):
         """
         Record <message> as an error with code <error_code> that took place
         at line <line> in the input file.
+
+        :param error_code: Numeric error code from the error definition files.
+        :param line: Line number in the input file where the error was found.
+        :param message: String message describing the error.
+        :returns: void
         """
 
         LOGGER.error(message)
@@ -74,7 +84,8 @@ class DatasetValidator(object):
         Returns True iff no errors were encountered.
 
         :param extcsv: A parsed Extended CSV file of the appropriate dataset.
-        :returns: True iff the file's dataset-specific tables are error-free.
+        :returns: `bool` of whether the file's dataset-specific tables
+                  are error-free.
         """
 
         return True
@@ -98,7 +109,8 @@ class TotalOzoneValidator(DatasetValidator):
         inconsistencies between #MONTHLY and the data it is derived from.
 
         :param extcsv: A parsed Extended CSV file of TotalOzone data.
-        :returns: True iff the file's dataset-specific tables are error-free.
+        :returns: `bool` of whether the file's dataset-specific tables
+                  are error-free.
         """
 
         LOGGER.info('Beginning TotalOzone-specific checks')
@@ -116,7 +128,7 @@ class TotalOzoneValidator(DatasetValidator):
         Returns True iff no errors were found.
 
         :param extcsv: A parsed Extended CSV file of TotalOzone data.
-        :returns: True iff the ordering of #DAILY Dates is error-free.
+        :returns: `bool` of whether the ordering of #DAILY Dates is error-free.
         """
 
         LOGGER.debug('Assessing order of #DAILY.Date column')
@@ -182,7 +194,7 @@ class TotalOzoneValidator(DatasetValidator):
         and inconsistencies. Returns True iff no errors were found.
 
         :param extcsv: A parsed Extended CSV file of TotalOzone data.
-        :returns: True iff the two #TIMESTAMP tables are error-free.
+        :returns: `bool` of whether the two #TIMESTAMP tables are error-free.
         """
 
         LOGGER.debug('Assessing #TIMESTAMP tables for similarity')
@@ -252,7 +264,7 @@ class TotalOzoneValidator(DatasetValidator):
         comparison with #DAILY. Returns True iff no errors were found.
 
         :param extcsv: A parsed Extended CSV file of TotalOzone data.
-        :returns: True iff the #MONTHLY table is error-free.
+        :returns: `bool` of whether the #MONTHLY table is error-free.
         """
 
         LOGGER.debug('Assessing correctness of #MONTHLY table')
@@ -347,7 +359,8 @@ class TotalOzoneObsValidator(DatasetValidator):
         #OBSERVATIONS tables.
 
         :param extcsv: A parsed Extended CSV file of TotalOzoneObs data.
-        :returns: True iff the file's dataset-specific tables are error-free.
+        :returns: `bool` of whether the file's dataset-specific tables
+                  are error-free.
         """
 
         LOGGER.info('Beginning TotalOzoneObs-specific checks')
@@ -363,7 +376,8 @@ class TotalOzoneObsValidator(DatasetValidator):
         Returns True iff no errors were found.
 
         :param extcsv: A parsed Extended CSV file of TotalOzoneObs data.
-        :returns: True iff the ordering of #OBSERVATIONS.Times is error-free.
+        :returns: `bool` of whether the ordering of #OBSERVATIONS.Times
+                  is error-free.
         """
 
         observations = zip(*extcsv.extcsv['OBSERVATIONS'].values())
@@ -431,7 +445,8 @@ class SpectralValidator(DatasetValidator):
         and #GLOBAL_SUMMARY tables such that the counts of each are different.
 
         :param extcsv: A parsed Extended CSV file of Spectral data.
-        :returns: True iff the file's dataset-specific tables are error-free.
+        :returns: `bool` of whether the file's dataset-specific tables
+                  are error-free.
         """
 
         LOGGER.info('Beginning Spectral-specific checks')
@@ -447,7 +462,7 @@ class SpectralValidator(DatasetValidator):
         in the input file <extcsv>. Returns True iff no errors were found.
 
         :param extcsv: A parsed Extended CSV file of Spectral data.
-        :returns: True iff the file is free of table grouping errors.
+        :returns: `bool` of whether the file is free of table grouping errors.
         """
 
         LOGGER.debug('Assessing #TIMESTAMP, #GLOBAL, #GLOBAL_SUMMARY'
@@ -488,7 +503,8 @@ class LidarValidator(DatasetValidator):
         and #OZONE_SUMMARY tables such that the counts of each are different.
 
         :param extcsv: A parsed Extended CSV file of Lidar data.
-        :returns: True iff the file's dataset-specific tables are error-free.
+        :returns: `bool` of whether the file's dataset-specific tables
+                  are error-free.
         """
 
         LOGGER.info('Beginning Lidar-specific checks')
@@ -504,7 +520,7 @@ class LidarValidator(DatasetValidator):
         in the input file <extcsv>. Returns True iff no errors were found.
 
         :param extcsv: A parsed Extended CSV file of Lidar data.
-        :returns: True iff the file is free of table grouping errors.
+        :returns: `bool` of whether the file is free of table grouping errors.
         """
 
         LOGGER.debug('Assessing #OZONE_PROFILE, #GLOBAL_SUMMARY table counts')
@@ -538,7 +554,8 @@ class UmkehrValidator(DatasetValidator):
         tables and improper ordering of dates within their data tables.
 
         :param extcsv: A parsed Extended CSV file of Umkehr data.
-        :returns: True iff the file's dataset-specific tables are error-free.
+        :returns: `bool` of whether the file's dataset-specific tables
+                  are error-free.
         """
 
         LOGGER.info('Beginning Umkehr-specific checks')
@@ -555,7 +572,8 @@ class UmkehrValidator(DatasetValidator):
         #C_PROFILE) in <extcsv>. Returns True iff no errors were found.
 
         :param extcsv: A parsed Extended CSV file of Umkehr data.
-        :returns: True iff the ordering of observation dates is error-free.
+        :returns: `bool` of whether the ordering of observation dates
+                  is error-free.
         """
 
         level = extcsv.extcsv['CONTENT']['Level']
@@ -617,7 +635,7 @@ class UmkehrValidator(DatasetValidator):
         and inconsistencies. Returns True iff no errors were found.
 
         :param extcsv: A parsed Extended CSV file of Umkehr data.
-        :returns: True iff the two #TIMESTAMP tables are error-free.
+        :returns: `bool` of whether the two #TIMESTAMP tables are error-free.
         """
 
         LOGGER.debug('Assessing #TIMESTAMP tables for similarity')
