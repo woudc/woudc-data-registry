@@ -832,7 +832,6 @@ def unpack_station_names(rows):
 
     for row in rows:
         name = row['name']
-        station = row['station_id']
 
         if name.startswith('\\x'):
             name = decode_hex(name[2:])[0].decode('utf-8')
