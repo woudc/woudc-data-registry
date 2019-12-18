@@ -54,7 +54,7 @@ make ENV=foo.env dropdb
 woudc-data-registry admin setup
 
 # initialize search engine
-woudc-data-registry admin search create-index
+woudc-data-registry admin search create-indexes
 
 # load core metadata
 
@@ -70,7 +70,7 @@ woudc-data-registry admin teardown
 woudc-data-registry admin setup
 
 # re-initialize search engine
-woudc-data-registry admin search delete-index
+woudc-data-registry admin search delete-indexes
 woudc-data-registry admin search create-index
 
 # drop database

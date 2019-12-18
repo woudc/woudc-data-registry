@@ -609,6 +609,7 @@ class DataRecord(base):
 
     ingest_filepath = Column(String, nullable=False)
     filename = Column(String, nullable=False)
+    output_filepath = Column(String, nullable=False)
 
     url = Column(String, nullable=False)
     es_id = Column(String, nullable=False)
@@ -665,9 +666,6 @@ class DataRecord(base):
 
         self.extcsv = ecsv.extcsv
         self.number_of_observations = ecsv.number_of_observations
-
-        self.filename = 'TODO'
-        self.url = 'TODO'
 
     @property
     def platform_type(self):
@@ -805,6 +803,7 @@ class DataRecord(base):
 
                 'ingest_filepath': self.ingest_filepath,
                 'filename': self.filename,
+                'output_filepath': self.output_filepath,
 
                 'url': self.url
             }

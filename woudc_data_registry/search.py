@@ -592,27 +592,27 @@ def search():
     pass
 
 
-@click.command('create-index')
+@click.command('create-indexes')
 @click.pass_context
-def create_index(ctx):
-    """create search index"""
+def create_indexes(ctx):
+    """create search indexes"""
 
-    click.echo('Creating index')
+    click.echo('Creating indexes')
     es = SearchIndex()
     es.create()
     click.echo('Done')
 
 
-@click.command('delete-index')
+@click.command('delete-indexes')
 @click.pass_context
-def delete_index(ctx):
-    """delete search index"""
+def delete_indexes(ctx):
+    """delete search indexes"""
 
-    click.echo('Deleting index')
+    click.echo('Deleting indexes')
     es = SearchIndex()
     es.delete()
     click.echo('Done')
 
 
-search.add_command(create_index)
-search.add_command(delete_index)
+search.add_command(create_indexes)
+search.add_command(delete_indexes)

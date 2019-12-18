@@ -305,6 +305,8 @@ class Process(object):
         data_record = DataRecord(self.extcsv)
         data_record.ingest_filepath = infile
         data_record.filename = os.path.basename(infile)
+        data_record.output_filepath = data_record.get_waf_path(
+            config.WDR_WAF_BASEDIR)
         data_record.url = data_record.get_waf_path(config.WDR_WAF_BASEURL)
         self.process_end = datetime.utcnow()
 

@@ -33,7 +33,7 @@ make ENV=/path/to/environment/config.env createdb
 woudc_data_registry admin setup
     Create Data Registry tables and schema
 
-woudc_data_registry admin search create-index
+woudc_data_registry admin search create-indexes
     Create Search Index mappings
 
 -----------------
@@ -43,7 +43,7 @@ Deleting Backends
 woudc_data_registry admin teardown
     Delete all Data Registry tables and schema
 
-woudc_data_registry admin search delete-index
+woudc_data_registry admin search delete-indexes
     Delete all Search Index indexes and mappings
 
 make ENV=/path/to/environment/config.env dropdb
