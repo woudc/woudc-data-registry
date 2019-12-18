@@ -443,7 +443,7 @@ class ParserTest(unittest.TestCase):
         ecsv.validate_metadata_tables()
 
         schema = DOMAINS['Datasets']['Broad-band']['1.0']['1']
-        version = ecsv._determine_version(schema)  # noqa
+        version = ecsv._determine_version(schema)
 
         self.assertEqual(version, '2')
         for param in schema[version]:
@@ -457,7 +457,7 @@ class ParserTest(unittest.TestCase):
         ecsv.validate_metadata_tables()
 
         schema = DOMAINS['Datasets']['Broad-band']['1.0']['1']
-        version = ecsv._determine_version(schema)  # noqa
+        version = ecsv._determine_version(schema)
 
         self.assertEqual(version, '1')
         for param in schema[version]:
