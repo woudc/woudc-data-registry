@@ -665,7 +665,7 @@ class DataRecord(base):
         self.generate_ids()
 
         self.extcsv = ecsv.extcsv
-        self.number_of_observations = ecsv.number_of_observations
+        self.number_of_observations = ecsv.number_of_observations()
 
     @property
     def platform_type(self):
