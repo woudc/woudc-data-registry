@@ -349,7 +349,7 @@ class Process(object):
 
                 go_ahead_for_addition = \
                     not prev_version or now_version > prev_version
-                if permission:
+                if go_ahead_for_addition:
                     data_records.append(model)
 
             if go_ahead_for_addition:
