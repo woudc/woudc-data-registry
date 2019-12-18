@@ -211,7 +211,7 @@ class Process(object):
                     LOGGER.info('Bypass mode. Skipping permission check')
                     permission = True
                 else:
-                    response = input('Deployment {} not found. Add? [y/n] '
+                    response = input('Deployment {} not found. Add? (y/n) [n]: '  # noqa
                                      .format(deployment_name))
                     permission = response.lower() in ['y', 'yes']
 
@@ -395,7 +395,7 @@ class Process(object):
             LOGGER.info('Bypass mode. Skipping permission check')
             permission = True
         else:
-            response = input('Station name {} not found. Add? [y/n] '
+            response = input('Station name {} not found. Add? (y/n) [n]: '
                              .format(station_name_object.station_name_id))
             permission = response.lower() in ['y', 'yes']
 
@@ -427,7 +427,7 @@ class Process(object):
             LOGGER.info('Bypass mode. Skipping permission check')
             permission = True
         else:
-            response = input('Instrument {} not found. Add? [y/n] '
+            response = input('Instrument {} not found. Add? (y/n) [n]: '
                              .format(instrument.instrument_id))
             permission = response.lower() in ['y', 'yes']
 
@@ -701,6 +701,10 @@ class Process(object):
 
         if not name_ok or not model_ok:
             return False
+
+        LOGGER.debug('Casting name and model to string for further checking')
+        name = str(name)
+        model = str(model)
 
         # Check data registry for matching instrument name
         response = self.registry.query_by_field(Instrument, 'name', name,
