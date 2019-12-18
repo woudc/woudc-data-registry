@@ -825,6 +825,8 @@ class ExtendedCSV(object):
         """
         Returns the total number of unique rows in the Extended CSV's
         data table(s).
+
+        :returns: Number of unique data rows in the file.
         """
 
         if not self._observations_table:
@@ -899,6 +901,8 @@ class ExtendedCSV(object):
         Sets the table definitions schema and observations data table
         for this Extended CSV instance, based on its CONTENT fields
         and which tables are present.
+
+        :returns: void
         """
 
         tables = DOMAINS['Datasets']
