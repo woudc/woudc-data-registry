@@ -11,7 +11,7 @@ In case the Data Registry and Search Index become desynchronized, there is a
 command to resync them. This command is destructive and cannot be undone,
 so use with caution and only when the Data Registry's content is trusted.
 
-woudc_data_registry admin search sync
+woudc-data-registry admin search sync
     Synchronize the Data Registry and Search Index exactly, using the Data
     Registry as a template. First inserts or update records in the Index to
     match the row with the same ID in the Registry, and then deletes excess
