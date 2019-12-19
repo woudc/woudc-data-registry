@@ -30,20 +30,20 @@ Creating Backends
 make ENV=/path/to/environment/config.env createdb
     Create the Data Registry database instance
 
-woudc_data_registry admin setup
+woudc-data-registry admin registry setup
     Create Data Registry tables and schema
 
-woudc_data_registry admin search create-indexes
+woudc-data-registry admin registry setup
     Create Search Index mappings
 
 -----------------
 Deleting Backends
 -----------------
 
-woudc_data_registry admin teardown
+woudc-data-registry admin registry teardown
     Delete all Data Registry tables and schema
 
-woudc_data_registry admin search delete-indexes
+woudc-data-registry admin search setup
     Delete all Search Index indexes and mappings
 
 make ENV=/path/to/environment/config.env dropdb
@@ -84,7 +84,7 @@ fetch-content.sh
 After running fetch-content.sh, the files in data/init are ready to be
 inserted to the Data Registry.
 
-woudc_data_registry admin init -d <initialization> <flags>
+woudc-data-registry admin init -d <initialization> <flags>
     Searches the directory path <initialization> for .csv and .json files
     of metadata, and loads them into the Data Registry tables. If the
     --init-search-index flag is provided, loads them to the Search Index

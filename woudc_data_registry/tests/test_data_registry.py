@@ -56,6 +56,9 @@ def resolve_test_data_path(test_data_file):
     """
     helper function to ensure filepath is valid
     for different testing context (setuptools, directly, etc.)
+
+    :param test_data_file: Relative path to an input file.
+    :returns: Full path to the input file.
     """
 
     if os.path.exists(test_data_file):
@@ -101,7 +104,7 @@ class ParserTest(unittest.TestCase):
             dummy.typecast_value('Dum', 'utcoffset', bad_input, 0), bad_input)
 
     def test_build_table(self):
-        """ Test table-management methods directly """
+        """Test table management methods directly"""
 
         ecsv = parser.ExtendedCSV('')
         fields = ['Class', 'Category', 'Level', 'Form']
@@ -152,7 +155,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(ecsv.extcsv, {})
 
     def test_row_filling(self):
-        """ Test that omitted columns in a row are filled in with nulls """
+        """Test that omitted columns in a row are filled in with nulls"""
 
         ecsv = parser.ExtendedCSV('')
         ecsv.init_table('TIMESTAMP', ['UTCOffset', 'Date', 'Time'], 1)
@@ -175,7 +178,7 @@ class ParserTest(unittest.TestCase):
             self.assertNotEqual(ecsv.extcsv['INSTRUMENT'][field][0], '')
 
     def test_field_capitalization(self):
-        """ Test that field names with incorrect capitalizations are fixed """
+        """Test that field names with incorrect capitalizations are fixed"""
 
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-field-capitalization.csv'))
@@ -206,7 +209,7 @@ class ParserTest(unittest.TestCase):
             self.assertEqual(len(ecsv.extcsv['DAILY'][field]), 30)
 
     def test_column_conversion(self):
-        """ Test that single-row tables are recognized and collimated """
+        """Test that single-row tables are recognized and collimated"""
 
         content_fields = ['Class', 'Category', 'Level', 'Form']
         content_values = ['WODUC', 'Broad-band', '1.0', '1']
@@ -257,7 +260,7 @@ class ParserTest(unittest.TestCase):
             self.assertIsInstance(value, float)
 
     def test_submissions(self):
-        """ Test parsing of previously submitted Extended CSV files """
+        """Test parsing of previously submitted Extended CSV files"""
 
         # Error-free file
         contents = util.read_file(resolve_test_data_path(
@@ -292,7 +295,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(ecsv.extcsv['PLATFORM']['Name'], 'Río Gallegos')
 
     def test_non_extcsv(self):
-        """ Test that various non-extcsv text files fail to parse """
+        """Test that various non-extcsv text files fail to parse"""
 
         # Text file is not in Extended CSV format
         contents = util.read_file(resolve_test_data_path(
@@ -311,7 +314,7 @@ class ParserTest(unittest.TestCase):
             ecsv.validate_metadata_tables()
 
     def test_missing_required_table(self):
-        """ Test that files with missing required tables fail to parse """
+        """Test that files with missing required tables fail to parse"""
 
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-missing-location-table.csv'))
@@ -323,7 +326,7 @@ class ParserTest(unittest.TestCase):
             ecsv.validate_metadata_tables()
 
     def test_missing_required_value(self):
-        """ Test that files with missing required values fail to parse """
+        """Test that files with missing required values fail to parse"""
 
         # File contains empty/null value for required field
         contents = util.read_file(resolve_test_data_path(
@@ -344,7 +347,7 @@ class ParserTest(unittest.TestCase):
             ecsv.validate_metadata_tables()
 
     def test_missing_optional_table(self):
-        """ Test that files with missing optional tables parse successfully """
+        """Test that files with missing optional tables parse successfully"""
 
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-missing-monthly-table.csv'))
@@ -358,7 +361,7 @@ class ParserTest(unittest.TestCase):
                         set(ecsv.extcsv.keys())))
 
     def test_missing_optional_value(self):
-        """ Test that files with missing optional values parse successfully """
+        """Test that files with missing optional values parse successfully"""
 
         # File contains empty/null value for optional LOCATION.Height
         contents = util.read_file(resolve_test_data_path(
@@ -380,7 +383,7 @@ class ParserTest(unittest.TestCase):
         self.assertIsNone(ecsv.extcsv['PLATFORM']['GAW_ID'])
 
     def test_empty_tables(self):
-        """ Test that files fail to parse if a table has no rows of values """
+        """Test that files fail to parse if a table has no rows of values"""
 
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-empty-timestamp2-table.csv'))
@@ -397,7 +400,7 @@ class ParserTest(unittest.TestCase):
             ecsv.validate_metadata_tables()
 
     def test_table_height(self):
-        """ Test that files fail to parse if a table has too many rows """
+        """Test that files fail to parse if a table has too many rows"""
 
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-excess-timestamp-table-rows.csv'))
@@ -407,7 +410,7 @@ class ParserTest(unittest.TestCase):
             ecsv.validate_metadata_tables()
 
     def test_table_occurrences(self):
-        """ Test that files fail to parse if a table appears too many times """
+        """Test that files fail to parse if a table appears too many times"""
 
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-excess-location-table.csv'))
@@ -417,7 +420,7 @@ class ParserTest(unittest.TestCase):
             ecsv.validate_metadata_tables()
 
     def test_line_spacing(self):
-        """ Test that files can parse no matter the space between tables """
+        """Test that files can parse no matter the space between tables"""
 
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-no-spaced.csv'))
@@ -434,7 +437,7 @@ class ParserTest(unittest.TestCase):
         self.assertTrue(set(DOMAINS['Common']).issubset(set(ecsv.extcsv)))
 
     def test_determine_version_broadband(self):
-        """ Test assigning a table definition version with multiple options """
+        """Test assigning a table definition version with multiple options"""
 
         contents = util.read_file(resolve_test_data_path(
             'data/general/20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'))
@@ -443,7 +446,7 @@ class ParserTest(unittest.TestCase):
         ecsv.validate_metadata_tables()
 
         schema = DOMAINS['Datasets']['Broad-band']['1.0']['1']
-        version = ecsv.determine_version(schema)
+        version = ecsv._determine_version(schema)
 
         self.assertEqual(version, '2')
         for param in schema[version]:
@@ -457,16 +460,91 @@ class ParserTest(unittest.TestCase):
         ecsv.validate_metadata_tables()
 
         schema = DOMAINS['Datasets']['Broad-band']['1.0']['1']
-        version = ecsv.determine_version(schema)
+        version = ecsv._determine_version(schema)
 
         self.assertEqual(version, '1')
         for param in schema[version]:
             if param != 'data_table':
                 self.assertIn(param, ecsv.extcsv)
 
+    def test_number_of_observations(self):
+        """Test counting of observation rows in a generic file"""
+
+        # Test throughout various datasets with different data table names.
+        contents = util.read_file(resolve_test_data_path(
+            'data/general/20111101.Brewer.MKIII.201.RMDA.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertEquals(ecsv.number_of_observations(), 30)
+
+        # Umkehr
+        contents = util.read_file(resolve_test_data_path(
+            'data/umkehr/umkehr2-correct.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertEquals(ecsv.number_of_observations(), 13)
+
+        # Broad-band
+        contents = util.read_file(resolve_test_data_path(
+            'data/general/20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertEquals(ecsv.number_of_observations(), 719)
+
+    def test_number_of_observations_large(self):
+        """Test counting of observation rows in a file with large tables"""
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/general/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertEquals(ecsv.number_of_observations(), 5295)
+
+    def test_number_of_observations_duplicates(self):
+        """Test counting of observation rows in a file with duplicate rows"""
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/umkehr/umkehr1-duplicated.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertLessEqual(ecsv.number_of_observations(), 14)
+
+    def test_number_of_observations_multiple_tables(self):
+        """
+        Test counting of observation rows in a file with multiple data tables
+        """
+
+        # Lidar
+        contents = util.read_file(resolve_test_data_path(
+            'data/lidar/lidar-correct.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertEquals(ecsv.number_of_observations(), 336)
+
+        # Spectral
+        contents = util.read_file(resolve_test_data_path(
+            'data/spectral/spectral-extra-profile.csv'))
+
+        ecsv = parser.ExtendedCSV(contents)
+        ecsv.validate_metadata_tables()
+
+        self.assertEquals(ecsv.number_of_observations(), 387)
+
 
 class TimestampParsingTest(unittest.TestCase):
-    """ Test suite for parser.ExtendedCSV._parse_timestamp """
+    """Test suite for parser.ExtendedCSV._parse_timestamp"""
 
     def setUp(self):
         # Only need a dummy parser since no input is coming from files.
@@ -476,7 +554,7 @@ class TimestampParsingTest(unittest.TestCase):
         return self.parser.parse_timestamp('Dummy', raw_string, 0)
 
     def test_success(self):
-        """ Test parsing valid timestamps """
+        """Test parsing valid timestamps"""
 
         self.assertEqual(self._parse_timestamp('00:00:00'), time(hour=0))
         self.assertEqual(self._parse_timestamp('12:00:00'), time(hour=12))
@@ -494,7 +572,7 @@ class TimestampParsingTest(unittest.TestCase):
                          time(hour=9, minute=15))
 
     def test_invalid_parts(self):
-        """ Test parsing timestamps fails with non-numeric characters """
+        """Test parsing timestamps fails with non-numeric characters"""
 
         with self.assertRaises(ValueError):
             self._parse_timestamp('0a:00:00')
@@ -510,8 +588,8 @@ class TimestampParsingTest(unittest.TestCase):
 
     def test_out_of_range(self):
         """
-        Test parsing timestamps where components have
-        invalid numeric values
+        Test parsing timestamps where components have invalid
+        numeric values
         """
 
         self.assertEqual(self._parse_timestamp('08:15:60'),
@@ -534,7 +612,7 @@ class TimestampParsingTest(unittest.TestCase):
                          time(hour=19, minute=25, second=1))
 
     def test_bad_separators(self):
-        """ Test parsing timestamps with separators other than ':' """
+        """Test parsing timestamps with separators other than ':'"""
 
         self.assertEqual(self._parse_timestamp('01-30-00'),
                          time(hour=1, minute=30))
@@ -547,7 +625,7 @@ class TimestampParsingTest(unittest.TestCase):
                          time(hour=1, minute=30))
 
     def test_12_hour_clock(self):
-        """ Test parsing timestamps which use am/pm format """
+        """Test parsing timestamps which use am/pm format"""
 
         self.assertEqual(self._parse_timestamp('01:00:00 am'), time(hour=1))
         self.assertEqual(self._parse_timestamp('01:00:00 pm'), time(hour=13))
@@ -562,7 +640,7 @@ class TimestampParsingTest(unittest.TestCase):
 
 
 class DatestampParsingTest(unittest.TestCase):
-    """ Test suite for parser.ExtendedCSV._parse_datestamp """
+    """Test suite for parser.ExtendedCSV._parse_datestamp"""
 
     def setUp(self):
         # Only need a dummy parser since no input is coming from files.
@@ -572,7 +650,7 @@ class DatestampParsingTest(unittest.TestCase):
         return self.parser.parse_datestamp('Dummy', raw_string, 0)
 
     def test_success(self):
-        """ Test parsing valid dates """
+        """Test parsing valid dates"""
 
         self.assertEqual(self._parse_datestamp('2013-05-01'),
                          date(year=2013, month=5, day=1))
@@ -589,7 +667,7 @@ class DatestampParsingTest(unittest.TestCase):
                          present)
 
     def test_invalid_parts(self):
-        """ Test parsing dates fails with non-numeric characters """
+        """Test parsing dates fails with non-numeric characters"""
 
         with self.assertRaises(ValueError):
             self._parse_datestamp('2019AD-10-31')
@@ -604,7 +682,7 @@ class DatestampParsingTest(unittest.TestCase):
             self._parse_datestamp('A generic string')
 
     def test_out_of_range(self):
-        """ Test parsing dates where components have invalid numeric values """
+        """Test parsing dates where components have invalid numeric values"""
 
         with self.assertRaises(ValueError):
             self._parse_datestamp('2001-04-35')
@@ -619,7 +697,7 @@ class DatestampParsingTest(unittest.TestCase):
             self._parse_datestamp('2003-00-01')
 
     def test_bad_separators(self):
-        """ Test parsing dates with separators other than '-' """
+        """Test parsing dates with separators other than '-'"""
 
         self.assertEqual(self._parse_datestamp('2019/01/24'),
                          date(year=2019, month=1, day=24))
@@ -634,7 +712,7 @@ class DatestampParsingTest(unittest.TestCase):
                          date(year=2019, month=1, day=24))
 
     def test_number_of_parts(self):
-        """ Test parsing dates with incorrect numbers of components """
+        """Test parsing dates with incorrect numbers of components"""
 
         with self.assertRaises(ValueError):
             self._parse_datestamp('20190124')
@@ -652,7 +730,7 @@ class DatestampParsingTest(unittest.TestCase):
 
 
 class UTCOffsetParsingTest(unittest.TestCase):
-    """ Test suite for parser.ExtendedCSV._parse_utcoffset """
+    """Test suite for parser.ExtendedCSV._parse_utcoffset"""
 
     def setUp(self):
         # Only need a dummy parser since no input is coming from files.
@@ -662,7 +740,7 @@ class UTCOffsetParsingTest(unittest.TestCase):
         return self.parser.parse_utcoffset('Dummy', raw_string, 0)
 
     def test_success(self):
-        """ Test parsing valid UTC offsets """
+        """Test parsing valid UTC offsets"""
 
         candidates = [
             '+09:00:00',
@@ -676,7 +754,7 @@ class UTCOffsetParsingTest(unittest.TestCase):
             self.assertEqual(self._parse_offset(candidate), candidate)
 
     def test_sign_variation(self):
-        """ Test parsing UTC offsets with various signs (or lacks thereof) """
+        """Test parsing UTC offsets with various signs (or lacks thereof)"""
         self.assertEqual(self._parse_offset('+05:30:00'), '+05:30:00')
         self.assertEqual(self._parse_offset('05:30:00'), '+05:30:00')
 
@@ -689,7 +767,7 @@ class UTCOffsetParsingTest(unittest.TestCase):
         self.assertEqual(self._parse_offset('00:00:00'), '+00:00:00')
 
     def test_missing_parts(self):
-        """ Test parsing UTC offsets where not all parts are provided. """
+        """Test parsing UTC offsets where not all parts are provided."""
 
         self.assertEqual(self._parse_offset('+13:00:'), '+13:00:00')
         self.assertEqual(self._parse_offset('+13::'), '+13:00:00')
@@ -706,7 +784,7 @@ class UTCOffsetParsingTest(unittest.TestCase):
             self._parse_offset('::')
 
     def test_part_lengths(self):
-        """ Test parsing UTC offsets where some parts are not 2 digits long """
+        """Test parsing UTC offsets where some parts are not 2 digits long"""
 
         self.assertEqual(self._parse_offset('+0:00:00'), '+00:00:00')
         self.assertEqual(self._parse_offset('+8:00:00'), '+08:00:00')
@@ -724,7 +802,7 @@ class UTCOffsetParsingTest(unittest.TestCase):
             self._parse_offset('-09:00:314159')
 
     def test_out_of_range(self):
-        """ Test that UTC offsets with invalid numeric parts fail to parse """
+        """Test that UTC offsets with invalid numeric parts fail to parse"""
 
         with self.assertRaises(ValueError):
             self._parse_offset('+60:00:00')
@@ -734,7 +812,7 @@ class UTCOffsetParsingTest(unittest.TestCase):
             self._parse_offset('-00:00:10800')
 
     def test_missing_separators(self):
-        """ Test parsing UTC offsets where there are fewer than 3 parts """
+        """Test parsing UTC offsets where there are fewer than 3 parts"""
 
         self.assertEqual(self._parse_offset('-03:30'), '-03:30:00')
         self.assertEqual(self._parse_offset('06:15'), '+06:15:00')
@@ -748,7 +826,7 @@ class UTCOffsetParsingTest(unittest.TestCase):
         self.assertEqual(self._parse_offset('-000000'), '+00:00:00')
 
     def test_bad_separators(self):
-        """ Test parsing dates with separators other than '-' """
+        """Test parsing dates with separators other than '-'"""
 
         self.assertEqual(self._parse_offset('+02|45|00'), '+02:45:00')
         self.assertEqual(self._parse_offset('+02/45/00'), '+02:45:00')
@@ -758,7 +836,7 @@ class UTCOffsetParsingTest(unittest.TestCase):
         self.assertEqual(self._parse_offset('+02/45|00'), '+02:45:00')
 
     def test_invalid_parts(self):
-        """ Test parsing UTC offsets which contain non-numeric characters """
+        """Test parsing UTC offsets which contain non-numeric characters"""
 
         with self.assertRaises(ValueError):
             self._parse_offset('-08:00:4A')
@@ -772,10 +850,10 @@ class UTCOffsetParsingTest(unittest.TestCase):
 
 
 class DatasetValidationTest(unittest.TestCase):
-    """ Test suite for dataset-specific validation checks and corrections """
+    """Test suite for dataset-specific validation checks and corrections"""
 
     def test_get_validator(self):
-        """ Test that get_validator returns the correct Validator classes """
+        """Test that get_validator returns the correct Validator classes"""
 
         datasets = ['Broad-band', 'Lidar', 'Multi-band', 'OzoneSonde',
                     'RocketSonde', 'Spectral', 'TotalOzone', 'TotalOzoneObs']
@@ -795,7 +873,7 @@ class DatasetValidationTest(unittest.TestCase):
             dv.get_validator('a generic string')
 
     def test_totalozone_checks(self):
-        """ Test that TotalOzone checks produce expected warnings/errors """
+        """Test that TotalOzone checks produce expected warnings/errors"""
 
         # Test a file with unique, out-of-order dates
         contents = util.read_file(resolve_test_data_path(
@@ -894,7 +972,7 @@ class DatasetValidationTest(unittest.TestCase):
         self.assertEqual(len(validator.errors), 0)
 
     def test_totalozone_monthly_generation(self):
-        """ Test derivation and checks related to TotalOzone MONTHLY table """
+        """Test derivation and checks related to TotalOzone MONTHLY table"""
 
         contents = util.read_file(resolve_test_data_path(
             'data/totalozone/totalozone-all300.csv'))
@@ -920,7 +998,7 @@ class DatasetValidationTest(unittest.TestCase):
         self.assertEqual(len(messages), 2)
 
     def test_totalozoneobs_checks(self):
-        """ Test that TotalOzoneObs checks produce expected warnings/errors """
+        """Test that TotalOzoneObs checks produce expected warnings/errors"""
 
         # Test that out-of-order observation times are found and corrected
         contents = util.read_file(resolve_test_data_path(
@@ -969,7 +1047,7 @@ class DatasetValidationTest(unittest.TestCase):
         self.assertEqual(len(validator.errors), 0)
 
     def test_spectral_checks(self):
-        """ Test that Spectral checks produce warnings/errors when expected """
+        """Test that Spectral checks produce warnings/errors when expected"""
 
         # Test that an excess profile table is detected
         contents = util.read_file(resolve_test_data_path(
@@ -1024,7 +1102,7 @@ class DatasetValidationTest(unittest.TestCase):
         self.assertEqual(len(messages), 0)
 
     def test_lidar_checks(self):
-        """ Test that Lidar checks produce warnings/errors when expected """
+        """Test that Lidar checks produce warnings/errors when expected"""
 
         # Test that an excess profile table is detected
         contents = util.read_file(resolve_test_data_path(
@@ -1175,12 +1253,12 @@ class DatasetValidationTest(unittest.TestCase):
         self.assertEqual(len(validator.errors), 0)
 
     def test_umkehr_level1_checks(self):
-        """ Test that expected warnings/errors are found in Umkehr Level 1 """
+        """Test that expected warnings/errors are found in Umkehr Level 1"""
 
         self._helper_test_umkehr(1.0)
 
     def test_umkehr_level2_checks(self):
-        """ Test that expected warnings/errors are found in Umkehr Level 2 """
+        """Test that expected warnings/errors are found in Umkehr Level 2"""
 
         self._helper_test_umkehr(2.0)
 

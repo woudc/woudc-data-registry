@@ -62,7 +62,6 @@ def get_metadata(entity, identifier=None):
 
     :param entity: metadata entity
     :param identifier: identifier filter (default no filter)
-
     :returns: `list` of all matching objects
     """
 
@@ -95,8 +94,9 @@ def add_metadata(entity, dict_, save_to_registry=True, save_to_index=True):
 
     :param entity: A model class.
     :param dict_: Dictionary of model data to initialize the object.
-    :param save_to_registry: Whether to load object to the data registry.
-    :param save_to_index: Whether to load object to the search index.
+    :param save_to_registry: `bool` of whether to load object
+                             to the data registry.
+    :param save_to_index: `bool` of whether to load object to the search index.
     :returns: The model object created.
     """
 
@@ -150,9 +150,11 @@ def update_metadata(entity, identifier, dict_,
     :param entity: A model class.
     :param identifier: Identifier of target object.
     :param dict_: Dictionary of model data to initialize the object.
-    :param save_to_registry: Whether to update object in the data registry.
-    :param save_to_index: Whether to update object in the search index.
-    :returns: Whether the operation was successful.
+    :param save_to_registry: `bool` of whether to update object in
+                             the data registry.
+    :param save_to_index: `bool` of whether to update object in
+                          the search index.
+    :returns: `bool` of whether the operation was successful.
     """
 
     records = get_metadata(entity, identifier)
@@ -206,9 +208,11 @@ def delete_metadata(entity, identifier,
 
     :param entity: A model class.
     :param identifier: Data registry identifier of target object.
-    :param save_to_registry: Whether changes should apply to the data registry.
-    :param save_to_index: Whether changes should apply to the search_index.
-    :returns: Whether the operation was successful.
+    :param save_to_registry: `bool` of whether changes should apply
+                             to the data registry.
+    :param save_to_index: `bool` of whether changes should apply
+                          to the search_index.
+    :returns: `bool` of whether the operation was successful.
     """
 
     LOGGER.debug('Updating metadata entity {}, identifier {}'.format(

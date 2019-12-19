@@ -665,7 +665,7 @@ class DataRecord(base):
         self.generate_ids()
 
         self.extcsv = ecsv.extcsv
-        self.number_of_observations = ecsv.number_of_observations
+        self.number_of_observations = ecsv.number_of_observations()
 
     @property
     def platform_type(self):
@@ -839,6 +839,12 @@ def unpack_station_names(rows):
             tracker[name] = row
 
     return tracker.values()
+
+
+@click.group('registry')
+def registry__():
+    """Registry"""
+    pass
 
 
 @click.group()
@@ -1056,7 +1062,7 @@ def init(ctx, datadir, init_search_index):
 @click.command('sync')
 @click.pass_context
 def sync(ctx):
-    """ sync search index with data registry """
+    """Sync search index with data registry"""
 
     model_classes = [
         Project,
@@ -1092,7 +1098,9 @@ def sync(ctx):
 
 search.add_command(sync)
 
-admin.add_command(setup)
-admin.add_command(teardown)
+registry__.add_command(setup)
+registry__.add_command(teardown)
 admin.add_command(init)
+
+admin.add_command(registry__)
 admin.add_command(search)

@@ -60,10 +60,13 @@ def orchestrate(file_, directory, metadata_only=False,
 
     :param file_: File to process.
     :param directory: Directory to process (recursive).
-    :param metadata_only: Whether to verify only the common metadata tables.
-    :param verify_only: Whether to verify the file for correctness without
-                        processing.
-    :param bypass: Whether to skip permission prompts for adding new records.
+    :param metadata_only: `bool` of whether to verify only the
+                          common metadata tables.
+    :param verify_only: `bool` of whether to verify the file for correctness
+                        without processing.
+    :param bypass: `bool` of whether to skip permission prompts for adding
+                   new records.
+    :returns: void
     """
 
     files_to_process = []
@@ -89,7 +92,7 @@ def orchestrate(file_, directory, metadata_only=False,
             p = Process(registry, search_engine)
             try:
                 if p.validate(file_to_process, metadata_only=metadata_only,
-                              bypass=bypass):
+                              verify_only=verify_only, bypass=bypass):
 
                     if verify_only:
                         click.echo('Verified but not ingested')
