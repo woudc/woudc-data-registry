@@ -130,13 +130,16 @@ class Process(object):
         LOGGER.error(message)
         self.errors.append((error_code, message, line))
 
-    def validate(self, infile, metadata_only=False, bypass=False):
+    def validate(self, infile, metadata_only=False, verify_only=False,
+                 bypass=False):
         """
         Process incoming data record.
 
         :param infile: Path to incoming data file.
         :param metadata_only: `bool` of whether to only verify common
                               metadata tables.
+        :param verify_only: `bool` of whether to verify the file for
+                            correctness without processing.
         :param bypass: `bool` of whether to skip permission prompts
                         to add records.
         :returns: `bool` of whether the operation was successful.
@@ -199,7 +202,7 @@ class Process(object):
         else:
             contributor_ok = self.check_contributor()
 
-        platform_ok = self.check_station(bypass=bypass)
+        platform_ok = self.check_station(bypass=bypass, verify=verify_only)
 
         if not all([project_ok, contributor_ok, platform_ok]):
             LOGGER.warning('Skipping deployment check: depends on'
@@ -218,16 +221,10 @@ class Process(object):
                 deployment_name = '{}@{}'.format(agency, platform_id)
                 LOGGER.warning('Deployment {} not found'.format(deployment_id))
 
-                if bypass:
-                    LOGGER.info('Bypass mode. Skipping permission check')
-                    allow_add_deployment = True
-                else:
-                    response = input('Deployment {} not found. Add? (y/n) [n]: '  # noqa
-                                     .format(deployment_name))
-                    allow_add_deployment = response.lower() in ['y', 'yes']
-
-                if allow_add_deployment:
-                    self.add_deployment()
+                if verify_only:
+                    LOGGER.info('Verify mode. Skipping deployment addition.')
+                    deployment_ok = True
+                elif self.add_deployment(bypass=bypass):
                     deployment_ok = True
 
                     msg = 'New deployment {} queued'.format(deployment_name)
@@ -276,7 +273,14 @@ class Process(object):
                     LOGGER.warning('No instrument with serial {} found'
                                    ' in registry'.format(old_serial))
                     self.extcsv.extcsv['INSTRUMENT']['Number'] = old_serial
-                    instrument_ok = self.add_instrument(bypass=False)
+
+                    if verify_only:
+                        LOGGER.info('Verify mode. Skipping instrument'
+                                    ' addition.')
+                        instrument_ok = True
+                    else:
+                        instrument_ok = self.add_instrument(verify=verify_only,
+                                                            bypass=False)
 
                     if instrument_ok:
                         msg = 'New instrument serial number queued'
@@ -378,20 +382,39 @@ class Process(object):
         self._registry_updates = []
         self._search_index_updates = []
 
-    def add_deployment(self):
+    def add_deployment(self, bypass=False):
         """
         Create a new deployment instance for the input Extended CSV file's
         #PLATFORM and #DATA_GENERATION.Agency. Queues the new deployment
         to be saved next time the publish method is called.
 
+        Unless <bypass> is provided and True, there will be a permission
+        prompt before a record is created. If permission is denied, no
+        deployment will be queued and False will be returned.
+
+        :param bypass: `bool` of whether to skip permission checks
+                       to add the deployment.
         :returns: void
         """
 
         deployment = build_deployment(self.extcsv)
 
-        LOGGER.info('Queueing new deployment...')
-        self._registry_updates.append(deployment)
-        self._search_index_updates.append(deployment)
+        if bypass:
+            LOGGER.info('Bypass mode. Skipping permission check.')
+            allow_add_deployment = True
+        else:
+            response = input('Deployment {} not found. Add? (y/n) [n]: '
+                             .format(deployment.deployment_id))
+            allow_add_deployment = response.lower() in ['y', 'yes']
+
+        if not allow_add_deployment:
+            return False
+        else:
+            LOGGER.info('Queueing new deployment...')
+
+            self._registry_updates.append(deployment)
+            self._search_index_updates.append(deployment)
+            return True
 
     def add_station_name(self, bypass=False):
         """
@@ -564,13 +587,17 @@ class Process(object):
             self._error(127, line, msg)
             return False
 
-    def check_station(self, bypass=False):
+    def check_station(self, bypass=False, verify=False):
         """
         Validates the instance's Extended CSV source file's #PLATFORM table
         and returns True if no errors are found.
 
         Adjusts the Extended CSV contents if necessary to form a match.
 
+        :param bypass: `bool` of whether to skip permission prompts
+                        to add records.
+        :param verify_only: `bool` of whether to verify the file for
+                            correctness without processing.
         :returns: `bool` of whether the input file's station
                   validated successfully.
         """
@@ -638,7 +665,10 @@ class Process(object):
             self.extcsv.extcsv['PLATFORM']['Name'] = name = response.name
             LOGGER.debug('Validated with name {} for id {}'.format(
                 name, identifier))
-        elif self.add_station_name(bypass):
+        elif verify:
+            LOGGER.info('Verify mode. Skipping station name addition.')
+            name_ok = True
+        elif self.add_station_name(bypass=bypass):
             LOGGER.info('Added new station name {}'
                         .format(station['current_name']))
             name_ok = True

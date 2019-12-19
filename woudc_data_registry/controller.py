@@ -92,7 +92,7 @@ def orchestrate(file_, directory, metadata_only=False,
             p = Process(registry, search_engine)
             try:
                 if p.validate(file_to_process, metadata_only=metadata_only,
-                              bypass=bypass):
+                              verify_only=verify_only, bypass=bypass):
 
                     if verify_only:
                         click.echo('Verified but not ingested')
