@@ -841,6 +841,12 @@ def unpack_station_names(rows):
     return tracker.values()
 
 
+@click.group('registry')
+def registry__():
+    """Registry"""
+    pass
+
+
 @click.group()
 def admin():
     """System administration"""
@@ -1092,7 +1098,9 @@ def sync(ctx):
 
 search.add_command(sync)
 
-admin.add_command(setup)
-admin.add_command(teardown)
+registry__.add_command(setup)
+registry__.add_command(teardown)
 admin.add_command(init)
+
+admin.add_command(registry__)
 admin.add_command(search)
