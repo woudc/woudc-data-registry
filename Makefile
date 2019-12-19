@@ -89,7 +89,7 @@ flake8:
 	flake8 woudc_data_registry
 
 init:
-	woudc-data-registry admin registry init -d $(DATA)
+	woudc-data-registry admin init -d $(DATA)
 
 package:
 	python setup.py sdist bdist_wheel

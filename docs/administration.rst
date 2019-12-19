@@ -72,7 +72,7 @@ initialization directory, which will put more .csv files in that directory.
 
 After running fetch-content.py, the files are ready to be inserted.
 
-woudc-data-registry admin registry init -d <initialization> <flags>
+woudc-data-registry admin init -d <initialization> <flags>
     Searches the directory path <initialization> for .csv and .json files
     of metadata, and loads them into the Data Registry tables. If the
     --init-search-index flag is provided, loads them to the Search Index

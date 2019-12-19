@@ -1100,7 +1100,7 @@ search.add_command(sync)
 
 registry__.add_command(setup)
 registry__.add_command(teardown)
-registry__.add_command(init)
+admin.add_command(init)
 
 admin.add_command(registry__)
 admin.add_command(search)

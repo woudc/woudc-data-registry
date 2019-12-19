@@ -62,7 +62,7 @@ woudc-data-registry admin search setup
 # fetch WMO country list
 mkdir data
 curl -o data/wmo-countries.json https://www.wmo.int/cpdb/data/membersandterritories.json
-woudc-data-registry admin registry init -d data/
+woudc-data-registry admin init -d data/
 
 # cleanups
 
