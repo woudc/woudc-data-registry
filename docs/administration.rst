@@ -30,7 +30,7 @@ Creating Backends
 make ENV=/path/to/environment/config.env createdb
     Create the Data Registry database instance
 
-woudc-data-registry admin setup
+woudc-data-registry admin search setup
     Create Data Registry tables and schema
 
 woudc-data-registry admin search setup
