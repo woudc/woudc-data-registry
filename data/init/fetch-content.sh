@@ -35,6 +35,9 @@ INSTRUMENTS_QUERY="SELECT platform.woudc_platform_identifier AS station_id, dtd.
 
 DEPLOYMENTS_QUERY="SELECT platform.woudc_platform_identifier AS station_id, CONCAT(agency.acronym, ':', project.project_acronym) AS contributor_id, DATE(platform.eff_start_datetime) AS start_date, DATE(platform.eff_end_datetime) AS end_date FROM agency JOIN platform USING (agency_id) JOIN project USING (project_id)"
 
+WMO_COUNTRIES_URL="https://cpdb.wmo.int/data/membersandterritories.json"
+
+
 echo "Projects..."
 psql -h $HOSTNAME -p $HOSTPORT -d $DB_SCHEMA -U $USERNAME -c "\\COPY ($PROJECTS_QUERY) TO $OUTPUT_DIR/projects.csv WITH CSV HEADER;"
 
@@ -57,4 +60,4 @@ echo "Deployments..."
 psql -h $HOSTNAME -p $HOSTPORT -d $DB_SCHEMA -U $USERNAME -c "\\COPY ($DEPLOYMENTS_QUERY) TO $OUTPUT_DIR/deployments.csv WITH CSV HEADER;"
 
 echo "Fetching WMO countries list..."
-curl -k -X GET https://cpdb.wmo.int/data/membersandterritories.json > "$OUTPUT_DIR/wmo-countries.json"
+curl -k -X GET $WMO_COUNTRIES_URL > "$OUTPUT_DIR/wmo-countries.json"

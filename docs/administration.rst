@@ -59,18 +59,30 @@ can be extracted from these files, and so there are alternate methods to
 recreate metadata from scratch.
 
 If the Data Registry is empty, metadata is created using the old WOUDC
-processing archive. Operators of the WOUDC Data Registry will be provided with
-an initialization directory which contains four files:
+processing archive. The WOUDC Data Registry code comes with three files
+in the data/init directory:
  * ships.csv
  * countries.json
- * wmo_countries.json
- * fetch-content.py
+ * fetch-content.sh
 
 The .csv and .json files contain metadata which is not stored in the archive.
-fetch-content.py must be called with one argument, the full path of the
-initialization directory, which will put more .csv files in that directory.
+fetch-content.sh is a program that generates more csv metadata files using
+the old WOUDC archive.
 
-After running fetch-content.py, the files are ready to be inserted.
+fetch-content.sh
+    Creates several CSV files containing core metadata for the WOUDC Data
+    Registry, using old WOUDC archives. Places the official WMO country
+    list and the CSV files in a specified output directory.
+
+    | -h (host)     Hostname of old WOUDC archive database
+    |               (or filepath for SQLite)
+    | -p (port)     Port number of old WOUDC archive database
+    | -d (database) Schema name of old WOUDC archive database
+    | -u (user)     Database account username
+    | -o (output)   Output directory for generated files
+
+After running fetch-content.sh, the files in data/init are ready to be
+inserted to the Data Registry.
 
 woudc_data_registry admin init -d <initialization> <flags>
     Searches the directory path <initialization> for .csv and .json files

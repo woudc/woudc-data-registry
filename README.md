@@ -58,10 +58,14 @@ woudc-data-registry admin search create-indexes
 
 # load core metadata
 
-# fetch WMO country list
-mkdir data
-curl -o data/wmo-countries.json https://www.wmo.int/cpdb/data/membersandterritories.json
-woudc-data-registry admin init -d data/
+# initialize metadata in registry
+export PGPASSWORD=<WOUDC archive password>
+data/init/fetch-content.sh -h <WOUDC archive hostname>
+                           -p <WOUDC archive port>
+                           -d <WOUDC archive schema name>
+                           -u <WOUDC archive username>
+                           -o data/init  # output directory
+woudc-data-registry admin init -d data/init
 
 # cleanups
 
