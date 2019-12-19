@@ -40,7 +40,7 @@ woudc-data-registry admin search setup
 Deleting Backends
 -----------------
 
-woudc-data-registry admin teardown
+woudc-data-registry admin registry teardown
     Delete all Data Registry tables and schema
 
 woudc-data-registry admin search setup
