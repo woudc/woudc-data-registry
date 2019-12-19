@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/woudc/woudc-data-registry.png)](https://travis-ci.org/woudc/woudc-data-registry)
 [![Coverage Status](https://coveralls.io/repos/github/woudc/woudc-data-registry/badge.svg?branch=master)](https://coveralls.io/github/woudc/woudc-data-registry?branch=master)
+[![Documentation](https://readthedocs.org/projects/woudc-data-registry/badge/)](https://woudc-data-registry.readthedocs.org)
 
 ## Overview
 
