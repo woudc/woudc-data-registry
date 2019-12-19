@@ -58,19 +58,16 @@ processing all files in the WAF (backfilling). Not all metadata
 can be extracted from these files, and so there are alternate methods to
 recreate metadata from scratch.
 
-If the Data Registry is empty, metadata is created using the old WOUDC
-processing archive. Operators of the WOUDC Data Registry will be provided with
-an initialization directory which contains four files:
+If the Data Registry is empty, its metadata is recovered from a
+series of files. The WOUDC Data Registry code comes with two files
+in the data/init directory:
  * ships.csv
  * countries.json
- * wmo_countries.json
- * fetch-content.py
 
-The .csv and .json files contain metadata which is not stored in the archive.
-fetch-content.py must be called with one argument, the full path of the
-initialization directory, which will put more .csv files in that directory.
+The .csv and .json files contain core metadata for the Data Registry.
+Contact WOUDC to provide the remaining required metadata files.
 
-After running fetch-content.py, the files are ready to be inserted.
+After ensuring all metadata files are together in one directory, run:
 
 woudc-data-registry admin init -d <initialization> <flags>
     Searches the directory path <initialization> for .csv and .json files
