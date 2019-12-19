@@ -95,16 +95,16 @@ package:
 	python setup.py sdist bdist_wheel
 
 setup:
-	woudc-data-registry admin setup
-	woudc-data-registry admin search create-indexes
+	woudc-data-registry admin registry setup
+	woudc-data-registry admin search setup
 
 setup_data:
 	mkdir -p data
 	curl -o data/wmo-countries.json https://www.wmo.int/cpdb/data/membersandterritories.json
 
 teardown:
-	woudc-data-registry admin teardown
-	woudc-data-registry admin search delete-indexes
+	woudc-data-registry admin registry teardown
+	woudc-data-registry admin search teardown
 
 test:
 	python setup.py test

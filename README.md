@@ -52,10 +52,10 @@ make ENV=foo.env createdb
 make ENV=foo.env dropdb
 
 # initialize model (database tables)
-woudc-data-registry admin setup
+woudc-data-registry admin registry setup
 
 # initialize search engine
-woudc-data-registry admin search create-indexes
+woudc-data-registry admin search setup
 
 # load core metadata
 
@@ -71,12 +71,12 @@ woudc-data-registry admin init -d data/init
 # cleanups
 
 # re-initialize model (database tables)
-woudc-data-registry admin teardown
-woudc-data-registry admin setup
+woudc-data-registry admin registry teardown
+woudc-data-registry admin registry setup
 
 # re-initialize search engine
-woudc-data-registry admin search delete-indexes
-woudc-data-registry admin search create-index
+woudc-data-registry admin search teardown
+woudc-data-registry admin search setup
 
 # drop database
 make ENV=foo.env dropdb
