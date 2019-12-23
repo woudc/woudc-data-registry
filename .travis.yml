@@ -19,10 +19,10 @@ env:
     - WDR_SEARCH_URL=http://localhost:9200/
     - WDR_WAF_BASEURL=https://woudc.org/archive/
     - WDR_WAF_BASEDIR=/tmp
-    - WDR_TABLE_SCHEMA=data/tables-schema.json
-    - WDR_TABLE_CONFIG=data/tables.yml
-    - WDR_ERROR_CONFIG=data/errors.csv
-    - WDR_ALIAS_CONFIG=data/aliases.yml
+    - WDR_TABLE_SCHEMA=$TRAVIS_BUILD_DIR/data/tables-schema.json
+    - WDR_TABLE_CONFIG=$TRAVIS_BUILD_DIR/data/tables.yml
+    - WDR_ERROR_CONFIG=$TRAVIS_BUILD_DIR/data/errors.csv
+    - WDR_ALIAS_CONFIG=$TRAVIS_BUILD_DIR/data/aliases.yml
 
 addons:
   postgresql: "9.3"
@@ -30,9 +30,14 @@ addons:
 services:
   - postgresql
 
+before_install:
+  - sudo apt-get -y install debhelper devscripts fakeroot python3-setuptools
+
 install:
+  - echo $TRAVIS_BUILD_DIR
   - pip install -r requirements-dev.txt
   - pip install -r requirements-pg.txt
+  - pip install -r requirements-docs.txt
   - pip install coveralls
   - python setup.py build
   - python setup.py install
@@ -46,5 +51,5 @@ after_success:
   - coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_data_registry
   - coverage report -m
   - coveralls
-  - python setup.py bdist_wheel
+  - python setup.py bdist_wheel --universal
   - debuild -b -uc -us

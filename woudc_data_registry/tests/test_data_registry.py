@@ -477,7 +477,7 @@ class ParserTest(unittest.TestCase):
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
 
-        self.assertEquals(ecsv.number_of_observations(), 30)
+        self.assertEqual(ecsv.number_of_observations(), 30)
 
         # Umkehr
         contents = util.read_file(resolve_test_data_path(
@@ -486,7 +486,7 @@ class ParserTest(unittest.TestCase):
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
 
-        self.assertEquals(ecsv.number_of_observations(), 13)
+        self.assertEqual(ecsv.number_of_observations(), 13)
 
         # Broad-band
         contents = util.read_file(resolve_test_data_path(
@@ -495,7 +495,7 @@ class ParserTest(unittest.TestCase):
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
 
-        self.assertEquals(ecsv.number_of_observations(), 719)
+        self.assertEqual(ecsv.number_of_observations(), 719)
 
     def test_number_of_observations_large(self):
         """Test counting of observation rows in a file with large tables"""
@@ -506,7 +506,7 @@ class ParserTest(unittest.TestCase):
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
 
-        self.assertEquals(ecsv.number_of_observations(), 5295)
+        self.assertEqual(ecsv.number_of_observations(), 5295)
 
     def test_number_of_observations_duplicates(self):
         """Test counting of observation rows in a file with duplicate rows"""
@@ -531,7 +531,7 @@ class ParserTest(unittest.TestCase):
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
 
-        self.assertEquals(ecsv.number_of_observations(), 336)
+        self.assertEqual(ecsv.number_of_observations(), 336)
 
         # Spectral
         contents = util.read_file(resolve_test_data_path(
@@ -540,7 +540,7 @@ class ParserTest(unittest.TestCase):
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
 
-        self.assertEquals(ecsv.number_of_observations(), 387)
+        self.assertEqual(ecsv.number_of_observations(), 387)
 
 
 class TimestampParsingTest(unittest.TestCase):
