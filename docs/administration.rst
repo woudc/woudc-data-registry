@@ -61,8 +61,9 @@ recreate metadata from scratch.
 If the Data Registry is empty, its metadata is recovered from a
 series of files. The WOUDC Data Registry code comes with two files
 in the data/init directory:
- * ships.csv
- * countries.json
+
+  * ships.csv
+  * countries.json
 
 The .csv and .json files contain core metadata for the Data Registry.
 Contact WOUDC to provide the remaining required metadata files.

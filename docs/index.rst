@@ -20,6 +20,7 @@ Welcome to WOUDC Data Registry's documentation!
    development
    support
    license
+   reference
 
 
 Indices and tables
