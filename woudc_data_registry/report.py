@@ -105,6 +105,10 @@ class ReportWriter:
         else:
             self._run_number = run or self._determine_run_number()
 
+            operator_report_path = self.operator_report_filepath()
+
+            self.operator_report = open(operator_report_path, 'w')
+
         self.read_error_definitions(config.WDR_ERROR_CONFIG)
 
     def _determine_run_number(self):
@@ -198,10 +202,10 @@ class ReportWriter:
 
         filename = 'run{}'.format(self._run_number)
 
-        if self._working_dir is None:
+        if self._working_directory is None:
             return filename
         else:
-            return os.path.join(self._working_dir, filename)
+            return os.path.join(self._working_directory, filename)
 
     def operator_report_filepath(self, run=0):
         """
@@ -216,10 +220,10 @@ class ReportWriter:
         today = date.today().strftime('%Y-%m-%d')
         filename = 'operator-report-{}-run{}.csv'.format(today,
                                                          self._run_number)
-        if self._working_dir is None:
+        if self._working_directory is None:
             return filename
         else:
-            return os.path.join(self._working_dir, filename)
+            return os.path.join(self._working_directory, filename)
 
     def email_report_filepath(self):
         """
@@ -355,7 +359,29 @@ class ReportWriter:
         :returns: void
         """
 
-        pass
+        column_names = ['Line Number', 'Error Type', 'Error Code', 'Message']
+        columns = zip(*[self._report_batch[name] for name in column_names])
+
+        for line, err_type, err_code, message in columns:
+            line = '' if line is None else str(line)
+            row = ','.join([
+                self._report_batch['Processing Status'],
+                err_type,
+                str(err_code),
+                line,
+                message.replace(',', '\\,'),
+                self._report_batch['Dataset'],
+                self._report_batch['Data Level'],
+                self._report_batch['Data Form'],
+                self._report_batch['Agency'],
+                self._report_batch['Station ID'],
+                self._report_batch['Filename'],
+                self._report_batch['Incoming Path'],
+                self._report_batch['Outgoing Path'],
+                self._report_batch['URN']
+            ])
+
+            self.operator_report.write(row + '\n')
 
     def write_email_report(self, addresses):
         """
