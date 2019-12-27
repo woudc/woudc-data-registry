@@ -82,6 +82,7 @@ class ReportWriter:
         self._working_directory = root
         self._error_definitions = {}
 
+        self._agency_reports = {}
         self._report_batch = {
             'Processing Status': '',
             'Station Type': '',
@@ -105,6 +106,7 @@ class ReportWriter:
         else:
             self._run_number = run or self._determine_run_number()
 
+            self.run_report_path = self.run_report_filepath()
             operator_report_path = self.operator_report_filepath()
 
             self.operator_report = open(operator_report_path, 'w')
@@ -309,6 +311,10 @@ class ReportWriter:
                                       data_record=data_record)
         self._report_batch['Processing Status'] = 'P'
 
+        if contributor not in self._agency_reports:
+            self._agency_reports[contributor] = []
+        self._agency_reports[contributor].append(('P', filepath))
+
         self._flush_report_batch()
 
     def record_failing_file(self, filepath, contributor, extcsv=None):
@@ -331,6 +337,10 @@ class ReportWriter:
 
         self._load_processing_results(filepath, contributor, extcsv=extcsv)
         self._report_batch['Processing Status'] = 'F'
+
+        if contributor not in self._agency_reports:
+            self._agency_reports[contributor] = []
+        self._agency_reports[contributor].append(('F', filepath))
 
         self._flush_report_batch()
 
