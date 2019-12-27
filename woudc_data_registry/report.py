@@ -95,6 +95,7 @@ class ReportWriter:
         rules to future error/warning determination.
 
         :param filepath: Path to an error definition file.
+        :returns: void
         """
 
         with open(filepath) as error_definitions:
@@ -109,7 +110,12 @@ class ReportWriter:
         """
         Empties out the stored report batch in preparation for starting to
         process a new file.
+
+        :returns: void
         """
+
+        self.write_operator_report()
+        self.write_run_report()
 
         for field, column in self._report_batch.items():
             if isinstance(column, str):
@@ -159,6 +165,7 @@ class ReportWriter:
         :param filepath: Path to an incoming data file.
         :param extcsv: Extended CSV object generated from the incoming file.
         :param data_record: Data record generated from the incoming file.
+        :returns: void
         """
 
         self._flush_report_batch()
@@ -178,6 +185,52 @@ class ReportWriter:
         :param filepath: Path to an incoming data file.
         :param extcsv: Extended CSV object generated from the incoming file.
         :param agency: Agency acronym responsible for the incoming file.
+        :returns: void
         """
 
         self._flush_report_batch()
+
+    def write_run_report(self):
+        """
+        Write a new run report into the working directory (or update an
+        existing one), which summarizes which files in the last
+        processing attempt passed or failed.
+
+        Files are divided by agency. See processing workflow for more
+        information.
+
+        :returns: void
+        """
+
+        pass
+
+    def write_operator_report(self):
+        """
+        Write a new operator report into the working directory (or update an
+        existing one), which contains a summary of errors and warnings
+        encountered in all files from the current processing attempt.
+
+        See processing workflow for more information.
+
+        :returns: void
+        """
+
+        pass
+
+    def write_email_report(self, addresses):
+        """
+        Write an email feedback summary to the working directory.
+        The file describes, per agency, how many files in the whole
+        processing run failed, were recovered, or passed the first time.
+
+        The email summary is generated from the operator reports in the
+        working directory. That is, the operator reports determine
+        what counts as an error or a pass or a fail.
+
+        See processing workflow for more information.
+
+        :param addresses: Map of contributor acronym to email address.
+        :returns: void
+        """
+
+        pass

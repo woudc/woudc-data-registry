@@ -51,6 +51,7 @@ import logging
 from woudc_data_registry import config
 from woudc_data_registry.util import is_text_file, read_file
 
+from woudc_data_registry.models import Contributor
 from woudc_data_registry.parser import (ExtendedCSV, NonStandardDataError,
                                         MetadataValidationError)
 from woudc_data_registry.processing import Process
@@ -105,6 +106,7 @@ def orchestrate(source, working_dir,
             LOGGER.info('Detecting file')
             if not is_text_file(file_to_process):
                 if reporter.add_message(1):  # If code 1 is an error
+                    report.record_failing_file(file_to_process)
                     failed.append(file_to_process)
                     continue
 
@@ -112,7 +114,7 @@ def orchestrate(source, working_dir,
                 contents = read_file(file_to_process)
 
                 LOGGER.info('Parsing data record')
-                extcsv = ExtendedCSV(contents, reporter)
+                extcsv = ExtendedCSV(contents, report)
 
                 LOGGER.info('Validating Extended CSV')
                 extcsv.validate_metadata_tables()
@@ -120,13 +122,14 @@ def orchestrate(source, working_dir,
                     extcsv.validate_dataset_tables()
                 LOGGER.info('Valid Extended CSV')
 
-                p = Process(registry, search_engine, reporter)
+                p = Process(registry, search_engine, report)
                 data_record = p.validate(extcsv, metadata_only=metadata_only,
                                          bypass=bypass)
 
                 if data_record is None:
                     click.echo('Not ingesting')
                     failed.append(file_to_process)
+                    report.record_failing_file(file_to_process, extcsv=extcsv)
                 else:
                     data_record.ingest_filepath = file_to_process
                     data_record.filename = os.path.basename(file_to_process)
@@ -141,25 +144,31 @@ def orchestrate(source, working_dir,
                         p.persist()
                         click.echo('Ingested successfully')
 
+                    report.record_passing_file(file_to_process, extcsv,
+                                               data_record)
                     passed.append(file_to_process)
 
             except UnicodeDecodeError as err:
                 LOGGER.error('Unknown file format: {}'.format(err))
 
                 click.echo('Not ingested')
+                report.record_failing_file(file_to_process)
                 failed.append(file_to_process)
             except NonStandardDataError as err:
                 LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
 
                 click.echo('Not ingested')
+                report.record_failing_file(file_to_process)
                 failed.append(file_to_process)
             except MetadataValidationError as err:
                 LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
 
                 click.echo('Not ingested')
+                report.record_failing_file(file_to_process)
                 failed.append(file_to_process)
             except Exception as err:
                 click.echo('Processing failed: {}'.format(err))
+                report.record_failing_file(file_to_process)
                 failed.append(file_to_process)
 
     registry.close_session()
@@ -211,5 +220,22 @@ def verify(ctx, source, lax, bypass):
                 verify_only=True, bypass=bypass)
 
 
+@click.command()
+@click.pass_context
+@click.option('--working-dir', '-w', 'working_dir', required=True,
+              type=click.Path(exists=True, resolve_path=True, file_okay=False))
+def generate_emails(ctx, working_dir):
+    """Write an email report based on the processing run in <working_dir>"""
+
+    registry = Registry()
+    report = ReportBuilder(working_dir)
+
+    contributors = registry.query_full_index(Contributor)
+    addresses = {model.acronym: model.email for model in contributors}
+
+    report.write_email_report(addresses)
+
+
 data.add_command(ingest)
 data.add_command(verify)
+data.add_command(generate_emails, name='generate-emails')
