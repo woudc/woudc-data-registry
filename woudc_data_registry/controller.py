@@ -64,13 +64,14 @@ from woudc_data_registry.report import ReportWriter
 LOGGER = logging.getLogger(__name__)
 
 
-def orchestrate(source, working_dir,
+def orchestrate(source, working_dir, run_number=1,
                 metadata_only=False, verify_only=False, bypass=False):
     """
     Core orchestation workflow
 
     :param source: Path to input file or directory tree containing them.
     :param working_dir: Output directory for log and report files.
+    :param run_number: Number of processing attempt in current processing run.
     :param metadata_only: `bool` of whether to verify only the
                           common metadata tables.
     :param verify_only: `bool` of whether to verify the file for correctness
@@ -97,7 +98,7 @@ def orchestrate(source, working_dir,
     registry = Registry()
     search_engine = SearchIndex()
 
-    reporter = ReportWriter(working_dir)
+    reporter = ReportWriter(working_dir, run_number)
 
     with click.progressbar(files_to_process, label='Processing files') as run_:
         for file_to_process in run_:
@@ -199,10 +200,13 @@ def data():
               help='Only validate core metadata tables')
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-def ingest(ctx, source, working_dir, lax, bypass):
+@click.option('--run', '-r', 'run', type=click.INT, default=1,
+              help='Processing attempt number in current processing run')
+def ingest(ctx, source, working_dir, lax, bypass, run):
     """ingest a single data submission or directory of files"""
 
-    orchestrate(source, working_dir, metadata_only=lax, bypass=bypass)
+    orchestrate(source, working_dir, metadata_only=lax, bypass=bypass,
+                run_number=run)
 
 
 @click.command()
