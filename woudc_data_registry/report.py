@@ -123,6 +123,52 @@ class ReportWriter:
 
         return run_number
 
+    def _load_processing_results(self, filepath, contributor,
+                                 extcsv=None, data_record=None):
+        """
+        Pick out relevant values from an incoming file to be written
+        with the next operator report.
+
+        :param filepath: Full path to an incoming file.
+        :param contributor: Acronym of contributor who submitted the file.
+        :param extcsv: Parsed Extended CSV object from the file's contents,
+                       or None if the file failed to parse.
+        :param data_record: The DataRecord object generated for the incoming
+                            file, or None if processing failed.
+        :returns: void
+        """
+
+        extcsv_to_batch_fields = [
+            ('Station Type', 'PLATFORM', 'Type'),
+            ('Station ID', 'PLATFORM', 'ID'),
+            ('Dataset', 'CONTENT', 'Category'),
+            ('Data Level', 'CONTENT', 'Level'),
+            ('Data Form', 'CONTENT', 'Form'),
+            ('Agency', 'DATA_GENERATION', 'Agency')
+        ]
+
+        # Tranfer core file metadata from the Extended CSV to the report batch.
+        for batch_field, table_name, extcsv_field in extcsv_to_batch_fields:
+            try:
+                self._report_batch[batch_field] = \
+                    str(extcsv.extcsv[table_name][extcsv_field])
+            except (TypeError, KeyError, AttributeError):
+                # Some parsing or processing error occurred and the
+                # ExtCSV value is unavailable.
+                self._report_batch[batch_field] = ''
+
+        if data_record is None:
+            self._report_batch['Outgoing Path'] = ''
+            self._report_batch['URN'] = ''
+        else:
+            self._report_batch['Outgoing Path'] = \
+                data_record.get_waf_path(config.WDR_WAF_BASEDIR)
+            self._report_batch['URN'] = data_record.data_record_id
+
+        self._report_batch['Agency'] = contributor
+        self._report_batch['Incoming Path'] = filepath
+        self._report_batch['Filename'] = os.path.basename(filepath)
+
     def _flush_report_batch(self):
         """
         Empties out the stored report batch in preparation for starting to
@@ -253,9 +299,15 @@ class ReportWriter:
         :returns: void
         """
 
+        contributor = extcsv.extcsv['DATA_GENERATION']['Agency']
+
+        self._load_processing_results(filepath, contributor, extcsv=extcsv,
+                                      data_record=data_record)
+        self._report_batch['Processing Status'] = 'P'
+
         self._flush_report_batch()
 
-    def record_failing_file(self, filepath, extcsv=None, agency=None):
+    def record_failing_file(self, filepath, contributor, extcsv=None):
         """
         Write out all warnings and errors found while processing <filepath>,
         complete with metadata from the source Extended CSV <extcsv>
@@ -268,10 +320,13 @@ class ReportWriter:
         left blank.
 
         :param filepath: Path to an incoming data file.
-        :param extcsv: Extended CSV object generated from the incoming file.
-        :param agency: Agency acronym responsible for the incoming file.
+        :param contributor: Acronym of contributor who submitted the file.
+        :param extcsv: Extended CSV object generated from the file.
         :returns: void
         """
+
+        self._load_processing_results(filepath, contributor, extcsv=extcsv)
+        self._report_batch['Processing Status'] = 'F'
 
         self._flush_report_batch()
 

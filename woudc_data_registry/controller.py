@@ -44,6 +44,7 @@
 # =================================================================
 
 import os
+from pathlib import Path
 
 import click
 import logging
@@ -84,11 +85,15 @@ def orchestrate(source, working_dir, run_number=0,
     files_to_process = []
 
     if os.path.isfile(source):
-        files_to_process = [source]
+        ftp_parent = Path(source).parent.resolve()
+        files_to_process = [(source, ftp_parent)]
     elif os.path.isdir(source):
         for root, dirs, files in os.walk(source):
+            ftp_parent = os.path.basename(root)
+
             for f in files:
-                files_to_process.append(os.path.join(root, f))
+                fullpath = os.path.join(root, f)
+                files_to_process.append((fullpath, ftp_parent))
 
     files_to_process.sort()
 
@@ -101,13 +106,14 @@ def orchestrate(source, working_dir, run_number=0,
     reporter = ReportWriter(working_dir, run_number)
 
     with click.progressbar(files_to_process, label='Processing files') as run_:
-        for file_to_process in run_:
+        for file_to_process, contributor in run_:
             click.echo('Processing filename: {}'.format(file_to_process))
 
             LOGGER.info('Detecting file')
             if not is_text_file(file_to_process):
-                if reporter.add_message(1):  # If code 1 is an error
-                    report.record_failing_file(file_to_process)
+                _, is_error = reporter.add_message(1)
+                if is_error:
+                    report.record_failing_file(file_to_process, contributor)
                     failed.append(file_to_process)
                     continue
 
@@ -119,6 +125,8 @@ def orchestrate(source, working_dir, run_number=0,
 
                 LOGGER.info('Validating Extended CSV')
                 extcsv.validate_metadata_tables()
+                contributor = extcsv.extcsv['DATA_GENERATION']['Agency']
+
                 if not metadata_only:
                     extcsv.validate_dataset_tables()
                 LOGGER.info('Valid Extended CSV')
@@ -130,7 +138,8 @@ def orchestrate(source, working_dir, run_number=0,
                 if data_record is None:
                     click.echo('Not ingesting')
                     failed.append(file_to_process)
-                    report.record_failing_file(file_to_process, extcsv=extcsv)
+                    report.record_failing_file(file_to_process, contributor,
+                                               extcsv=extcsv)
                 else:
                     data_record.ingest_filepath = file_to_process
                     data_record.filename = os.path.basename(file_to_process)
@@ -153,23 +162,23 @@ def orchestrate(source, working_dir, run_number=0,
                 LOGGER.error('Unknown file format: {}'.format(err))
 
                 click.echo('Not ingested')
-                report.record_failing_file(file_to_process)
+                report.record_failing_file(file_to_process, contributor)
                 failed.append(file_to_process)
             except NonStandardDataError as err:
                 LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
 
                 click.echo('Not ingested')
-                report.record_failing_file(file_to_process)
+                report.record_failing_file(file_to_process, contributor)
                 failed.append(file_to_process)
             except MetadataValidationError as err:
                 LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
 
                 click.echo('Not ingested')
-                report.record_failing_file(file_to_process)
+                report.record_failing_file(file_to_process, contributor)
                 failed.append(file_to_process)
             except Exception as err:
                 click.echo('Processing failed: {}'.format(err))
-                report.record_failing_file(file_to_process)
+                report.record_failing_file(file_to_process, contributor)
                 failed.append(file_to_process)
 
     registry.close_session()
