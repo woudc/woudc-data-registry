@@ -64,7 +64,7 @@ from woudc_data_registry.report import ReportWriter
 LOGGER = logging.getLogger(__name__)
 
 
-def orchestrate(source, working_dir, run_number=1,
+def orchestrate(source, working_dir, run_number=0,
                 metadata_only=False, verify_only=False, bypass=False):
     """
     Core orchestation workflow
@@ -200,7 +200,7 @@ def data():
               help='Only validate core metadata tables')
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-@click.option('--run', '-r', 'run', type=click.INT, default=1,
+@click.option('--run', '-r', 'run', type=click.INT, default=0,
               help='Processing attempt number in current processing run')
 def ingest(ctx, source, working_dir, lax, bypass, run):
     """ingest a single data submission or directory of files"""
