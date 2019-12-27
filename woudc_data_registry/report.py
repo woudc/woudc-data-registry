@@ -82,7 +82,7 @@ class ReportWriter:
         self._working_directory = root
         self._error_definitions = {}
 
-        self._agency_reports = {}
+        self._contributor_status = {}
         self._report_batch = {
             'Processing Status': '',
             'Station Type': '',
@@ -106,9 +106,7 @@ class ReportWriter:
         else:
             self._run_number = run or self._determine_run_number()
 
-            self.run_report_path = self.run_report_filepath()
             operator_report_path = self.operator_report_filepath()
-
             self.operator_report = open(operator_report_path, 'w')
 
         self.read_error_definitions(config.WDR_ERROR_CONFIG)
@@ -311,9 +309,9 @@ class ReportWriter:
                                       data_record=data_record)
         self._report_batch['Processing Status'] = 'P'
 
-        if contributor not in self._agency_reports:
-            self._agency_reports[contributor] = []
-        self._agency_reports[contributor].append(('P', filepath))
+        if contributor not in self._contributor_status:
+            self._contributor_status[contributor] = []
+        self._contributor_status[contributor].append(('P', filepath))
 
         self._flush_report_batch()
 
@@ -338,9 +336,9 @@ class ReportWriter:
         self._load_processing_results(filepath, contributor, extcsv=extcsv)
         self._report_batch['Processing Status'] = 'F'
 
-        if contributor not in self._agency_reports:
-            self._agency_reports[contributor] = []
-        self._agency_reports[contributor].append(('F', filepath))
+        if contributor not in self._contributor_status:
+            self._contributor_status[contributor] = []
+        self._contributor_status[contributor].append(('F', filepath))
 
         self._flush_report_batch()
 
@@ -356,7 +354,30 @@ class ReportWriter:
         :returns: void
         """
 
-        pass
+        contributor_list = sorted(list(self._contributor_status.keys()))
+        if 'UNKNOWN' in contributor_list:
+            # Move UNKNOWN to the end of the list, ignoring alphabetical order.
+            contributor_list.remove('UNKNOWN')
+            contributor_list.append('UNKNOWN')
+
+        blocks = []
+        for contributor in contributor_list:
+            # List all files processed for each agency along with their status.
+            package = contributor + '\n'
+            process_results = self._contributor_status[contributor]
+
+            for status, filepath in process_results:
+                if status == 'F':
+                    package += 'Fail: {}\n'.format(filepath)
+                else:
+                    package += 'Pass: {}\n'.format(filepath)
+
+            blocks.append(package)
+
+        run_report_path = self.run_report_filepath()
+        with open(run_report_path, 'w') as run_report:
+            contents = '\n'.join(blocks)
+            run_report.write(contents)
 
     def write_operator_report(self):
         """
