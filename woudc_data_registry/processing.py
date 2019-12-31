@@ -906,9 +906,11 @@ class Process(object):
             height_numeric = None
 
         station_type = self.extcsv.extcsv['PLATFORM'].get('Type', 'STN')
+        ignore_ships = not get_processing_extra('ships_ignore_location')
+
         if not all([lat_ok, lon_ok]):
             return False
-        elif station_type == 'SHP':
+        elif station_type == 'SHP' and ignore_ships:
             LOGGER.debug('Not validating shipboard instrument location')
             return True
         elif instrument_id is not None:
@@ -918,21 +920,33 @@ class Process(object):
                 return True
 
             instrument = result[0]
+
+            lat_interval = get_processing_extra('latitude_error_distance')
+            lon_interval = get_processing_extra('longitude_error_distance')
+            height_interval = get_processing_extra('height_error_distance')
+
+            polar_latitude_range = get_processing_extra('polar_latitude_range')
+            ignore_polar_lon = get_processing_extra('polar_ignore_longitude')
+
+            in_polar_region = lat_numeric is not None \
+                              and abs(lat_numeric) > 90 - polar_latitude_range
+
             if lat_numeric is not None and instrument.y is not None \
-               and abs(lat_numeric - instrument.y) >= 1.5:
+               and abs(lat_numeric - instrument.y) >= lat_interval:
                 lat_ok = False
                 msg = '#LOCATION.Latitude in file does not match database'
                 LOGGER.error(msg)
                 self._error(77, values_line, msg)
-            if lon_numeric is not None and instrument.x is not None \
-               and (lat_numeric is None or abs(lat_numeric) < 89.5) \
-               and abs(lon_numeric - instrument.x) >= 1.5:
-                lon_ok = False
-                msg = '#LOCATION.Longitude in file does not match database'
-                LOGGER.error(msg)
-                self._error(77, values_line, msg)
+            if lon_numeric is not None and instrument.x is not None:
+                if in_polar_region and ignore_polar_lon:
+                    LOGGER.info('Skipping longitude check in polar region')
+                elif abs(lon_numeric - instrument.x) >= lon_interval:
+                    lon_ok = False
+                    msg = '#LOCATION.Longitude in file does not match database'
+                    LOGGER.error(msg)
+                    self._error(77, values_line, msg)
             if height_numeric is not None and instrument.z is not None \
-               and abs(height_numeric - instrument.z) >= 1:
+               and abs(height_numeric - instrument.z) >= height_interval:
                 msg = '#LOCATION.Height in file does not match database'
                 self._warning(77, values_line, msg)
 
@@ -1180,6 +1194,18 @@ class Process(object):
             self._warning(145, instrument_valueline, msg)
 
         return dg_date_ok and version_ok
+
+
+def get_processing_extra(option_name):
+    """
+    Returns the value of an extra configuration option <option_name>
+    under the Processing section.
+
+    :param option_name: Name of a processing extra configuration.
+    :returns: Value of that configuration option.
+    """
+
+    return config.get_config_extra('Processing', option_name)
 
 
 class ProcessingError(Exception):
