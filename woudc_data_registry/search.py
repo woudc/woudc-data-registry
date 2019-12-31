@@ -64,15 +64,15 @@ typedefs = {
 MAPPINGS = {
     'projects': {
         'index': 'project',
-        'enabled': True
+        'enabled': config.get_config_extra('SearchIndex', 'projects_enabled')
     },
     'datasets': {
         'index': 'dataset',
-        'enabled': True
+        'enabled': config.get_config_extra('SearchIndex', 'datasets_enabled')
     },
     'countries': {
         'index': 'country',
-        'enabled': True,
+        'enabled': config.get_config_extra('SearchIndex', 'countries_enabled'),
         'properties': {
             'country_code': {
                 'type': 'text',
@@ -105,7 +105,8 @@ MAPPINGS = {
     },
     'contributors': {
         'index': 'contributor',
-        'enabled': True,
+        'enabled': config.get_config_extra('SearchIndex',
+                                           'contributors_enabled'),
         'properties': {
             'name': {
                 'type': 'text',
@@ -141,7 +142,7 @@ MAPPINGS = {
     },
     'stations': {
         'index': 'station',
-        'enabled': True,
+        'enabled': config.get_config_extra('SearchIndex', 'stations_enabled'),
         'properties': {
             'name': {
                 'type': 'text',
@@ -177,7 +178,8 @@ MAPPINGS = {
     },
     'instruments': {
         'index': 'instrument',
-        'enabled': True,
+        'enabled': config.get_config_extra('SearchIndex',
+                                           'instruments_enabled'),
         'properties': {
             'station_id': {
                 'type': 'text',
@@ -203,7 +205,8 @@ MAPPINGS = {
     },
     'deployments': {
         'index': 'deployment',
-        'enabled': True,
+        'enabled': config.get_config_extra('SearchIndex',
+                                           'deployments_enabled'),
         'properties': {
             'station_id': {
                 'type': 'text',
@@ -223,7 +226,8 @@ MAPPINGS = {
     },
     'data_records': {
         'index': 'data_record',
-        'enabled': True,
+        'enabled': config.get_config_extra('SearchIndex',
+                                           'data_records_enabled'),
         'properties': {
             'content_class': {
                 'type': 'text',

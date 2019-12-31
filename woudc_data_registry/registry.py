@@ -185,10 +185,17 @@ class Registry(object):
         """
 
         try:
-            LOGGER.debug('Saving')
             if obj is not None:
-                self.session.add(obj)
-                # self.session.merge(obj)
+                flag_name = '_'.join([obj.__tablename__, 'enabled'])
+                if config.get_config_extra('Registry', flag_name):
+                    self.session.add(obj)
+                    # self.session.merge(obj)
+                else:
+                    LOGGER.info('Registry persistence for model {} disabled,'
+                                ' skipping'.format(obj.__tablename__))
+                    return
+
+            LOGGER.debug('Saving')
             try:
                 self.session.commit()
             except SQLAlchemyError as err:

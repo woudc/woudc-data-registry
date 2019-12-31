@@ -345,33 +345,40 @@ class Process(object):
 
         data_records = []
 
-        LOGGER.info('Beginning persistence to data registry')
-        for model in self._registry_updates:
-            LOGGER.debug('Saving {} to registry'.format(str(model)))
-            self.registry.save(model)
+        if not config.get_config_extra('Processing', 'registry_enabled'):
+            LOGGER.info('Data registry persistence disabled, skipping.')
+        else:
+            LOGGER.info('Beginning persistence to data registry')
+            for model in self._registry_updates:
+                LOGGER.debug('Saving {} to registry'.format(str(model)))
+                self.registry.save(model)
 
-            if isinstance(model, DataRecord):
-                data_records.append(model)
-
-        LOGGER.info('Beginning persistence to search index')
-        for model in self._search_index_updates:
-            if not isinstance(model, DataRecord):
-                allow_update_model = True
-            else:
-                # Do not persist older versions of data records.
-                esid = model.es_id
-                prev_version = self.search_index.get_record_version(esid)
-                now_version = model.data_generation_version
-
-                if prev_version or now_version > prev_version:
-                    allow_update_model = True
+                if isinstance(model, DataRecord):
                     data_records.append(model)
-                else:
-                    allow_update_model = False
 
-            if allow_update_model:
-                LOGGER.debug('Saving {} to search index'.format(str(model)))
-                self.search_index.index(type(model), model.__geo_interface__)
+        if not config.get_config_extra('Processing', 'search_index_enabled'):
+            LOGGER.info('Search index persistence disabled, skipping.')
+        else:
+            LOGGER.info('Beginning persistence to search index')
+            for model in self._search_index_updates:
+                if not isinstance(model, DataRecord):
+                    allow_update_model = True
+                else:
+                    # Do not persist older versions of data records.
+                    esid = model.es_id
+                    prev_version = self.search_index.get_record_version(esid)
+                    now_version = model.data_generation_version
+
+                    if prev_version or now_version > prev_version:
+                        allow_update_model = True
+                        data_records.append(model)
+                    else:
+                        allow_update_model = False
+
+                if allow_update_model:
+                    LOGGER.debug('Saving {} to search index'.format(model))
+                    self.search_index.index(type(model),
+                                            model.__geo_interface__)
 
         for record in data_records:
             LOGGER.info('Saving data record CSV to WAF')
