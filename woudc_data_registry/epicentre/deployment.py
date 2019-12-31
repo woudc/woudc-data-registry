@@ -101,8 +101,8 @@ def add(ctx, station, contributor, start_date, end_date):
               help='identifier')
 @click.option('-s', '--station', 'station', help='station')
 @click.option('-c', '--contributor', 'contributor', help='contributor')
-@click.option('-sd', '--start', 'start_date', type=click.DateTime(['%Y-%m-%d']),
-              help='deployment start date')
+@click.option('-sd', '--start', 'start_date',
+              type=click.DateTime(['%Y-%m-%d']), help='deployment start date')
 @click.option('-ed', '--end', 'end_date', type=click.DateTime(['%Y-%m-%d']),
               help='deployment end date')
 @click.pass_context

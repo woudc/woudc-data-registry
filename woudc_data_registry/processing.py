@@ -929,7 +929,7 @@ class Process(object):
             ignore_polar_lon = get_processing_extra('polar_ignore_longitude')
 
             in_polar_region = lat_numeric is not None \
-                              and abs(lat_numeric) > 90 - polar_latitude_range
+                and abs(lat_numeric) > 90 - polar_latitude_range
 
             if lat_numeric is not None and instrument.y is not None \
                and abs(lat_numeric - instrument.y) >= lat_interval:
