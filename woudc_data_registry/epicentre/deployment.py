@@ -71,10 +71,10 @@ def show(ctx, identifier):
 @click.option('-s', '--station', 'station', required=True, help='station')
 @click.option('-c', '--contributor', 'contributor', required=True,
               help='contributor')
-@click.option('--start', 'start_date', required=False,
+@click.option('-sd', '--start', 'start_date', required=False,
               default=date.today().strftime('%Y-%m-%d'),
               type=click.DateTime(['%Y-%m-%d']), help='deployment start date')
-@click.option('--end', 'end_date', required=False, default=None,
+@click.option('-ed', '--end', 'end_date', required=False, default=None,
               type=click.DateTime(['%Y-%m-%d']), help='deployment end date')
 @click.pass_context
 def add(ctx, station, contributor, start_date, end_date):
@@ -101,9 +101,9 @@ def add(ctx, station, contributor, start_date, end_date):
               help='identifier')
 @click.option('-s', '--station', 'station', help='station')
 @click.option('-c', '--contributor', 'contributor', help='contributor')
-@click.option('--start', 'start_date', type=click.DateTime(['%Y-%m-%d']),
+@click.option('-sd', '--start', 'start_date', type=click.DateTime(['%Y-%m-%d']),
               help='deployment start date')
-@click.option('--end', 'end_date', type=click.DateTime(['%Y-%m-%d']),
+@click.option('-ed', '--end', 'end_date', type=click.DateTime(['%Y-%m-%d']),
               help='deployment end date')
 @click.pass_context
 def update(ctx, identifier, station, contributor, start_date, end_date):
