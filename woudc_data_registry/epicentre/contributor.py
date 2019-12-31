@@ -54,7 +54,12 @@ from woudc_data_registry.epicentre.metadata import (
 from woudc_data_registry.models import Contributor
 from woudc_data_registry.util import json_serial
 
+from woudc_data_registry import config
+
 LOGGER = logging.getLogger(__name__)
+
+save_to_registry = config.get_config_extra('CLI', 'registry_enabled')
+save_to_index = config.get_config_extra('CLI', 'search_index_enabled')
 
 
 @click.group()
@@ -121,7 +126,8 @@ def add(ctx, name, acronym, country, project, wmo_region,
         'y': geom_tokens[0]
     }
 
-    result = add_metadata(Contributor, contributor_)
+    result = add_metadata(Contributor, contributor_,
+                          save_to_registry, save_to_index)
     click.echo('Contributor {} added'.format(result.contributor_id))
 
 
@@ -171,7 +177,8 @@ def update(ctx, identifier, name, acronym, country, project,
         click.echo('No updates specified')
         return
 
-    update_metadata(Contributor, identifier, contributor_)
+    update_metadata(Contributor, identifier, contributor_,
+                    save_to_registry, save_to_index)
     click.echo('Contributor {} updated'.format(identifier))
 
 
@@ -188,7 +195,8 @@ def delete(ctx, identifier):
     q = 'Are you sure you want to delete contributor {}?'.format(identifier)
 
     if click.confirm(q):  # noqa
-        delete_metadata(Contributor, identifier)
+        delete_metadata(Contributor, identifier,
+                        save_to_registry, save_to_index)
 
     click.echo('Contributor {} deleted'.format(identifier))
 

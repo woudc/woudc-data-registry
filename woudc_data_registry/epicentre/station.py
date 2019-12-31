@@ -54,7 +54,12 @@ from woudc_data_registry.epicentre.metadata import (
 from woudc_data_registry.models import Station, StationName
 from woudc_data_registry.util import json_serial
 
+from woudc_data_registry import config
+
 LOGGER = logging.getLogger(__name__)
+
+save_to_registry = config.get_config_extra('CLI', 'registry_enabled')
+save_to_index = config.get_config_extra('CLI', 'search_index_enabled')
 
 
 def build_station_name(ecsv):
@@ -146,7 +151,7 @@ def add(ctx, identifier, name, type_, gaw_id, country,
         'z': geom_tokens[2]
     }
 
-    add_metadata(Station, station_)
+    add_metadata(Station, station_, save_to_registry, save_to_index)
     click.echo('Station {} added'.format(identifier))
 
 
@@ -197,7 +202,8 @@ def update(ctx, identifier, name, type_, gaw_id, country,
         click.echo('No updates specified')
         return
 
-    update_metadata(Station, identifier, station_)
+    update_metadata(Station, identifier, station_,
+                    save_to_registry, save_to_index)
     click.echo('Station {} updated'.format(identifier))
 
 
@@ -214,7 +220,7 @@ def delete(ctx, identifier):
     q = 'Are you sure you want to delete station {}?'.format(identifier)
 
     if click.confirm(q):  # noqa
-        delete_metadata(Station, identifier)
+        delete_metadata(Station, identifier, save_to_registry, save_to_index)
 
     click.echo('Station {} deleted'.format(identifier))
 

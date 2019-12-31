@@ -3,6 +3,10 @@ Processing:
   registry_enabled: True        # Whether to allow operations toward the data registry during processing.
   search_index_enabled: False   # Whether to allow operations toward the search index during processing.
 
+CLI:
+  registry_enabled: False       # Whether to allow operations toward the data registry from model CLI.
+  search_index_enabled: False   # Whether to allow operations toward the search index from model CLI.
+
 Registry:
   projects_enabled: True        # Whether to allow project models to be persisted to the Data Registry.
   datasets_enabled: True        # Whether to allow dataset models to be persisted to the Data Registry.
