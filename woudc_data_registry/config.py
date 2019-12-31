@@ -45,6 +45,7 @@
 
 import logging
 import os
+import yaml
 
 from woudc_data_registry.util import str2bool
 
@@ -69,6 +70,7 @@ WDR_TABLE_SCHEMA = os.getenv('WDR_TABLE_SCHEMA', None)
 WDR_TABLE_CONFIG = os.getenv('WDR_TABLE_CONFIG', None)
 WDR_ERROR_CONFIG = os.getenv('WDR_ERROR_CONFIG', None)
 WDR_ALIAS_CONFIG = os.getenv('WDR_ALIAS_CONFIG', None)
+WDR_EXTRA_CONFIG = os.getenv('WDR_EXTRA_CONFIG', None)
 
 if WDR_DB_TYPE is None:
     msg = 'WDR_DB_TYPE is not set!'
@@ -95,7 +97,36 @@ else:
                                                     WDR_DB_PORT,
                                                     WDR_DB_NAME)
 
-if None in [WDR_TABLE_SCHEMA, WDR_TABLE_CONFIG, WDR_ERROR_CONFIG]:
+if None in [WDR_TABLE_SCHEMA, WDR_TABLE_CONFIG, WDR_ERROR_CONFIG,
+            WDR_EXTRA_CONFIG]:
     msg = 'Central configuration environment variables are not set!'
     LOGGER.error(msg)
     raise EnvironmentError(msg)
+
+
+try:
+    with open(WDR_EXTRA_CONFIG) as extra_config_file:
+        _EXTRAS = yaml.safe_load(extra_config_file)
+except Exception as err:
+    msg = 'Failed to read extra configurations file due to: {}'.format(err)
+    LOGGER.error(msg)
+    raise EnvironmentError(msg)
+
+
+def get_config_extra(section, flag_name):
+    """
+    Search for an option named <flag_name> under the <section> block in
+    the extra configurations file. Return the value if found, otherwise
+    raise an exception.
+
+    :param section: Name of an option group in the extra configuration file.
+    :param flag_name: Name of an option within that group.
+    :returns: Value of the option.
+    """
+
+    try:
+        return _EXTRAS[section][flag_name]
+    except KeyError:
+        msg = 'Unknown configuration variable in extra file: {}.{}' \
+              .format(section, flag_name)
+        raise Exception(msg)
