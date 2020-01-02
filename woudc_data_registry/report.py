@@ -49,6 +49,7 @@ import logging
 
 import re
 from datetime import date
+from collections import OrderedDict
 
 from woudc_data_registry import config
 
@@ -84,23 +85,23 @@ class ReportWriter:
         self._error_definitions = {}
 
         self._contributor_status = {}
-        self._report_batch = {
-            'Processing Status': '',
-            'Station Type': '',
-            'Station ID': '',
-            'Agency': '',
-            'Dataset': '',
-            'Data Level': '',
-            'Data Form': '',
-            'Filename': '',
-            'Line Number': [],
-            'Error Type': [],
-            'Error Code': [],
-            'Message': [],
-            'Incoming Path': '',
-            'Outgoing Path': '',
-            'URN': ''
-        }
+        self._report_batch = OrderedDict([
+            ('Processing Status', ''),
+            ('Error Type', []),
+            ('Error Code', []),
+            ('Line Number', []),
+            ('Message', []),
+            ('Dataset', ''),
+            ('Data Level', ''),
+            ('Data Form', ''),
+            ('Agency', ''),
+            ('Station Type', ''),
+            ('Station ID', ''),
+            ('Filename', ''),
+            ('Incoming Path', ''),
+            ('Outgoing Path', ''),
+            ('URN', '')
+        ])
 
         if root is None:
             self._run_number = 0
@@ -421,6 +422,9 @@ class ReportWriter:
             operator_report_path = self.operator_report_filepath()
             self.operator_report = open(operator_report_path, 'w')
 
+            header = ','.join(self._report_batch.keys())
+            self.operator_report.write(header + '\n')
+
         column_names = ['Line Number', 'Error Type', 'Error Code', 'Message']
         columns = zip(*[self._report_batch[name] for name in column_names])
 
@@ -436,6 +440,7 @@ class ReportWriter:
                 self._report_batch['Data Level'],
                 self._report_batch['Data Form'],
                 self._report_batch['Agency'],
+                self._report_batch['Station Type'],
                 self._report_batch['Station ID'],
                 self._report_batch['Filename'],
                 self._report_batch['Incoming Path'],
@@ -462,3 +467,12 @@ class ReportWriter:
         """
 
         pass
+
+    def close(self):
+        """
+        Release held resources and file descriptors.
+
+        :returns: void
+        """
+
+        self.operator_report.close()

@@ -43,12 +43,14 @@
 #
 # =================================================================
 
-from datetime import date, datetime, time
 import os
+import csv
 import pathlib
 import unittest
 
-from woudc_data_registry import (parser, report, util)
+from datetime import date, datetime, time
+
+from woudc_data_registry import parser, models, report, util
 from woudc_data_registry import dataset_validators as dv
 from woudc_data_registry.parser import DOMAINS
 
@@ -78,6 +80,19 @@ def resolve_test_data_path(test_data_file):
         path = os.path.join('woudc_data_registry', 'tests', test_data_file)
         if os.path.exists(path):
             return path
+
+
+def clear_sandbox():
+    """
+    Clean up report generation tests by deleting any files in the
+    sandbox directory.
+    """
+
+    sandbox = resolve_test_data_path('data/reports/sandbox')
+
+    for filename in os.listdir(sandbox):
+        fullpath = os.path.join(sandbox, filename)
+        os.remove(fullpath)
 
 
 class ParserTest(unittest.TestCase):
@@ -1412,6 +1427,12 @@ class UtilTest(unittest.TestCase):
 class ReportGenerationTest(unittest.TestCase):
     """Test suite for ReportBuilder and report file generation"""
 
+    def setUpClass():
+        clear_sandbox()
+
+    def tearDown(self):
+        clear_sandbox()
+
     def test_run_report_filename(self):
         """Test that run report filepaths are generated properly"""
 
@@ -1534,6 +1555,163 @@ class ReportGenerationTest(unittest.TestCase):
         self.assertIn(1, reporter._error_definitions)
         _, success = reporter.add_message(1)
         self.assertTrue(success)
+
+    def test_passing_operator_report(self):
+        """ Test that a passing file is written in the operator report """
+
+        output_root = resolve_test_data_path('data/reports/sandbox')
+
+        filename = '20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'
+        infile = resolve_test_data_path('data/general/{}'.format(filename))
+        contents = util.read_file(infile)
+
+        reporter = report.ReportWriter(output_root)
+        ecsv = parser.ExtendedCSV(contents, reporter)
+
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+        data_record = models.DataRecord(ecsv)
+        data_record.filename = filename
+
+        agency = ecsv.extcsv['DATA_GENERATION']['Agency']
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_path = os.path.join(output_root,
+                                   'operator-report-{}-run1.csv'.format(today))
+
+        reporter.add_message(200)  # File passes validation
+        reporter.record_passing_file(infile, ecsv, data_record)
+        reporter.close()
+
+        self.assertTrue(os.path.exists(output_path))
+        with open(output_path) as output:
+            reader = csv.reader(output)
+            next(reader)
+
+            report_line = next(reader)
+            self.assertEquals(report_line[0], 'P')
+            self.assertEquals(report_line[2], '200')
+            self.assertIn(agency, report_line)
+            self.assertIn(os.path.basename(infile), report_line)
+
+            with self.assertRaises(StopIteration):
+                next(reader)
+
+    def test_warning_operator_report(self):
+        """ Test that file warnings are written in the operator report """
+
+        output_root = resolve_test_data_path('data/reports/sandbox')
+
+        filename = 'ecsv-trailing-commas.csv'
+        infile = resolve_test_data_path('data/general/{}'.format(filename))
+        contents = util.read_file(infile)
+
+        reporter = report.ReportWriter(output_root)
+        ecsv = parser.ExtendedCSV(contents, reporter)
+
+        # Some warnings are encountered during parsing.
+        ecsv.validate_metadata_tables()
+        ecsv.validate_dataset_tables()
+        data_record = models.DataRecord(ecsv)
+        data_record.filename = filename
+
+        agency = ecsv.extcsv['DATA_GENERATION']['Agency']
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_path = os.path.join(output_root,
+                                   'operator-report-{}-run1.csv'.format(today))
+
+        reporter.add_message(200)  # File passes validation
+        reporter.record_passing_file(infile, ecsv, data_record)
+        reporter.close()
+
+        self.assertTrue(os.path.exists(output_path))
+        with open(output_path) as output:
+            reader = csv.reader(output)
+            next(reader)
+
+            expected_warnings = len(ecsv.warnings)
+            for _ in range(expected_warnings):
+                report_line = next(reader)
+
+                self.assertEquals(report_line[0], 'P')
+                self.assertEquals(report_line[1], 'Warning')
+                self.assertIn(agency, report_line)
+                self.assertIn(os.path.basename(infile), report_line)
+
+            report_line = next(reader)
+            self.assertEquals(report_line[0], 'P')
+            self.assertEquals(report_line[1], 'Warning')
+            self.assertEquals(report_line[2], '200')
+            self.assertIn(agency, report_line)
+            self.assertIn(os.path.basename(infile), report_line)
+
+            with self.assertRaises(StopIteration):
+                next(reader)
+
+    def test_failing_operator_report(self):
+        """ Test that a failing file is written in the operator report """
+
+        output_root = resolve_test_data_path('data/reports/sandbox')
+
+        filename = 'ecsv-missing-instrument-name.csv'
+        infile = resolve_test_data_path('data/general/{}'.format(filename))
+        contents = util.read_file(infile)
+
+        reporter = report.ReportWriter(output_root)
+        ecsv = None
+
+        # Agency typically filled in with FTP username for failing files.
+        agency = 'rmda'
+
+        try:
+            ecsv = parser.ExtendedCSV(contents, reporter)
+            ecsv.validate_metadata_tables()
+            ecsv.validate_dataset_tables()
+
+            raise AssertionError('Parsing of {} did not fail'.format(infile))
+        except (parser.MetadataValidationError, parser.NonStandardDataError):
+            output_path = os.path.join(output_root, 'run1')
+
+            reporter.add_message(209)
+            reporter.record_failing_file(infile, agency, ecsv)
+            reporter.close()
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_path = os.path.join(output_root,
+                                   'operator-report-{}-run1.csv'.format(today))
+
+        self.assertTrue(os.path.exists(output_path))
+        with open(output_path) as output:
+            reader = csv.reader(output)
+            next(reader)
+
+            warnings = 0
+            errors = 0
+
+            expected_warnings = len(ecsv.warnings)
+            expected_errors = len(ecsv.errors)
+            for _ in range(expected_warnings + expected_errors):
+                report_line = next(reader)
+                self.assertEquals(report_line[0], 'F')
+
+                if report_line[1] == 'Warning':
+                    warnings += 1
+                elif report_line[1] == 'Error':
+                    errors += 1
+
+            self.assertEquals(warnings, expected_warnings)
+            self.assertEquals(errors, expected_errors)
+
+            report_line = next(reader)
+            self.assertEquals(report_line[0], 'F')
+            self.assertEquals(report_line[1], 'Error')
+            self.assertEquals(report_line[2], '209')
+            self.assertIn(agency, report_line)
+            self.assertIn(os.path.basename(infile), report_line)
+
+            with self.assertRaises(StopIteration):
+                next(reader)
 
 
 if __name__ == '__main__':

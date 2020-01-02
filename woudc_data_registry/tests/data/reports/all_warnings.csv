@@ -117,4 +117,5 @@ Error Code,Error Type,Message Template,Notes
 201,Warning,New instrument added
 202,Warning,New deployment added
 203,Warning,New station name added
+209,Error,Data file failed to validate
 1000,Warning,Unassigned error message
