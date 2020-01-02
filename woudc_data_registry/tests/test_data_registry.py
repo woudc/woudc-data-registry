@@ -45,6 +45,7 @@
 
 from datetime import date, datetime, time
 import os
+import pathlib
 import unittest
 
 from woudc_data_registry import (parser, report, util)
@@ -1414,7 +1415,7 @@ class ReportGenerationTest(unittest.TestCase):
     def test_run_report_filename(self):
         """Test that run report filepaths are generated properly"""
 
-        project_root = '/path/to/project/root'
+        project_root = resolve_test_data_path('data/reports/sandbox')
         reporter = report.ReportWriter(project_root, run=1)
 
         # Test using manually entered run numbers.
@@ -1441,7 +1442,7 @@ class ReportGenerationTest(unittest.TestCase):
     def test_operator_report_filename(self):
         """Test that operator report filepaths are generated properly"""
 
-        project_root = '/path/to/project/root'
+        project_root = resolve_test_data_path('data/reports/sandbox')
         reporter = report.ReportWriter(project_root, run=1)
 
         # Test using manually entered run numbers.
@@ -1499,6 +1500,40 @@ class ReportGenerationTest(unittest.TestCase):
         operator_report_path = reporter.operator_report_filepath()
         self.assertEquals(reporter._run_number, 6)
         self.assertIn('run6.csv', operator_report_path)
+
+    def test_output_location(self):
+        """Test that all output file locations are in the workin directory"""
+
+        project_root = resolve_test_data_path('data/reports/sandbox')
+        reporter = report.ReportWriter(project_root, run=47)
+
+        operator_path = pathlib.Path(reporter.operator_report_filepath())
+        run_report_path = pathlib.Path(reporter.run_report_filepath())
+        email_report_path = pathlib.Path(reporter.email_report_filepath())
+
+        self.assertEquals(str(operator_path.parent), project_root)
+        self.assertEquals(str(run_report_path.parent), project_root)
+        self.assertEquals(str(email_report_path.parent), project_root)
+
+    def test_uses_error_definition(self):
+        """Test that error/warning feedback responds to input files"""
+
+        # The two error files below have different error types for error 1.
+        all_warnings = resolve_test_data_path('data/reports/all_warnings.csv')
+        all_errors = resolve_test_data_path('data/reports/all_errors.csv')
+
+        project_root = resolve_test_data_path('data/reports/sandbox')
+        reporter = report.ReportWriter(project_root)
+
+        reporter.read_error_definitions(all_warnings)
+        self.assertIn(1, reporter._error_definitions)
+        _, success = reporter.add_message(1)
+        self.assertFalse(success)
+
+        reporter.read_error_definitions(all_errors)
+        self.assertIn(1, reporter._error_definitions)
+        _, success = reporter.add_message(1)
+        self.assertTrue(success)
 
 
 if __name__ == '__main__':

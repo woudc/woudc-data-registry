@@ -1,0 +1,120 @@
+Error Code,Error Type,Message Template,Notes
+1,Error,Not a text file
+2,Error,No core metadata tables found. Not an Extended CSV file
+3,Error,Missing required table #{table}
+4,Error,Excess table #{table} does not belong in {dataset} file
+5,Error,Missing required field #{table}.{field}
+6,Error,Excess field {field} does not belong in table {table}
+7,Error,Required field #{table}.{field} is null or empty
+8,Error,Optional field #{table}.{field} is null or empty
+9,Error,Table #{table} has no fields
+10,Error,Table #{table} has no fields,Placeholder for optional-table-specific error
+11,Error,Required table #{table} contains no data
+12,Error,Optional table #{table} contains no data
+13,Error,No non-core data tables found
+14,Error,Unexpected empty line between table header and fields
+15,Error,Unrecognized data {row}
+16,Error,Improper delimiter used '{separator}' corrected to '\,' (comma)
+20,Error,#{table} field {oldfield} capitalization should be {newfield}
+21,Error,#{table} corrected to {newtable} using aliases
+22,Error,#{table} field {oldfield} corrected to {newfield} using aliases
+23,Error,#{table}.{field} value corrected to {newvalue} using aliases
+25,Error,#{table} row has more values than #{table} has columns
+26,Error,Fewer than minimum {bound} occurrences of table #{table} found
+27,Error,More than maximum {bound} occurrences of table #{table} found
+28,Error,Fewer than minimum {bound} number of rows in table #{table}
+29,Error,More than maximum {bound} number of rows in table #{table}
+30,Error,#{table}.Time separator '{separator}' corrected to ':' (colon)
+31,Error,Failed to parse #{table}.Time {component}: contains invalid characters
+32,Error,#{table}.Time corrected from 12-hour clock to 24-hour YYYY-MM-DD format
+33,Error,#{table}.Time {component} is not within allowable range [{lower}]-[{upper}]
+34,Error,#{table}.Date separator '{separator}' corrected to '-' (hyphen)
+35,Error,#{table}.Date not in YYYY-MM-DD format: missing separators
+36,Error,#{table}.Date is incomplete
+37,Error,#{table}.Date not in YYYY-MM-DD format: too many separators
+38,Error,Failed to parse #{table}.Date {component}: contains invalid characters
+39,Error,#{table}.Date {component} is not within allowable range [{lower}]-[{upper}],Reserved for year and month components
+40,Error,#{table}.Date day is not within allowable range [{lower}]-[{upper}]
+41,Error,#{table}.UTCOffset separator '{separator}' corrected to ':' (colon)
+42,Error,#{table}.UTCOffset {component} is less than 2 digits long
+43,Error,#{table}.UTCOffset {component} is missing\, default value is '00' (zero)
+44,Error,Missing sign in #{table}.UTCOffset\, default '+' (plus)
+45,Error,Invalid sign in #{table}.UTCOffset\, replacing with '{sign}'
+46,Error,#{table}.UTCOffset is a series of zeroes\, should be '+00:00:00'
+47,Error,Failed to parse #{table}.UTCOffset: contains invalid characters
+50,Error,Missing #CONTENT.Class\, default is 'WOUDC'
+51,Error,#CONTENT.Class {value} failed to validate against registry
+52,Error,#CONTENT.Category {value} failed to validate against registry
+53,Error,#CONTENT.Level should be {value} according to present tables
+54,Error,#CONTENT.Level {oldvalue} should be a decimal number ({newvalue})
+55,Error,Failed to parse #CONTENT.Level: contains invalid characters
+56,Error,Unknown #CONTENT.Level for dataset {dataset}
+57,Error,#CONTENT.Form {oldvalue} should be integral ({newvalue})
+58,Error,Failed to parse #CONTENT.Form: contains invalid characters
+59,Error,Cannot resolve missing or invalid #CONTENT.Form
+60,Error,Unknown #CONTENT.Form for dataset {dataset} and level {level}
+61,Error,Cannot assess expected table set: #CONTENT.{field} unknown
+62,Error,Missing #DATA_GENERATION.Date\, defaulting to processing date
+63,Error,Missing #DATA_GENERATION.Version\, defaulting to {default}
+64,Error,#DATA_GENERATION.Version is not within allowable range [{lower}]-[{upper}]
+65,Error,#DATA_GENERATION.Version does not have exactly decimal place
+66,Error,Failed to parse #DATA_GENERATION.Version: contains invalid characters
+67,Error,#DATA_GENERATION.Agency failed to validate against registry
+70,Error,#PLATFORM.ID is not 3 digits long
+71,Error,#PLATFORM.ID not found in registry
+72,Error,#PLATFORM.Type in file does not match registry
+73,Error,#PLATFORM.Name in file does not match registry
+74,Error,#PLATFORM.Country in file does not match registry
+75,Error,Ship #PLATFORM.Country should be 'XY' to meet ISO-3166 standards
+76,Error,Failed to parse #LOCATION.{field}: contains invalid characters,Reserved for fields Latitude and Longitude
+77,Error,Failed to parse #LOCATION.Height: contains invalid characters
+78,Error,#LOCATION.{field} is not within allowable range [{lower}]-[{upper}],Reserved for fields Latitude and Longitude
+79,Error,#LOCATION.Height is not within allowable range [{lower}]-[{upper}]
+80,Error,#LOCATION.{field} in file does not match registry,Reserved for fields Latitude and Longitude
+81,Error,#LOCATION.Height in file does not match registry
+82,Error,Null value found for #INSTRUMENT.Name
+83,Error,Null value found for #INSTRUMENT.Model
+84,Error,Null value found for #INSTRUMENT.Number
+85,Error,#INSTRUMENT.Name not found in registry
+86,Error,#INSTRUMENT.Model not found in registry
+87,Error,Instrument failed to validate against registry
+88,Error,Deployment {ident} not found in registry
+89,Error,Failed to parse #{table}.{field} due to errors: {reason}
+90,Error,Inconsistent Time values between #TIMESTAMP tables
+91,Error,#{table}.Date cannot be more recent than #DATA_GENERATION.Date,Reserved for TIMESTAMP tables
+92,Error,#{table}.Date cannot be more recent than #DATA_GENERATION.Date,Reserved for non-TIMESTAMP tables
+93,Error,First #TIMESTAMP.Time cannot be more recent than other time(s)
+95,Error,Submitted file #DATA_GENERATION.Date is earlier than previously submitted version
+96,Error,Submitted file version and #DATA_GENERAION.Date identical to previously submitted file
+97,Error,Submitted #DATA_GENERATION.Date is identical to previously submitted file
+98,Error,Submitted version number is identical to previously submitted file
+99,Error,ECC instrument serial number different from previous submission
+101,Error,No ozone data in #DAILY table
+102,Error,#DAILY.Date found in non-chronological order
+103,Error,#DAILY.Date has different year than #TIMESTAMP.Date
+104,Error,Duplicate observations found in #DAILY table
+105,Error,Multiple observations found with #DAILY.Date {value}
+106,Error,#TIMESTAMP.Date before #DAILY does not equal first date of #DAILY
+107,Error,#TIMESTAMP.Date after #DAILY does not equal last date of #DAILY
+108,Error,More than two #TIMESTAMP tables found in file
+109,Error,#TIMESTAMP table after #DAILY is missing\, deriving based on requirements
+110,Error,Missing #MONTHLY table\, deriving based on requirements
+111,Error,Missing value for #MONTHLY.{field}\, deriving based on requirements
+112,Error,#MONTHLY.{field} differs from derived value
+113,Error,Cannot derive #MONTHLY table: missing #DAILY.ColumnO3
+114,Error,#OBSERVATIONS.Time found in non-chronological order
+115,Error,Duplicate observations found in #OBSERVATIONS table
+116,Error,Multiple observations found with #OBSERVATIONS.Time {value}
+118,Error,#{table}.Date found in non-chronological order,Reserved for Umkehr data tables
+119,Error,Duplicate observations found in #{table} table,Reserved for Umkehr data tables
+120,Error,Multiple observations found with #{table}.Date {value},Reserved for Umkehr data tables
+121,Error,#TIMESTAMP.Date before #{table} does not equal first date of #{table},Reserved for Umkehr data tables
+122,Error,#TIMESTAMP.Date after #{table} does not equal last date of #{table},Reserved for Umkehr data tables
+123,Error,#TIMESTAMP table after #{table} is missing\, deriving based on requirements,Reserved for Umkehr data tables
+125,Error,Lidar table counts are uneven between #OZONE_PROFILE and #OZONE_SUMMARY
+126,Error,Spectral table counts are uneven between #TIMESTAMP\, #GLOBAL\, and #{summary_table}
+200,Error,Data file successfully persisted
+201,Error,New instrument added
+202,Error,New deployment added
+203,Error,New station name added
+1000,Error,Unassigned error message
