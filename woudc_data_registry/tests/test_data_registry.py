@@ -1408,5 +1408,98 @@ class UtilTest(unittest.TestCase):
         self.assertTrue(util.is_plural(2))
 
 
+class ReportGenerationTest(unittest.TestCase):
+    """Test suite for ReportBuilder and report file generation"""
+
+    def test_run_report_filename(self):
+        """Test that run report filepaths are generated properly"""
+
+        project_root = '/path/to/project/root'
+        reporter = report.ReportWriter(project_root, run=1)
+
+        # Test using manually entered run numbers.
+        report_file4 = reporter.run_report_filepath(4)
+        report_file61 = reporter.run_report_filepath(61)
+
+        self.assertIn(project_root, report_file4)
+        self.assertIn(project_root, report_file61)
+
+        self.assertIn('4', report_file4)
+        self.assertIn('61', report_file61)
+
+        self.assertNotEquals(report_file4, report_file61)
+
+        # Test that instance run report is used if none is specified.
+        report_file1 = reporter.run_report_filepath()
+
+        self.assertIn(project_root, report_file1)
+        self.assertIn('1', report_file1)
+
+        self.assertNotEquals(report_file1, report_file4)
+        self.assertNotEquals(report_file1, report_file61)
+
+    def test_operator_report_filename(self):
+        """Test that operator report filepaths are generated properly"""
+
+        project_root = '/path/to/project/root'
+        reporter = report.ReportWriter(project_root, run=1)
+
+        # Test using manually entered run numbers.
+        report_file4 = reporter.operator_report_filepath(4)
+        report_file61 = reporter.operator_report_filepath(61)
+
+        self.assertIn(project_root, report_file4)
+        self.assertIn(project_root, report_file61)
+
+        self.assertIn('4', report_file4)
+        self.assertIn('61', report_file61)
+
+        self.assertNotEquals(report_file4, report_file61)
+
+        # Test that instance run report is used if none is specified.
+        report_file1 = reporter.operator_report_filepath()
+
+        self.assertIn(project_root, report_file1)
+        self.assertIn('1', report_file1)
+
+        self.assertNotEquals(report_file1, report_file4)
+        self.assertNotEquals(report_file1, report_file61)
+
+    def test_run_number_determination(self):
+        """Test automatic run number determination from the file system"""
+
+        # Test that an empty working directory results in run number 1.
+        root = resolve_test_data_path('data/reports/run_numbers/no_reports')
+        reporter = report.ReportWriter(root)
+
+        operator_report_path = reporter.operator_report_filepath()
+        self.assertEquals(reporter._run_number, 1)
+        self.assertIn('run1.csv', operator_report_path)
+
+        # Test that run number is adjusted when one previous run has happened.
+        root = resolve_test_data_path('data/reports/run_numbers/one_report')
+        reporter = report.ReportWriter(root)
+
+        operator_report_path = reporter.operator_report_filepath()
+        self.assertEquals(reporter._run_number, 2)
+        self.assertIn('run2.csv', operator_report_path)
+
+        # Test that run number is adjusted when multiple runs have happened.
+        root = resolve_test_data_path('data/reports/run_numbers/six_reports')
+        reporter = report.ReportWriter(root)
+
+        operator_report_path = reporter.operator_report_filepath()
+        self.assertEquals(reporter._run_number, 7)
+        self.assertIn('run7.csv', operator_report_path)
+
+        # Test that run number is correct when past runs start from above 1.
+        root = resolve_test_data_path('data/reports/run_numbers/jump_reports')
+        reporter = report.ReportWriter(root)
+
+        operator_report_path = reporter.operator_report_filepath()
+        self.assertEquals(reporter._run_number, 6)
+        self.assertIn('run6.csv', operator_report_path)
+
+
 if __name__ == '__main__':
     unittest.main()

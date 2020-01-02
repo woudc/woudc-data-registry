@@ -47,6 +47,7 @@ import os
 import csv
 import logging
 
+import re
 from datetime import date
 
 from woudc_data_registry import config
@@ -106,10 +107,28 @@ class ReportWriter:
         else:
             self._run_number = run or self._determine_run_number()
 
-            operator_report_path = self.operator_report_filepath()
-            self.operator_report = open(operator_report_path, 'w')
-
+        self.operator_report = None
         self.read_error_definitions(config.WDR_ERROR_CONFIG)
+
+    def _find_operator_reports(self):
+        """
+        Returns a list of operator report file names that already exist
+        in the instance's working directory. If the working directory is
+        null, then the list will be empty.
+
+        :returns: List of existing operator report filenames.
+        """
+
+        date_pattern = r'\d{4}-\d{2}-\d{2}'
+        operator_report_pattern = r'^operator-report-{}-run\d+.csv$' \
+                                  .format(date_pattern)
+
+        operator_reports = []
+        for filename in os.listdir(self._working_directory):
+            if re.match(operator_report_pattern, filename):
+                operator_reports.append(filename)
+
+        return operator_reports
 
     def _determine_run_number(self):
         """
@@ -119,13 +138,18 @@ class ReportWriter:
         :returns: Next run number in the working directory.
         """
 
-        run_number = 1
+        highest_report_number = 0
+        operator_reports = self._find_operator_reports()
 
-        # Count run reports in the working directory.
-        while os.path.exists(self.run_report_filepath(run_number)):
-            run_number += 1
+        run_number_pattern = r'run(\d+).csv$'
+        for operator_report_name in operator_reports:
+            match = re.search(run_number_pattern, operator_report_name)
+            report_number = int(match.group(1))
 
-        return run_number
+            if report_number > highest_report_number:
+                highest_report_number = report_number
+
+        return highest_report_number + 1
 
     def _load_processing_results(self, filepath, contributor,
                                  extcsv=None, data_record=None):
@@ -200,7 +224,8 @@ class ReportWriter:
         :returns: Full path to specified runport.
         """
 
-        filename = 'run{}'.format(self._run_number)
+        run = run or self._run_number
+        filename = 'run{}'.format(run)
 
         if self._working_directory is None:
             return filename
@@ -218,8 +243,10 @@ class ReportWriter:
         """
 
         today = date.today().strftime('%Y-%m-%d')
-        filename = 'operator-report-{}-run{}.csv'.format(today,
-                                                         self._run_number)
+
+        run = run or self._run_number
+        filename = 'operator-report-{}-run{}.csv'.format(today, run)
+
         if self._working_directory is None:
             return filename
         else:
@@ -389,6 +416,10 @@ class ReportWriter:
 
         :returns: void
         """
+
+        if self.operator_report is None:
+            operator_report_path = self.operator_report_filepath()
+            self.operator_report = open(operator_report_path, 'w')
 
         column_names = ['Line Number', 'Error Type', 'Error Code', 'Message']
         columns = zip(*[self._report_batch[name] for name in column_names])
