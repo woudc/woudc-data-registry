@@ -83,6 +83,9 @@ class ReportWriter:
 
         self._working_directory = root
         self._error_definitions = {}
+        self._contributors = {
+            'unknown': 'UNKNOWN'
+        }
 
         self._contributor_status = {}
         self._report_batch = OrderedDict([
@@ -332,6 +335,8 @@ class ReportWriter:
         """
 
         contributor = extcsv.extcsv['DATA_GENERATION']['Agency']
+        contributor_raw = contributor.replace('-', '').lower()
+        self._contributors[contributor_raw] = contributor
 
         self._load_processing_results(filepath, contributor, extcsv=extcsv,
                                       data_record=data_record)
@@ -364,6 +369,10 @@ class ReportWriter:
         self._load_processing_results(filepath, contributor, extcsv=extcsv)
         self._report_batch['Processing Status'] = 'F'
 
+        contributor_raw = contributor.replace('-', '').lower()
+        if contributor_raw not in self._contributors:
+            self._contributors[contributor_raw] = contributor
+
         if contributor not in self._contributor_status:
             self._contributor_status[contributor] = []
         self._contributor_status[contributor].append(('F', filepath))
@@ -381,6 +390,21 @@ class ReportWriter:
 
         :returns: void
         """
+
+        for contributor in list(self._contributor_status.keys()):
+            contributor_raw = contributor.replace('-', '').lower()
+
+            if contributor_raw in self._contributors:
+                contributor_official = self._contributors[contributor_raw]
+
+                if contributor != contributor_official:
+                    self._contributor_status[contributor_official].extend(
+                        self._contributor_status.pop(contributor))
+            else:
+                if 'UNKNOWN' not in self._contributor_status:
+                    self._contributor_status['UNKNOWN'] = []
+                self._contributor_status['UNKNOWN'].extend(
+                    self._contributor_status.pop(contributor_raw))
 
         contributor_list = sorted(list(self._contributor_status.keys()))
         if 'UNKNOWN' in contributor_list:

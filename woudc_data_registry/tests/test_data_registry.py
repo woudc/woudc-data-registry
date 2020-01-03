@@ -91,8 +91,9 @@ def clear_sandbox():
     sandbox = resolve_test_data_path('data/reports/sandbox')
 
     for filename in os.listdir(sandbox):
-        fullpath = os.path.join(sandbox, filename)
-        os.remove(fullpath)
+        if filename != '.keep':
+            fullpath = os.path.join(sandbox, filename)
+            os.remove(fullpath)
 
 
 class ParserTest(unittest.TestCase):
@@ -1693,8 +1694,7 @@ class ReportGenerationTest(unittest.TestCase):
         reporter = report.ReportWriter(output_root)
         ecsv = None
 
-        # Agency typically filled in with FTP username for failing files.
-        agency = 'rmda'
+        agency = 'UNKNOWN'
 
         try:
             ecsv = parser.ExtendedCSV(contents, reporter)
@@ -1771,7 +1771,7 @@ class ReportGenerationTest(unittest.TestCase):
         except (parser.MetadataValidationError, parser.NonStandardDataError):
             output_path = os.path.join(output_root, 'run1')
 
-            reporter.add_message(209, None)
+            reporter.add_message(209)
             reporter.record_failing_file(infile, agency, ecsv)
             reporter.close()
 
@@ -1803,7 +1803,7 @@ class ReportGenerationTest(unittest.TestCase):
         except (parser.MetadataValidationError, parser.NonStandardDataError):
             output_path = os.path.join(output_root, 'run1')
 
-            reporter.add_message(209, None)
+            reporter.add_message(209)
             reporter.record_failing_file(infile, agency, ecsv)
             reporter.close()
 
@@ -1814,6 +1814,255 @@ class ReportGenerationTest(unittest.TestCase):
 
                 self.assertEquals(lines[0], agency)
                 self.assertEquals(lines[1], 'Fail: {}'.format(infile))
+
+    def test_mixed_operator_report(self):
+        """
+        Test that passing and failing files are written to the operator report
+        when a mixture of the two is processed
+        """
+
+        output_root = resolve_test_data_path('data/reports/sandbox')
+        infile_root = resolve_test_data_path('data/reports/pass_and_fail')
+
+        reporter = report.ReportWriter(output_root)
+
+        warnings = {}
+        errors = {}
+
+        expected_warnings = {}
+        expected_errors = {}
+
+        agency = 'UNKNOWN'
+
+        for infile in os.listdir(infile_root):
+            fullpath = os.path.join(infile_root, infile)
+
+            warnings[fullpath] = 0
+            errors[fullpath] = 0
+
+            try:
+                contents = util.read_file(fullpath)
+                ecsv = parser.ExtendedCSV(contents, reporter)
+            except (parser.MetadataValidationError,
+                    parser.NonStandardDataError) as err:
+                expected_errors[fullpath] = len(err.errors)
+
+                reporter.add_message(209)
+                reporter.record_failing_file(fullpath, agency)
+                continue
+
+            try:
+                ecsv.validate_metadata_tables()
+                agency = ecsv.extcsv['DATA_GENERATION']['Agency']
+
+                ecsv.validate_dataset_tables()
+                data_record = models.DataRecord(ecsv)
+                data_record.filename = infile
+
+                expected_warnings[fullpath] = len(ecsv.warnings)
+                expected_errors[fullpath] = 0
+                reporter.record_passing_file(fullpath, ecsv, data_record)
+            except (parser.MetadataValidationError,
+                    parser.NonStandardDataError):
+                expected_warnings[fullpath] = len(ecsv.warnings)
+                expected_errors[fullpath] = len(ecsv.errors)
+
+                reporter.add_message(209)
+                reporter.record_failing_file(fullpath, agency, ecsv)
+
+        reporter.close()
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_path = os.path.join(output_root,
+                                   'operator-report-{}-run1.csv'.format(today))
+
+        self.assertTrue(os.path.exists(output_path))
+        with open(output_path) as output:
+            reader = csv.reader(output)
+            next(reader)
+
+            for line in reader:
+                if expected_errors[line[12]] == 0:
+                    self.assertEquals(line[0], 'P')
+                    self.assertEquals(line[1], 'Warning')
+                else:
+                    self.assertEquals(line[0], 'F')
+
+                if line[2] == '200':
+                    self.assertEquals(expected_errors[line[12]], 0)
+                elif line[2] == '209':
+                    self.assertGreater(expected_errors[line[12]], 0)
+                elif line[1] == 'Warning':
+                    warnings[line[12]] += 1
+                elif line[1] == 'Error':
+                    errors[line[12]] += 1
+
+        self.assertEquals(warnings, expected_warnings)
+        self.assertEquals(errors, expected_errors)
+
+    def test_mixed_run_report(self):
+        """
+        Test that passing and failing files are written to the run report
+        when a mixture of the two is processed
+        """
+
+        output_root = resolve_test_data_path('data/reports/sandbox')
+        infile_root = resolve_test_data_path('data/reports/pass_and_fail')
+
+        reporter = report.ReportWriter(output_root)
+        agency = 'MSC'
+
+        expected_passes = set()
+        expected_fails = set()
+
+        for infile in os.listdir(infile_root):
+            fullpath = os.path.join(infile_root, infile)
+
+            try:
+                contents = util.read_file(fullpath)
+                ecsv = parser.ExtendedCSV(contents, reporter)
+            except (parser.MetadataValidationError,
+                    parser.NonStandardDataError):
+                expected_fails.add(fullpath)
+
+                reporter.add_message(209)
+                reporter.record_failing_file(fullpath, agency)
+                continue
+
+            try:
+                ecsv.validate_metadata_tables()
+                ecsv.validate_dataset_tables()
+                data_record = models.DataRecord(ecsv)
+                data_record.filename = infile
+
+                expected_passes.add(fullpath)
+
+                reporter.add_message(200)
+                reporter.record_passing_file(fullpath, ecsv, data_record)
+            except (parser.MetadataValidationError,
+                    parser.NonStandardDataError):
+                expected_fails.add(fullpath)
+
+                reporter.add_message(209)
+                reporter.record_failing_file(fullpath, agency, ecsv)
+
+        reporter.close()
+
+        self.assertEquals(len(expected_passes), 6)
+        self.assertEquals(len(expected_fails), 4)
+
+        output_path = os.path.join(output_root, 'run1')
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(lines[0], agency)
+            self.assertEquals(len(lines),
+                              len(expected_passes) + len(expected_fails) + 1)
+
+            for line in lines[1:]:
+                if line.startswith('Pass'):
+                    target = line[6:].strip()
+                    self.assertIn(target, expected_passes)
+                elif line.startswith('Fail'):
+                    target = line[6:].strip()
+                    self.assertIn(target, expected_fails)
+
+    def test_run_report_multiple_agencies(self):
+        """Test that files in the run report are grouped by agency"""
+
+        output_root = resolve_test_data_path('data/reports/sandbox')
+        infile_root = resolve_test_data_path('data/reports/agencies')
+
+        reporter = report.ReportWriter(output_root)
+
+        expected_passes = {}
+        expected_fails = {}
+        agency_aliases = {
+            'msc': 'MSC',
+            'casiap': 'CAS-IAP',
+            'mlcd-lu': 'MLCD-LU',
+            'dwd-mohp': 'DWD-MOHp'
+        }
+
+        for dirpath, dirnames, filenames in os.walk(infile_root):
+            for infile in filenames:
+                fullpath = os.path.join(dirpath, infile)
+                # Agency inferred from directory name.
+                agency = dirpath.split('/')[-1]
+
+                try:
+                    contents = util.read_file(fullpath)
+                    ecsv = parser.ExtendedCSV(contents, reporter)
+                except (parser.MetadataValidationError,
+                        parser.NonStandardDataError):
+                    if agency not in expected_passes:
+                        expected_passes[agency] = set()
+                    if agency not in expected_fails:
+                        expected_fails[agency] = set()
+                    expected_fails[agency].add(fullpath)
+
+                    reporter.add_message(209)
+                    reporter.record_failing_file(fullpath, agency)
+                    continue
+
+                try:
+                    ecsv.validate_metadata_tables()
+                    agency = ecsv.extcsv['DATA_GENERATION']['Agency']
+
+                    if agency not in expected_passes:
+                        expected_passes[agency] = set()
+                    if agency not in expected_fails:
+                        expected_fails[agency] = set()
+
+                    ecsv.validate_dataset_tables()
+                    data_record = models.DataRecord(ecsv)
+                    data_record.filename = infile
+
+                    expected_passes[agency].add(fullpath)
+                    reporter.add_message(200)
+                    reporter.record_passing_file(fullpath, ecsv, data_record)
+                except (parser.MetadataValidationError,
+                        parser.NonStandardDataError):
+                    agency = agency_aliases[agency]
+                    if agency not in expected_passes:
+                        expected_passes[agency] = set()
+                    if agency not in expected_fails:
+                        expected_fails[agency] = set()
+                    expected_fails[agency].add(fullpath)
+
+                    reporter.add_message(209)
+                    reporter.record_failing_file(fullpath, agency, ecsv)
+
+        reporter.close()
+
+        self.assertEquals(len(expected_passes['CAS-IAP']), 1)
+        self.assertEquals(len(expected_passes['DWD-MOHp']), 2)
+        self.assertEquals(len(expected_passes['MLCD-LU']), 3)
+        self.assertEquals(len(expected_passes['MSC']), 4)
+
+        self.assertEquals(len(expected_fails['CAS-IAP']), 0)
+        self.assertEquals(len(expected_fails['DWD-MOHp']), 1)
+        self.assertEquals(len(expected_fails['MLCD-LU']), 0)
+        self.assertEquals(len(expected_fails['MSC']), 1)
+
+        output_path = os.path.join(output_root, 'run1')
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            curr_agency = None
+
+            for line in lines:
+                if line.startswith('Pass'):
+                    target = line[6:]
+                    self.assertIn(target, expected_passes[curr_agency])
+                elif line.startswith('Fail'):
+                    target = line[6:]
+                    self.assertIn(target, expected_fails[curr_agency])
+                elif line.strip() != '':
+                    curr_agency = line.strip()
+                    self.assertIn(line, agency_aliases.values())
 
 
 if __name__ == '__main__':
