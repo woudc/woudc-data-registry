@@ -724,13 +724,12 @@ class Process(object):
         timestamp_date = self.extcsv.extcsv['TIMESTAMP']['Date']
 
         deployment_id = ':'.join([station, agency, project])
-        results = self.registry.query_by_field(Deployment, 'deployment_id',
-                                               deployment_id)
-        if not results:
+        deployment = self.registry.query_by_field(Deployment, 'deployment_id',
+                                                 deployment_id)
+        if not deployment:
             LOGGER.warning('Deployment {} not found'.format(deployment_id))
             return False
         else:
-            deployment = results[0]
             LOGGER.debug('Found deployment match for {}'
                          .format(deployment_id))
             if deployment.start_date > timestamp_date:
@@ -783,22 +782,22 @@ class Process(object):
         model = str(model)
 
         # Check data registry for matching instrument name
-        response = self.registry.query_by_field(Instrument, 'name', name,
-                                                case_insensitive=True)
-        if response:
-            name = response[0].name
-            self.extcsv.extcsv['INSTRUMENT']['Name'] = response[0].name
+        instrument = self.registry.query_by_field(Instrument, 'name', name,
+                                                  case_insensitive=True)
+        if instrument:
+            name = instrument.name
+            self.extcsv.extcsv['INSTRUMENT']['Name'] = instrument.name
         else:
             msg = 'No match found for #INSTRUMENT.Name = {}'.format(name)
             self._error(1000, instrument_valueline, msg)
             name_ok = False
 
         # Check data registry for matching instrument model
-        response = self.registry.query_by_field(Instrument, 'model', model,
-                                                case_insensitive=True)
-        if response:
-            model = response[0].model
-            self.extcsv.extcsv['INSTRUMENT']['Model'] = response[0].model
+        instrument = self.registry.query_by_field(Instrument, 'model', model,
+                                                  case_insensitive=True)
+        if instrument:
+            model = instrument.model
+            self.extcsv.extcsv['INSTRUMENT']['Model'] = instrument.model
         else:
             msg = 'No match found for #INSTRUMENT.Model = {}'.format(model)
             self._error(1000, instrument_valueline, msg)
@@ -916,12 +915,11 @@ class Process(object):
             LOGGER.debug('Not validating shipboard instrument location')
             return True
         elif instrument_id is not None:
-            result = self.registry.query_by_field(Instrument, 'instrument_id',
-                                                  instrument_id)
-            if not result:
+            instrument = self.registry.query_by_field(Instrument,
+                                                      'instrument_id',
+                                                    instrument_id)
+            if not instrument:
                 return True
-
-            instrument = result[0]
 
             lat_interval = process_config['latitude_error_distance']
             lon_interval = process_config['longitude_error_distance']
