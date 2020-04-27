@@ -111,6 +111,7 @@
 201,Warning,New instrument added
 202,Warning,New deployment added
 203,Warning,New station name added
+209,Error,Data file failed to validate
 996,Critical,Failed to read table definitions file
 997,Error,Failed to read table definitions schema\, cannot assure table definitions file validity
 998,Error,Table definitions schema failed to validate as a schema\, cannot assure table definitions file validity

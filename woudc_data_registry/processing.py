@@ -301,6 +301,7 @@ class Process(object):
         if not all([project_ok, dataset_ok, contributor_ok,
                     platform_ok, deployment_ok, instrument_ok,
                     location_ok, content_ok, data_generation_ok]):
+            self._error(209, None)
             return False
 
         if metadata_only:
@@ -314,6 +315,7 @@ class Process(object):
             dataset_validated = dataset_validator.check_all(self.extcsv)
 
             if not all([time_series_ok, dataset_validated]):
+                self._error(209, None)
                 return False
 
         LOGGER.info('Validating data record')
@@ -327,12 +329,16 @@ class Process(object):
 
         data_record_ok = self.check_data_record(data_record)
 
-        if data_record_ok:
+        if not data_record_ok:
+            self._error(209, None)
+            return False
+        else:
             LOGGER.info('Data record is valid and verified')
             self._registry_updates.append(data_record)
             self._search_index_updates.append(data_record)
 
-        return data_record_ok
+            self._warning(200, None)
+            return True
 
     def persist(self):
         """
