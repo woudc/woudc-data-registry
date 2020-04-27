@@ -388,11 +388,9 @@ class SearchIndex(object):
 
             settings = {
                 'mappings': {
-                    'FeatureCollection': {
-                        'properties': {
-                            'geometry': {
-                                'type': 'geo_shape'
-                            }
+                    'properties': {
+                        'geometry': {
+                            'type': 'geo_shape'
                         }
                     }
                 },
@@ -405,8 +403,7 @@ class SearchIndex(object):
             }
 
             if 'properties' in definition:
-                props = settings['mappings']['FeatureCollection']['properties']
-                props['properties'] = {
+                settings['mappings']['properties']['properties'] = {
                     'properties': definition['properties']
                 }
 
@@ -448,7 +445,6 @@ class SearchIndex(object):
                 MAPPINGS['data_records']['index'])
 
             result = self.connection.get(index=index_name,
-                                         doc_type='FeatureCollection',
                                          id=identifier)
             return result['_source']['properties']['data_generation_version']
         except NotFoundError:
@@ -484,7 +480,6 @@ class SearchIndex(object):
 
             LOGGER.debug('Indexing 1 document into {}'.format(index_name))
             self.connection.update(index=index_name, id=target['id'],
-                                   doc_type='FeatureCollection',
                                    body=wrapper)
 
         else:
@@ -492,7 +487,7 @@ class SearchIndex(object):
             wrapper = [{
                 '_op_type': 'update',
                 '_index': index_name,
-                '_type': 'FeatureCollection',
+                '_type': '_doc',
                 '_id': document['id'],
                 'doc': document,
                 'doc_as_upsert': True
@@ -527,8 +522,7 @@ class SearchIndex(object):
 
         if isinstance(target, str):
             # <target> is a document ID, delete normally.
-            result = self.connection.delete(index=index_name, id=target,
-                                            doc_type='FeatureCollection')
+            result = self.connection.delete(index=index_name, id=target)
 
             if not result['found']:
                 msg = 'Data record {} does not exist'.format(target)
@@ -536,8 +530,7 @@ class SearchIndex(object):
                 raise SearchIndexError(msg)
         elif isinstance(target, dict):
             # <target> is the single GeoJSON object to delete.
-            result = self.connection.delete(index=index_name, id=target['id'],
-                                            doc_type='FeatureCollection')
+            result = self.connection.delete(index=index_name, id=target['id'])
 
             if not result['found']:
                 msg = 'Data record {} does not exist'.format(target['id'])
@@ -548,7 +541,7 @@ class SearchIndex(object):
             wrapper = [{
                 '_op_type': 'delete',
                 '_index': index_name,
-                '_type': document['type'],
+                '_type': '_doc',
                 '_id': document['id']
             } for document in target]
 
