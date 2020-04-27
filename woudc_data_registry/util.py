@@ -60,12 +60,6 @@ def point2geojsongeometry(x, y, z=None):
     :returns: `dict` of GeoJSON geometry
     """
 
-    coordinates = []
-
-    geometry = {
-        'type': 'Point'
-    }
-
     if z is None or int(z) == 0:
         LOGGER.debug('Point has no z property')
         coordinates = [x, y]
@@ -73,7 +67,13 @@ def point2geojsongeometry(x, y, z=None):
         LOGGER.debug('Point has z property')
         coordinates = [x, y, z]
 
-    geometry['coordinates'] = coordinates
+    if None in coordinates:
+        return None
+
+    geometry = {
+        'type': 'Point',
+        'coordinates': coordinates
+    }
 
     return geometry
 
