@@ -345,7 +345,7 @@ class Process(object):
 
         data_records = []
 
-        if not config.get_config_extra('Processing', 'registry_enabled'):
+        if not config.EXTRAS['Processing']['registry_enabled']:
             LOGGER.info('Data registry persistence disabled, skipping.')
         else:
             LOGGER.info('Beginning persistence to data registry')
@@ -356,7 +356,7 @@ class Process(object):
                 if isinstance(model, DataRecord):
                     data_records.append(model)
 
-        if not config.get_config_extra('Processing', 'search_index_enabled'):
+        if not config.EXTRAS['Processing']['search_index_enabled']:
             LOGGER.info('Search index persistence disabled, skipping.')
         else:
             LOGGER.info('Beginning persistence to search index')
@@ -857,6 +857,8 @@ class Process(object):
 
         instrument_id = build_instrument(self.extcsv).instrument_id
 
+        process_config = config.EXTRAS['Processing']
+
         lat = self.extcsv.extcsv['LOCATION']['Latitude']
         lon = self.extcsv.extcsv['LOCATION']['Longitude']
         height = self.extcsv.extcsv['LOCATION'].get('Height', None)
@@ -906,7 +908,7 @@ class Process(object):
             height_numeric = None
 
         station_type = self.extcsv.extcsv['PLATFORM'].get('Type', 'STN')
-        ignore_ships = not get_processing_extra('ships_ignore_location')
+        ignore_ships = not process_config['ships_ignore_location']
 
         if not all([lat_ok, lon_ok]):
             return False
@@ -921,12 +923,12 @@ class Process(object):
 
             instrument = result[0]
 
-            lat_interval = get_processing_extra('latitude_error_distance')
-            lon_interval = get_processing_extra('longitude_error_distance')
-            height_interval = get_processing_extra('height_error_distance')
+            lat_interval = process_config['latitude_error_distance']
+            lon_interval = process_config['longitude_error_distance']
+            height_interval = process_config['height_error_distance']
 
-            polar_latitude_range = get_processing_extra('polar_latitude_range')
-            ignore_polar_lon = get_processing_extra('polar_ignore_longitude')
+            polar_latitude_range = process_config['polar_latitude_range']
+            ignore_polar_lon = process_config['polar_ignore_longitude']
 
             in_polar_region = lat_numeric is not None \
                 and abs(lat_numeric) > 90 - polar_latitude_range
@@ -1194,18 +1196,6 @@ class Process(object):
             self._warning(145, instrument_valueline, msg)
 
         return dg_date_ok and version_ok
-
-
-def get_processing_extra(option_name):
-    """
-    Returns the value of an extra configuration option <option_name>
-    under the Processing section.
-
-    :param option_name: Name of a processing extra configuration.
-    :returns: Value of that configuration option.
-    """
-
-    return config.get_config_extra('Processing', option_name)
 
 
 class ProcessingError(Exception):

@@ -64,15 +64,12 @@ typedefs = {
 MAPPINGS = {
     'projects': {
         'index': 'project',
-        'enabled': config.get_config_extra('SearchIndex', 'projects_enabled')
     },
     'datasets': {
         'index': 'dataset',
-        'enabled': config.get_config_extra('SearchIndex', 'datasets_enabled')
     },
     'countries': {
         'index': 'country',
-        'enabled': config.get_config_extra('SearchIndex', 'countries_enabled'),
         'properties': {
             'country_code': {
                 'type': 'text',
@@ -105,8 +102,6 @@ MAPPINGS = {
     },
     'contributors': {
         'index': 'contributor',
-        'enabled': config.get_config_extra('SearchIndex',
-                                           'contributors_enabled'),
         'properties': {
             'name': {
                 'type': 'text',
@@ -142,7 +137,6 @@ MAPPINGS = {
     },
     'stations': {
         'index': 'station',
-        'enabled': config.get_config_extra('SearchIndex', 'stations_enabled'),
         'properties': {
             'name': {
                 'type': 'text',
@@ -178,8 +172,6 @@ MAPPINGS = {
     },
     'instruments': {
         'index': 'instrument',
-        'enabled': config.get_config_extra('SearchIndex',
-                                           'instruments_enabled'),
         'properties': {
             'station_id': {
                 'type': 'text',
@@ -205,8 +197,6 @@ MAPPINGS = {
     },
     'deployments': {
         'index': 'deployment',
-        'enabled': config.get_config_extra('SearchIndex',
-                                           'deployments_enabled'),
         'properties': {
             'station_id': {
                 'type': 'text',
@@ -226,8 +216,6 @@ MAPPINGS = {
     },
     'data_records': {
         'index': 'data_record',
-        'enabled': config.get_config_extra('SearchIndex',
-                                           'data_records_enabled'),
         'properties': {
             'content_class': {
                 'type': 'text',
@@ -379,9 +367,12 @@ class SearchIndex(object):
     def create(self):
         """create search indexes"""
 
-        for definition in MAPPINGS.values():
+        search_index_config = config.EXTRAS.get('Search_Index', {})
+
+        for key, definition in MAPPINGS.items():
             # Skip indexes that have been manually disabled.
-            if not definition['enabled']:
+            enabled_flag = '{}_enabled'.format(key)
+            if not search_index_config.get(enabled_flag, True):
                 continue
 
             index_name = self.generate_index_name(definition['index'])
@@ -419,9 +410,12 @@ class SearchIndex(object):
     def delete(self):
         """delete search indexes"""
 
-        for definition in MAPPINGS.values():
+        search_index_config = config.EXTRAS.get('Search_Index', {})
+
+        for key, definition in MAPPINGS.items():
             # Skip indexes that have been manually disabled.
-            if not definition['enabled']:
+            enabled_flag = '{}_enabled'.format(key)
+            if not search_index_config.get(enabled_flag, True):
                 continue
 
             index_name = self.generate_index_name(definition['index'])
@@ -461,7 +455,10 @@ class SearchIndex(object):
         :returns: `bool` of whether the operation was successful.
         """
 
-        if not MAPPINGS[domain.__tablename__]['enabled']:
+        search_index_config = config.EXTRAS('SearchIndex', {})
+        enabled_flag = '{}_enabled'.format(domain.__tablename__)
+
+        if not search_index_config.get(enabled_flag, True):
             msg = '{} index is currently frozen'.format(domain.__tablename__)
             LOGGER.warning(msg)
             return False
@@ -508,7 +505,10 @@ class SearchIndex(object):
         :returns: `bool` of whether the operation was successful.
         """
 
-        if not MAPPINGS[domain.__tablename__]['enabled']:
+        search_index_config = config.EXTRAS('SearchIndex', {})
+        enabled_flag = '{}_enabled'.format(domain.__tablename__)
+
+        if not search_index_config.get(enabled_flag, True):
             msg = '{} index is currently frozen'.format(domain.__tablename__)
             LOGGER.warning(msg)
             return False
@@ -557,7 +557,10 @@ class SearchIndex(object):
         :returns: `bool` of whether the operation was successful.
         """
 
-        if not MAPPINGS[domain.__tablename__]['enabled']:
+        search_index_config = config.EXTRAS('SearchIndex', {})
+        enabled_flag = '{}_enabled'.format(domain.__tablename__)
+
+        if not search_index_config.get(enabled_flag, True):
             msg = '{} index is currently frozen'.format(domain.__tablename__)
             LOGGER.warning(msg)
             return False

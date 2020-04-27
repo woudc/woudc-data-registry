@@ -184,10 +184,12 @@ class Registry(object):
         :returns: void
         """
 
+        registry_config = config.EXTRAS.get('Registry', {})
+
         try:
             if obj is not None:
                 flag_name = '_'.join([obj.__tablename__, 'enabled'])
-                if config.get_config_extra('Registry', flag_name):
+                if registry_config.get(flag_name, True):
                     self.session.add(obj)
                     # self.session.merge(obj)
                 else:

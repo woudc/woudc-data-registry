@@ -9,8 +9,8 @@ from woudc_data_registry.util import json_serial
 
 from woudc_data_registry import config
 
-save_to_registry = config.get_config_extra('CLI', 'registry_enabled')
-save_to_index = config.get_config_extra('CLI', 'search_index_enabled')
+save_to_registry = config.EXTRAS['CLI']['registry_enabled']
+save_to_index = config.EXTRAS['CLI']['search_index_enabled']
 
 
 def build_instrument(ecsv):
