@@ -114,10 +114,10 @@ class Country(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.country_id,
             'type': 'Feature',
+            'geometry': 'None',
             'properties': {
-                'country_code': self.country_id,
+                'identifier': self.country_id,
                 'country_name_en': self.name_en,
                 'country_name_fr': self.name_fr,
                 'wmo_region_id': self.wmo_region_id,
@@ -188,10 +188,10 @@ class Contributor(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.contributor_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y),
             'properties': {
+                'identifier': self.contributor_id,
                 'name': self.name,
                 'country_code': self.country_id,
                 'wmo_region_id': self.wmo_region_id,
@@ -232,8 +232,11 @@ class Dataset(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.dataset_id,
-            'type': 'Feature'
+            'type': 'Feature',
+            'geometry': None,
+            'properties': {
+                'identifier': self.dataset_id
+            }
         }
 
     def __repr__(self):
@@ -281,10 +284,10 @@ class Instrument(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.instrument_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
+                'identifier': self.instrument_id,
                 'station_id': self.station_id,
                 'dataset': self.dataset_id,
                 'name': self.name,
@@ -322,8 +325,11 @@ class Project(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.project_id,
-            'type': 'Feature'
+            'type': 'Feature',
+            'geometry': None,
+            'properties': {
+                'identifier': self.project_id
+            }
         }
 
     def __repr__(self):
@@ -413,14 +419,13 @@ class Station(base):
     def __geo_interface__(self):
 
         return {
-            'id': self.station_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
-                'name': self.station_name.name,
-                'type': self.station_type,
                 'woudc_id': self.station_id,
                 'gaw_id': self.gaw_id,
+                'name': self.station_name.name,
+                'type': self.station_type,
                 'country_code': self.country_id,
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
@@ -511,6 +516,11 @@ class Deployment(base):
 
     @property
     def __geo_interface__(self):
+        if self.station is None:
+            geom = None
+        else:
+            geom = point2geojsongeometry(self.station.x, self.station.y,
+                                         self.station.z)
         return {
             'id': self.deployment_id,
             'type': 'Feature',
@@ -764,10 +774,10 @@ class DataRecord(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.es_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
+                'identifier': self.es_id,
                 'content_class': self.content_class,
                 'content_category': self.content_category,
                 'content_level': self.content_level,

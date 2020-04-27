@@ -64,14 +64,26 @@ typedefs = {
 MAPPINGS = {
     'projects': {
         'index': 'project',
+        'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            }
+        }
     },
     'datasets': {
         'index': 'dataset',
+        'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            }
+        }
     },
     'countries': {
         'index': 'country',
         'properties': {
-            'country_code': {
+            'identifier': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
             },
@@ -103,6 +115,10 @@ MAPPINGS = {
     'contributors': {
         'index': 'contributor',
         'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
             'name': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
@@ -138,19 +154,19 @@ MAPPINGS = {
     'stations': {
         'index': 'station',
         'properties': {
-            'name': {
-                'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
-            },
-            'type': {
-                'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
-            },
             'woudc_id': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
             },
             'gaw_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'name': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'type': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
             },
@@ -173,6 +189,10 @@ MAPPINGS = {
     'instruments': {
         'index': 'instrument',
         'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
             'station_id': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
@@ -198,6 +218,10 @@ MAPPINGS = {
     'deployments': {
         'index': 'deployment',
         'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
             'station_id': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
@@ -217,6 +241,10 @@ MAPPINGS = {
     'data_records': {
         'index': 'data_record',
         'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
             'content_class': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
@@ -470,6 +498,10 @@ class SearchIndex(object):
 
         index_name = self.generate_index_name(
             MAPPINGS[domain.__tablename__]['index'])
+        if domain.__tablename__ == 'stations':
+            id_field = 'woudc_id'
+        else:
+            id_field = 'identifier'
 
         if isinstance(target, dict):
             # Index/update single document the normal way.
@@ -479,7 +511,8 @@ class SearchIndex(object):
             }
 
             LOGGER.debug('Indexing 1 document into {}'.format(index_name))
-            self.connection.update(index=index_name, id=target['id'],
+            identifier = target['properties'][id_field]
+            self.connection.update(index=index_name, id=identifier,
                                    body=wrapper)
 
         else:
@@ -488,7 +521,7 @@ class SearchIndex(object):
                 '_op_type': 'update',
                 '_index': index_name,
                 '_type': '_doc',
-                '_id': document['id'],
+                '_id': document['properties'][id_field],
                 'doc': document,
                 'doc_as_upsert': True
             } for document in target]
@@ -519,6 +552,10 @@ class SearchIndex(object):
 
         index_name = self.generate_index_name(
             MAPPINGS[domain.__tablename__]['index'])
+        if domain.__tablename__ == 'stations':
+            id_field = 'woudc_id'
+        else:
+            id_field = 'identifier'
 
         if isinstance(target, str):
             # <target> is a document ID, delete normally.
@@ -530,10 +567,11 @@ class SearchIndex(object):
                 raise SearchIndexError(msg)
         elif isinstance(target, dict):
             # <target> is the single GeoJSON object to delete.
-            result = self.connection.delete(index=index_name, id=target['id'])
+            identifier = target['properties'][id_field]
+            result = self.connection.delete(index=index_name, id=identifier)
 
             if not result['found']:
-                msg = 'Data record {} does not exist'.format(target['id'])
+                msg = 'Data record {} does not exist'.format(identifier)
                 LOGGER.error(msg)
                 raise SearchIndexError(msg)
         else:
@@ -542,7 +580,7 @@ class SearchIndex(object):
                 '_op_type': 'delete',
                 '_index': index_name,
                 '_type': '_doc',
-                '_id': document['id']
+                '_id': document['properties'][id_field]
             } for document in target]
 
             helpers.bulk(self.connection, wrapper)
@@ -569,8 +607,12 @@ class SearchIndex(object):
 
         index_name = self.generate_index_name(
             MAPPINGS[domain.__tablename__]['index'])
+        if domain.__tablename__ == 'stations':
+            id_field = 'woudc_id'
+        else:
+            id_field = 'identifier'
 
-        ids = [document['id'] for document in targets]
+        ids = [document['properties'][id_field] for document in targets]
 
         query = {
             'query': {
