@@ -772,7 +772,7 @@ class Process(object):
             self._error(1000, instrument_valueline, msg)
             model_ok = False
 
-            self.extcsv.extcsv['INSTRUMENT']['Model'] = model = 'na'
+            self.extcsv.extcsv['INSTRUMENT']['Model'] = model = 'UNKNOWN'
 
         if not name_ok or not model_ok:
             return False
@@ -823,7 +823,7 @@ class Process(object):
 
         serial = self.extcsv.extcsv['INSTRUMENT']['Number']
         if not serial or str(serial).lower() in ['na', 'n/a']:
-            self.extcsv.extcsv['INSTRUMENT']['Number'] = serial = 'na'
+            self.extcsv.extcsv['INSTRUMENT']['Number'] = serial = 'UNKNOWN'
 
         instrument = build_instrument(self.extcsv)
         fields = ['name', 'model', 'serial', 'station_id', 'dataset_id']
@@ -875,6 +875,8 @@ class Process(object):
             msg = '#LOCATION.Latitude contains invalid characters'
             LOGGER.error(msg)
             self._error(75, values_line, msg)
+
+            self.extcsv.extcsv['LOCATION']['Latitude'] = lat = None
             lat_numeric = None
             lat_ok = False
 
@@ -891,6 +893,8 @@ class Process(object):
             msg = '#LOCATION.Longitude contains invalid characters'
             LOGGER.error(msg)
             self._error(75, values_line, msg)
+
+            self.extcsv.extcsv['LOCATION']['Longitude'] = lon = None
             lon_numeric = None
             lon_ok = False
 
@@ -904,6 +908,8 @@ class Process(object):
         except ValueError:
             msg = '#LOCATION.Height contains invalid characters'
             self._warning(75, values_line, msg)
+
+            self.extcsv.extcsv['LOCATION']['Height'] = height = None
             height_numeric = None
 
         station_type = self.extcsv.extcsv['PLATFORM'].get('Type', 'STN')
