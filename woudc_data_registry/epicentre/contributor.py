@@ -58,8 +58,8 @@ from woudc_data_registry import config
 
 LOGGER = logging.getLogger(__name__)
 
-save_to_registry = config.EXTRAS['CLI']['registry_enabled']
-save_to_index = config.EXTRAS['CLI']['search_index_enabled']
+save_to_registry = config.EXTRAS['cli']['registry_enabled']
+save_to_index = config.EXTRAS['cli']['search_index_enabled']
 
 
 @click.group()

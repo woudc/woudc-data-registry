@@ -1,5 +1,4 @@
----
-Processing:
+processing:
   registry_enabled: True        # Whether to allow operations toward the data registry during processing.
   search_index_enabled: False   # Whether to allow operations toward the search index during processing.
 
@@ -12,28 +11,6 @@ Processing:
 
   ships_ignore_location: False  # Whether to skip location checks for mobile ship stations.
 
-CLI:
+cli:
   registry_enabled: False       # Whether to allow operations toward the data registry from model CLI.
   search_index_enabled: False   # Whether to allow operations toward the search index from model CLI.
-
-Registry:
-  projects_enabled: True        # Whether to allow project models to be persisted to the Data Registry.
-  datasets_enabled: True        # Whether to allow dataset models to be persisted to the Data Registry.
-  countries_enabled: True       # Whether to allow country models to be persisted to the Data Registry.
-  contributors_enabled: True    # Whether to allow contributor models to be persisted to the Data Registry.
-  stations_enabled: True        # Whether to allow station models to be persisted to the Data Registry.
-  station_names_enabled: True   # Whether to allow station name models to be persisted to the Data Registry.
-  instruments_enabled: True     # Whether to allow instrument models to be persisted to the Data Registry.
-  deployments_enabled: True     # Whether to allow deployment models to be persisted to the Data Registry.
-  data_records_enabled: True    # Whether to allow data records to be persisted to the Data Registry.
-
-SearchIndex:
-  projects_enabled: True        # Whether to allow project models to be persisted to the Search Index.
-  datasets_enabled: True        # Whether to allow dataset models to be persisted to the Search Index.
-  countries_enabled: True       # Whether to allow country models to be persisted to the Search Index.
-  contributors_enabled: True    # Whether to allow contributor models to be persisted to the Search Index.
-  stations_enabled: True        # Whether to allow station models to be persisted to the Search Index.
-  instruments_enabled: True     # Whether to allow instrument models to be persisted to the Search Index.
-  deployments_enabled: True     # Whether to allow deployment models to be persisted to the Search Index.
-  data_records_enabled: True    # Whether to allow data records to be persisted to the Search Index.
-...

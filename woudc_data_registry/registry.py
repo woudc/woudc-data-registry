@@ -184,7 +184,7 @@ class Registry(object):
         :returns: void
         """
 
-        registry_config = config.EXTRAS.get('Registry', {})
+        registry_config = config.EXTRAS.get('registry', {})
 
         try:
             if obj is not None:

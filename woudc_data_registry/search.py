@@ -367,7 +367,7 @@ class SearchIndex(object):
     def create(self):
         """create search indexes"""
 
-        search_index_config = config.EXTRAS.get('Search_Index', {})
+        search_index_config = config.EXTRAS.get('search_index', {})
 
         for key, definition in MAPPINGS.items():
             # Skip indexes that have been manually disabled.
@@ -410,7 +410,7 @@ class SearchIndex(object):
     def delete(self):
         """delete search indexes"""
 
-        search_index_config = config.EXTRAS.get('Search_Index', {})
+        search_index_config = config.EXTRAS.get('search_index', {})
 
         for key, definition in MAPPINGS.items():
             # Skip indexes that have been manually disabled.
@@ -455,7 +455,7 @@ class SearchIndex(object):
         :returns: `bool` of whether the operation was successful.
         """
 
-        search_index_config = config.EXTRAS('SearchIndex', {})
+        search_index_config = config.EXTRAS('search_index', {})
         enabled_flag = '{}_enabled'.format(domain.__tablename__)
 
         if not search_index_config.get(enabled_flag, True):
@@ -505,7 +505,7 @@ class SearchIndex(object):
         :returns: `bool` of whether the operation was successful.
         """
 
-        search_index_config = config.EXTRAS('SearchIndex', {})
+        search_index_config = config.EXTRAS('search_index', {})
         enabled_flag = '{}_enabled'.format(domain.__tablename__)
 
         if not search_index_config.get(enabled_flag, True):
@@ -557,7 +557,7 @@ class SearchIndex(object):
         :returns: `bool` of whether the operation was successful.
         """
 
-        search_index_config = config.EXTRAS('SearchIndex', {})
+        search_index_config = config.EXTRAS('search_index', {})
         enabled_flag = '{}_enabled'.format(domain.__tablename__)
 
         if not search_index_config.get(enabled_flag, True):

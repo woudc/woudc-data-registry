@@ -345,7 +345,7 @@ class Process(object):
 
         data_records = []
 
-        if not config.EXTRAS['Processing']['registry_enabled']:
+        if not config.EXTRAS['processing']['registry_enabled']:
             LOGGER.info('Data registry persistence disabled, skipping.')
         else:
             LOGGER.info('Beginning persistence to data registry')
@@ -356,7 +356,7 @@ class Process(object):
                 if isinstance(model, DataRecord):
                     data_records.append(model)
 
-        if not config.EXTRAS['Processing']['search_index_enabled']:
+        if not config.EXTRAS['processing']['search_index_enabled']:
             LOGGER.info('Search index persistence disabled, skipping.')
         else:
             LOGGER.info('Beginning persistence to search index')
@@ -857,7 +857,7 @@ class Process(object):
 
         instrument_id = build_instrument(self.extcsv).instrument_id
 
-        process_config = config.EXTRAS['Processing']
+        process_config = config.EXTRAS['processing']
 
         lat = self.extcsv.extcsv['LOCATION']['Latitude']
         lon = self.extcsv.extcsv['LOCATION']['Longitude']
