@@ -375,7 +375,7 @@ class Process(object):
                     prev_version = self.search_index.get_record_version(esid)
                     now_version = model.data_generation_version
 
-                    if prev_version or now_version > prev_version:
+                    if not prev_version or now_version > prev_version:
                         allow_update_model = True
                         data_records.append(model)
                     else:
@@ -731,7 +731,7 @@ class Process(object):
 
         deployment_id = ':'.join([station, agency, project])
         deployment = self.registry.query_by_field(Deployment, 'deployment_id',
-                                                 deployment_id)
+                                                  deployment_id)
         if not deployment:
             LOGGER.warning('Deployment {} not found'.format(deployment_id))
             return False
@@ -929,7 +929,7 @@ class Process(object):
         elif instrument_id is not None:
             instrument = self.registry.query_by_field(Instrument,
                                                       'instrument_id',
-                                                    instrument_id)
+                                                      instrument_id)
             if not instrument:
                 return True
 

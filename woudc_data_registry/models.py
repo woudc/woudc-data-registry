@@ -57,7 +57,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-from woudc_data_registry import registry
+from woudc_data_registry import config, registry
 from woudc_data_registry.search import SearchIndex, search
 from woudc_data_registry.util import point2geojsongeometry
 
@@ -115,7 +115,7 @@ class Country(base):
     def __geo_interface__(self):
         return {
             'type': 'Feature',
-            'geometry': 'None',
+            'geometry': None,
             'properties': {
                 'identifier': self.country_id,
                 'country_name_en': self.name_en,
@@ -522,9 +522,10 @@ class Deployment(base):
             geom = point2geojsongeometry(self.station.x, self.station.y,
                                          self.station.z)
         return {
-            'id': self.deployment_id,
             'type': 'Feature',
+            'geometry': geom,
             'properties': {
+                'identifier': self.deployment_id,
                 'station_id': self.station_id,
                 'contributor': self.contributor_id,
                 'start_date': self.start_date,
@@ -1088,10 +1089,17 @@ def sync(ctx):
     registry_ = registry.Registry()
     search_index = SearchIndex()
 
+    search_index_config = config.EXTRAS.get('search_index', {})
+
     click.echo('Begin data registry backend sync on ', nl=False)
     for clazz in model_classes:
         plural_name = clazz.__tablename__
         plural_caps = ''.join(map(str.capitalize, plural_name.split('_')))
+
+        enabled_flag = '{}_enabled'.format(plural_name)
+        if not search_index_config.get(enabled_flag, True):
+            click.echo('{} index frozen (skipping)'.format(plural_caps))
+            continue
 
         click.echo('{}...'.format(plural_caps))
 

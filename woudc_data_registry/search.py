@@ -354,11 +354,10 @@ class SearchIndex(object):
         self.index_basename = config.WDR_SEARCH_INDEX_BASENAME
 
         LOGGER.debug('Connecting to Elasticsearch')
+        url_parsed = urlparse(self.url)
         url_settings = {
             'host': url_parsed.hostname
         }
-
-        url_parsed = urlparse(self.url)
 
         if url_parsed.port is None:  # proxy to default HTTP(S) port
             if url_parsed.scheme == 'https':
@@ -379,7 +378,8 @@ class SearchIndex(object):
             self.connection = Elasticsearch([url_settings])
         else:
             LOGGER.debug('Connecting using username {}'.format(AUTH[0]))
-            self.connection = Elasticsearch([url_settings], http_auth=AUTH)
+            self.connection = Elasticsearch([url_settings], http_auth=AUTH,
+                                            verify_certs=False)
 
         if not self.connection.ping():
             msg = 'Cannot connect to Elasticsearch'
