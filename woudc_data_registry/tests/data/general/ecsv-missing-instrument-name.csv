@@ -13,7 +13,7 @@ STN,002,Tamanrasset,DZA
 
 #INSTRUMENT
 Name,Model,Number
-Brewer,MKIII,
+,MKIII,114
 
 #LOCATION
 Latitude,Longitude,Height
