@@ -340,7 +340,7 @@ class ParserTest(unittest.TestCase):
 
         # Required column is entirely missing in the table
         contents = util.read_file(resolve_test_data_path(
-            'data/general/ecsv-missing-instrument-number.csv'))
+            'data/general/ecsv-missing-instrument-name.csv'))
 
         with self.assertRaises(parser.MetadataValidationError):
             ecsv = parser.ExtendedCSV(contents)

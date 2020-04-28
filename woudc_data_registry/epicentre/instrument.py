@@ -7,6 +7,11 @@ from woudc_data_registry.epicentre.metadata import (
 from woudc_data_registry.models import Instrument
 from woudc_data_registry.util import json_serial
 
+from woudc_data_registry import config
+
+save_to_registry = config.EXTRAS['cli']['registry_enabled']
+save_to_index = config.EXTRAS['cli']['search_index_enabled']
+
 
 def build_instrument(ecsv):
     """
@@ -101,7 +106,8 @@ def add(ctx, station, dataset, name, model, serial, geometry):
         'z': geom_tokens[2]
     }
 
-    result = add_metadata(Instrument, instrument_)
+    result = add_metadata(Instrument, instrument_,
+                          save_to_registry, save_to_index)
     click.echo('Instrument {} added'.format(result.instrument_id))
 
 
@@ -145,7 +151,8 @@ def update(ctx, identifier, station, dataset, name, model, serial, geometry):
         click.echo('No updates specified')
         return
 
-    update_metadata(Instrument, identifier, instrument_)
+    update_metadata(Instrument, identifier, instrument_,
+                    save_to_registry, save_to_index)
     click.echo('Instrument {} updated'.format(identifier))
 
 
@@ -162,7 +169,8 @@ def delete(ctx, identifier):
     q = 'Are you sure you want to delete instrument {}?'.format(identifier)
 
     if click.confirm(q):  # noqa
-        delete_metadata(Instrument, identifier)
+        delete_metadata(Instrument, identifier,
+                        save_to_registry, save_to_index)
 
     click.echo('Instrument {} deleted'.format(identifier))
 

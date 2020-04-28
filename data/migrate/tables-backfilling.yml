@@ -493,7 +493,7 @@ Datasets:
               - Time
             optional_fields:
               - SZA
-          data_table: DIFFUSE
+          data_table: GLOBAL
   UmkehrN14:
     "1.0":
       "1":

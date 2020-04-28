@@ -9,6 +9,11 @@ from woudc_data_registry.epicentre.metadata import (
 from woudc_data_registry.models import Deployment
 from woudc_data_registry.util import json_serial
 
+from woudc_data_registry import config
+
+save_to_registry = config.EXTRAS['cli']['registry_enabled']
+save_to_index = config.EXTRAS['cli']['search_index_enabled']
+
 
 def build_deployment(ecsv):
     """Creates and returns a Deployment instance from the contents of <ecsv>"""
@@ -66,10 +71,10 @@ def show(ctx, identifier):
 @click.option('-s', '--station', 'station', required=True, help='station')
 @click.option('-c', '--contributor', 'contributor', required=True,
               help='contributor')
-@click.option('--start', 'start_date', required=False,
+@click.option('-sd', '--start', 'start_date', required=False,
               default=date.today().strftime('%Y-%m-%d'),
               type=click.DateTime(['%Y-%m-%d']), help='deployment start date')
-@click.option('--end', 'end_date', required=False, default=None,
+@click.option('-ed', '--end', 'end_date', required=False, default=None,
               type=click.DateTime(['%Y-%m-%d']), help='deployment end date')
 @click.pass_context
 def add(ctx, station, contributor, start_date, end_date):
@@ -86,7 +91,8 @@ def add(ctx, station, contributor, start_date, end_date):
         'end_date': end_date
     }
 
-    result = add_metadata(Deployment, deployment_)
+    result = add_metadata(Deployment, deployment_,
+                          save_to_registry, save_to_index)
     click.echo('Deployment {} added'.format(result.deployment_id))
 
 
@@ -95,9 +101,9 @@ def add(ctx, station, contributor, start_date, end_date):
               help='identifier')
 @click.option('-s', '--station', 'station', help='station')
 @click.option('-c', '--contributor', 'contributor', help='contributor')
-@click.option('--start', 'start_date', type=click.DateTime(['%Y-%m-%d']),
-              help='deployment start date')
-@click.option('--end', 'end_date', type=click.DateTime(['%Y-%m-%d']),
+@click.option('-sd', '--start', 'start_date',
+              type=click.DateTime(['%Y-%m-%d']), help='deployment start date')
+@click.option('-ed', '--end', 'end_date', type=click.DateTime(['%Y-%m-%d']),
               help='deployment end date')
 @click.pass_context
 def update(ctx, identifier, station, contributor, start_date, end_date):
@@ -118,7 +124,8 @@ def update(ctx, identifier, station, contributor, start_date, end_date):
         click.echo('No updates specified')
         return
 
-    update_metadata(Deployment, identifier, deployment_)
+    update_metadata(Deployment, identifier, deployment_,
+                    save_to_registry, save_to_index)
     click.echo('Deployment {} updated'.format(identifier))
 
 
@@ -135,7 +142,8 @@ def delete(ctx, identifier):
     q = 'Are you sure you want to delete deployment {}?'.format(identifier)
 
     if click.confirm(q):  # noqa
-        delete_metadata(Deployment, identifier)
+        delete_metadata(Deployment, identifier,
+                        save_to_registry, save_to_index)
 
     click.echo('Deployment {} deleted'.format(identifier))
 

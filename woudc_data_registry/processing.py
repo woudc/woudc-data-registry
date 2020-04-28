@@ -345,33 +345,40 @@ class Process(object):
 
         data_records = []
 
-        LOGGER.info('Beginning persistence to data registry')
-        for model in self._registry_updates:
-            LOGGER.debug('Saving {} to registry'.format(str(model)))
-            self.registry.save(model)
+        if not config.EXTRAS['processing']['registry_enabled']:
+            LOGGER.info('Data registry persistence disabled, skipping.')
+        else:
+            LOGGER.info('Beginning persistence to data registry')
+            for model in self._registry_updates:
+                LOGGER.debug('Saving {} to registry'.format(str(model)))
+                self.registry.save(model)
 
-            if isinstance(model, DataRecord):
-                data_records.append(model)
-
-        LOGGER.info('Beginning persistence to search index')
-        for model in self._search_index_updates:
-            if not isinstance(model, DataRecord):
-                allow_update_model = True
-            else:
-                # Do not persist older versions of data records.
-                esid = model.es_id
-                prev_version = self.search_index.get_record_version(esid)
-                now_version = model.data_generation_version
-
-                if prev_version or now_version > prev_version:
-                    allow_update_model = True
+                if isinstance(model, DataRecord):
                     data_records.append(model)
-                else:
-                    allow_update_model = False
 
-            if allow_update_model:
-                LOGGER.debug('Saving {} to search index'.format(str(model)))
-                self.search_index.index(type(model), model.__geo_interface__)
+        if not config.EXTRAS['processing']['search_index_enabled']:
+            LOGGER.info('Search index persistence disabled, skipping.')
+        else:
+            LOGGER.info('Beginning persistence to search index')
+            for model in self._search_index_updates:
+                if not isinstance(model, DataRecord):
+                    allow_update_model = True
+                else:
+                    # Do not persist older versions of data records.
+                    esid = model.es_id
+                    prev_version = self.search_index.get_record_version(esid)
+                    now_version = model.data_generation_version
+
+                    if prev_version or now_version > prev_version:
+                        allow_update_model = True
+                        data_records.append(model)
+                    else:
+                        allow_update_model = False
+
+                if allow_update_model:
+                    LOGGER.debug('Saving {} to search index'.format(model))
+                    self.search_index.index(type(model),
+                                            model.__geo_interface__)
 
         for record in data_records:
             LOGGER.info('Saving data record CSV to WAF')
@@ -850,6 +857,8 @@ class Process(object):
 
         instrument_id = build_instrument(self.extcsv).instrument_id
 
+        process_config = config.EXTRAS['processing']
+
         lat = self.extcsv.extcsv['LOCATION']['Latitude']
         lon = self.extcsv.extcsv['LOCATION']['Longitude']
         height = self.extcsv.extcsv['LOCATION'].get('Height', None)
@@ -899,9 +908,11 @@ class Process(object):
             height_numeric = None
 
         station_type = self.extcsv.extcsv['PLATFORM'].get('Type', 'STN')
+        ignore_ships = not process_config['ships_ignore_location']
+
         if not all([lat_ok, lon_ok]):
             return False
-        elif station_type == 'SHP':
+        elif station_type == 'SHP' and ignore_ships:
             LOGGER.debug('Not validating shipboard instrument location')
             return True
         elif instrument_id is not None:
@@ -911,21 +922,33 @@ class Process(object):
                 return True
 
             instrument = result[0]
+
+            lat_interval = process_config['latitude_error_distance']
+            lon_interval = process_config['longitude_error_distance']
+            height_interval = process_config['height_error_distance']
+
+            polar_latitude_range = process_config['polar_latitude_range']
+            ignore_polar_lon = process_config['polar_ignore_longitude']
+
+            in_polar_region = lat_numeric is not None \
+                and abs(lat_numeric) > 90 - polar_latitude_range
+
             if lat_numeric is not None and instrument.y is not None \
-               and abs(lat_numeric - instrument.y) >= 1.5:
+               and abs(lat_numeric - instrument.y) >= lat_interval:
                 lat_ok = False
                 msg = '#LOCATION.Latitude in file does not match database'
                 LOGGER.error(msg)
                 self._error(77, values_line, msg)
-            if lon_numeric is not None and instrument.x is not None \
-               and (lat_numeric is None or abs(lat_numeric) < 89.5) \
-               and abs(lon_numeric - instrument.x) >= 1.5:
-                lon_ok = False
-                msg = '#LOCATION.Longitude in file does not match database'
-                LOGGER.error(msg)
-                self._error(77, values_line, msg)
+            if lon_numeric is not None and instrument.x is not None:
+                if in_polar_region and ignore_polar_lon:
+                    LOGGER.info('Skipping longitude check in polar region')
+                elif abs(lon_numeric - instrument.x) >= lon_interval:
+                    lon_ok = False
+                    msg = '#LOCATION.Longitude in file does not match database'
+                    LOGGER.error(msg)
+                    self._error(77, values_line, msg)
             if height_numeric is not None and instrument.z is not None \
-               and abs(height_numeric - instrument.z) >= 1:
+               and abs(height_numeric - instrument.z) >= height_interval:
                 msg = '#LOCATION.Height in file does not match database'
                 self._warning(77, values_line, msg)
 

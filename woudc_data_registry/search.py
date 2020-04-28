@@ -64,15 +64,12 @@ typedefs = {
 MAPPINGS = {
     'projects': {
         'index': 'project',
-        'enabled': True
     },
     'datasets': {
         'index': 'dataset',
-        'enabled': True
     },
     'countries': {
         'index': 'country',
-        'enabled': True,
         'properties': {
             'country_code': {
                 'type': 'text',
@@ -105,7 +102,6 @@ MAPPINGS = {
     },
     'contributors': {
         'index': 'contributor',
-        'enabled': True,
         'properties': {
             'name': {
                 'type': 'text',
@@ -141,7 +137,6 @@ MAPPINGS = {
     },
     'stations': {
         'index': 'station',
-        'enabled': True,
         'properties': {
             'name': {
                 'type': 'text',
@@ -177,7 +172,6 @@ MAPPINGS = {
     },
     'instruments': {
         'index': 'instrument',
-        'enabled': True,
         'properties': {
             'station_id': {
                 'type': 'text',
@@ -203,7 +197,6 @@ MAPPINGS = {
     },
     'deployments': {
         'index': 'deployment',
-        'enabled': True,
         'properties': {
             'station_id': {
                 'type': 'text',
@@ -223,7 +216,6 @@ MAPPINGS = {
     },
     'data_records': {
         'index': 'data_record',
-        'enabled': True,
         'properties': {
             'content_class': {
                 'type': 'text',
@@ -375,9 +367,12 @@ class SearchIndex(object):
     def create(self):
         """create search indexes"""
 
-        for definition in MAPPINGS.values():
+        search_index_config = config.EXTRAS.get('search_index', {})
+
+        for key, definition in MAPPINGS.items():
             # Skip indexes that have been manually disabled.
-            if not definition['enabled']:
+            enabled_flag = '{}_enabled'.format(key)
+            if not search_index_config.get(enabled_flag, True):
                 continue
 
             index_name = self.generate_index_name(definition['index'])
@@ -415,9 +410,12 @@ class SearchIndex(object):
     def delete(self):
         """delete search indexes"""
 
-        for definition in MAPPINGS.values():
+        search_index_config = config.EXTRAS.get('search_index', {})
+
+        for key, definition in MAPPINGS.items():
             # Skip indexes that have been manually disabled.
-            if not definition['enabled']:
+            enabled_flag = '{}_enabled'.format(key)
+            if not search_index_config.get(enabled_flag, True):
                 continue
 
             index_name = self.generate_index_name(definition['index'])
@@ -457,7 +455,10 @@ class SearchIndex(object):
         :returns: `bool` of whether the operation was successful.
         """
 
-        if not MAPPINGS[domain.__tablename__]['enabled']:
+        search_index_config = config.EXTRAS.get('search_index', {})
+        enabled_flag = '{}_enabled'.format(domain.__tablename__)
+
+        if not search_index_config.get(enabled_flag, True):
             msg = '{} index is currently frozen'.format(domain.__tablename__)
             LOGGER.warning(msg)
             return False
@@ -504,7 +505,10 @@ class SearchIndex(object):
         :returns: `bool` of whether the operation was successful.
         """
 
-        if not MAPPINGS[domain.__tablename__]['enabled']:
+        search_index_config = config.EXTRAS('search_index', {})
+        enabled_flag = '{}_enabled'.format(domain.__tablename__)
+
+        if not search_index_config.get(enabled_flag, True):
             msg = '{} index is currently frozen'.format(domain.__tablename__)
             LOGGER.warning(msg)
             return False
@@ -553,7 +557,10 @@ class SearchIndex(object):
         :returns: `bool` of whether the operation was successful.
         """
 
-        if not MAPPINGS[domain.__tablename__]['enabled']:
+        search_index_config = config.EXTRAS.get('search_index', {})
+        enabled_flag = '{}_enabled'.format(domain.__tablename__)
+
+        if not search_index_config.get(enabled_flag, True):
             msg = '{} index is currently frozen'.format(domain.__tablename__)
             LOGGER.warning(msg)
             return False

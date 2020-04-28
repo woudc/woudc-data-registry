@@ -23,6 +23,7 @@ env:
     - WDR_TABLE_CONFIG=$TRAVIS_BUILD_DIR/data/tables.yml
     - WDR_ERROR_CONFIG=$TRAVIS_BUILD_DIR/data/errors.csv
     - WDR_ALIAS_CONFIG=$TRAVIS_BUILD_DIR/data/aliases.yml
+    - WDR_EXTRA_CONFIG=$TRAVIS_BUILD_DIR/data/extra-options.yml
 
 addons:
   postgresql: "9.3"

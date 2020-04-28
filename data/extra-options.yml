@@ -1,0 +1,16 @@
+processing:
+  registry_enabled: True        # Whether to allow operations toward the data registry during processing.
+  search_index_enabled: False   # Whether to allow operations toward the search index during processing.
+
+  latitude_error_distance: 1.0  # Maximum acceptable degrees difference between received and expected latitude.
+  longitude_error_distance: 1.0 # Maximum acceptable degrees difference between received and expected longitude.
+  height_error_distance: 50.0   # Maximum acceptable degrees difference between received and expected height.
+
+  polar_ignore_longitude: True  # Whether to skip longitude checks near the poles, when longitude lines converge.
+  polar_latitude_range: 1.0     # Number of degrees latitude around the poles that count as polar regions.
+
+  ships_ignore_location: False  # Whether to skip location checks for mobile ship stations.
+
+cli:
+  registry_enabled: True        # Whether to allow operations toward the data registry from model CLI.
+  search_index_enabled: True    # Whether to allow operations toward the search index from model CLI.
