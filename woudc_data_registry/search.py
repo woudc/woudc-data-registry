@@ -381,11 +381,6 @@ class SearchIndex(object):
             self.connection = Elasticsearch([url_settings], http_auth=AUTH,
                                             verify_certs=False)
 
-        if not self.connection.ping():
-            msg = 'Cannot connect to Elasticsearch'
-            LOGGER.error(msg)
-            raise RuntimeError(msg)
-
         self.headers = {'Content-Type': 'application/json'}
 
     def generate_index_name(self, index_name):
