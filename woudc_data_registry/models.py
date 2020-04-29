@@ -212,7 +212,9 @@ class Contributor(base):
             'geometry': point2geojsongeometry(self.x, self.y),
             'properties': {
                 'identifier': self.contributor_id,
+                'acronym': self.acronym,
                 'name': self.name,
+                'project': self.project_id,
                 'country_code': self.country_id,
                 'wmo_region_id': self.wmo_region_id,
                 'url': self.url,

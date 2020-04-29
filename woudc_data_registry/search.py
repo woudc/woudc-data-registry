@@ -123,7 +123,15 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'acronym': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'project': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
