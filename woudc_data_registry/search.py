@@ -181,6 +181,12 @@ MAPPINGS = {
             'active': {
                 'type': 'boolean'
             },
+            'start_date': {
+                'type': 'date'
+            },
+            'end_date': {
+                'type': 'date'
+            },
             'last_validated_datetime': {
                 'type': 'date'
             }

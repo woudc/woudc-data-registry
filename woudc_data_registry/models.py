@@ -435,6 +435,8 @@ class Station(base):
                 'country_code': self.country_id,
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
+                'start_date': self.start_date,
+                'end_date': self.end_date,
                 'last_validated_datetime': self.last_validated_datetime,
             }
         }
