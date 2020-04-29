@@ -77,6 +77,10 @@ MAPPINGS = {
             'identifier': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
+            },
+            'data_class': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
             }
         }
     },

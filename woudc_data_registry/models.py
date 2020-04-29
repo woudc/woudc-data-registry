@@ -228,8 +228,12 @@ class Dataset(base):
 
     dataset_id = Column(String, primary_key=True)
 
+    data_class = Column(String, nullable=False)
+
     def __init__(self, dict_):
         self.dataset_id = dict_['dataset_id']
+
+        self.data_class = dict_['data_class']
 
     @property
     def __geo_interface__(self):
@@ -238,7 +242,8 @@ class Dataset(base):
             'type': 'Feature',
             'geometry': None,
             'properties': {
-                'identifier': self.dataset_id
+                'identifier': self.dataset_id,
+                'data_class': self.data_class
             }
         }
 
