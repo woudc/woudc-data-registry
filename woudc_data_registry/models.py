@@ -114,6 +114,7 @@ class Country(base):
     @property
     def __geo_interface__(self):
         return {
+            'id': self.country_id,
             'type': 'Feature',
             'geometry': None,
             'properties': {
@@ -188,6 +189,7 @@ class Contributor(base):
     @property
     def __geo_interface__(self):
         return {
+            'id': self.contributor_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y),
             'properties': {
@@ -232,6 +234,7 @@ class Dataset(base):
     @property
     def __geo_interface__(self):
         return {
+            'id': self.dataset_id,
             'type': 'Feature',
             'geometry': None,
             'properties': {
@@ -284,6 +287,7 @@ class Instrument(base):
     @property
     def __geo_interface__(self):
         return {
+            'id': self.instrument_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
@@ -325,6 +329,7 @@ class Project(base):
     @property
     def __geo_interface__(self):
         return {
+            'id': self.project_id,
             'type': 'Feature',
             'geometry': None,
             'properties': {
@@ -419,6 +424,7 @@ class Station(base):
     def __geo_interface__(self):
 
         return {
+            'id': self.station_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
@@ -522,6 +528,7 @@ class Deployment(base):
             geom = point2geojsongeometry(self.station.x, self.station.y,
                                          self.station.z)
         return {
+            'id': self.deployment_id,
             'type': 'Feature',
             'geometry': geom,
             'properties': {
@@ -775,6 +782,7 @@ class DataRecord(base):
     @property
     def __geo_interface__(self):
         return {
+            'id': self.es_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {

@@ -493,10 +493,6 @@ class SearchIndex(object):
 
         index_name = self.generate_index_name(
             MAPPINGS[domain.__tablename__]['index'])
-        if domain.__tablename__ == 'stations':
-            id_field = 'woudc_id'
-        else:
-            id_field = 'identifier'
 
         if isinstance(target, dict):
             # Index/update single document the normal way.
@@ -506,17 +502,15 @@ class SearchIndex(object):
             }
 
             LOGGER.debug('Indexing 1 document into {}'.format(index_name))
-            identifier = target['properties'][id_field]
-            self.connection.update(index=index_name, id=identifier,
+            self.connection.update(index=index_name, id=target['id'],
                                    body=wrapper)
-
         else:
             # Index/update multiple documents using bulk API.
             wrapper = [{
                 '_op_type': 'update',
                 '_index': index_name,
                 '_type': '_doc',
-                '_id': document['properties'][id_field],
+                '_id': document['id'],
                 'doc': document,
                 'doc_as_upsert': True
             } for document in target]
@@ -547,10 +541,6 @@ class SearchIndex(object):
 
         index_name = self.generate_index_name(
             MAPPINGS[domain.__tablename__]['index'])
-        if domain.__tablename__ == 'stations':
-            id_field = 'woudc_id'
-        else:
-            id_field = 'identifier'
 
         if isinstance(target, str):
             # <target> is a document ID, delete normally.
@@ -562,11 +552,10 @@ class SearchIndex(object):
                 raise SearchIndexError(msg)
         elif isinstance(target, dict):
             # <target> is the single GeoJSON object to delete.
-            identifier = target['properties'][id_field]
-            result = self.connection.delete(index=index_name, id=identifier)
+            result = self.connection.delete(index=index_name, id=target['id'])
 
             if not result['found']:
-                msg = 'Data record {} does not exist'.format(identifier)
+                msg = 'Data record {} does not exist'.format(target['id'])
                 LOGGER.error(msg)
                 raise SearchIndexError(msg)
         else:
@@ -575,7 +564,7 @@ class SearchIndex(object):
                 '_op_type': 'delete',
                 '_index': index_name,
                 '_type': '_doc',
-                '_id': document['properties'][id_field]
+                '_id': document['id']
             } for document in target]
 
             helpers.bulk(self.connection, wrapper)
@@ -602,12 +591,8 @@ class SearchIndex(object):
 
         index_name = self.generate_index_name(
             MAPPINGS[domain.__tablename__]['index'])
-        if domain.__tablename__ == 'stations':
-            id_field = 'woudc_id'
-        else:
-            id_field = 'identifier'
 
-        ids = [document['properties'][id_field] for document in targets]
+        ids = [document['id'] for document in targets]
 
         query = {
             'query': {
