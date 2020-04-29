@@ -14,8 +14,8 @@ Common:
     required_fields:
       - Date
       - Agency
-      - Version
     optional_fields:
+      - Version
       - ScientificAuthority
   PLATFORM:
     rows: 1
@@ -32,8 +32,8 @@ Common:
     occurrences: 1
     required_fields:
       - Name
-      - Model
     optional_fields:
+      - Model
       - Number
   LOCATION:
     rows: 1

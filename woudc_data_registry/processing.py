@@ -301,6 +301,7 @@ class Process(object):
         if not all([project_ok, dataset_ok, contributor_ok,
                     platform_ok, deployment_ok, instrument_ok,
                     location_ok, content_ok, data_generation_ok]):
+            self._error(209, None)
             return False
 
         if metadata_only:
@@ -314,6 +315,7 @@ class Process(object):
             dataset_validated = dataset_validator.check_all(self.extcsv)
 
             if not all([time_series_ok, dataset_validated]):
+                self._error(209, None)
                 return False
 
         LOGGER.info('Validating data record')
@@ -327,12 +329,16 @@ class Process(object):
 
         data_record_ok = self.check_data_record(data_record)
 
-        if data_record_ok:
+        if not data_record_ok:
+            self._error(209, None)
+            return False
+        else:
             LOGGER.info('Data record is valid and verified')
             self._registry_updates.append(data_record)
             self._search_index_updates.append(data_record)
 
-        return data_record_ok
+            self._warning(200, None)
+            return True
 
     def persist(self):
         """
@@ -369,7 +375,7 @@ class Process(object):
                     prev_version = self.search_index.get_record_version(esid)
                     now_version = model.data_generation_version
 
-                    if prev_version or now_version > prev_version:
+                    if not prev_version or now_version > prev_version:
                         allow_update_model = True
                         data_records.append(model)
                     else:
@@ -724,13 +730,12 @@ class Process(object):
         timestamp_date = self.extcsv.extcsv['TIMESTAMP']['Date']
 
         deployment_id = ':'.join([station, agency, project])
-        results = self.registry.query_by_field(Deployment, 'deployment_id',
-                                               deployment_id)
-        if not results:
+        deployment = self.registry.query_by_field(Deployment, 'deployment_id',
+                                                  deployment_id)
+        if not deployment:
             LOGGER.warning('Deployment {} not found'.format(deployment_id))
             return False
         else:
-            deployment = results[0]
             LOGGER.debug('Found deployment match for {}'
                          .format(deployment_id))
             if deployment.start_date > timestamp_date:
@@ -773,7 +778,7 @@ class Process(object):
             self._error(1000, instrument_valueline, msg)
             model_ok = False
 
-            self.extcsv.extcsv['INSTRUMENT']['Model'] = model = 'na'
+            self.extcsv.extcsv['INSTRUMENT']['Model'] = model = 'UNKNOWN'
 
         if not name_ok or not model_ok:
             return False
@@ -783,22 +788,22 @@ class Process(object):
         model = str(model)
 
         # Check data registry for matching instrument name
-        response = self.registry.query_by_field(Instrument, 'name', name,
-                                                case_insensitive=True)
-        if response:
-            name = response[0].name
-            self.extcsv.extcsv['INSTRUMENT']['Name'] = response[0].name
+        instrument = self.registry.query_by_field(Instrument, 'name', name,
+                                                  case_insensitive=True)
+        if instrument:
+            name = instrument.name
+            self.extcsv.extcsv['INSTRUMENT']['Name'] = instrument.name
         else:
             msg = 'No match found for #INSTRUMENT.Name = {}'.format(name)
             self._error(1000, instrument_valueline, msg)
             name_ok = False
 
         # Check data registry for matching instrument model
-        response = self.registry.query_by_field(Instrument, 'model', model,
-                                                case_insensitive=True)
-        if response:
-            model = response[0].model
-            self.extcsv.extcsv['INSTRUMENT']['Model'] = response[0].model
+        instrument = self.registry.query_by_field(Instrument, 'model', model,
+                                                  case_insensitive=True)
+        if instrument:
+            model = instrument.model
+            self.extcsv.extcsv['INSTRUMENT']['Model'] = instrument.model
         else:
             msg = 'No match found for #INSTRUMENT.Model = {}'.format(model)
             self._error(1000, instrument_valueline, msg)
@@ -824,7 +829,7 @@ class Process(object):
 
         serial = self.extcsv.extcsv['INSTRUMENT']['Number']
         if not serial or str(serial).lower() in ['na', 'n/a']:
-            self.extcsv.extcsv['INSTRUMENT']['Number'] = serial = 'na'
+            self.extcsv.extcsv['INSTRUMENT']['Number'] = serial = 'UNKNOWN'
 
         instrument = build_instrument(self.extcsv)
         fields = ['name', 'model', 'serial', 'station_id', 'dataset_id']
@@ -876,6 +881,8 @@ class Process(object):
             msg = '#LOCATION.Latitude contains invalid characters'
             LOGGER.error(msg)
             self._error(75, values_line, msg)
+
+            self.extcsv.extcsv['LOCATION']['Latitude'] = lat = None
             lat_numeric = None
             lat_ok = False
 
@@ -892,6 +899,8 @@ class Process(object):
             msg = '#LOCATION.Longitude contains invalid characters'
             LOGGER.error(msg)
             self._error(75, values_line, msg)
+
+            self.extcsv.extcsv['LOCATION']['Longitude'] = lon = None
             lon_numeric = None
             lon_ok = False
 
@@ -905,6 +914,8 @@ class Process(object):
         except ValueError:
             msg = '#LOCATION.Height contains invalid characters'
             self._warning(75, values_line, msg)
+
+            self.extcsv.extcsv['LOCATION']['Height'] = height = None
             height_numeric = None
 
         station_type = self.extcsv.extcsv['PLATFORM'].get('Type', 'STN')
@@ -916,12 +927,11 @@ class Process(object):
             LOGGER.debug('Not validating shipboard instrument location')
             return True
         elif instrument_id is not None:
-            result = self.registry.query_by_field(Instrument, 'instrument_id',
-                                                  instrument_id)
-            if not result:
+            instrument = self.registry.query_by_field(Instrument,
+                                                      'instrument_id',
+                                                      instrument_id)
+            if not instrument:
                 return True
-
-            instrument = result[0]
 
             lat_interval = process_config['latitude_error_distance']
             lon_interval = process_config['longitude_error_distance']

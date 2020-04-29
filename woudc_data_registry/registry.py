@@ -102,7 +102,7 @@ class Registry(object):
         :param value: Value of the field in any query results
         :param case_insensitive: `bool` of whether to query strings
                                  case-insensitively
-        :returns: Query results
+        :returns: Single element of query results
         """
 
         field = getattr(obj, by)
@@ -115,7 +115,7 @@ class Registry(object):
             LOGGER.debug('Querying for {} = {}'.format(field, value))
             condition = field == value
 
-        return self.session.query(obj).filter(condition).all()
+        return self.session.query(obj).filter(condition).first()
 
     def query_by_pattern(self, obj, by, pattern, case_insensitive=False):
         """

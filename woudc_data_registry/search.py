@@ -64,14 +64,26 @@ typedefs = {
 MAPPINGS = {
     'projects': {
         'index': 'project',
+        'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            }
+        }
     },
     'datasets': {
         'index': 'dataset',
+        'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            }
+        }
     },
     'countries': {
         'index': 'country',
         'properties': {
-            'country_code': {
+            'identifier': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
             },
@@ -103,6 +115,10 @@ MAPPINGS = {
     'contributors': {
         'index': 'contributor',
         'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
             'name': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
@@ -138,19 +154,19 @@ MAPPINGS = {
     'stations': {
         'index': 'station',
         'properties': {
-            'name': {
-                'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
-            },
-            'type': {
-                'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
-            },
             'woudc_id': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
             },
             'gaw_id': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'name': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
+            'type': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
             },
@@ -173,6 +189,10 @@ MAPPINGS = {
     'instruments': {
         'index': 'instrument',
         'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
             'station_id': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
@@ -198,6 +218,10 @@ MAPPINGS = {
     'deployments': {
         'index': 'deployment',
         'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
             'station_id': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
@@ -217,6 +241,10 @@ MAPPINGS = {
     'data_records': {
         'index': 'data_record',
         'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'keyword': typedefs['keyword']}
+            },
             'content_class': {
                 'type': 'text',
                 'fields': {'keyword': typedefs['keyword']}
@@ -326,28 +354,32 @@ class SearchIndex(object):
         self.index_basename = config.WDR_SEARCH_INDEX_BASENAME
 
         LOGGER.debug('Connecting to Elasticsearch')
-
         url_parsed = urlparse(self.url)
+        url_settings = {
+            'host': url_parsed.hostname
+        }
 
         if url_parsed.port is None:  # proxy to default HTTP(S) port
             if url_parsed.scheme == 'https':
-                port = 443
+                url_settings['port'] = 443
+                url_settings['scheme'] = url_parsed.scheme
             else:
-                port = 80
+                url_settings['port'] = 80
         else:  # was set explictly
-            port = url_parsed.port
-
-        url_settings = {
-            'host': url_parsed.hostname,
-            'port': port
-        }
+            url_settings['port'] = url_parsed.port
 
         if url_parsed.path is not None:
             url_settings['url_prefix'] = url_parsed.path
 
         LOGGER.debug('URL settings: {}'.format(url_settings))
 
-        self.connection = Elasticsearch([url_settings])
+        AUTH = (config.WDR_SEARCH_USERNAME, config.WDR_SEARCH_PASSWORD)
+        if None in AUTH:
+            self.connection = Elasticsearch([url_settings])
+        else:
+            LOGGER.debug('Connecting using username {}'.format(AUTH[0]))
+            self.connection = Elasticsearch([url_settings], http_auth=AUTH,
+                                            verify_certs=False)
 
         self.headers = {'Content-Type': 'application/json'}
 
@@ -379,11 +411,9 @@ class SearchIndex(object):
 
             settings = {
                 'mappings': {
-                    'FeatureCollection': {
-                        'properties': {
-                            'geometry': {
-                                'type': 'geo_shape'
-                            }
+                    'properties': {
+                        'geometry': {
+                            'type': 'geo_shape'
                         }
                     }
                 },
@@ -396,8 +426,7 @@ class SearchIndex(object):
             }
 
             if 'properties' in definition:
-                props = settings['mappings']['FeatureCollection']['properties']
-                props['properties'] = {
+                settings['mappings']['properties']['properties'] = {
                     'properties': definition['properties']
                 }
 
@@ -439,7 +468,6 @@ class SearchIndex(object):
                 MAPPINGS['data_records']['index'])
 
             result = self.connection.get(index=index_name,
-                                         doc_type='FeatureCollection',
                                          id=identifier)
             return result['_source']['properties']['data_generation_version']
         except NotFoundError:
@@ -475,15 +503,13 @@ class SearchIndex(object):
 
             LOGGER.debug('Indexing 1 document into {}'.format(index_name))
             self.connection.update(index=index_name, id=target['id'],
-                                   doc_type='FeatureCollection',
                                    body=wrapper)
-
         else:
             # Index/update multiple documents using bulk API.
             wrapper = [{
                 '_op_type': 'update',
                 '_index': index_name,
-                '_type': 'FeatureCollection',
+                '_type': '_doc',
                 '_id': document['id'],
                 'doc': document,
                 'doc_as_upsert': True
@@ -518,8 +544,7 @@ class SearchIndex(object):
 
         if isinstance(target, str):
             # <target> is a document ID, delete normally.
-            result = self.connection.delete(index=index_name, id=target,
-                                            doc_type='FeatureCollection')
+            result = self.connection.delete(index=index_name, id=target)
 
             if not result['found']:
                 msg = 'Data record {} does not exist'.format(target)
@@ -527,8 +552,7 @@ class SearchIndex(object):
                 raise SearchIndexError(msg)
         elif isinstance(target, dict):
             # <target> is the single GeoJSON object to delete.
-            result = self.connection.delete(index=index_name, id=target['id'],
-                                            doc_type='FeatureCollection')
+            result = self.connection.delete(index=index_name, id=target['id'])
 
             if not result['found']:
                 msg = 'Data record {} does not exist'.format(target['id'])
@@ -539,7 +563,7 @@ class SearchIndex(object):
             wrapper = [{
                 '_op_type': 'delete',
                 '_index': index_name,
-                '_type': document['type'],
+                '_type': '_doc',
                 '_id': document['id']
             } for document in target]
 

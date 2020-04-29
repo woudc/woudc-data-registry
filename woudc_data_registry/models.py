@@ -57,7 +57,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-from woudc_data_registry import registry
+from woudc_data_registry import config, registry
 from woudc_data_registry.search import SearchIndex, search
 from woudc_data_registry.util import point2geojsongeometry
 
@@ -116,8 +116,9 @@ class Country(base):
         return {
             'id': self.country_id,
             'type': 'Feature',
+            'geometry': None,
             'properties': {
-                'country_code': self.country_id,
+                'identifier': self.country_id,
                 'country_name_en': self.name_en,
                 'country_name_fr': self.name_fr,
                 'wmo_region_id': self.wmo_region_id,
@@ -192,6 +193,7 @@ class Contributor(base):
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y),
             'properties': {
+                'identifier': self.contributor_id,
                 'name': self.name,
                 'country_code': self.country_id,
                 'wmo_region_id': self.wmo_region_id,
@@ -233,7 +235,11 @@ class Dataset(base):
     def __geo_interface__(self):
         return {
             'id': self.dataset_id,
-            'type': 'Feature'
+            'type': 'Feature',
+            'geometry': None,
+            'properties': {
+                'identifier': self.dataset_id
+            }
         }
 
     def __repr__(self):
@@ -285,6 +291,7 @@ class Instrument(base):
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
+                'identifier': self.instrument_id,
                 'station_id': self.station_id,
                 'dataset': self.dataset_id,
                 'name': self.name,
@@ -323,7 +330,11 @@ class Project(base):
     def __geo_interface__(self):
         return {
             'id': self.project_id,
-            'type': 'Feature'
+            'type': 'Feature',
+            'geometry': None,
+            'properties': {
+                'identifier': self.project_id
+            }
         }
 
     def __repr__(self):
@@ -417,10 +428,10 @@ class Station(base):
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
-                'name': self.station_name.name,
-                'type': self.station_type,
                 'woudc_id': self.station_id,
                 'gaw_id': self.gaw_id,
+                'name': self.station_name.name,
+                'type': self.station_type,
                 'country_code': self.country_id,
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
@@ -511,10 +522,17 @@ class Deployment(base):
 
     @property
     def __geo_interface__(self):
+        if self.station is None:
+            geom = None
+        else:
+            geom = point2geojsongeometry(self.station.x, self.station.y,
+                                         self.station.z)
         return {
             'id': self.deployment_id,
             'type': 'Feature',
+            'geometry': geom,
             'properties': {
+                'identifier': self.deployment_id,
                 'station_id': self.station_id,
                 'contributor': self.contributor_id,
                 'start_date': self.start_date,
@@ -768,6 +786,7 @@ class DataRecord(base):
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
+                'identifier': self.es_id,
                 'content_class': self.content_class,
                 'content_category': self.content_category,
                 'content_level': self.content_level,
@@ -1078,10 +1097,17 @@ def sync(ctx):
     registry_ = registry.Registry()
     search_index = SearchIndex()
 
+    search_index_config = config.EXTRAS.get('search_index', {})
+
     click.echo('Begin data registry backend sync on ', nl=False)
     for clazz in model_classes:
         plural_name = clazz.__tablename__
         plural_caps = ''.join(map(str.capitalize, plural_name.split('_')))
+
+        enabled_flag = '{}_enabled'.format(plural_name)
+        if not search_index_config.get(enabled_flag, True):
+            click.echo('{} index frozen (skipping)'.format(plural_caps))
+            continue
 
         click.echo('{}...'.format(plural_caps))
 
