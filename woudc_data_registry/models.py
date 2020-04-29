@@ -157,8 +157,11 @@ class Contributor(base):
     ftp_username = Column(String, nullable=False)
 
     active = Column(Boolean, nullable=False, default=True)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
     last_validated_datetime = Column(DateTime, nullable=False,
                                      default=datetime.datetime.utcnow())
+
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
 
@@ -181,6 +184,21 @@ class Contributor(base):
         self.email = dict_['email']
         self.ftp_username = dict_['ftp_username']
 
+        try:
+            if isinstance(dict_['start_date'], datetime.date):
+                self.start_date = dict_['start_date']
+            else:
+                self.start_date = datetime.datetime.strptime(
+                    dict_['start_date'], '%Y-%m-%d').date()
+            if dict_['end_date'] is None \
+               or isinstance(dict_['end_date'], datetime.date):
+                self.end_date = dict_['end_date']
+            elif dict_['end_date']:
+                self.end_date = datetime.datetime.strptime(
+                    dict_['end_date'], '%Y-%m-%d').date()
+        except Exception as err:
+            LOGGER.error(err)
+
         self.active = dict_.get('active', True)
         self.last_validated_datetime = datetime.datetime.utcnow()
         self.x = dict_['x']
@@ -201,6 +219,8 @@ class Contributor(base):
                 'email': self.email,
                 'ftp_username': self.ftp_username,
                 'active': self.active,
+                'start_date': self.start_date,
+                'end_date': self.end_date,
                 'last_validated_datetime': self.last_validated_datetime
             }
         }
@@ -267,6 +287,10 @@ class Instrument(base):
     name = Column(String, nullable=False)
     model = Column(String, nullable=False)
     serial = Column(String, nullable=False)
+
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
+
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
     z = Column(Float, nullable=False)
@@ -285,6 +309,21 @@ class Instrument(base):
 
         self.generate_ids()
 
+        try:
+            if isinstance(dict_['start_date'], datetime.date):
+                self.start_date = dict_['start_date']
+            else:
+                self.start_date = datetime.datetime.strptime(
+                    dict_['start_date'], '%Y-%m-%d').date()
+            if dict_['end_date'] is None \
+               or isinstance(dict_['end_date'], datetime.date):
+                self.end_date = dict_['end_date']
+            elif dict_['end_date']:
+                self.end_date = datetime.datetime.strptime(
+                    dict_['end_date'], '%Y-%m-%d').date()
+        except Exception as err:
+            LOGGER.error(err)
+
         self.x = dict_['x']
         self.y = dict_['y']
         self.z = dict_['z']
@@ -302,6 +341,8 @@ class Instrument(base):
                 'name': self.name,
                 'model': self.model,
                 'serial': self.serial,
+                'start_date': self.start_date,
+                'end_date': self.end_date
             }
         }
 
