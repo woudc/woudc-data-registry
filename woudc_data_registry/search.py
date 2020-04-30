@@ -188,7 +188,11 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'country_code': {
+            'country_name_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_fr': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -207,6 +211,10 @@ MAPPINGS = {
             },
             'last_validated_datetime': {
                 'type': 'date'
+            },
+            'gaw_url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
             }
         }
     },

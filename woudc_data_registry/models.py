@@ -470,6 +470,9 @@ class Station(base):
 
     @property
     def __geo_interface__(self):
+        gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
+                      '/search/station/stationReportDetails'
+        gaw_pagename = '0-20008-0-{}'.format(self.gaw_id)
 
         return {
             'id': self.station_id,
@@ -480,12 +483,14 @@ class Station(base):
                 'gaw_id': self.gaw_id,
                 'name': self.station_name.name,
                 'type': self.station_type,
-                'country_code': self.country_id,
+                'country_name_en': self.country.name_en,
+                'country_name_fr': self.country.name_fr,
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
                 'start_date': self.start_date,
                 'end_date': self.end_date,
                 'last_validated_datetime': self.last_validated_datetime,
+                'gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename)
             }
         }
 
