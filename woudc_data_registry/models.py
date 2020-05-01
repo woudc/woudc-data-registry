@@ -332,6 +332,13 @@ class Instrument(base):
 
     @property
     def __geo_interface__(self):
+        waf_basepath = config.WDR_WAF_BASEURL
+
+        dataset_folder = '{}_1.0_1'.format(self.dataset_id)
+        station_folder = '{}{}'.format(self.station.station_type.lower(),
+                                       self.station_id)
+        instrument_folder = self.name.lower()
+
         return {
             'id': self.instrument_id,
             'type': 'Feature',
@@ -339,12 +346,16 @@ class Instrument(base):
             'properties': {
                 'identifier': self.instrument_id,
                 'station_id': self.station_id,
+                'station_name': self.station.station_name.name,
+                'data_class': self.dataset.data_class,
                 'dataset': self.dataset_id,
                 'name': self.name,
                 'model': self.model,
                 'serial': self.serial,
                 'start_date': self.start_date,
-                'end_date': self.end_date
+                'end_date': self.end_date,
+                'waf_url': '/'.join([waf_basepath, dataset_folder,
+                                     station_folder, instrument_folder])
             }
         }
 

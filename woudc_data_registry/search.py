@@ -229,6 +229,14 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'station_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'data_class': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'dataset': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
@@ -250,6 +258,10 @@ MAPPINGS = {
             },
             'end_date': {
                 'type': 'date'
+            },
+            'waf_url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
             }
         }
     },
