@@ -67,7 +67,7 @@ MAPPINGS = {
         'properties': {
             'identifier': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             }
         }
     },
@@ -76,7 +76,11 @@ MAPPINGS = {
         'properties': {
             'identifier': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'data_class': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
             }
         }
     },
@@ -85,30 +89,30 @@ MAPPINGS = {
         'properties': {
             'identifier': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'country_name_en': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'country_name_fr': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'wmo_region_id': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'wmo_membership': {
                 'type': 'date'
             },
             'regional_involvement': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'link': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             }
         }
     },
@@ -117,34 +121,44 @@ MAPPINGS = {
         'properties': {
             'identifier': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'acronym': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
             },
             'name': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
-            'country_code': {
+            'project': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
             },
             'wmo_region_id': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'url': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
-            },
-            'email': {
-                'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
-            },
-            'ftp_username': {
-                'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'active': {
                 'type': 'boolean'
+            },
+            'start_date': {
+                'type': 'date'
+            },
+            'end_date': {
+                'type': 'date'
             },
             'last_validated_datetime': {
                 'type': 'date'
@@ -156,33 +170,47 @@ MAPPINGS = {
         'properties': {
             'woudc_id': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'gaw_id': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'name': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'type': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
-            'country_code': {
+            'country_name_en': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
             },
             'wmo_region_id': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'active': {
                 'type': 'boolean'
             },
+            'start_date': {
+                'type': 'date'
+            },
+            'end_date': {
+                'type': 'date'
+            },
             'last_validated_datetime': {
                 'type': 'date'
+            },
+            'gaw_url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
             }
         }
     },
@@ -191,27 +219,45 @@ MAPPINGS = {
         'properties': {
             'identifier': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'station_id': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'data_class': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
             },
             'dataset': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'name': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'model': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'serial': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'start_date': {
+                'type': 'date'
+            },
+            'end_date': {
+                'type': 'date'
+            },
+            'waf_url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
             }
         }
     },
@@ -220,15 +266,43 @@ MAPPINGS = {
         'properties': {
             'identifier': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'station_id': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_type': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_country_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_country_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
             },
             'contributor': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_project': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
             },
             'start_date': {
                 'type': 'date'
@@ -243,15 +317,15 @@ MAPPINGS = {
         'properties': {
             'identifier': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'content_class': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'content_category': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'content_form': {
                 'type': 'byte'
@@ -261,7 +335,7 @@ MAPPINGS = {
             },
             'data_generation_agency': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'data_generation_date': {
                 'type': 'date'
@@ -271,50 +345,50 @@ MAPPINGS = {
             },
             'data_generation_scientific_authority': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'platform_id': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'platform_type': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'platform_name': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'platform_country': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'platform_gaw_id': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'instrument_name': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'instrument_model': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'instrument_number': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'timestamp_utcoffset': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'timestamp_date': {
                 'type': 'date'
             },
             'timestamp_time': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             },
             'published': {
                 'type': 'boolean'
@@ -336,7 +410,7 @@ MAPPINGS = {
             },
             'url': {
                 'type': 'text',
-                'fields': {'keyword': typedefs['keyword']}
+                'fields': {'raw': typedefs['keyword']}
             }
         }
     }

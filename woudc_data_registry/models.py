@@ -157,8 +157,11 @@ class Contributor(base):
     ftp_username = Column(String, nullable=False)
 
     active = Column(Boolean, nullable=False, default=True)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
     last_validated_datetime = Column(DateTime, nullable=False,
                                      default=datetime.datetime.utcnow())
+
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
 
@@ -181,6 +184,21 @@ class Contributor(base):
         self.email = dict_['email']
         self.ftp_username = dict_['ftp_username']
 
+        try:
+            if isinstance(dict_['start_date'], datetime.date):
+                self.start_date = dict_['start_date']
+            else:
+                self.start_date = datetime.datetime.strptime(
+                    dict_['start_date'], '%Y-%m-%d').date()
+            if dict_['end_date'] is None \
+               or isinstance(dict_['end_date'], datetime.date):
+                self.end_date = dict_['end_date']
+            elif dict_['end_date']:
+                self.end_date = datetime.datetime.strptime(
+                    dict_['end_date'], '%Y-%m-%d').date()
+        except Exception as err:
+            LOGGER.error(err)
+
         self.active = dict_.get('active', True)
         self.last_validated_datetime = datetime.datetime.utcnow()
         self.x = dict_['x']
@@ -194,13 +212,16 @@ class Contributor(base):
             'geometry': point2geojsongeometry(self.x, self.y),
             'properties': {
                 'identifier': self.contributor_id,
+                'acronym': self.acronym,
                 'name': self.name,
-                'country_code': self.country_id,
+                'project': self.project_id,
+                'country_name_en': self.country.name_en,
+                'country_name_fr': self.country.name_fr,
                 'wmo_region_id': self.wmo_region_id,
                 'url': self.url,
-                'email': self.email,
-                'ftp_username': self.ftp_username,
                 'active': self.active,
+                'start_date': self.start_date,
+                'end_date': self.end_date,
                 'last_validated_datetime': self.last_validated_datetime
             }
         }
@@ -228,8 +249,12 @@ class Dataset(base):
 
     dataset_id = Column(String, primary_key=True)
 
+    data_class = Column(String, nullable=False)
+
     def __init__(self, dict_):
         self.dataset_id = dict_['dataset_id']
+
+        self.data_class = dict_['data_class']
 
     @property
     def __geo_interface__(self):
@@ -238,7 +263,8 @@ class Dataset(base):
             'type': 'Feature',
             'geometry': None,
             'properties': {
-                'identifier': self.dataset_id
+                'identifier': self.dataset_id,
+                'data_class': self.data_class
             }
         }
 
@@ -262,6 +288,10 @@ class Instrument(base):
     name = Column(String, nullable=False)
     model = Column(String, nullable=False)
     serial = Column(String, nullable=False)
+
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
+
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
     z = Column(Float, nullable=False)
@@ -280,12 +310,34 @@ class Instrument(base):
 
         self.generate_ids()
 
+        try:
+            if isinstance(dict_['start_date'], datetime.date):
+                self.start_date = dict_['start_date']
+            else:
+                self.start_date = datetime.datetime.strptime(
+                    dict_['start_date'], '%Y-%m-%d').date()
+            if dict_['end_date'] is None \
+               or isinstance(dict_['end_date'], datetime.date):
+                self.end_date = dict_['end_date']
+            elif dict_['end_date']:
+                self.end_date = datetime.datetime.strptime(
+                    dict_['end_date'], '%Y-%m-%d').date()
+        except Exception as err:
+            LOGGER.error(err)
+
         self.x = dict_['x']
         self.y = dict_['y']
         self.z = dict_['z']
 
     @property
     def __geo_interface__(self):
+        waf_basepath = config.WDR_WAF_BASEURL
+
+        dataset_folder = '{}_1.0_1'.format(self.dataset_id)
+        station_folder = '{}{}'.format(self.station.station_type.lower(),
+                                       self.station_id)
+        instrument_folder = self.name.lower()
+
         return {
             'id': self.instrument_id,
             'type': 'Feature',
@@ -293,10 +345,16 @@ class Instrument(base):
             'properties': {
                 'identifier': self.instrument_id,
                 'station_id': self.station_id,
+                'station_name': self.station.station_name.name,
+                'data_class': self.dataset.data_class,
                 'dataset': self.dataset_id,
                 'name': self.name,
                 'model': self.model,
                 'serial': self.serial,
+                'start_date': self.start_date,
+                'end_date': self.end_date,
+                'waf_url': '/'.join([waf_basepath, dataset_folder,
+                                     station_folder, instrument_folder])
             }
         }
 
@@ -422,6 +480,9 @@ class Station(base):
 
     @property
     def __geo_interface__(self):
+        gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
+                      '/search/station/stationReportDetails'
+        gaw_pagename = '0-20008-0-{}'.format(self.gaw_id)
 
         return {
             'id': self.station_id,
@@ -432,10 +493,14 @@ class Station(base):
                 'gaw_id': self.gaw_id,
                 'name': self.station_name.name,
                 'type': self.station_type,
-                'country_code': self.country_id,
+                'country_name_en': self.country.name_en,
+                'country_name_fr': self.country.name_fr,
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
+                'start_date': self.start_date,
+                'end_date': self.end_date,
                 'last_validated_datetime': self.last_validated_datetime,
+                'gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename)
             }
         }
 
@@ -534,7 +599,14 @@ class Deployment(base):
             'properties': {
                 'identifier': self.deployment_id,
                 'station_id': self.station_id,
-                'contributor': self.contributor_id,
+                'station_type': self.station.station_type,
+                'station_name': self.station.station_name.name,
+                'station_country_en': self.station.country.name_en,
+                'station_country_fr': self.station.country.name_fr,
+                'contributor': self.contributor.acronym,
+                'contributor_name': self.contributor.name,
+                'contributor_project': self.contributor.project_id,
+                'contributor_url': self.contributor.url,
                 'start_date': self.start_date,
                 'end_date': self.end_date
             }
