@@ -135,7 +135,11 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'country_code': {
+            'country_name_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_fr': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -144,14 +148,6 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'url': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'email': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'ftp_username': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
