@@ -272,7 +272,35 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'station_type': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_country_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_country_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'contributor': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_project': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_url': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },

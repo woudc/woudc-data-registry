@@ -599,7 +599,14 @@ class Deployment(base):
             'properties': {
                 'identifier': self.deployment_id,
                 'station_id': self.station_id,
-                'contributor': self.contributor_id,
+                'station_type': self.station.station_type,
+                'station_name': self.station.station_name.name,
+                'station_country_en': self.station.country.name_en,
+                'station_country_fr': self.station.country.name_fr,
+                'contributor': self.contributor.acronym,
+                'contributor_name': self.contributor.name,
+                'contributor_project': self.contributor.project_id,
+                'contributor_url': self.contributor.url,
                 'start_date': self.start_date,
                 'end_date': self.end_date
             }
