@@ -85,7 +85,8 @@ def orchestrate(source, working_dir, run_number=0,
     files_to_process = []
 
     if os.path.isfile(source):
-        ftp_parent = Path(source).parent.resolve()
+        ftp_path = Path(source).parent.resolve()
+        ftp_parent = os.path.basename(str(ftp_path))
         files_to_process = [(source, ftp_parent)]
     elif os.path.isdir(source):
         for root, dirs, files in os.walk(source):
