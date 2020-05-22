@@ -150,6 +150,32 @@ woudc-data-registry data verify foo.dat -l
 woudc-data-registry data ingest /path/to/dir -l
 ```
 
+#### Report Generation
+
+The `woudc-data-registry data ingest` command accepts a `-w` flag, which is a path pointing to a directory.
+When that flag is provided, an operator report and a run report are automatically written to that directory
+while the files are being processing.
+
+`woudc-data-registry data ingest /path/to/dir -w /path/to/reports/location`
+
+The run report has a filename `runx`, with `x` being an integer. The file contains a series of blocks,
+one per contributor in a processing run, of the following format:
+
+```
+<contributor acronym>
+<status>: <filepath>
+<status>: <filepath>
+<status>: <filepath>
+...
+```
+
+Where `<status>` is either `Pass` or `Fail`, depending on how the file reported in that line fared in processing.
+
+The operator report is a more in-depth error-log in CSV format, with a filename like `operator-report-<date>-runx.csv`,
+with `x` being the same integer as in the run report. Operator reports contain one line per error or warning that
+happened during the processing run. The operator report is meant to be a human-readable log which makes specific errors
+easy to find and diagnose.
+
 ### Development
 
 ```bash
