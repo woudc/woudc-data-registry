@@ -52,7 +52,6 @@ import logging
 from woudc_data_registry import config
 from woudc_data_registry.util import is_text_file, read_file
 
-from woudc_data_registry.models import Contributor
 from woudc_data_registry.parser import (ExtendedCSV, NonStandardDataError,
                                         MetadataValidationError)
 from woudc_data_registry.processing import Process
@@ -232,22 +231,6 @@ def verify(ctx, source, lax, bypass):
 
     orchestrate(source, None, metadata_only=lax,
                 verify_only=True, bypass=bypass)
-
-
-@click.command()
-@click.pass_context
-@click.option('--working-dir', '-w', 'working_dir', required=True,
-              type=click.Path(exists=True, resolve_path=True, file_okay=False))
-def generate_emails(ctx, working_dir):
-    """Write an email report based on the processing run in <working_dir>"""
-
-    registry = Registry()
-    report = ReportBuilder(working_dir)
-
-    contributors = registry.query_full_index(Contributor)
-    addresses = {model.acronym: model.email for model in contributors}
-
-    report.write_email_report(addresses)
 
 
 data.add_command(ingest)
