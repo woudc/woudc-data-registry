@@ -235,4 +235,3 @@ def verify(ctx, source, lax, bypass):
 
 data.add_command(ingest)
 data.add_command(verify)
-data.add_command(generate_emails, name='generate-emails')
