@@ -209,8 +209,9 @@ class ReportWriter:
         :returns: void
         """
 
-        self.write_operator_report()
-        self.write_run_report()
+        if self._working_directory is not None:
+            self.write_operator_report()
+            self.write_run_report()
 
         for field, column in self._report_batch.items():
             if isinstance(column, str):
