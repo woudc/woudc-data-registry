@@ -46,20 +46,30 @@
 import os
 
 import click
+import logging
 
+from woudc_data_registry import config
+from woudc_data_registry.util import is_text_file, read_file
+
+from woudc_data_registry.parser import (ExtendedCSV, NonStandardDataError,
+                                        MetadataValidationError)
 from woudc_data_registry.processing import Process
 
 from woudc_data_registry.registry import Registry
 from woudc_data_registry.search import SearchIndex
+from woudc_data_registry.report import ReportWriter
 
 
-def orchestrate(file_, directory, metadata_only=False,
-                verify_only=False, bypass=False):
+LOGGER = logging.getLogger(__name__)
+
+
+def orchestrate(source, working_dir,
+                metadata_only=False, verify_only=False, bypass=False):
     """
     Core orchestation workflow
 
-    :param file_: File to process.
-    :param directory: Directory to process (recursive).
+    :param source: Path to input file or directory tree containing them.
+    :param working_dir: Output directory for log and report files.
     :param metadata_only: `bool` of whether to verify only the
                           common metadata tables.
     :param verify_only: `bool` of whether to verify the file for correctness
@@ -71,10 +81,10 @@ def orchestrate(file_, directory, metadata_only=False,
 
     files_to_process = []
 
-    if file_ is not None:
-        files_to_process = [file_]
-    elif directory is not None:
-        for root, dirs, files in os.walk(directory):
+    if os.path.isfile(source):
+        files_to_process = [source]
+    elif os.path.isdir(source):
+        for root, dirs, files in os.walk(source):
             for f in files:
                 files_to_process.append(os.path.join(root, f))
 
@@ -86,23 +96,68 @@ def orchestrate(file_, directory, metadata_only=False,
     registry = Registry()
     search_engine = SearchIndex()
 
+    reporter = ReportWriter(working_dir)
+
     with click.progressbar(files_to_process, label='Processing files') as run_:
         for file_to_process in run_:
             click.echo('Processing filename: {}'.format(file_to_process))
-            p = Process(registry, search_engine)
+
+            LOGGER.info('Detecting file')
+            if not is_text_file(file_to_process):
+                if reporter.add_message(1):  # If code 1 is an error
+                    failed.append(file_to_process)
+                    continue
+
             try:
-                if p.validate(file_to_process, metadata_only=metadata_only,
-                              verify_only=verify_only, bypass=bypass):
+                contents = read_file(file_to_process)
+
+                LOGGER.info('Parsing data record')
+                extcsv = ExtendedCSV(contents, reporter)
+
+                LOGGER.info('Validating Extended CSV')
+                extcsv.validate_metadata_tables()
+                if not metadata_only:
+                    extcsv.validate_dataset_tables()
+                LOGGER.info('Valid Extended CSV')
+
+                p = Process(registry, search_engine, reporter)
+                data_record = p.validate(extcsv, metadata_only=metadata_only,
+                                         bypass=bypass)
+
+                if data_record is None:
+                    click.echo('Not ingesting')
+                    failed.append(file_to_process)
+                else:
+                    data_record.ingest_filepath = file_to_process
+                    data_record.filename = os.path.basename(file_to_process)
+                    data_record.url = \
+                        data_record.get_waf_path(config.WDR_WAF_BASEURL)
+                    data_record.output_filepath = \
+                        data_record.get_waf_path(config.WDR_WAF_BASEDIR)
 
                     if verify_only:
                         click.echo('Verified but not ingested')
                     else:
                         p.persist()
                         click.echo('Ingested successfully')
+
                     passed.append(file_to_process)
-                else:
-                    click.echo('Not ingested')
-                    failed.append(file_to_process)
+
+            except UnicodeDecodeError as err:
+                LOGGER.error('Unknown file format: {}'.format(err))
+
+                click.echo('Not ingested')
+                failed.append(file_to_process)
+            except NonStandardDataError as err:
+                LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
+
+                click.echo('Not ingested')
+                failed.append(file_to_process)
+            except MetadataValidationError as err:
+                LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
+
+                click.echo('Not ingested')
+                failed.append(file_to_process)
             except Exception as err:
                 click.echo('Processing failed: {}'.format(err))
                 failed.append(file_to_process)
@@ -127,57 +182,33 @@ def data():
 
 @click.command()
 @click.pass_context
-@click.option('--file', '-f', 'file_',
-              type=click.Path(exists=True, resolve_path=True),
-              help='Path to data record')
-@click.option('--directory', '-d', 'directory',
-              type=click.Path(exists=True, resolve_path=True,
-                              dir_okay=True, file_okay=False),
-              help='Path to directory of data records')
+@click.argument('source', type=click.Path(exists=True, resolve_path=True,
+                                          dir_okay=True, file_okay=True))
+@click.option('--working-dir', '-w', 'working_dir', default=None,
+              help='Path to main output directory for logs and reports')
 @click.option('--lax', '-l', 'lax', is_flag=True,
               help='Only validate core metadata tables')
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-def ingest(ctx, file_, directory, lax, bypass):
+def ingest(ctx, source, working_dir, lax, bypass):
     """ingest a single data submission or directory of files"""
 
-    if file_ is not None and directory is not None:
-        msg = '--file and --directory are mutually exclusive'
-        raise click.ClickException(msg)
-
-    if file_ is None and directory is None:
-        msg = 'One of --file or --directory is required'
-        raise click.ClickException(msg)
-
-    orchestrate(file_, directory, metadata_only=lax, bypass=bypass)
+    orchestrate(source, working_dir, metadata_only=lax, bypass=bypass)
 
 
 @click.command()
 @click.pass_context
-@click.option('--file', '-f', 'file_',
-              type=click.Path(exists=True, resolve_path=True),
-              help='Path to data record')
-@click.option('--directory', '-d', 'directory',
-              type=click.Path(exists=True, resolve_path=True,
-                              dir_okay=True, file_okay=False),
-              help='Path to directory of data records')
+@click.argument('source', type=click.Path(exists=True, resolve_path=True,
+                                          dir_okay=True, file_okay=True))
 @click.option('--lax', '-l', 'lax', is_flag=True,
               help='Only validate core metadata tables')
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-def verify(ctx, file_, directory, lax, bypass):
+def verify(ctx, source, lax, bypass):
     """verify a single data submission or directory of files"""
 
-    if file_ is not None and directory is not None:
-        msg = '--file and --directory are mutually exclusive'
-        raise click.ClickException(msg)
-
-    if file_ is None and directory is None:
-        msg = 'One of --file or --directory is required'
-        raise click.ClickException(msg)
-
-    orchestrate(file_, directory, metadata_only=lax, verify_only=True,
-                bypass=bypass)
+    orchestrate(source, None, metadata_only=lax,
+                verify_only=True, bypass=bypass)
 
 
 data.add_command(ingest)

@@ -129,25 +129,25 @@ woudc-data-registry instrument update --help
 
 ```bash
 # ingest directory of files (walks directory recursively)
-woudc-data-registry data ingest -d /path/to/dir
+woudc-data-registry data ingest /path/to/dir
 
 # ingest single file
-woudc-data-registry data ingest -f foo.dat
+woudc-data-registry data ingest foo.dat
 
 # ingest without asking permission checks
-woudc-data-registry data ingest -f foo.dat -y
+woudc-data-registry data ingest foo.dat -y
 
 # verify directory of files (walks directory recursively)
-woudc-data-registry data verify -d /path/to/dir
+woudc-data-registry data verify /path/to/dir
 
 # verify single file
-woudc-data-registry data verify -f foo.dat
+woudc-data-registry data verify foo.dat
 
 # verify core metadata only
-woudc-data-registry data verify -f foo.dat -l
+woudc-data-registry data verify foo.dat -l
 
 # ingest with only core metadata checks
-woudc-data-registry data ingest -d /path/to/dir -l
+woudc-data-registry data ingest /path/to/dir -l
 ```
 
 ### Development

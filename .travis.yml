@@ -20,8 +20,8 @@ env:
     - WDR_WAF_BASEURL=https://woudc.org/archive/
     - WDR_WAF_BASEDIR=/tmp
     - WDR_TABLE_SCHEMA=$TRAVIS_BUILD_DIR/data/tables-schema.json
-    - WDR_TABLE_CONFIG=$TRAVIS_BUILD_DIR/data/tables.yml
-    - WDR_ERROR_CONFIG=$TRAVIS_BUILD_DIR/data/errors.csv
+    - WDR_TABLE_CONFIG=$TRAVIS_BUILD_DIR/data/migrate/tables-backfilling.yml
+    - WDR_ERROR_CONFIG=$TRAVIS_BUILD_DIR/data/migrate/errors-backfilling.csv
     - WDR_ALIAS_CONFIG=$TRAVIS_BUILD_DIR/data/aliases.yml
     - WDR_EXTRA_CONFIG=$TRAVIS_BUILD_DIR/data/extra-options.yml
 

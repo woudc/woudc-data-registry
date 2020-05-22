@@ -1,3 +1,47 @@
+# =================================================================
+#
+# Terms and Conditions of Use
+#
+# Unless otherwise noted, computer program source code of this
+# distribution # is covered under Crown Copyright, Government of
+# Canada, and is distributed under the MIT License.
+#
+# The Canada wordmark and related graphics associated with this
+# distribution are protected under trademark law and copyright law.
+# No permission is granted to use them outside the parameters of
+# the Government of Canada's corporate identity program. For
+# more information, see
+# http://www.tbs-sct.gc.ca/fip-pcim/index-eng.asp
+#
+# Copyright title to all 3rd party software distributed with this
+# software is held by the respective copyright holders as noted in
+# those files. Users are asked to read the 3rd Party Licenses
+# referenced with those assets.
+#
+# Copyright (c) 2019 Government of Canada
+#
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this software and associated documentation
+# files (the "Software"), to deal in the Software without
+# restriction, including without limitation the rights to use,
+# copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following
+# conditions:
+#
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+#
+# =================================================================
 
 import logging
 import statistics
@@ -11,28 +55,29 @@ DATASETS = ['Broad-band', 'Lidar', 'Multi-band', 'OzoneSonde', 'RocketSonde',
             'Spectral', 'TotalOzone', 'TotalOzoneObs', 'UmkehrN14']
 
 
-def get_validator(dataset):
+def get_validator(dataset, reporter):
     """
     Returns a DatasetValidator instance tied to <dataset>.
     If <dataset> is a valid data category but no special validator exists
     for it, returns a base validator that automatically succeeds.
 
     :param dataset: Name of a WOUDC data type.
+    :param reporter: `ReportWriter` instance for error handling and logging.
     :returns: Validator class targetted to that data type.
     """
 
     if dataset == 'TotalOzone':
-        return TotalOzoneValidator()
+        return TotalOzoneValidator(reporter)
     elif dataset == 'TotalOzoneObs':
-        return TotalOzoneObsValidator()
+        return TotalOzoneObsValidator(reporter)
     elif dataset == 'Spectral':
-        return SpectralValidator()
+        return SpectralValidator(reporter)
     elif dataset == 'UmkehrN14':
-        return UmkehrValidator()
+        return UmkehrValidator(reporter)
     elif dataset == 'Lidar':
-        return LidarValidator()
+        return LidarValidator(reporter)
     elif dataset in DATASETS:
-        return DatasetValidator()
+        return DatasetValidator(reporter)
     else:
         raise ValueError('Invalid dataset {}'.format(dataset))
 
@@ -46,37 +91,30 @@ class DatasetValidator(object):
     errors tied to their tables, and so never have dataset-specific errors.
     """
 
-    def __init__(self):
+    def __init__(self, reporter):
+        self.reports = reporter
+
         self.errors = []
         self.warnings = []
 
-    def _warning(self, error_code, line, message=None):
+    def _add_to_report(self, error_code, line=None, **kwargs):
         """
-        Record <message> as an error with code <error_code> that took place
-        at line <line> in the input file.
+        Submit a warning or error of code <error_code> to the report generator,
+        with was found at line <line> in the input file. Uses keyword arguments
+        to detail the warning/error message.
 
-        :param error_code: Numeric error code from the error definition files.
-        :param line: Line number in the input file where the error was found.
-        :param message: String message describing the error.
-        :returns: void
+        Returns False iff the error is serious enough to abort parsing.
         """
 
-        LOGGER.warning(message)
-        self.warnings.append((error_code, message, line))
+        message, severe = self.reports.add_message(error_code, line, **kwargs)
+        if severe:
+            LOGGER.error(message)
+            self.errors.append(message)
+        else:
+            LOGGER.warning(message)
+            self.warnings.append(message)
 
-    def _error(self, error_code, line, message=None):
-        """
-        Record <message> as an error with code <error_code> that took place
-        at line <line> in the input file.
-
-        :param error_code: Numeric error code from the error definition files.
-        :param line: Line number in the input file where the error was found.
-        :param message: String message describing the error.
-        :returns: void
-        """
-
-        LOGGER.error(message)
-        self.errors.append((error_code, message, line))
+        return not severe
 
     def check_all(self, extcsv):
         """
@@ -96,8 +134,8 @@ class TotalOzoneValidator(DatasetValidator):
     Dataset-specific validator for TotalOzone files.
     """
 
-    def __init__(self):
-        super(TotalOzoneValidator, self).__init__()
+    def __init__(self, reporter):
+        super(TotalOzoneValidator, self).__init__(reporter)
 
     def check_all(self, extcsv):
         """
@@ -132,24 +170,25 @@ class TotalOzoneValidator(DatasetValidator):
         """
 
         LOGGER.debug('Assessing order of #DAILY.Date column')
+        success = True
 
         timestamp1_date = extcsv.extcsv['TIMESTAMP']['Date']
-        daily_start = extcsv.line_num('DAILY') + 2
+        daily_startline = extcsv.line_num('DAILY') + 2
+
         dates_encountered = {}
         rows_to_remove = []
 
         daily_columns = zip(*extcsv.extcsv['DAILY'].values())
-        sequence_ok = True
 
         in_order = True
         prev_date = None
         for index, row in enumerate(daily_columns):
-            line_num = daily_start + index
+            line_num = daily_startline + index
             daily_date = row[0]
 
             if daily_date.year != timestamp1_date.year:
-                msg = '#DAILY.Date has a different year than #TIMESTAMP.Date'
-                self._warning(42, line_num, msg)
+                if not self._add_to_report(103, line_num):
+                    success = False
 
             if prev_date and daily_date < prev_date:
                 in_order = False
@@ -158,26 +197,20 @@ class TotalOzoneValidator(DatasetValidator):
             if daily_date not in dates_encountered:
                 dates_encountered[daily_date] = row
             elif row == dates_encountered[daily_date]:
-                msg = 'Duplicate data ignored with non-unique #DAILY.Date'
-                self._warning(47, line_num, msg)
-
+                if not self._add_to_report(104, line_num, date=daily_date):
+                    success = False
                 rows_to_remove.append(index)
-            else:
-                msg = '#Found multiple observations under #DAILY.Date {}' \
-                      .format(daily_date)
-                self._error(48, line_num, msg)
-                sequence_ok = False
+            elif not self._add_to_report(105, line_num, date=daily_date):
+                success = False
 
         rows_to_remove.reverse()
         for index in rows_to_remove:
             for column in extcsv.extcsv['DAILY'].values():
                 column.pop(index)
 
-        if not sequence_ok:
-            return False
-        elif not in_order:
-            msg = '#DAILY.Date found in non-chronological order'
-            self._warning(49, daily_start, msg)
+        if not in_order:
+            if not self._add_to_report(102, daily_startline):
+                success = False
 
             sorted_dates = sorted(extcsv.extcsv['DAILY']['Date'])
             sorted_daily = [dates_encountered[date_] for date_ in sorted_dates]
@@ -186,7 +219,7 @@ class TotalOzoneValidator(DatasetValidator):
                 column = list(map(lambda row: row[field_num], sorted_daily))
                 extcsv.extcsv['DAILY'][field] = column
 
-        return True
+        return success
 
     def check_timestamps(self, extcsv):
         """
@@ -198,26 +231,24 @@ class TotalOzoneValidator(DatasetValidator):
         """
 
         LOGGER.debug('Assessing #TIMESTAMP tables for similarity')
+        success = True
 
         timestamp1_date = extcsv.extcsv['TIMESTAMP']['Date']
         timestamp1_time = extcsv.extcsv['TIMESTAMP'].get('Time', None)
         daily_dates = extcsv.extcsv['DAILY']['Date']
 
-        timestamp1_start = extcsv.line_num('TIMESTAMP')
-        timestamp1_values = timestamp1_start + 2
+        timestamp1_startline = extcsv.line_num('TIMESTAMP')
+        timestamp1_valueline = timestamp1_startline + 2
 
         if timestamp1_date != daily_dates[0]:
-            msg = '#TIMESTAMP.Date before #DAILY does not equal' \
-                  ' first date of #DAILY'
-            self._warning(114, timestamp1_values, msg)
-
+            if not self._add_to_report(106, timestamp1_valueline):
+                success = False
             extcsv.extcsv['TIMESTAMP']['Date'] = daily_dates[0]
 
         timestamp_count = extcsv.table_count('TIMESTAMP')
         if timestamp_count == 1:
-            msg = '#TIMESTAMP table after #DAILY is missing,' \
-                  ' deriving based on requirements'
-            self._warning(117, None, msg)
+            if not self._add_to_report(109):
+                success = False
 
             utcoffset = extcsv.extcsv['TIMESTAMP']['UTCOffset']
             final_date = daily_dates[-1]
@@ -232,31 +263,29 @@ class TotalOzoneValidator(DatasetValidator):
         timestamp2_date = extcsv.extcsv['TIMESTAMP_2']['Date']
         timestamp2_time = extcsv.extcsv['TIMESTAMP_2']['Time']
 
-        timestamp2_start = extcsv.line_num('TIMESTAMP_2')
-        timestamp2_values = None if timestamp2_start is None \
-            else timestamp2_start + 2
+        timestamp2_startline = extcsv.line_num('TIMESTAMP_2')
+        timestamp2_valueline = None if timestamp2_startline is None \
+            else timestamp2_startline + 2
 
         if timestamp2_date != daily_dates[-1]:
-            msg = '#TIMESTAMP.Date after #DAILY does not equal' \
-                  ' last date of #DAILY'
-            self._warning(115, timestamp2_values, msg)
-
+            if not self._add_to_report(107, timestamp2_valueline):
+                success = False
             extcsv.extcsv['TIMESTAMP_2']['Date'] = daily_dates[-1]
 
         if timestamp2_time != timestamp1_time:
-            msg = 'Inconsistent Time values between #TIMESTAMP tables'
-            self._warning(118, timestamp2_values, msg)
+            if not self._add_to_report(90, timestamp2_valueline):
+                success = False
 
         if timestamp_count > 2:
-            msg = 'More than 2 #TIMESTAMP tables present; removing extras'
-            line = extcsv.line_num('TIMESTAMP_3')
-            self._warning(116, line, msg)
+            timestamp3_startline = extcsv.line_num('TIMESTAMP_3')
+            if not self._add_to_report(108, timestamp3_startline):
+                success = False
 
             for ind in range(3, timestamp_count + 1):
                 table_name = 'TIMESTAMP_' + str(ind)
                 extcsv.remove_table(table_name)
 
-        return True
+        return success
 
     def check_monthly(self, extcsv):
         """
@@ -268,6 +297,7 @@ class TotalOzoneValidator(DatasetValidator):
         """
 
         LOGGER.debug('Assessing correctness of #MONTHLY table')
+        success = True
 
         try:
             template_monthly = self.derive_monthly_from_daily(extcsv)
@@ -276,25 +306,25 @@ class TotalOzoneValidator(DatasetValidator):
             return False
 
         if 'MONTHLY' not in extcsv.extcsv:
-            msg = 'Missing #MONTHLY table derived according to requirements'
-            self._warning(119, None, msg)
+            if not self._add_to_report(110):
+                success = False
         else:
             present_monthly = extcsv.extcsv['MONTHLY']
-            start_line = extcsv.line_num('MONTHLY')
-            value_line = start_line + 2
+            monthly_startline = extcsv.line_num('MONTHLY')
+            monthly_valueline = monthly_startline + 2
 
             for field, derived_val in template_monthly.items():
                 if field not in present_monthly:
-                    msg = 'Missing value for #MONTHLY.{} derived according' \
-                          ' to requirements'.format(field)
-                    self._warning(121, value_line, msg)
+                    if not self._add_to_report(111, monthly_valueline,
+                                               field=field):
+                        success = False
                 elif present_monthly[field] != template_monthly[field]:
-                    msg = '#MONTHLY.{} value differs from derived value:' \
-                          ' correcting'.format(field)
-                    self._warning(120, value_line, msg)
+                    if not self._add_to_report(112, monthly_valueline,
+                                               field=field):
+                        success = False
 
         extcsv.extcsv['MONTHLY'] = template_monthly
-        return True
+        return success
 
     def derive_monthly_from_daily(self, extcsv):
         """
@@ -308,7 +338,7 @@ class TotalOzoneValidator(DatasetValidator):
         :returns: An OrderedDict representing the derived #MONTHLY table.
         """
 
-        LOGGER.debug('Renerating #MONTHLY table from data')
+        LOGGER.debug('Regenerating #MONTHLY table from data')
 
         dates_column = extcsv.extcsv['DAILY']['Date']
         ozone_column = extcsv.extcsv['DAILY'].get('ColumnO3', None)
@@ -317,14 +347,14 @@ class TotalOzoneValidator(DatasetValidator):
         daily_valueline = daily_fieldline + 1
 
         if not ozone_column:
+            self._add_to_report(113, daily_fieldline)
             msg = 'Cannot derive #MONTHLY table: #DAILY.ColumnO3 missing'
-            self._error(1000, daily_fieldline, msg)
             raise Exception(msg)
 
         ozone_column = list(filter(bool, ozone_column))
         if len(ozone_column) == 0:
-            msg = 'No ozone data in #DAILY table'
-            self._error(1000, daily_valueline, msg)
+            self._add_to_report(101, daily_valueline)
+            msg = 'Cannot derive #MONTHLY table: no ozone data in #DAILY'
             raise Exception(msg)
 
         first_date = dates_column[0]
@@ -347,8 +377,8 @@ class TotalOzoneObsValidator(DatasetValidator):
     Dataset-specific validator for TotalOzoneObs files.
     """
 
-    def __init__(self):
-        super(TotalOzoneObsValidator, self).__init__()
+    def __init__(self, reporter):
+        super(TotalOzoneObsValidator, self).__init__(reporter)
 
     def check_all(self, extcsv):
         """
@@ -380,9 +410,12 @@ class TotalOzoneObsValidator(DatasetValidator):
                   is error-free.
         """
 
-        observations = zip(*extcsv.extcsv['OBSERVATIONS'].values())
+        LOGGER.debug('Assessing order of #OBSERVATIONS.Time column')
+        success = True
 
+        observations = zip(*extcsv.extcsv['OBSERVATIONS'].values())
         observations_valueline = extcsv.line_num('OBSERVATIONS') + 2
+
         times_encountered = {}
         rows_to_remove = []
 
@@ -399,15 +432,11 @@ class TotalOzoneObsValidator(DatasetValidator):
             if time not in times_encountered:
                 times_encountered[time] = row
             elif row == times_encountered[time]:
-                msg = 'Duplicate observations for #OBSERVATIONS.Time {}' \
-                      .format(time)
-                self._warning(1000, line_num, msg)
-
+                if not self._add_to_report(115, line_num, time=time):
+                    success = False
                 rows_to_remove.append(index)
-            else:
-                msg = 'Found non-unique observations with #OBSERVATIONS.Time' \
-                      ' {}'.format(time)
-                self._warning(51, line_num, msg)
+            elif not self._add_to_report(116, line_num, time=time):
+                success = False
 
         rows_to_remove.reverse()
         for index in rows_to_remove:
@@ -415,8 +444,8 @@ class TotalOzoneObsValidator(DatasetValidator):
                 column.pop(index)
 
         if not in_order:
-            msg = '#OBSERVATIONS.Time found in non-chronological order'
-            self._warning(50, observations_valueline, msg)
+            if not self._add_to_report(114, observations_valueline):
+                success = False
 
             sorted_times = sorted(extcsv.extcsv['OBSERVATIONS']['Time'])
             sorted_rows = [times_encountered[time] for time in sorted_times]
@@ -425,7 +454,7 @@ class TotalOzoneObsValidator(DatasetValidator):
                 column = list(map(lambda row: row[field_num], sorted_rows))
                 extcsv.extcsv['OBSERVATIONS'][field] = column
 
-        return True
+        return success
 
 
 class SpectralValidator(DatasetValidator):
@@ -433,8 +462,8 @@ class SpectralValidator(DatasetValidator):
     Dataset-specific validator for Spectral files.
     """
 
-    def __init__(self):
-        super(SpectralValidator, self).__init__()
+    def __init__(self, reporter):
+        super(SpectralValidator, self).__init__(reporter)
 
     def check_all(self, extcsv):
         """
@@ -467,23 +496,21 @@ class SpectralValidator(DatasetValidator):
 
         LOGGER.debug('Assessing #TIMESTAMP, #GLOBAL, #GLOBAL_SUMMARY'
                      ' table counts')
+        success = True
 
-        global_summary_table = 'GLOBAL_SUMMARY_NSF' \
+        summary_table = 'GLOBAL_SUMMARY_NSF' \
             if 'GLOBAL_SUMMARY_NSF' in extcsv.extcsv \
             else 'GLOBAL_SUMMARY'
 
         timestamp_count = extcsv.table_count('TIMESTAMP')
         global_count = extcsv.table_count('GLOBAL')
-        global_summary_count = extcsv.table_count(global_summary_table)
+        summary_count = extcsv.table_count(summary_table)
 
-        if not timestamp_count == global_count == global_summary_count:
-            msg = 'Required Spectral tables #TIMESTAMP, #GLOBAL, and #{}' \
-                  ' have uneven counts {}, {}, and {}: must be even counts' \
-                  ' of each'.format(global_summary_table, timestamp_count,
-                                    global_count, global_summary_count)
-            self._warning(147, None, msg)
+        if not timestamp_count == global_count == summary_count:
+            if not self._add_to_report(126, summary_table=summary_table):
+                success = False
 
-        return True
+        return success
 
 
 class LidarValidator(DatasetValidator):
@@ -491,8 +518,8 @@ class LidarValidator(DatasetValidator):
     Dataset-specific validator for Lidar files.
     """
 
-    def __init__(self):
-        super(LidarValidator, self).__init__()
+    def __init__(self, reporter):
+        super(LidarValidator, self).__init__(reporter)
 
     def check_all(self, extcsv):
         """
@@ -524,17 +551,16 @@ class LidarValidator(DatasetValidator):
         """
 
         LOGGER.debug('Assessing #OZONE_PROFILE, #GLOBAL_SUMMARY table counts')
+        success = True
 
         profile_count = extcsv.table_count('OZONE_PROFILE')
         summary_count = extcsv.table_count('OZONE_SUMMARY')
 
         if profile_count != summary_count:
-            msg = 'Required Lidar tables #OZONE_PROFILE and #OZONE_SUMMARY' \
-                  ' have uneven counts {}, {}: must be equal counts of each' \
-                  .format(profile_count, summary_count)
-            self._warning(146, None, msg)
+            if not self._add_to_report(125):
+                success = False
 
-        return True
+        return success
 
 
 class UmkehrValidator(DatasetValidator):
@@ -542,8 +568,8 @@ class UmkehrValidator(DatasetValidator):
     Dataset-specific validator for Umkehr files.
     """
 
-    def __init__(self):
-        super(UmkehrValidator, self).__init__()
+    def __init__(self, reporter):
+        super(UmkehrValidator, self).__init__(reporter)
 
     def check_all(self, extcsv):
         """
@@ -580,8 +606,9 @@ class UmkehrValidator(DatasetValidator):
         data_table = 'N14_VALUES' if level == 1.0 else 'C_PROFILE'
 
         LOGGER.debug('Assessing order of #{}.Date column'.format(data_table))
+        success = True
 
-        observations_valueline = extcsv.line_num(data_table) + 2
+        data_table_valueline = extcsv.line_num(data_table) + 2
         dates_encountered = {}
         rows_to_remove = []
 
@@ -590,7 +617,7 @@ class UmkehrValidator(DatasetValidator):
         in_order = True
         prev_date = None
         for index, row in enumerate(columns):
-            line_num = observations_valueline + index
+            line_num = data_table_valueline + index
             observation_date = row[0]
 
             if prev_date and observation_date < prev_date:
@@ -600,15 +627,13 @@ class UmkehrValidator(DatasetValidator):
             if observation_date not in dates_encountered:
                 dates_encountered[observation_date] = row
             elif row == dates_encountered[observation_date]:
-                msg = 'Duplicate data ignored with non-unique #{}.Date' \
-                      .format(data_table)
-                self._warning(47, line_num, msg)
-
+                if not self._add_to_report(119, line_num, table=data_table,
+                                           date=observation_date):
+                    success = False
                 rows_to_remove.append(index)
-            else:
-                msg = '#Found multiple observations under #DAILY.Date {}' \
-                      .format(observation_date)
-                self._error(48, line_num, msg)
+            elif not self._add_to_report(120, line_num, table=data_table,
+                                         date=observation_date):
+                success = False
 
         rows_to_remove.reverse()
         for index in rows_to_remove:
@@ -616,9 +641,9 @@ class UmkehrValidator(DatasetValidator):
                 column.pop(index)
 
         if not in_order:
-            msg = '#{}.Date found in non-chronological order' \
-                  .format(data_table)
-            self._warning(49, observations_valueline, msg)
+            if not self._add_to_report(118, data_table_valueline,
+                                       table=data_table):
+                success = False
 
             sorted_dates = sorted(extcsv.extcsv[data_table]['Date'])
             sorted_rows = [dates_encountered[date_] for date_ in sorted_dates]
@@ -627,7 +652,7 @@ class UmkehrValidator(DatasetValidator):
                 column = list(map(lambda row: row[fieldnum], sorted_rows))
                 extcsv.extcsv[data_table][field] = column
 
-        return True
+        return success
 
     def check_timestamps(self, extcsv):
         """
@@ -639,6 +664,7 @@ class UmkehrValidator(DatasetValidator):
         """
 
         LOGGER.debug('Assessing #TIMESTAMP tables for similarity')
+        success = True
 
         level = extcsv.extcsv['CONTENT']['Level']
         data_table = 'N14_VALUES' if level == 1.0 else 'C_PROFILE'
@@ -651,17 +677,15 @@ class UmkehrValidator(DatasetValidator):
         timestamp1_valueline = timestamp1_startline + 2
 
         if timestamp1_date != observation_dates[0]:
-            msg = '#TIMESTAMP.Date before #{table} does not equal' \
-                  ' first date of #{table}'.format(table=data_table)
-            self._warning(150, timestamp1_valueline, msg)
-
+            if not self._add_to_report(121, timestamp1_valueline,
+                                       table=data_table):
+                success = False
             extcsv.extcsv['TIMESTAMP']['Date'] = observation_dates[0]
 
         timestamp_count = extcsv.table_count('TIMESTAMP')
         if timestamp_count == 1:
-            msg = '#TIMESTAMP table after #{} is missing, deriving' \
-                  ' based on requirements'.format(data_table)
-            self._warning(153, None, msg)
+            if not self._add_to_report(123, table=data_table):
+                success = False
 
             utcoffset = extcsv.extcsv['TIMESTAMP']['UTCOffset']
             final_date = observation_dates[-1]
@@ -681,23 +705,23 @@ class UmkehrValidator(DatasetValidator):
             else timestamp2_startline + 2
 
         if timestamp2_date != observation_dates[-1]:
-            msg = '#TIMESTAMP.Date after #{table} does not equal' \
-                  ' last date of #{table}'.format(table=data_table)
-            self._warning(151, timestamp2_valueline, msg)
+            if not self._add_to_report(122, timestamp2_valueline,
+                                       table=data_table):
+                success = False
 
             extcsv.extcsv['TIMESTAMP_2']['Date'] = observation_dates[-1]
 
         if timestamp2_time != timestamp1_time:
-            msg = 'Inconsistent Time values between #TIMESTAMP tables'
-            self._warning(118, timestamp2_valueline, msg)
+            if not self._add_to_report(90, timestamp2_valueline):
+                success = False
 
         if timestamp_count > 2:
-            msg = 'More than 2 #TIMESTAMP tables present; removing extras'
-            line = extcsv.line_num('TIMESTAMP_3')
-            self._warning(116, line, msg)
+            timestamp3_startline = extcsv.line_num('TIMESTAMP_3')
+            if not self._add_to_report(108, timestamp3_startline):
+                success = False
 
             for ind in range(3, timestamp_count + 1):
                 table_name = 'TIMESTAMP_' + str(ind)
                 extcsv.remove_table(table_name)
 
-        return True
+        return success
