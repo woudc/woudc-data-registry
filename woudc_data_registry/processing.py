@@ -256,7 +256,7 @@ class Process(object):
             LOGGER.info(msg)
         else:
             dataset = self.extcsv.extcsv['CONTENT']['Category']
-            dataset_validator = get_validator(dataset)
+            dataset_validator = get_validator(dataset, self.reports)
 
             time_series_ok = self.check_time_series()
             dataset_validated = dataset_validator.check_all(self.extcsv)
