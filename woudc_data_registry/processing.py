@@ -228,8 +228,7 @@ class Process(object):
                                     ' addition.')
                         instrument_ok = True
                     else:
-                        instrument_ok = self.add_instrument(verify=verify_only,
-                                                            bypass=False)
+                        instrument_ok = self.add_instruments(bypass=False)
 
                     if instrument_ok:
                         self._add_to_report(201)
