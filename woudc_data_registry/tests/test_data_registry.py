@@ -62,8 +62,8 @@ def dummy_extCSV(source):
     with dummy output settings (no logs or reports).
     """
 
-    report_ = report.ReportWriter()
-    return parser.ExtendedCSV(source, report_)
+    error_bank = report.OperatorReport()
+    return parser.ExtendedCSV(source, error_bank)
 
 
 def resolve_test_data_path(test_data_file):
@@ -883,7 +883,7 @@ class DatasetValidationTest(unittest.TestCase):
     def test_get_validator(self):
         """Test that get_validator returns the correct Validator classes"""
 
-        null_reporter = report.ReportWriter()
+        null_reporter = report.OperatorReport()
         datasets = ['Broad-band', 'Lidar', 'Multi-band', 'OzoneSonde',
                     'RocketSonde', 'Spectral', 'TotalOzone', 'TotalOzoneObs']
         for dataset in datasets:
@@ -1466,11 +1466,11 @@ class ReportGenerationTest(unittest.TestCase):
         """Test that operator report filepaths are generated properly"""
 
         project_root = resolve_test_data_path('data/reports/sandbox')
-        reporter = report.ReportWriter(project_root, run=1)
+        op_report = report.OperatorReport(project_root, run=1)
 
         # Test using manually entered run numbers.
-        report_file4 = reporter.operator_report_filepath(4)
-        report_file61 = reporter.operator_report_filepath(61)
+        report_file4 = op_report.filepath(4)
+        report_file61 = op_report.filepath(61)
 
         self.assertIn(project_root, report_file4)
         self.assertIn(project_root, report_file61)
@@ -1481,7 +1481,7 @@ class ReportGenerationTest(unittest.TestCase):
         self.assertNotEquals(report_file4, report_file61)
 
         # Test that instance run report is used if none is specified.
-        report_file1 = reporter.operator_report_filepath()
+        report_file1 = op_report.filepath()
 
         self.assertIn(project_root, report_file1)
         self.assertIn('1', report_file1)
@@ -1489,51 +1489,87 @@ class ReportGenerationTest(unittest.TestCase):
         self.assertNotEquals(report_file1, report_file4)
         self.assertNotEquals(report_file1, report_file61)
 
-    def test_run_number_determination(self):
+    def test_operator_report_run_number_determination(self):
         """Test automatic run number determination from the file system"""
 
         # Test that an empty working directory results in run number 1.
         root = resolve_test_data_path('data/reports/run_numbers/no_reports')
-        reporter = report.ReportWriter(root)
+        op_report = report.OperatorReport(root)
 
-        operator_report_path = reporter.operator_report_filepath()
-        self.assertEquals(reporter._run_number, 1)
+        operator_report_path = op_report.filepath()
+        self.assertEquals(op_report._run_number, 1)
         self.assertIn('run1.csv', operator_report_path)
 
         # Test that run number is adjusted when one previous run has happened.
         root = resolve_test_data_path('data/reports/run_numbers/one_report')
-        reporter = report.ReportWriter(root)
+        op_report = report.OperatorReport(root)
 
-        operator_report_path = reporter.operator_report_filepath()
-        self.assertEquals(reporter._run_number, 2)
+        operator_report_path = op_report.filepath()
+        self.assertEquals(op_report._run_number, 2)
         self.assertIn('run2.csv', operator_report_path)
 
         # Test that run number is adjusted when multiple runs have happened.
         root = resolve_test_data_path('data/reports/run_numbers/six_reports')
-        reporter = report.ReportWriter(root)
+        op_report = report.OperatorReport(root)
 
-        operator_report_path = reporter.operator_report_filepath()
-        self.assertEquals(reporter._run_number, 7)
+        operator_report_path = op_report.filepath()
+        self.assertEquals(op_report._run_number, 7)
         self.assertIn('run7.csv', operator_report_path)
 
         # Test that run number is correct when past runs start from above 1.
         root = resolve_test_data_path('data/reports/run_numbers/jump_reports')
-        reporter = report.ReportWriter(root)
+        op_report = report.OperatorReport(root)
 
-        operator_report_path = reporter.operator_report_filepath()
-        self.assertEquals(reporter._run_number, 6)
+        operator_report_path = op_report.filepath()
+        self.assertEquals(op_report._run_number, 6)
         self.assertIn('run6.csv', operator_report_path)
+
+    def test_run_report_run_number_determination(self):
+        """Test automatic run number determination from the file system"""
+
+        # Test that an empty working directory results in run number 1.
+        root = resolve_test_data_path('data/reports/run_numbers/no_reports')
+        run_report = report.RunReport(root)
+
+        run_report_path = run_report.filepath()
+        self.assertEquals(run_report._run_number, 1)
+        self.assertIn('run1', run_report_path)
+
+        # Test that run number is adjusted when one previous run has happened.
+        root = resolve_test_data_path('data/reports/run_numbers/one_report')
+        run_report = report.RunReport(root)
+
+        run_report_path = run_report.filepath()
+        self.assertEquals(run_report._run_number, 2)
+        self.assertIn('run2', run_report_path)
+
+        # Test that run number is adjusted when multiple runs have happened.
+        root = resolve_test_data_path('data/reports/run_numbers/six_reports')
+        run_report = report.RunReport(root)
+
+        run_report_path = run_report.filepath()
+        self.assertEquals(run_report._run_number, 7)
+        self.assertIn('run7', run_report_path)
+
+        # Test that run number is correct when past runs start from above 1.
+        root = resolve_test_data_path('data/reports/run_numbers/jump_reports')
+        run_report = report.RunReport(root)
+
+        run_report_path = run_report.filepath()
+        self.assertEquals(run_report._run_number, 6)
+        self.assertIn('run6', run_report_path)
 
     def test_output_location(self):
         """Test that all output file locations are in the workin directory"""
 
         project_root = resolve_test_data_path('data/reports/sandbox')
+        op_report = report.OperatorReport(project_root, run=47)
         run_report = report.RunReport(project_root, run=47)
-        reporter = report.ReportWriter(project_root, run=47)
+        email_report = report.EmailSummary(project_root)
 
-        operator_path = pathlib.Path(reporter.operator_report_filepath())
+        operator_path = pathlib.Path(op_report.filepath())
         run_report_path = pathlib.Path(run_report.filepath())
-        email_report_path = pathlib.Path(reporter.email_report_filepath())
+        email_report_path = pathlib.Path(email_report.filepath())
 
         self.assertEquals(str(operator_path.parent), project_root)
         self.assertEquals(str(run_report_path.parent), project_root)
@@ -1547,16 +1583,16 @@ class ReportGenerationTest(unittest.TestCase):
         all_errors = resolve_test_data_path('data/reports/all_errors.csv')
 
         project_root = resolve_test_data_path('data/reports/sandbox')
-        reporter = report.ReportWriter(project_root)
+        op_report = report.OperatorReport(project_root)
 
-        reporter.read_error_definitions(all_warnings)
-        self.assertIn(1, reporter._error_definitions)
-        _, success = reporter.add_message(1)
+        op_report.read_error_definitions(all_warnings)
+        self.assertIn(1, op_report._error_definitions)
+        _, success = op_report.add_message(1)
         self.assertFalse(success)
 
-        reporter.read_error_definitions(all_errors)
-        self.assertIn(1, reporter._error_definitions)
-        _, success = reporter.add_message(1)
+        op_report.read_error_definitions(all_errors)
+        self.assertIn(1, op_report._error_definitions)
+        _, success = op_report.add_message(1)
         self.assertTrue(success)
 
     def test_passing_operator_report(self):
@@ -1568,8 +1604,8 @@ class ReportGenerationTest(unittest.TestCase):
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        reporter = report.ReportWriter(output_root)
-        ecsv = parser.ExtendedCSV(contents, reporter)
+        op_report = report.OperatorReport(output_root)
+        ecsv = parser.ExtendedCSV(contents, op_report)
 
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
@@ -1582,9 +1618,9 @@ class ReportGenerationTest(unittest.TestCase):
         output_path = os.path.join(output_root,
                                    'operator-report-{}-run1.csv'.format(today))
 
-        reporter.add_message(200)  # File passes validation
-        reporter.record_passing_file(infile, ecsv, data_record)
-        reporter.close()
+        op_report.add_message(200)  # File passes validation
+        op_report.write_passing_file(infile, ecsv, data_record)
+        op_report.close()
 
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
@@ -1610,7 +1646,7 @@ class ReportGenerationTest(unittest.TestCase):
         contents = util.read_file(infile)
 
         run_report = report.RunReport(output_root)
-        error_bank = report.ReportWriter()
+        error_bank = report.OperatorReport()
         ecsv = parser.ExtendedCSV(contents, error_bank)
 
         ecsv.validate_metadata_tables()
@@ -1640,8 +1676,8 @@ class ReportGenerationTest(unittest.TestCase):
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        reporter = report.ReportWriter(output_root)
-        ecsv = parser.ExtendedCSV(contents, reporter)
+        op_report = report.OperatorReport(output_root)
+        ecsv = parser.ExtendedCSV(contents, op_report)
 
         # Some warnings are encountered during parsing.
         ecsv.validate_metadata_tables()
@@ -1655,9 +1691,9 @@ class ReportGenerationTest(unittest.TestCase):
         output_path = os.path.join(output_root,
                                    'operator-report-{}-run1.csv'.format(today))
 
-        reporter.add_message(200)  # File passes validation
-        reporter.record_passing_file(infile, ecsv, data_record)
-        reporter.close()
+        op_report.add_message(200)  # File passes validation
+        op_report.write_passing_file(infile, ecsv, data_record)
+        op_report.close()
 
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
@@ -1692,13 +1728,13 @@ class ReportGenerationTest(unittest.TestCase):
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        reporter = report.ReportWriter(output_root)
+        op_report = report.OperatorReport(output_root)
         ecsv = None
 
         agency = 'UNKNOWN'
 
         try:
-            ecsv = parser.ExtendedCSV(contents, reporter)
+            ecsv = parser.ExtendedCSV(contents, op_report)
             ecsv.validate_metadata_tables()
             agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
@@ -1707,9 +1743,9 @@ class ReportGenerationTest(unittest.TestCase):
         except (parser.MetadataValidationError, parser.NonStandardDataError):
             output_path = os.path.join(output_root, 'run1')
 
-            reporter.add_message(209)
-            reporter.record_failing_file(infile, agency, ecsv)
-            reporter.close()
+            op_report.add_message(209)
+            op_report.write_failing_file(infile, agency, ecsv)
+            op_report.close()
 
         today = datetime.now().strftime('%Y-%m-%d')
         output_path = os.path.join(output_root,
@@ -1757,7 +1793,7 @@ class ReportGenerationTest(unittest.TestCase):
         contents = util.read_file(infile)
 
         run_report = report.RunReport(output_root)
-        error_bank = report.ReportWriter()
+        error_bank = report.OperatorReport()
         ecsv = None
 
         # Agency typically filled in with FTP username for failing files.
@@ -1793,7 +1829,7 @@ class ReportGenerationTest(unittest.TestCase):
         contents = util.read_file(infile)
 
         run_report = report.RunReport(output_root)
-        error_bank = report.ReportWriter()
+        error_bank = report.OperatorReport()
 
         agency = 'UNKNOWN'
 
@@ -1822,7 +1858,7 @@ class ReportGenerationTest(unittest.TestCase):
         output_root = resolve_test_data_path('data/reports/sandbox')
         infile_root = resolve_test_data_path('data/reports/pass_and_fail')
 
-        reporter = report.ReportWriter(output_root)
+        op_report = report.OperatorReport(output_root)
 
         warnings = {}
         errors = {}
@@ -1840,13 +1876,13 @@ class ReportGenerationTest(unittest.TestCase):
 
             try:
                 contents = util.read_file(fullpath)
-                ecsv = parser.ExtendedCSV(contents, reporter)
+                ecsv = parser.ExtendedCSV(contents, op_report)
             except (parser.MetadataValidationError,
                     parser.NonStandardDataError) as err:
                 expected_errors[fullpath] = len(err.errors)
 
-                reporter.add_message(209)
-                reporter.record_failing_file(fullpath, agency)
+                op_report.add_message(209)
+                op_report.write_failing_file(fullpath, agency)
                 continue
 
             try:
@@ -1859,16 +1895,16 @@ class ReportGenerationTest(unittest.TestCase):
 
                 expected_warnings[fullpath] = len(ecsv.warnings)
                 expected_errors[fullpath] = 0
-                reporter.record_passing_file(fullpath, ecsv, data_record)
+                op_report.write_passing_file(fullpath, ecsv, data_record)
             except (parser.MetadataValidationError,
                     parser.NonStandardDataError):
                 expected_warnings[fullpath] = len(ecsv.warnings)
                 expected_errors[fullpath] = len(ecsv.errors)
 
-                reporter.add_message(209)
-                reporter.record_failing_file(fullpath, agency, ecsv)
+                op_report.add_message(209)
+                op_report.write_failing_file(fullpath, agency, ecsv)
 
-        reporter.close()
+        op_report.close()
 
         today = datetime.now().strftime('%Y-%m-%d')
         output_path = os.path.join(output_root,
@@ -1908,7 +1944,7 @@ class ReportGenerationTest(unittest.TestCase):
         infile_root = resolve_test_data_path('data/reports/pass_and_fail')
 
         run_report = report.RunReport(output_root)
-        error_bank = report.ReportWriter()
+        error_bank = report.OperatorReport()
         agency = 'MSC'
 
         expected_passes = set()
@@ -1966,7 +2002,7 @@ class ReportGenerationTest(unittest.TestCase):
         infile_root = resolve_test_data_path('data/reports/agencies')
 
         run_report = report.RunReport(output_root)
-        error_bank = report.ReportWriter()
+        error_bank = report.OperatorReport()
 
         expected_passes = {}
         expected_fails = {}
