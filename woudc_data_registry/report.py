@@ -89,21 +89,21 @@ class ReportWriter:
 
         self._contributor_status = {}
         self._report_batch = OrderedDict([
-            ('Processing Status', ''),
+            ('Processing Status', None),
             ('Error Type', []),
             ('Error Code', []),
             ('Line Number', []),
             ('Message', []),
-            ('Dataset', ''),
-            ('Data Level', ''),
-            ('Data Form', ''),
-            ('Agency', ''),
-            ('Station Type', ''),
-            ('Station ID', ''),
-            ('Filename', ''),
-            ('Incoming Path', ''),
-            ('Outgoing Path', ''),
-            ('URN', '')
+            ('Dataset', None),
+            ('Data Level', None),
+            ('Data Form', None),
+            ('Agency', None),
+            ('Station Type', None),
+            ('Station ID', None),
+            ('Filename', None),
+            ('Incoming Path', None),
+            ('Outgoing Path', None),
+            ('URN', None)
         ])
 
         if root is None:
@@ -187,11 +187,11 @@ class ReportWriter:
             except (TypeError, KeyError, AttributeError):
                 # Some parsing or processing error occurred and the
                 # ExtCSV value is unavailable.
-                self._report_batch[batch_field] = ''
+                self._report_batch[batch_field] = None
 
         if data_record is None:
-            self._report_batch['Outgoing Path'] = ''
-            self._report_batch['URN'] = ''
+            self._report_batch['Outgoing Path'] = None
+            self._report_batch['URN'] = None
         else:
             self._report_batch['Outgoing Path'] = \
                 data_record.get_waf_path(config.WDR_WAF_BASEDIR)
@@ -214,10 +214,10 @@ class ReportWriter:
             self.write_run_report()
 
         for field, column in self._report_batch.items():
-            if isinstance(column, str):
-                self._report_batch[field] = ''
-            else:
+            if isinstance(column, list):
                 self._report_batch[field].clear()
+            else:
+                self._report_batch[field] = None
 
     def run_report_filepath(self, run=0):
         """
@@ -451,14 +451,13 @@ class ReportWriter:
             self.operator_report.write(header + '\n')
 
         column_names = ['Line Number', 'Error Type', 'Error Code', 'Message']
-        columns = zip(*[self._report_batch[name] for name in column_names])
+        rows = zip(*[self._report_batch[name] for name in column_names])
 
-        for line, err_type, err_code, message in columns:
-            line = '' if line is None else str(line)
-            row = ','.join([
+        for line, err_type, err_code, message in rows:
+            tokens = [
                 self._report_batch['Processing Status'],
                 err_type,
-                str(err_code),
+                err_code,
                 line,
                 message.replace(',', '\\,'),
                 self._report_batch['Dataset'],
@@ -471,8 +470,11 @@ class ReportWriter:
                 self._report_batch['Incoming Path'],
                 self._report_batch['Outgoing Path'],
                 self._report_batch['URN']
-            ])
+            ]
 
+            row = ','.join([
+                '' if token is None else str(token) for token in tokens
+            ])
             self.operator_report.write(row + '\n')
 
     def write_email_report(self, addresses):
