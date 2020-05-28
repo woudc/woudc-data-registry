@@ -58,7 +58,7 @@ from woudc_data_registry.processing import Process
 
 from woudc_data_registry.registry import Registry
 from woudc_data_registry.search import SearchIndex
-from woudc_data_registry.report import ReportWriter
+from woudc_data_registry.report import ReportWriter, RunReport
 
 
 LOGGER = logging.getLogger(__name__)
@@ -103,6 +103,7 @@ def orchestrate(source, working_dir, run_number=0,
     registry = Registry()
     search_engine = SearchIndex()
 
+    run_report = RunReport(working_dir, run_number)
     reporter = ReportWriter(working_dir, run_number)
 
     with click.progressbar(files_to_process, label='Processing files') as run_:
@@ -113,6 +114,7 @@ def orchestrate(source, working_dir, run_number=0,
             if not is_text_file(file_to_process):
                 _, is_error = reporter.add_message(1)
                 if is_error:
+                    run_report.write_failing_file(file_to_process, contributor)
                     reporter.record_failing_file(file_to_process, contributor)
                     failed.append(file_to_process)
                     continue
@@ -138,6 +140,7 @@ def orchestrate(source, working_dir, run_number=0,
                 if data_record is None:
                     click.echo('Not ingesting')
                     failed.append(file_to_process)
+                    run_report.write_failing_file(file_to_process, contributor)
                     reporter.record_failing_file(file_to_process, contributor,
                                                  extcsv=extcsv)
                 else:
@@ -154,6 +157,7 @@ def orchestrate(source, working_dir, run_number=0,
                         p.persist()
                         click.echo('Ingested successfully')
 
+                    run_report.write_passing_file(file_to_process, contributor)
                     reporter.record_passing_file(file_to_process, extcsv,
                                                  data_record)
                     passed.append(file_to_process)
@@ -162,22 +166,26 @@ def orchestrate(source, working_dir, run_number=0,
                 LOGGER.error('Unknown file format: {}'.format(err))
 
                 click.echo('Not ingested')
+                run_report.write_failing_file(file_to_process, contributor)
                 reporter.record_failing_file(file_to_process, contributor)
                 failed.append(file_to_process)
             except NonStandardDataError as err:
                 LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
 
                 click.echo('Not ingested')
+                run_report.write_failing_file(file_to_process, contributor)
                 reporter.record_failing_file(file_to_process, contributor)
                 failed.append(file_to_process)
             except MetadataValidationError as err:
                 LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
 
                 click.echo('Not ingested')
+                run_report.write_failing_file(file_to_process, contributor)
                 reporter.record_failing_file(file_to_process, contributor)
                 failed.append(file_to_process)
             except Exception as err:
                 click.echo('Processing failed: {}'.format(err))
+                run_report.write_failing_file(file_to_process, contributor)
                 reporter.record_failing_file(file_to_process, contributor)
                 failed.append(file_to_process)
 

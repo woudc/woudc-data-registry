@@ -1439,11 +1439,11 @@ class ReportGenerationTest(unittest.TestCase):
         """Test that run report filepaths are generated properly"""
 
         project_root = resolve_test_data_path('data/reports/sandbox')
-        reporter = report.ReportWriter(project_root, run=1)
+        run_report = report.RunReport(project_root, run=1)
 
         # Test using manually entered run numbers.
-        report_file4 = reporter.run_report_filepath(4)
-        report_file61 = reporter.run_report_filepath(61)
+        report_file4 = run_report.filepath(4)
+        report_file61 = run_report.filepath(61)
 
         self.assertIn(project_root, report_file4)
         self.assertIn(project_root, report_file61)
@@ -1454,7 +1454,7 @@ class ReportGenerationTest(unittest.TestCase):
         self.assertNotEquals(report_file4, report_file61)
 
         # Test that instance run report is used if none is specified.
-        report_file1 = reporter.run_report_filepath()
+        report_file1 = run_report.filepath()
 
         self.assertIn(project_root, report_file1)
         self.assertIn('1', report_file1)
@@ -1528,10 +1528,11 @@ class ReportGenerationTest(unittest.TestCase):
         """Test that all output file locations are in the workin directory"""
 
         project_root = resolve_test_data_path('data/reports/sandbox')
+        run_report = report.RunReport(project_root, run=47)
         reporter = report.ReportWriter(project_root, run=47)
 
         operator_path = pathlib.Path(reporter.operator_report_filepath())
-        run_report_path = pathlib.Path(reporter.run_report_filepath())
+        run_report_path = pathlib.Path(run_report.filepath())
         email_report_path = pathlib.Path(reporter.email_report_filepath())
 
         self.assertEquals(str(operator_path.parent), project_root)
@@ -1608,8 +1609,9 @@ class ReportGenerationTest(unittest.TestCase):
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        reporter = report.ReportWriter(output_root)
-        ecsv = parser.ExtendedCSV(contents, reporter)
+        run_report = report.RunReport(output_root)
+        error_bank = report.ReportWriter()
+        ecsv = parser.ExtendedCSV(contents, error_bank)
 
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
@@ -1619,9 +1621,7 @@ class ReportGenerationTest(unittest.TestCase):
         agency = ecsv.extcsv['DATA_GENERATION']['Agency']
         output_path = os.path.join(output_root, 'run1')
 
-        reporter.add_message(200, None)
-        reporter.record_passing_file(infile, ecsv, data_record)
-        reporter.close()
+        run_report.write_passing_file(infile, agency)
 
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
@@ -1756,14 +1756,15 @@ class ReportGenerationTest(unittest.TestCase):
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        reporter = report.ReportWriter(output_root)
+        run_report = report.RunReport(output_root)
+        error_bank = report.ReportWriter()
         ecsv = None
 
         # Agency typically filled in with FTP username for failing files.
         agency = 'rmda'
 
         try:
-            ecsv = parser.ExtendedCSV(contents, reporter)
+            ecsv = parser.ExtendedCSV(contents, error_bank)
             ecsv.validate_metadata_tables()
             agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
@@ -1772,9 +1773,7 @@ class ReportGenerationTest(unittest.TestCase):
         except (parser.MetadataValidationError, parser.NonStandardDataError):
             output_path = os.path.join(output_root, 'run1')
 
-            reporter.add_message(209)
-            reporter.record_failing_file(infile, agency, ecsv)
-            reporter.close()
+            run_report.write_failing_file(infile, agency)
 
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
@@ -1793,20 +1792,18 @@ class ReportGenerationTest(unittest.TestCase):
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        reporter = report.ReportWriter(output_root)
-        ecsv = None
+        run_report = report.RunReport(output_root)
+        error_bank = report.ReportWriter()
 
         agency = 'UNKNOWN'
 
         try:
-            ecsv = parser.ExtendedCSV(contents, reporter)
+            _ = parser.ExtendedCSV(contents, error_bank)
             raise AssertionError('Parsing of {} did not fail'.format(infile))
         except (parser.MetadataValidationError, parser.NonStandardDataError):
             output_path = os.path.join(output_root, 'run1')
 
-            reporter.add_message(209)
-            reporter.record_failing_file(infile, agency, ecsv)
-            reporter.close()
+            run_report.write_failing_file(infile, agency)
 
             self.assertTrue(os.path.exists(output_path))
             with open(output_path) as output:
@@ -1910,7 +1907,8 @@ class ReportGenerationTest(unittest.TestCase):
         output_root = resolve_test_data_path('data/reports/sandbox')
         infile_root = resolve_test_data_path('data/reports/pass_and_fail')
 
-        reporter = report.ReportWriter(output_root)
+        run_report = report.RunReport(output_root)
+        error_bank = report.ReportWriter()
         agency = 'MSC'
 
         expected_passes = set()
@@ -1921,13 +1919,11 @@ class ReportGenerationTest(unittest.TestCase):
 
             try:
                 contents = util.read_file(fullpath)
-                ecsv = parser.ExtendedCSV(contents, reporter)
+                ecsv = parser.ExtendedCSV(contents, error_bank)
             except (parser.MetadataValidationError,
                     parser.NonStandardDataError):
                 expected_fails.add(fullpath)
-
-                reporter.add_message(209)
-                reporter.record_failing_file(fullpath, agency)
+                run_report.write_failing_file(fullpath, agency)
                 continue
 
             try:
@@ -1937,17 +1933,11 @@ class ReportGenerationTest(unittest.TestCase):
                 data_record.filename = infile
 
                 expected_passes.add(fullpath)
-
-                reporter.add_message(200)
-                reporter.record_passing_file(fullpath, ecsv, data_record)
+                run_report.write_passing_file(fullpath, agency)
             except (parser.MetadataValidationError,
                     parser.NonStandardDataError):
                 expected_fails.add(fullpath)
-
-                reporter.add_message(209)
-                reporter.record_failing_file(fullpath, agency, ecsv)
-
-        reporter.close()
+                run_report.write_failing_file(fullpath, agency)
 
         self.assertEquals(len(expected_passes), 6)
         self.assertEquals(len(expected_fails), 4)
@@ -1975,7 +1965,8 @@ class ReportGenerationTest(unittest.TestCase):
         output_root = resolve_test_data_path('data/reports/sandbox')
         infile_root = resolve_test_data_path('data/reports/agencies')
 
-        reporter = report.ReportWriter(output_root)
+        run_report = report.RunReport(output_root)
+        error_bank = report.ReportWriter()
 
         expected_passes = {}
         expected_fails = {}
@@ -1994,7 +1985,7 @@ class ReportGenerationTest(unittest.TestCase):
 
                 try:
                     contents = util.read_file(fullpath)
-                    ecsv = parser.ExtendedCSV(contents, reporter)
+                    ecsv = parser.ExtendedCSV(contents, error_bank)
                 except (parser.MetadataValidationError,
                         parser.NonStandardDataError):
                     if agency not in expected_passes:
@@ -2002,9 +1993,7 @@ class ReportGenerationTest(unittest.TestCase):
                     if agency not in expected_fails:
                         expected_fails[agency] = set()
                     expected_fails[agency].add(fullpath)
-
-                    reporter.add_message(209)
-                    reporter.record_failing_file(fullpath, agency)
+                    run_report.write_failing_file(fullpath, agency)
                     continue
 
                 try:
@@ -2021,8 +2010,7 @@ class ReportGenerationTest(unittest.TestCase):
                     data_record.filename = infile
 
                     expected_passes[agency].add(fullpath)
-                    reporter.add_message(200)
-                    reporter.record_passing_file(fullpath, ecsv, data_record)
+                    run_report.write_passing_file(fullpath, agency)
                 except (parser.MetadataValidationError,
                         parser.NonStandardDataError):
                     agency = agency_aliases[agency]
@@ -2030,12 +2018,9 @@ class ReportGenerationTest(unittest.TestCase):
                         expected_passes[agency] = set()
                     if agency not in expected_fails:
                         expected_fails[agency] = set()
+
                     expected_fails[agency].add(fullpath)
-
-                    reporter.add_message(209)
-                    reporter.record_failing_file(fullpath, agency, ecsv)
-
-        reporter.close()
+                    run_report.write_failing_file(fullpath, agency)
 
         self.assertEquals(len(expected_passes['CAS-IAP']), 1)
         self.assertEquals(len(expected_passes['DWD-MOHp']), 2)
