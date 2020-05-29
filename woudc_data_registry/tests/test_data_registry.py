@@ -62,8 +62,8 @@ def dummy_extCSV(source):
     with dummy output settings (no logs or reports).
     """
 
-    error_bank = report.OperatorReport()
-    return parser.ExtendedCSV(source, error_bank)
+    with report.OperatorReport() as error_bank:
+        return parser.ExtendedCSV(source, error_bank)
 
 
 def resolve_test_data_path(test_data_file):
@@ -883,12 +883,13 @@ class DatasetValidationTest(unittest.TestCase):
     def test_get_validator(self):
         """Test that get_validator returns the correct Validator classes"""
 
-        null_reporter = report.OperatorReport()
         datasets = ['Broad-band', 'Lidar', 'Multi-band', 'OzoneSonde',
                     'RocketSonde', 'Spectral', 'TotalOzone', 'TotalOzoneObs']
+
         for dataset in datasets:
-            validator_name = '{}Validator'.format(dataset.replace('-', ''))
-            validator = dv.get_validator(dataset, null_reporter)
+            with report.OperatorReport() as null_reporter:
+                validator_name = '{}Validator'.format(dataset.replace('-', ''))
+                validator = dv.get_validator(dataset, null_reporter)
 
             if hasattr(dv, validator_name):
                 self.assertIsInstance(validator, getattr(dv, validator_name))
@@ -1439,11 +1440,10 @@ class ReportGenerationTest(unittest.TestCase):
         """Test that operator reports write a file in the working directory"""
 
         project_root = resolve_test_data_path('data/reports/sandbox')
-        op_report = report.OperatorReport(project_root)
 
-        operator_path = pathlib.Path(op_report.filepath())
-
-        self.assertEquals(str(operator_path.parent), project_root)
+        with report.OperatorReport(project_root) as op_report:
+            operator_path = pathlib.Path(op_report.filepath())
+            self.assertEquals(str(operator_path.parent), project_root)
 
     def test_run_report_output_location(self):
         """Test that run reports write a file in the working directory"""
@@ -1452,7 +1452,6 @@ class ReportGenerationTest(unittest.TestCase):
         run_report = report.RunReport(project_root)
 
         run_report_path = pathlib.Path(run_report.filepath())
-
         self.assertEquals(str(run_report_path.parent), project_root)
 
     def test_email_summary_output_location(self):
@@ -1462,7 +1461,6 @@ class ReportGenerationTest(unittest.TestCase):
         email_report = report.EmailSummary(project_root)
 
         email_report_path = pathlib.Path(email_report.filepath())
-
         self.assertEquals(str(email_report_path.parent), project_root)
 
     def test_uses_error_definition(self):
@@ -1473,17 +1471,19 @@ class ReportGenerationTest(unittest.TestCase):
         all_errors = resolve_test_data_path('data/reports/all_errors.csv')
 
         project_root = resolve_test_data_path('data/reports/sandbox')
-        op_report = report.OperatorReport(project_root)
 
-        op_report.read_error_definitions(all_warnings)
-        self.assertIn(1, op_report._error_definitions)
-        _, success = op_report.add_message(1)
-        self.assertFalse(success)
+        with report.OperatorReport(project_root) as op_report:
+            op_report.read_error_definitions(all_warnings)
 
-        op_report.read_error_definitions(all_errors)
-        self.assertIn(1, op_report._error_definitions)
-        _, success = op_report.add_message(1)
-        self.assertTrue(success)
+            self.assertIn(1, op_report._error_definitions)
+            _, success = op_report.add_message(1)
+            self.assertFalse(success)
+
+            op_report.read_error_definitions(all_errors)
+
+            self.assertIn(1, op_report._error_definitions)
+            _, success = op_report.add_message(1)
+            self.assertTrue(success)
 
     def test_passing_operator_report(self):
         """Test that a passing file is written in the operator report"""
@@ -1494,23 +1494,22 @@ class ReportGenerationTest(unittest.TestCase):
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        op_report = report.OperatorReport(output_root)
-        ecsv = parser.ExtendedCSV(contents, op_report)
+        with report.OperatorReport(output_root) as op_report:
+            ecsv = parser.ExtendedCSV(contents, op_report)
 
-        ecsv.validate_metadata_tables()
-        ecsv.validate_dataset_tables()
-        data_record = models.DataRecord(ecsv)
-        data_record.filename = filename
+            ecsv.validate_metadata_tables()
+            ecsv.validate_dataset_tables()
+            data_record = models.DataRecord(ecsv)
+            data_record.filename = filename
 
-        agency = ecsv.extcsv['DATA_GENERATION']['Agency']
+            agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
-        today = datetime.now().strftime('%Y-%m-%d')
-        output_path = os.path.join(output_root,
-                                   'operator-report-{}.csv'.format(today))
+            today = datetime.now().strftime('%Y-%m-%d')
+            output_path = os.path.join(output_root,
+                                       'operator-report-{}.csv'.format(today))
 
-        op_report.add_message(200)  # File passes validation
-        op_report.write_passing_file(infile, ecsv, data_record)
-        op_report.close()
+            op_report.add_message(200)  # File passes validation
+            op_report.write_passing_file(infile, ecsv, data_record)
 
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
@@ -1536,18 +1535,18 @@ class ReportGenerationTest(unittest.TestCase):
         contents = util.read_file(infile)
 
         run_report = report.RunReport(output_root)
-        error_bank = report.OperatorReport()
-        ecsv = parser.ExtendedCSV(contents, error_bank)
+        with report.OperatorReport() as error_bank:
+            ecsv = parser.ExtendedCSV(contents, error_bank)
 
-        ecsv.validate_metadata_tables()
-        ecsv.validate_dataset_tables()
-        data_record = models.DataRecord(ecsv)
-        data_record.filename = filename
+            ecsv.validate_metadata_tables()
+            ecsv.validate_dataset_tables()
+            data_record = models.DataRecord(ecsv)
+            data_record.filename = filename
 
-        agency = ecsv.extcsv['DATA_GENERATION']['Agency']
-        output_path = os.path.join(output_root, 'run_report')
+            agency = ecsv.extcsv['DATA_GENERATION']['Agency']
+            output_path = os.path.join(output_root, 'run_report')
 
-        run_report.write_passing_file(infile, agency)
+            run_report.write_passing_file(infile, agency)
 
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
@@ -1566,24 +1565,23 @@ class ReportGenerationTest(unittest.TestCase):
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        op_report = report.OperatorReport(output_root)
-        ecsv = parser.ExtendedCSV(contents, op_report)
+        with report.OperatorReport(output_root) as op_report:
+            ecsv = parser.ExtendedCSV(contents, op_report)
 
-        # Some warnings are encountered during parsing.
-        ecsv.validate_metadata_tables()
-        ecsv.validate_dataset_tables()
-        data_record = models.DataRecord(ecsv)
-        data_record.filename = filename
+            # Some warnings are encountered during parsing.
+            ecsv.validate_metadata_tables()
+            ecsv.validate_dataset_tables()
+            data_record = models.DataRecord(ecsv)
+            data_record.filename = filename
 
-        agency = ecsv.extcsv['DATA_GENERATION']['Agency']
+            agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
-        today = datetime.now().strftime('%Y-%m-%d')
-        output_path = os.path.join(output_root,
-                                   'operator-report-{}.csv'.format(today))
+            today = datetime.now().strftime('%Y-%m-%d')
+            output_path = os.path.join(output_root,
+                                       'operator-report-{}.csv'.format(today))
 
-        op_report.add_message(200)  # File passes validation
-        op_report.write_passing_file(infile, ecsv, data_record)
-        op_report.close()
+            op_report.add_message(200)  # File passes validation
+            op_report.write_passing_file(infile, ecsv, data_record)
 
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
@@ -1618,24 +1616,24 @@ class ReportGenerationTest(unittest.TestCase):
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        op_report = report.OperatorReport(output_root)
         ecsv = None
-
         agency = 'UNKNOWN'
 
-        try:
-            ecsv = parser.ExtendedCSV(contents, op_report)
-            ecsv.validate_metadata_tables()
-            agency = ecsv.extcsv['DATA_GENERATION']['Agency']
+        with report.OperatorReport(output_root) as op_report:
+            try:
+                ecsv = parser.ExtendedCSV(contents, op_report)
+                ecsv.validate_metadata_tables()
+                agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
-            ecsv.validate_dataset_tables()
-            raise AssertionError('Parsing of {} did not fail'.format(infile))
-        except (parser.MetadataValidationError, parser.NonStandardDataError):
-            output_path = os.path.join(output_root, 'run1')
+                ecsv.validate_dataset_tables()
+                raise AssertionError('Parsing of {} did not fail'
+                                     .format(infile))
+            except (parser.MetadataValidationError,
+                    parser.NonStandardDataError):
+                output_path = os.path.join(output_root, 'run1')
 
-            op_report.add_message(209)
-            op_report.write_failing_file(infile, agency, ecsv)
-            op_report.close()
+                op_report.add_message(209)
+                op_report.write_failing_file(infile, agency, ecsv)
 
         today = datetime.now().strftime('%Y-%m-%d')
         output_path = os.path.join(output_root,
@@ -1682,24 +1680,26 @@ class ReportGenerationTest(unittest.TestCase):
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        run_report = report.RunReport(output_root)
-        error_bank = report.OperatorReport()
         ecsv = None
-
-        # Agency typically filled in with FTP username for failing files.
+         # Agency typically filled in with FTP username for failing files.
         agency = 'rmda'
 
-        try:
-            ecsv = parser.ExtendedCSV(contents, error_bank)
-            ecsv.validate_metadata_tables()
-            agency = ecsv.extcsv['DATA_GENERATION']['Agency']
+        with report.OperatorReport() as error_bank:
+            run_report = report.RunReport(output_root)
 
-            ecsv.validate_dataset_tables()
-            raise AssertionError('Parsing of {} did not fail'.format(infile))
-        except (parser.MetadataValidationError, parser.NonStandardDataError):
-            output_path = os.path.join(output_root, 'run_report')
+            try:
+                ecsv = parser.ExtendedCSV(contents, error_bank)
+                ecsv.validate_metadata_tables()
+                agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
-            run_report.write_failing_file(infile, agency)
+                ecsv.validate_dataset_tables()
+                raise AssertionError('Parsing of {} did not fail'
+                                     .format(infile))
+            except (parser.MetadataValidationError,
+                    parser.NonStandardDataError):
+                output_path = os.path.join(output_root, 'run_report')
+
+                run_report.write_failing_file(infile, agency)
 
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
@@ -1718,26 +1718,28 @@ class ReportGenerationTest(unittest.TestCase):
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        run_report = report.RunReport(output_root)
-        error_bank = report.OperatorReport()
-
         agency = 'UNKNOWN'
 
-        try:
-            _ = parser.ExtendedCSV(contents, error_bank)
-            raise AssertionError('Parsing of {} did not fail'.format(infile))
-        except (parser.MetadataValidationError, parser.NonStandardDataError):
-            output_path = os.path.join(output_root, 'run_report')
+        with report.OperatorReport() as error_bank:
+            run_report = report.RunReport(output_root)
 
-            run_report.write_failing_file(infile, agency)
+            try:
+                _ = parser.ExtendedCSV(contents, error_bank)
+                raise AssertionError('Parsing of {} did not fail'
+                                     .format(infile))
+            except (parser.MetadataValidationError,
+                    parser.NonStandardDataError):
+                output_path = os.path.join(output_root, 'run_report')
 
-            self.assertTrue(os.path.exists(output_path))
-            with open(output_path) as output:
-                lines = output.read().splitlines()
-                self.assertEquals(len(lines), 2)
+                run_report.write_failing_file(infile, agency)
 
-                self.assertEquals(lines[0], agency)
-                self.assertEquals(lines[1], 'Fail: {}'.format(infile))
+                self.assertTrue(os.path.exists(output_path))
+                with open(output_path) as output:
+                    lines = output.read().splitlines()
+                    self.assertEquals(len(lines), 2)
+
+                    self.assertEquals(lines[0], agency)
+                    self.assertEquals(lines[1], 'Fail: {}'.format(infile))
 
     def test_mixed_operator_report(self):
         """
@@ -1748,8 +1750,6 @@ class ReportGenerationTest(unittest.TestCase):
         output_root = resolve_test_data_path('data/reports/sandbox')
         infile_root = resolve_test_data_path('data/reports/pass_and_fail')
 
-        op_report = report.OperatorReport(output_root)
-
         warnings = {}
         errors = {}
 
@@ -1758,43 +1758,42 @@ class ReportGenerationTest(unittest.TestCase):
 
         agency = 'UNKNOWN'
 
-        for infile in os.listdir(infile_root):
-            fullpath = os.path.join(infile_root, infile)
+        with report.OperatorReport(output_root) as op_report:
+            for infile in os.listdir(infile_root):
+                fullpath = os.path.join(infile_root, infile)
 
-            warnings[fullpath] = 0
-            errors[fullpath] = 0
+                warnings[fullpath] = 0
+                errors[fullpath] = 0
 
-            try:
-                contents = util.read_file(fullpath)
-                ecsv = parser.ExtendedCSV(contents, op_report)
-            except (parser.MetadataValidationError,
-                    parser.NonStandardDataError) as err:
-                expected_errors[fullpath] = len(err.errors)
+                try:
+                    contents = util.read_file(fullpath)
+                    ecsv = parser.ExtendedCSV(contents, op_report)
+                except (parser.MetadataValidationError,
+                        parser.NonStandardDataError) as err:
+                    expected_errors[fullpath] = len(err.errors)
 
-                op_report.add_message(209)
-                op_report.write_failing_file(fullpath, agency)
-                continue
+                    op_report.add_message(209)
+                    op_report.write_failing_file(fullpath, agency)
+                    continue
 
-            try:
-                ecsv.validate_metadata_tables()
-                agency = ecsv.extcsv['DATA_GENERATION']['Agency']
+                try:
+                    ecsv.validate_metadata_tables()
+                    agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
-                ecsv.validate_dataset_tables()
-                data_record = models.DataRecord(ecsv)
-                data_record.filename = infile
+                    ecsv.validate_dataset_tables()
+                    data_record = models.DataRecord(ecsv)
+                    data_record.filename = infile
 
-                expected_warnings[fullpath] = len(ecsv.warnings)
-                expected_errors[fullpath] = 0
-                op_report.write_passing_file(fullpath, ecsv, data_record)
-            except (parser.MetadataValidationError,
-                    parser.NonStandardDataError):
-                expected_warnings[fullpath] = len(ecsv.warnings)
-                expected_errors[fullpath] = len(ecsv.errors)
+                    expected_warnings[fullpath] = len(ecsv.warnings)
+                    expected_errors[fullpath] = 0
+                    op_report.write_passing_file(fullpath, ecsv, data_record)
+                except (parser.MetadataValidationError,
+                        parser.NonStandardDataError):
+                    expected_warnings[fullpath] = len(ecsv.warnings)
+                    expected_errors[fullpath] = len(ecsv.errors)
 
-                op_report.add_message(209)
-                op_report.write_failing_file(fullpath, agency, ecsv)
-
-        op_report.close()
+                    op_report.add_message(209)
+                    op_report.write_failing_file(fullpath, agency, ecsv)
 
         today = datetime.now().strftime('%Y-%m-%d')
         output_path = os.path.join(output_root,
@@ -1833,37 +1832,38 @@ class ReportGenerationTest(unittest.TestCase):
         output_root = resolve_test_data_path('data/reports/sandbox')
         infile_root = resolve_test_data_path('data/reports/pass_and_fail')
 
-        run_report = report.RunReport(output_root)
-        error_bank = report.OperatorReport()
         agency = 'MSC'
 
         expected_passes = set()
         expected_fails = set()
 
-        for infile in os.listdir(infile_root):
-            fullpath = os.path.join(infile_root, infile)
+        with report.OperatorReport() as error_bank:
+            run_report = report.RunReport(output_root)
 
-            try:
-                contents = util.read_file(fullpath)
-                ecsv = parser.ExtendedCSV(contents, error_bank)
-            except (parser.MetadataValidationError,
-                    parser.NonStandardDataError):
-                expected_fails.add(fullpath)
-                run_report.write_failing_file(fullpath, agency)
-                continue
+            for infile in os.listdir(infile_root):
+                fullpath = os.path.join(infile_root, infile)
 
-            try:
-                ecsv.validate_metadata_tables()
-                ecsv.validate_dataset_tables()
-                data_record = models.DataRecord(ecsv)
-                data_record.filename = infile
+                try:
+                    contents = util.read_file(fullpath)
+                    ecsv = parser.ExtendedCSV(contents, error_bank)
+                except (parser.MetadataValidationError,
+                        parser.NonStandardDataError):
+                    expected_fails.add(fullpath)
+                    run_report.write_failing_file(fullpath, agency)
+                    continue
 
-                expected_passes.add(fullpath)
-                run_report.write_passing_file(fullpath, agency)
-            except (parser.MetadataValidationError,
-                    parser.NonStandardDataError):
-                expected_fails.add(fullpath)
-                run_report.write_failing_file(fullpath, agency)
+                try:
+                    ecsv.validate_metadata_tables()
+                    ecsv.validate_dataset_tables()
+                    data_record = models.DataRecord(ecsv)
+                    data_record.filename = infile
+
+                    expected_passes.add(fullpath)
+                    run_report.write_passing_file(fullpath, agency)
+                except (parser.MetadataValidationError,
+                        parser.NonStandardDataError):
+                    expected_fails.add(fullpath)
+                    run_report.write_failing_file(fullpath, agency)
 
         self.assertEquals(len(expected_passes), 6)
         self.assertEquals(len(expected_fails), 4)
@@ -1891,9 +1891,6 @@ class ReportGenerationTest(unittest.TestCase):
         output_root = resolve_test_data_path('data/reports/sandbox')
         infile_root = resolve_test_data_path('data/reports/agencies')
 
-        run_report = report.RunReport(output_root)
-        error_bank = report.OperatorReport()
-
         expected_passes = {}
         expected_fails = {}
         agency_aliases = {
@@ -1903,50 +1900,53 @@ class ReportGenerationTest(unittest.TestCase):
             'dwd-mohp': 'DWD-MOHp'
         }
 
-        for dirpath, dirnames, filenames in os.walk(infile_root):
-            for infile in filenames:
-                fullpath = os.path.join(dirpath, infile)
-                # Agency inferred from directory name.
-                agency = dirpath.split('/')[-1]
+        with report.OperatorReport() as error_bank:
+            run_report = report.RunReport(output_root)
 
-                try:
-                    contents = util.read_file(fullpath)
-                    ecsv = parser.ExtendedCSV(contents, error_bank)
-                except (parser.MetadataValidationError,
-                        parser.NonStandardDataError):
-                    if agency not in expected_passes:
-                        expected_passes[agency] = set()
-                    if agency not in expected_fails:
-                        expected_fails[agency] = set()
-                    expected_fails[agency].add(fullpath)
-                    run_report.write_failing_file(fullpath, agency)
-                    continue
+            for dirpath, dirnames, filenames in os.walk(infile_root):
+                for infile in filenames:
+                    fullpath = os.path.join(dirpath, infile)
+                    # Agency inferred from directory name.
+                    agency = dirpath.split('/')[-1]
 
-                try:
-                    ecsv.validate_metadata_tables()
-                    agency = ecsv.extcsv['DATA_GENERATION']['Agency']
+                    try:
+                        contents = util.read_file(fullpath)
+                        ecsv = parser.ExtendedCSV(contents, error_bank)
+                    except (parser.MetadataValidationError,
+                            parser.NonStandardDataError):
+                        if agency not in expected_passes:
+                            expected_passes[agency] = set()
+                        if agency not in expected_fails:
+                            expected_fails[agency] = set()
+                        expected_fails[agency].add(fullpath)
+                        run_report.write_failing_file(fullpath, agency)
+                        continue
 
-                    if agency not in expected_passes:
-                        expected_passes[agency] = set()
-                    if agency not in expected_fails:
-                        expected_fails[agency] = set()
+                    try:
+                        ecsv.validate_metadata_tables()
+                        agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
-                    ecsv.validate_dataset_tables()
-                    data_record = models.DataRecord(ecsv)
-                    data_record.filename = infile
+                        if agency not in expected_passes:
+                            expected_passes[agency] = set()
+                        if agency not in expected_fails:
+                            expected_fails[agency] = set()
 
-                    expected_passes[agency].add(fullpath)
-                    run_report.write_passing_file(fullpath, agency)
-                except (parser.MetadataValidationError,
-                        parser.NonStandardDataError):
-                    agency = agency_aliases[agency]
-                    if agency not in expected_passes:
-                        expected_passes[agency] = set()
-                    if agency not in expected_fails:
-                        expected_fails[agency] = set()
+                        ecsv.validate_dataset_tables()
+                        data_record = models.DataRecord(ecsv)
+                        data_record.filename = infile
 
-                    expected_fails[agency].add(fullpath)
-                    run_report.write_failing_file(fullpath, agency)
+                        expected_passes[agency].add(fullpath)
+                        run_report.write_passing_file(fullpath, agency)
+                    except (parser.MetadataValidationError,
+                            parser.NonStandardDataError):
+                        agency = agency_aliases[agency]
+                        if agency not in expected_passes:
+                            expected_passes[agency] = set()
+                        if agency not in expected_fails:
+                            expected_fails[agency] = set()
+
+                        expected_fails[agency].add(fullpath)
+                        run_report.write_failing_file(fullpath, agency)
 
         self.assertEquals(len(expected_passes['CAS-IAP']), 1)
         self.assertEquals(len(expected_passes['DWD-MOHp']), 2)

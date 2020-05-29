@@ -223,6 +223,28 @@ class OperatorReport(Report):
         self._error_definitions = {}
         self.read_error_definitions(config.WDR_ERROR_CONFIG)
 
+    def __enter__(self):
+        """
+        Open and set up the file where this operator report will be written.
+        """
+
+        if self._working_directory is not None:
+            filepath = self.filepath()
+            self.operator_report = open(filepath, 'w')
+
+            header = ','.join(self._report_batch.keys())
+            self.operator_report.write(header + '\n')
+
+        return self
+
+    def __exit__(self, *args):
+        """
+        Close the file where the operator report has been written.
+        """
+
+        if self.operator_report is not None:
+            self.operator_report.close()
+
     def _load_processing_results_common(self, filepath, contributor, extcsv):
         """
         Helper used to extract values values about the file located at
@@ -390,13 +412,6 @@ class OperatorReport(Report):
             # Ensure no files are written if working directory is null.
             return
 
-        if self.operator_report is None:
-            filepath = self.filepath()
-            self.operator_report = open(filepath, 'w')
-
-            header = ','.join(self._report_batch.keys())
-            self.operator_report.write(header + '\n')
-
         column_names = ['Line Number', 'Error Type', 'Error Code', 'Message']
         rows = zip(*[self._report_batch[name] for name in column_names])
 
@@ -430,15 +445,6 @@ class OperatorReport(Report):
                 self._report_batch[field].clear()
             else:
                 self._report_batch[field] = None
-
-    def close(self):
-        """
-        Release held resources and file descriptors.
-
-        :returns: void
-        """
-
-        self.operator_report.close()
 
 
 class RunReport(Report):

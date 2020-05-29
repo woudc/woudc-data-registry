@@ -102,10 +102,11 @@ def orchestrate(source, working_dir, metadata_only=False,
     registry = Registry()
     search_engine = SearchIndex()
 
-    op_report = OperatorReport(working_dir)
-    run_report = RunReport(working_dir)
+    with OperatorReport(working_dir) as op_report, \
+         click.progressbar(files_to_process, label='Processing files') as run_:
 
-    with click.progressbar(files_to_process, label='Processing files') as run_:
+        run_report = RunReport(working_dir)
+
         for file_to_process, contributor in run_:
             click.echo('Processing filename: {}'.format(file_to_process))
 
@@ -134,15 +135,15 @@ def orchestrate(source, working_dir, metadata_only=False,
                 LOGGER.info('Valid Extended CSV')
 
                 p = Process(registry, search_engine, op_report)
-                data_record = p.validate(extcsv, metadata_only=metadata_only,
-                                         bypass=bypass)
+                data_record = p.validate(extcsv, bypass=bypass,
+                                         metadata_only=metadata_only)
 
                 if data_record is None:
                     click.echo('Not ingesting')
                     failed.append(file_to_process)
 
-                    op_report.write_failing_file(file_to_process, contributor,
-                                                 extcsv)
+                    op_report.write_failing_file(file_to_process,
+                                                 contributor, extcsv)
                     run_report.write_failing_file(file_to_process, contributor)
                 else:
                     data_record.ingest_filepath = file_to_process
