@@ -64,14 +64,13 @@ from woudc_data_registry.report import OperatorReport, RunReport
 LOGGER = logging.getLogger(__name__)
 
 
-def orchestrate(source, working_dir, run_number=0,
-                metadata_only=False, verify_only=False, bypass=False):
+def orchestrate(source, working_dir, metadata_only=False,
+                verify_only=False, bypass=False):
     """
     Core orchestation workflow
 
     :param source: Path to input file or directory tree containing them.
     :param working_dir: Output directory for log and report files.
-    :param run_number: Number of processing attempt in current processing run.
     :param metadata_only: `bool` of whether to verify only the
                           common metadata tables.
     :param verify_only: `bool` of whether to verify the file for correctness
@@ -103,8 +102,8 @@ def orchestrate(source, working_dir, run_number=0,
     registry = Registry()
     search_engine = SearchIndex()
 
-    op_report = OperatorReport(working_dir, run_number)
-    run_report = RunReport(working_dir, run_number)
+    op_report = OperatorReport(working_dir)
+    run_report = RunReport(working_dir)
 
     with click.progressbar(files_to_process, label='Processing files') as run_:
         for file_to_process, contributor in run_:
@@ -218,19 +217,16 @@ def data():
 @click.pass_context
 @click.argument('source', type=click.Path(exists=True, resolve_path=True,
                                           dir_okay=True, file_okay=True))
-@click.option('--working-dir', '-w', 'working_dir', default=None,
+@click.option('--report', '-r', 'reports_dir', default=None,
               help='Path to main output directory for logs and reports')
 @click.option('--lax', '-l', 'lax', is_flag=True,
               help='Only validate core metadata tables')
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-@click.option('--run', '-r', 'run', type=click.INT, default=0,
-              help='Processing attempt number in current processing run')
-def ingest(ctx, source, working_dir, lax, bypass, run):
+def ingest(ctx, source, reports_dir, lax, bypass):
     """ingest a single data submission or directory of files"""
 
-    orchestrate(source, working_dir, metadata_only=lax, bypass=bypass,
-                run_number=run)
+    orchestrate(source, reports_dir, metadata_only=lax, bypass=bypass)
 
 
 @click.command()

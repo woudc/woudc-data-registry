@@ -1435,144 +1435,34 @@ class ReportGenerationTest(unittest.TestCase):
     def tearDown(self):
         clear_sandbox()
 
-    def test_run_report_filename(self):
-        """Test that run report filepaths are generated properly"""
+    def test_operator_report_output_location(self):
+        """Test that operator reports write a file in the working directory"""
 
         project_root = resolve_test_data_path('data/reports/sandbox')
-        run_report = report.RunReport(project_root, run=1)
-
-        # Test using manually entered run numbers.
-        report_file4 = run_report.filepath(4)
-        report_file61 = run_report.filepath(61)
-
-        self.assertIn(project_root, report_file4)
-        self.assertIn(project_root, report_file61)
-
-        self.assertIn('4', report_file4)
-        self.assertIn('61', report_file61)
-
-        self.assertNotEquals(report_file4, report_file61)
-
-        # Test that instance run report is used if none is specified.
-        report_file1 = run_report.filepath()
-
-        self.assertIn(project_root, report_file1)
-        self.assertIn('1', report_file1)
-
-        self.assertNotEquals(report_file1, report_file4)
-        self.assertNotEquals(report_file1, report_file61)
-
-    def test_operator_report_filename(self):
-        """Test that operator report filepaths are generated properly"""
-
-        project_root = resolve_test_data_path('data/reports/sandbox')
-        op_report = report.OperatorReport(project_root, run=1)
-
-        # Test using manually entered run numbers.
-        report_file4 = op_report.filepath(4)
-        report_file61 = op_report.filepath(61)
-
-        self.assertIn(project_root, report_file4)
-        self.assertIn(project_root, report_file61)
-
-        self.assertIn('4', report_file4)
-        self.assertIn('61', report_file61)
-
-        self.assertNotEquals(report_file4, report_file61)
-
-        # Test that instance run report is used if none is specified.
-        report_file1 = op_report.filepath()
-
-        self.assertIn(project_root, report_file1)
-        self.assertIn('1', report_file1)
-
-        self.assertNotEquals(report_file1, report_file4)
-        self.assertNotEquals(report_file1, report_file61)
-
-    def test_operator_report_run_number_determination(self):
-        """Test automatic run number determination from the file system"""
-
-        # Test that an empty working directory results in run number 1.
-        root = resolve_test_data_path('data/reports/run_numbers/no_reports')
-        op_report = report.OperatorReport(root)
-
-        operator_report_path = op_report.filepath()
-        self.assertEquals(op_report._run_number, 1)
-        self.assertIn('run1.csv', operator_report_path)
-
-        # Test that run number is adjusted when one previous run has happened.
-        root = resolve_test_data_path('data/reports/run_numbers/one_report')
-        op_report = report.OperatorReport(root)
-
-        operator_report_path = op_report.filepath()
-        self.assertEquals(op_report._run_number, 2)
-        self.assertIn('run2.csv', operator_report_path)
-
-        # Test that run number is adjusted when multiple runs have happened.
-        root = resolve_test_data_path('data/reports/run_numbers/six_reports')
-        op_report = report.OperatorReport(root)
-
-        operator_report_path = op_report.filepath()
-        self.assertEquals(op_report._run_number, 7)
-        self.assertIn('run7.csv', operator_report_path)
-
-        # Test that run number is correct when past runs start from above 1.
-        root = resolve_test_data_path('data/reports/run_numbers/jump_reports')
-        op_report = report.OperatorReport(root)
-
-        operator_report_path = op_report.filepath()
-        self.assertEquals(op_report._run_number, 6)
-        self.assertIn('run6.csv', operator_report_path)
-
-    def test_run_report_run_number_determination(self):
-        """Test automatic run number determination from the file system"""
-
-        # Test that an empty working directory results in run number 1.
-        root = resolve_test_data_path('data/reports/run_numbers/no_reports')
-        run_report = report.RunReport(root)
-
-        run_report_path = run_report.filepath()
-        self.assertEquals(run_report._run_number, 1)
-        self.assertIn('run1', run_report_path)
-
-        # Test that run number is adjusted when one previous run has happened.
-        root = resolve_test_data_path('data/reports/run_numbers/one_report')
-        run_report = report.RunReport(root)
-
-        run_report_path = run_report.filepath()
-        self.assertEquals(run_report._run_number, 2)
-        self.assertIn('run2', run_report_path)
-
-        # Test that run number is adjusted when multiple runs have happened.
-        root = resolve_test_data_path('data/reports/run_numbers/six_reports')
-        run_report = report.RunReport(root)
-
-        run_report_path = run_report.filepath()
-        self.assertEquals(run_report._run_number, 7)
-        self.assertIn('run7', run_report_path)
-
-        # Test that run number is correct when past runs start from above 1.
-        root = resolve_test_data_path('data/reports/run_numbers/jump_reports')
-        run_report = report.RunReport(root)
-
-        run_report_path = run_report.filepath()
-        self.assertEquals(run_report._run_number, 6)
-        self.assertIn('run6', run_report_path)
-
-    def test_output_location(self):
-        """Test that all output file locations are in the workin directory"""
-
-        project_root = resolve_test_data_path('data/reports/sandbox')
-        op_report = report.OperatorReport(project_root, run=47)
-        run_report = report.RunReport(project_root, run=47)
-        email_report = report.EmailSummary(project_root)
+        op_report = report.OperatorReport(project_root)
 
         operator_path = pathlib.Path(op_report.filepath())
-        run_report_path = pathlib.Path(run_report.filepath())
-        email_report_path = pathlib.Path(email_report.filepath())
 
         self.assertEquals(str(operator_path.parent), project_root)
+
+    def test_run_report_output_location(self):
+        """Test that run reports write a file in the working directory"""
+
+        project_root = resolve_test_data_path('data/reports/sandbox')
+        run_report = report.RunReport(project_root)
+
+        run_report_path = pathlib.Path(run_report.filepath())
+
         self.assertEquals(str(run_report_path.parent), project_root)
+
+    def test_email_summary_output_location(self):
+        """Test that email summaries write a file in the working directory"""
+
+        project_root = resolve_test_data_path('data/reports/sandbox')
+        email_report = report.EmailSummary(project_root)
+
+        email_report_path = pathlib.Path(email_report.filepath())
+
         self.assertEquals(str(email_report_path.parent), project_root)
 
     def test_uses_error_definition(self):
@@ -1616,7 +1506,7 @@ class ReportGenerationTest(unittest.TestCase):
 
         today = datetime.now().strftime('%Y-%m-%d')
         output_path = os.path.join(output_root,
-                                   'operator-report-{}-run1.csv'.format(today))
+                                   'operator-report-{}.csv'.format(today))
 
         op_report.add_message(200)  # File passes validation
         op_report.write_passing_file(infile, ecsv, data_record)
@@ -1655,7 +1545,7 @@ class ReportGenerationTest(unittest.TestCase):
         data_record.filename = filename
 
         agency = ecsv.extcsv['DATA_GENERATION']['Agency']
-        output_path = os.path.join(output_root, 'run1')
+        output_path = os.path.join(output_root, 'run_report')
 
         run_report.write_passing_file(infile, agency)
 
@@ -1689,7 +1579,7 @@ class ReportGenerationTest(unittest.TestCase):
 
         today = datetime.now().strftime('%Y-%m-%d')
         output_path = os.path.join(output_root,
-                                   'operator-report-{}-run1.csv'.format(today))
+                                   'operator-report-{}.csv'.format(today))
 
         op_report.add_message(200)  # File passes validation
         op_report.write_passing_file(infile, ecsv, data_record)
@@ -1749,7 +1639,7 @@ class ReportGenerationTest(unittest.TestCase):
 
         today = datetime.now().strftime('%Y-%m-%d')
         output_path = os.path.join(output_root,
-                                   'operator-report-{}-run1.csv'.format(today))
+                                   'operator-report-{}.csv'.format(today))
 
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
@@ -1807,7 +1697,7 @@ class ReportGenerationTest(unittest.TestCase):
             ecsv.validate_dataset_tables()
             raise AssertionError('Parsing of {} did not fail'.format(infile))
         except (parser.MetadataValidationError, parser.NonStandardDataError):
-            output_path = os.path.join(output_root, 'run1')
+            output_path = os.path.join(output_root, 'run_report')
 
             run_report.write_failing_file(infile, agency)
 
@@ -1837,7 +1727,7 @@ class ReportGenerationTest(unittest.TestCase):
             _ = parser.ExtendedCSV(contents, error_bank)
             raise AssertionError('Parsing of {} did not fail'.format(infile))
         except (parser.MetadataValidationError, parser.NonStandardDataError):
-            output_path = os.path.join(output_root, 'run1')
+            output_path = os.path.join(output_root, 'run_report')
 
             run_report.write_failing_file(infile, agency)
 
@@ -1908,7 +1798,7 @@ class ReportGenerationTest(unittest.TestCase):
 
         today = datetime.now().strftime('%Y-%m-%d')
         output_path = os.path.join(output_root,
-                                   'operator-report-{}-run1.csv'.format(today))
+                                   'operator-report-{}.csv'.format(today))
 
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
@@ -1978,7 +1868,7 @@ class ReportGenerationTest(unittest.TestCase):
         self.assertEquals(len(expected_passes), 6)
         self.assertEquals(len(expected_fails), 4)
 
-        output_path = os.path.join(output_root, 'run1')
+        output_path = os.path.join(output_root, 'run_report')
         self.assertTrue(os.path.exists(output_path))
 
         with open(output_path) as output:
@@ -2068,7 +1958,7 @@ class ReportGenerationTest(unittest.TestCase):
         self.assertEquals(len(expected_fails['MLCD-LU']), 0)
         self.assertEquals(len(expected_fails['MSC']), 1)
 
-        output_path = os.path.join(output_root, 'run1')
+        output_path = os.path.join(output_root, 'run_report')
         self.assertTrue(os.path.exists(output_path))
 
         with open(output_path) as output:

@@ -47,7 +47,6 @@ import os
 import csv
 import logging
 
-import re
 from datetime import date
 from collections import OrderedDict
 
@@ -72,66 +71,14 @@ class Report:
     on its own.
     """
 
-    def __init__(self, root, run):
+    def __init__(self, root):
         """
         Initialize a new Report that writes to the directory <root>.
 
-        Assumes (e.g. for the sake of filenames) that this is the <run>th
-        processing command in the run so far. If <run> is 0, then a
-        value will be figured out from the previous files in the
-        working directory.
-
         :param root: Path to the processing run's working directory.
-        :param run: Sequence number of the processing command in the run.
         """
 
         self._working_directory = root
-
-        if root is None:
-            self._run_number = 0
-        else:
-            self._run_number = run or self._determine_run_number()
-
-    def _find_operator_reports(self):
-        """
-        Returns a list of operator report file names that already exist
-        in the instance's working directory. If the working directory is
-        null, then the list will be empty.
-
-        :returns: List of existing operator report filenames.
-        """
-
-        date_pattern = r'\d{4}-\d{2}-\d{2}'
-        operator_report_pattern = r'^operator-report-{}-run\d+.csv$' \
-                                  .format(date_pattern)
-
-        operator_reports = []
-        for filename in os.listdir(self._working_directory):
-            if re.match(operator_report_pattern, filename):
-                operator_reports.append(filename)
-
-        return operator_reports
-
-    def _determine_run_number(self):
-        """
-        Returns the next run number that would continue the processing
-        run in this report's working directory, based on previous outputs.
-
-        :returns: Next run number in the working directory.
-        """
-
-        highest_report_number = 0
-        operator_reports = self._find_operator_reports()
-
-        run_number_pattern = r'run(\d+).csv$'
-        for operator_report_name in operator_reports:
-            match = re.search(run_number_pattern, operator_report_name)
-            report_number = int(match.group(1))
-
-            if report_number > highest_report_number:
-                highest_report_number = report_number
-
-        return highest_report_number + 1
 
     def _load_processing_results_pass(self, filepath, *args):
         """
@@ -165,14 +112,12 @@ class Report:
 
         raise NotImplementedError()
 
-    def filepath(self, run=0):
+    def filepath(self):
         """
-        Returns a full path to the report from the <run>'th processing command
-        in this report's working directory.
+        Returns a full path to the report that will be placed in this
+        report object's working directory.
 
-        :param run: Optional run number of the report to look for.
-                    If omitted uses the instance's run number.
-        :returns: Full path to specified report.
+        :returns: Full path to this report file.
         """
 
         raise NotImplementedError()
@@ -206,7 +151,6 @@ class Report:
 
         :param filepath: Path to an incoming data file.
         :param args: Additional information from or about the file.
-        :returns: void
         :returns: void
         """
 
@@ -244,24 +188,17 @@ class OperatorReport(Report):
     The `OperatorReport` class is responsible for writing operator reports.
     """
 
-    def __init__(self, root=None, run=0):
+    def __init__(self, root=None):
         """
         Initialize a new OperatorReport that writes to the directory <root>.
 
         For use in dummy or verification-only runs, passing <root> as None
         causes no output files to be produced.
 
-        While <run> usually stands for the sequence number of a data
-        registry processing attempt, giving it special value 0 causes
-        it to derive a run number from previous output files in its
-        working directory.
-
         :param root: Path to the processing run's working directory.
-        :param run: Sequence number of the current processing attempt in
-                    the processing run, or a special value (see above).
         """
 
-        super(OperatorReport, self).__init__(root, run)
+        super(OperatorReport, self).__init__(root)
 
         self._report_batch = OrderedDict([
             ('Processing Status', None),
@@ -372,24 +309,20 @@ class OperatorReport(Report):
         self._report_batch['Outgoing Path'] = None
         self._report_batch['URN'] = None
 
-    def filepath(self, run=0):
+    def filepath(self):
         """
-        Returns a full path to the operator report from the <run>'th
-        processing attempt from today in this report's working directory.
+        Returns a full path to the operator report that will be placed
+        in this report's working directory.
 
-        :param run: Optional run number of operator report to look for.
-                    If omitted uses the instance's run number.
-        :returns: Full path to specified operator report.
+        :returns: Full path to this operator report file.
         """
-
-        today = date.today().strftime('%Y-%m-%d')
-
-        run = run or self._run_number
-        filename = 'operator-report-{}-run{}.csv'.format(today, run)
 
         if self._working_directory is None:
-            return filename
+            return None
         else:
+            today = date.today().strftime('%Y-%m-%d')
+            filename = 'operator-report-{}.csv'.format(today)
+
             return os.path.join(self._working_directory, filename)
 
     def read_error_definitions(self, filepath):
@@ -522,24 +455,17 @@ class RunReport(Report):
     The `RunReport` class is responsible for writing run reports.
     """
 
-    def __init__(self, root=None, run=0):
+    def __init__(self, root=None):
         """
         Initialize a new RunReport that will write to the directory <root>.
 
         For use in dummy or verification-only runs, passing <root> as None
         causes no output files to be produced.
 
-        While <run> usually stands for the sequence number of a data
-        registry processing attempt, giving it special value 0 causes
-        it to derive a run number from previous output files in its
-        working directory.
-
         :param root: Path to the processing run's working directory.
-        :param run: Sequence number of the current processing attempt in
-                    the processing run, or a special value (see above).
         """
 
-        super(RunReport, self).__init__(root, run)
+        super(RunReport, self).__init__(root)
 
         self._contributor_status = {}
         self._contributors = {
@@ -582,22 +508,18 @@ class RunReport(Report):
             self._contributor_status[contributor] = []
         self._contributor_status[contributor].append(('Fail', filepath))
 
-    def filepath(self, run=0):
+    def filepath(self):
         """
-        Returns a full path to the run report from the <run>'th
-        processing attempt in this report's working directory.
+        Returns a full path to the run report that will be written
+         to this report's working directory.
 
-        :param run: Optional run number of operator report to look for.
-                    If omitted uses the instance's run number.
-        :returns: Full path to specified run report.
+        :returns: Full path to this run report file.
         """
 
         if self._working_directory is None:
             return None
         else:
-            run = run or self._run_number
-            filename = 'run{}'.format(run)
-
+            filename = 'run_report'
             return os.path.join(self._working_directory, filename)
 
     def write(self):
