@@ -9,6 +9,9 @@ from datetime import datetime
 from woudc_data_registry import models, parser, report, util
 
 
+SANDBOX_DIR = '/tmp/woudc-data-registry'
+
+
 def dummy_extCSV(source):
     """
     Returns a parser.ExtendedCSV instace built from the filepath <source>
@@ -42,31 +45,33 @@ def clear_sandbox():
     sandbox directory.
     """
 
-    sandbox = resolve_test_data_path('data/reports/sandbox')
-
-    for filename in os.listdir(sandbox):
-        if filename != '.keep':
-            fullpath = os.path.join(sandbox, filename)
-            os.remove(fullpath)
+    for filename in os.listdir(SANDBOX_DIR):
+        fullpath = os.path.join(SANDBOX_DIR, filename)
+        os.remove(fullpath)
 
 
-class OperatorReportTest(unittest.TestCase):
-    """Test suite for OperatorReport, error severity, and file format"""
+class SandboxTestSuite(unittest.TestCase):
+    """Superclass for test classes that write temporary files to a sandbox"""
 
     def setUpClass():
-        clear_sandbox()
+        os.mkdir(SANDBOX_DIR)
+
+    def tearDownClass():
+        os.rmdir(SANDBOX_DIR)
 
     def tearDown(self):
         clear_sandbox()
 
+
+class OperatorReportTest(SandboxTestSuite):
+    """Test suite for OperatorReport, error severity, and file format"""
+
     def test_operator_report_output_location(self):
         """Test that operator reports write a file in the working directory"""
 
-        project_root = resolve_test_data_path('data/reports/sandbox')
-
-        with report.OperatorReport(project_root) as op_report:
+        with report.OperatorReport(SANDBOX_DIR) as op_report:
             operator_path = pathlib.Path(op_report.filepath())
-            self.assertEquals(str(operator_path.parent), project_root)
+            self.assertEquals(str(operator_path.parent), SANDBOX_DIR)
 
     def test_uses_error_definition(self):
         """Test that error/warning feedback responds to input files"""
@@ -75,9 +80,7 @@ class OperatorReportTest(unittest.TestCase):
         all_warnings = resolve_test_data_path('data/reports/all_warnings.csv')
         all_errors = resolve_test_data_path('data/reports/all_errors.csv')
 
-        project_root = resolve_test_data_path('data/reports/sandbox')
-
-        with report.OperatorReport(project_root) as op_report:
+        with report.OperatorReport(SANDBOX_DIR) as op_report:
             op_report.read_error_definitions(all_warnings)
 
             self.assertIn(1, op_report._error_definitions)
@@ -93,13 +96,11 @@ class OperatorReportTest(unittest.TestCase):
     def test_passing_operator_report(self):
         """Test that a passing file is written in the operator report"""
 
-        output_root = resolve_test_data_path('data/reports/sandbox')
-
         filename = '20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        with report.OperatorReport(output_root) as op_report:
+        with report.OperatorReport(SANDBOX_DIR) as op_report:
             ecsv = parser.ExtendedCSV(contents, op_report)
 
             ecsv.validate_metadata_tables()
@@ -110,7 +111,7 @@ class OperatorReportTest(unittest.TestCase):
             agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
             today = datetime.now().strftime('%Y-%m-%d')
-            output_path = os.path.join(output_root,
+            output_path = os.path.join(SANDBOX_DIR,
                                        'operator-report-{}.csv'.format(today))
 
             op_report.add_message(200)  # File passes validation
@@ -133,13 +134,11 @@ class OperatorReportTest(unittest.TestCase):
     def test_warning_operator_report(self):
         """Test that file warnings are written in the operator report"""
 
-        output_root = resolve_test_data_path('data/reports/sandbox')
-
         filename = 'ecsv-trailing-commas.csv'
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        with report.OperatorReport(output_root) as op_report:
+        with report.OperatorReport(SANDBOX_DIR) as op_report:
             ecsv = parser.ExtendedCSV(contents, op_report)
 
             # Some warnings are encountered during parsing.
@@ -151,7 +150,7 @@ class OperatorReportTest(unittest.TestCase):
             agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
             today = datetime.now().strftime('%Y-%m-%d')
-            output_path = os.path.join(output_root,
+            output_path = os.path.join(SANDBOX_DIR,
                                        'operator-report-{}.csv'.format(today))
 
             op_report.add_message(200)  # File passes validation
@@ -184,8 +183,6 @@ class OperatorReportTest(unittest.TestCase):
     def test_failing_operator_report(self):
         """Test that a failing file is written in the operator report"""
 
-        output_root = resolve_test_data_path('data/reports/sandbox')
-
         filename = 'ecsv-missing-instrument-name.csv'
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
@@ -193,7 +190,7 @@ class OperatorReportTest(unittest.TestCase):
         ecsv = None
         agency = 'UNKNOWN'
 
-        with report.OperatorReport(output_root) as op_report:
+        with report.OperatorReport(SANDBOX_DIR) as op_report:
             try:
                 ecsv = parser.ExtendedCSV(contents, op_report)
                 ecsv.validate_metadata_tables()
@@ -204,13 +201,13 @@ class OperatorReportTest(unittest.TestCase):
                                      .format(infile))
             except (parser.MetadataValidationError,
                     parser.NonStandardDataError):
-                output_path = os.path.join(output_root, 'run1')
+                output_path = os.path.join(SANDBOX_DIR, 'run1')
 
                 op_report.add_message(209)
                 op_report.write_failing_file(infile, agency, ecsv)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_path = os.path.join(output_root,
+        output_path = os.path.join(SANDBOX_DIR,
                                    'operator-report-{}.csv'.format(today))
 
         self.assertTrue(os.path.exists(output_path))
@@ -251,7 +248,6 @@ class OperatorReportTest(unittest.TestCase):
         when a mixture of the two is processed
         """
 
-        output_root = resolve_test_data_path('data/reports/sandbox')
         infile_root = resolve_test_data_path('data/reports/pass_and_fail')
 
         warnings = {}
@@ -262,7 +258,7 @@ class OperatorReportTest(unittest.TestCase):
 
         agency = 'UNKNOWN'
 
-        with report.OperatorReport(output_root) as op_report:
+        with report.OperatorReport(SANDBOX_DIR) as op_report:
             for infile in os.listdir(infile_root):
                 fullpath = os.path.join(infile_root, infile)
 
@@ -300,7 +296,7 @@ class OperatorReportTest(unittest.TestCase):
                     op_report.write_failing_file(fullpath, agency, ecsv)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_path = os.path.join(output_root,
+        output_path = os.path.join(SANDBOX_DIR,
                                    'operator-report-{}.csv'.format(today))
 
         self.assertTrue(os.path.exists(output_path))
@@ -328,34 +324,25 @@ class OperatorReportTest(unittest.TestCase):
         self.assertEquals(errors, expected_errors)
 
 
-class RunReportTest(unittest.TestCase):
+class RunReportTest(SandboxTestSuite):
     """Test suite for RunReport, file writing and file format"""
-
-    def setUpClass():
-        clear_sandbox()
-
-    def tearDown(self):
-        clear_sandbox()
 
     def test_run_report_output_location(self):
         """Test that run reports write a file in the working directory"""
 
-        project_root = resolve_test_data_path('data/reports/sandbox')
-        run_report = report.RunReport(project_root)
+        run_report = report.RunReport(SANDBOX_DIR)
 
         run_report_path = pathlib.Path(run_report.filepath())
-        self.assertEquals(str(run_report_path.parent), project_root)
+        self.assertEquals(str(run_report_path.parent), SANDBOX_DIR)
 
     def test_passing_run_report(self):
         """Test that a passing file is written to the run report"""
-
-        output_root = resolve_test_data_path('data/reports/sandbox')
 
         filename = '20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
 
-        run_report = report.RunReport(output_root)
+        run_report = report.RunReport(SANDBOX_DIR)
         with report.OperatorReport() as error_bank:
             ecsv = parser.ExtendedCSV(contents, error_bank)
 
@@ -365,7 +352,7 @@ class RunReportTest(unittest.TestCase):
             data_record.filename = filename
 
             agency = ecsv.extcsv['DATA_GENERATION']['Agency']
-            output_path = os.path.join(output_root, 'run_report')
+            output_path = os.path.join(SANDBOX_DIR, 'run_report')
 
             run_report.write_passing_file(infile, agency)
 
@@ -380,8 +367,6 @@ class RunReportTest(unittest.TestCase):
     def test_failing_run_report(self):
         """Test that a failing file is written to the run report"""
 
-        output_root = resolve_test_data_path('data//reports/sandbox')
-
         filename = 'ecsv-missing-instrument-name.csv'
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
@@ -391,7 +376,7 @@ class RunReportTest(unittest.TestCase):
         agency = 'rmda'
 
         with report.OperatorReport() as error_bank:
-            run_report = report.RunReport(output_root)
+            run_report = report.RunReport(SANDBOX_DIR)
 
             try:
                 ecsv = parser.ExtendedCSV(contents, error_bank)
@@ -403,7 +388,7 @@ class RunReportTest(unittest.TestCase):
                                      .format(infile))
             except (parser.MetadataValidationError,
                     parser.NonStandardDataError):
-                output_path = os.path.join(output_root, 'run_report')
+                output_path = os.path.join(SANDBOX_DIR, 'run_report')
 
                 run_report.write_failing_file(infile, agency)
 
@@ -418,8 +403,6 @@ class RunReportTest(unittest.TestCase):
     def test_non_extcsv_run_report(self):
         """Test that an unparseable file is written to the run report"""
 
-        output_root = resolve_test_data_path('data/reports/sandbox')
-
         filename = 'not-an-ecsv.dat'
         infile = resolve_test_data_path('data/general/{}'.format(filename))
         contents = util.read_file(infile)
@@ -427,7 +410,7 @@ class RunReportTest(unittest.TestCase):
         agency = 'UNKNOWN'
 
         with report.OperatorReport() as error_bank:
-            run_report = report.RunReport(output_root)
+            run_report = report.RunReport(SANDBOX_DIR)
 
             try:
                 _ = parser.ExtendedCSV(contents, error_bank)
@@ -435,7 +418,7 @@ class RunReportTest(unittest.TestCase):
                                      .format(infile))
             except (parser.MetadataValidationError,
                     parser.NonStandardDataError):
-                output_path = os.path.join(output_root, 'run_report')
+                output_path = os.path.join(SANDBOX_DIR, 'run_report')
 
                 run_report.write_failing_file(infile, agency)
 
@@ -453,7 +436,6 @@ class RunReportTest(unittest.TestCase):
         when a mixture of the two is processed
         """
 
-        output_root = resolve_test_data_path('data/reports/sandbox')
         infile_root = resolve_test_data_path('data/reports/pass_and_fail')
 
         agency = 'MSC'
@@ -462,7 +444,7 @@ class RunReportTest(unittest.TestCase):
         expected_fails = set()
 
         with report.OperatorReport() as error_bank:
-            run_report = report.RunReport(output_root)
+            run_report = report.RunReport(SANDBOX_DIR)
 
             for infile in os.listdir(infile_root):
                 fullpath = os.path.join(infile_root, infile)
@@ -492,7 +474,7 @@ class RunReportTest(unittest.TestCase):
         self.assertEquals(len(expected_passes), 6)
         self.assertEquals(len(expected_fails), 4)
 
-        output_path = os.path.join(output_root, 'run_report')
+        output_path = os.path.join(SANDBOX_DIR, 'run_report')
         self.assertTrue(os.path.exists(output_path))
 
         with open(output_path) as output:
@@ -512,7 +494,6 @@ class RunReportTest(unittest.TestCase):
     def test_run_report_multiple_agencies(self):
         """Test that files in the run report are grouped by agency"""
 
-        output_root = resolve_test_data_path('data/reports/sandbox')
         infile_root = resolve_test_data_path('data/reports/agencies')
 
         expected_passes = {}
@@ -525,7 +506,7 @@ class RunReportTest(unittest.TestCase):
         }
 
         with report.OperatorReport() as error_bank:
-            run_report = report.RunReport(output_root)
+            run_report = report.RunReport(SANDBOX_DIR)
 
             for dirpath, dirnames, filenames in os.walk(infile_root):
                 for infile in filenames:
@@ -582,7 +563,7 @@ class RunReportTest(unittest.TestCase):
         self.assertEquals(len(expected_fails['MLCD-LU']), 0)
         self.assertEquals(len(expected_fails['MSC']), 1)
 
-        output_path = os.path.join(output_root, 'run_report')
+        output_path = os.path.join(SANDBOX_DIR, 'run_report')
         self.assertTrue(os.path.exists(output_path))
 
         with open(output_path) as output:
@@ -601,26 +582,19 @@ class RunReportTest(unittest.TestCase):
                     self.assertIn(line, agency_aliases.values())
 
 
-class EmailSummaryTest(unittest.TestCase):
+class EmailSummaryTest(SandboxTestSuite):
     """
     Test suite for EmailSummary, output format, and detection of passes,
     fixes, and fails
     """
 
-    def setUpClass():
-        clear_sandbox()
-
-    def tearDown(self):
-        clear_sandbox()
-
     def test_email_summary_output_location(self):
         """Test that email summaries write a file in the working directory"""
 
-        project_root = resolve_test_data_path('data/reports/sandbox')
-        email_report = report.EmailSummary(project_root)
+        email_report = report.EmailSummary(SANDBOX_DIR)
 
         email_report_path = pathlib.Path(email_report.filepath())
-        self.assertEquals(str(email_report_path.parent), project_root)
+        self.assertEquals(str(email_report_path.parent), SANDBOX_DIR)
 
 
 if __name__ == '__main__':
