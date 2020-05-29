@@ -103,7 +103,7 @@ def orchestrate(source, working_dir, metadata_only=False,
     search_engine = SearchIndex()
 
     with OperatorReport(working_dir) as op_report, \
-         click.progressbar(files_to_process, label='Processing files') as run_:
+         click.progressbar(files_to_process, label='Processing files') as run_:  # noqa
 
         run_report = RunReport(working_dir)
 

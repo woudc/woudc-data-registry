@@ -1681,7 +1681,7 @@ class ReportGenerationTest(unittest.TestCase):
         contents = util.read_file(infile)
 
         ecsv = None
-         # Agency typically filled in with FTP username for failing files.
+        # Agency typically filled in with FTP username for failing files.
         agency = 'rmda'
 
         with report.OperatorReport() as error_bank:
