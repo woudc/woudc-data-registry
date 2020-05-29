@@ -112,7 +112,7 @@ def orchestrate(source, working_dir, run_number=0,
 
             LOGGER.info('Detecting file')
             if not is_text_file(file_to_process):
-                _, is_error = reporter.add_message(1)
+                _, is_error = op_report.add_message(1)
                 if is_error:
                     op_report.write_failing_file(file_to_process, contributor)
                     run_report.write_failing_file(file_to_process, contributor)
@@ -143,7 +143,7 @@ def orchestrate(source, working_dir, run_number=0,
                     failed.append(file_to_process)
 
                     op_report.write_failing_file(file_to_process, contributor,
-                                                 extcsv=extcsv)
+                                                 extcsv)
                     run_report.write_failing_file(file_to_process, contributor)
                 else:
                     data_record.ingest_filepath = file_to_process

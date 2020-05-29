@@ -57,65 +57,40 @@ from woudc_data_registry import config
 LOGGER = logging.getLogger(__name__)
 
 
-class OperatorReport:
+class Report:
     """
-    A WOUDC Data Registry operator report is like a simplified log used
-    during a processing run to identify errors in files. It describes
-    all files and all the warnings and errors that are encountered
-    while handling them, but is not a true log file and so stays concise.
+    Superclass for WOUDC Data Registry reports that are generated during
+    a processing run, one file at a time.
 
-    An operator report is a CSV file with one row of headers one line
-    for each warning or error in a file, in order of appearance and in
-    the order the files were processed.
+    The expected behaviour for these types of reports is to accept a
+    passing or failing file once it is done processing, add it onto the
+    existing report file (if one exists) and write it all out to disk
+    immediately, so the user can look at the reports before the processing
+    command is complete.
 
-    The `OperatorReport` class is responsible for writing operator reports.
+    This is meant to be an abstract superclass and should not be instantiated
+    on its own.
     """
 
-    def __init__(self, root=None, run=0):
+    def __init__(self, root, run):
         """
-        Initialize a new OperatorReport that writes to the directory <root>.
+        Initialize a new Report that writes to the directory <root>.
 
-        For use in dummy or verification-only runs, passing <root> as None
-        causes no output files to be produced.
-
-        While <run> usually stands for the sequence number of a data
-        registry processing attempt, giving it special value 0 causes
-        it to derive a run number from previous output files in its
+        Assumes (e.g. for the sake of filenames) that this is the <run>th
+        processing command in the run so far. If <run> is 0, then a
+        value will be figured out from the previous files in the
         working directory.
 
         :param root: Path to the processing run's working directory.
-        :param run: Sequence number of the current processing attempt in
-                    the processing run, or a special value (see above).
+        :param run: Sequence number of the processing command in the run.
         """
 
         self._working_directory = root
-        self._error_definitions = {}
-
-        self._report_batch = OrderedDict([
-            ('Processing Status', None),
-            ('Error Type', []),
-            ('Error Code', []),
-            ('Line Number', []),
-            ('Message', []),
-            ('Dataset', None),
-            ('Data Level', None),
-            ('Data Form', None),
-            ('Agency', None),
-            ('Station Type', None),
-            ('Station ID', None),
-            ('Filename', None),
-            ('Incoming Path', None),
-            ('Outgoing Path', None),
-            ('URN', None)
-        ])
 
         if root is None:
             self._run_number = 0
         else:
             self._run_number = run or self._determine_run_number()
-
-        self.operator_report = None
-        self.read_error_definitions(config.WDR_ERROR_CONFIG)
 
     def _find_operator_reports(self):
         """
@@ -158,18 +133,172 @@ class OperatorReport:
 
         return highest_report_number + 1
 
-    def _load_processing_results(self, filepath, contributor,
-                                 extcsv=None, data_record=None):
+    def _load_processing_results_pass(self, filepath, *args):
         """
-        Pick out relevant values from an incoming file to be written
-        with the next operator report.
+        Picks out important metadata about the file given under <filepath>
+        after it passed processing, using the additional arguments list
+        to help construct messages for the report.
 
-        :param filepath: Full path to an incoming file.
-        :param contributor: Acronym of contributor who submitted the file.
-        :param extcsv: Parsed Extended CSV object from the file's contents,
-                       or None if the file failed to parse.
-        :param data_record: The DataRecord object generated for the incoming
-                            file, or None if processing failed.
+        Subclasses must override this method to define what arguments they
+        need and what information to store for report messages.
+
+        :param filepath: Path to an incoming data file.
+        :param args: Additional information from or about the file.
+        :returns: void
+        """
+
+        raise NotImplementedError()
+
+    def _load_processing_results_fail(self, filepath, *args):
+        """
+        Picks out important metadata about the file given under <filepath>
+        after it failed processing, using the additional arguments list
+        to help construct messages and error logs for the report.
+
+        Subclasses must override this method to define what arguments they
+        need and what information to store for report messages.
+
+        :param filepath: Path to an incoming data file.
+        :param args: Additional information from or about the file.
+        :returns: void
+        """
+
+        raise NotImplementedError()
+
+    def filepath(self, run=0):
+        """
+        Returns a full path to the report from the <run>'th processing command
+        in this report's working directory.
+
+        :param run: Optional run number of the report to look for.
+                    If omitted uses the instance's run number.
+        :returns: Full path to specified report.
+        """
+
+        raise NotImplementedError()
+
+    def write_passing_file(self, filepath, *args):
+        """
+        Record in this processing report that the file given under <filepath>
+        has been processed successfully.
+
+        Additional information about the file, passed through by additional
+        args, will be used to fill out the report entry. See subclass'
+        load_processing_results method for more information.
+
+        :param filepath: Path to an incoming data file.
+        :param args: Additional information from or about the file.
+        :returns: void
+        """
+
+        if self._working_directory is not None:
+            self._load_processing_results_pass(filepath, *args)
+            self.write()
+
+    def write_failing_file(self, filepath, *args):
+        """
+        Record in this processing report that the file given under <filepath>
+        failed to process, at least for the current processing command.
+
+        Additional information about the file, passed through by additional
+        args, will be used to fill out the report entry. See subclass'
+        load_processing_results method for more information.
+
+        :param filepath: Path to an incoming data file.
+        :param args: Additional information from or about the file.
+        :returns: void
+        :returns: void
+        """
+
+        if self._working_directory is not None:
+            self._load_processing_results_fail(filepath, *args)
+            self.write()
+
+    def write(self):
+        """
+        Write a new report into the working directory (or update an existing
+        report if one exists) with internally stored file metadata.
+
+        Users should generally not call these methods, and instead use the
+        write_passing_file and write_failing_file methods to load file
+        metadata and write it in one call. However, subclasses must define
+        this write method to specify their file formats.
+
+        :returns: void
+        """
+
+        raise NotImplementedError()
+
+
+class OperatorReport(Report):
+    """
+    A WOUDC Data Registry operator report is like a simplified log used
+    during a processing run to identify errors in files. It describes
+    all files and all the warnings and errors that are encountered
+    while handling them, but is not a true log file and so stays concise.
+
+    An operator report is a CSV file with one row of headers one line
+    for each warning or error in a file, in order of appearance and in
+    the order the files were processed.
+
+    The `OperatorReport` class is responsible for writing operator reports.
+    """
+
+    def __init__(self, root=None, run=0):
+        """
+        Initialize a new OperatorReport that writes to the directory <root>.
+
+        For use in dummy or verification-only runs, passing <root> as None
+        causes no output files to be produced.
+
+        While <run> usually stands for the sequence number of a data
+        registry processing attempt, giving it special value 0 causes
+        it to derive a run number from previous output files in its
+        working directory.
+
+        :param root: Path to the processing run's working directory.
+        :param run: Sequence number of the current processing attempt in
+                    the processing run, or a special value (see above).
+        """
+
+        super(OperatorReport, self).__init__(root, run)
+
+        self._report_batch = OrderedDict([
+            ('Processing Status', None),
+            ('Error Type', []),
+            ('Error Code', []),
+            ('Line Number', []),
+            ('Message', []),
+            ('Dataset', None),
+            ('Data Level', None),
+            ('Data Form', None),
+            ('Agency', None),
+            ('Station Type', None),
+            ('Station ID', None),
+            ('Filename', None),
+            ('Incoming Path', None),
+            ('Outgoing Path', None),
+            ('URN', None)
+        ])
+
+        self.operator_report = None
+
+        self._error_definitions = {}
+        self.read_error_definitions(config.WDR_ERROR_CONFIG)
+
+    def _load_processing_results_common(self, filepath, contributor, extcsv):
+        """
+        Helper used to extract values values about the file located at
+        <filepath>, mainly from its Extended CSV object (if it exists).
+
+        Extended CSV fields that are present will be copied into their places
+        in operator report lines. Those that are not present will be replaced
+        with empty strings in the report. Some filepath information is taken
+        from <filepath> itself.
+
+        :param filepath: Path to an incoming data file.
+        :param contributor: Acronym of the contributor that submitted the file.
+        :param extcsv: Extended CSV object from parsing the file, if available.
         :returns: void
         """
 
@@ -192,17 +321,56 @@ class OperatorReport:
                 # ExtCSV value is unavailable.
                 self._report_batch[batch_field] = None
 
-        if data_record is None:
-            self._report_batch['Outgoing Path'] = None
-            self._report_batch['URN'] = None
-        else:
-            self._report_batch['Outgoing Path'] = \
-                data_record.get_waf_path(config.WDR_WAF_BASEDIR)
-            self._report_batch['URN'] = data_record.data_record_id
-
         self._report_batch['Agency'] = contributor
         self._report_batch['Incoming Path'] = filepath
         self._report_batch['Filename'] = os.path.basename(filepath)
+
+    def _load_processing_results_pass(self, filepath, extcsv, data_record):
+        """
+        Picks out and stores features of the file under <filepath> from
+        the Extended CSV and data records it generated after being processed.
+
+        :param filepath: Path to an incoming data file.
+        :param extcsv: Extended CSV object generated from parsing the file.
+        :param data_record: DataRecord object generated by processing the file.
+        :returns: void
+        """
+
+        self._report_batch['Processing Status'] = 'P'
+
+        contributor = extcsv.extcsv['DATA_GENERATION']['Agency']
+        self._load_processing_results_common(filepath, contributor, extcsv)
+
+        self._report_batch['Outgoing Path'] = \
+            data_record.get_waf_path(config.WDR_WAF_BASEDIR)
+        self._report_batch['URN'] = data_record.data_record_id
+
+    def _load_processing_results_fail(self, filepath, contributor,
+                                      extcsv=None):
+        """
+        Salvages any information about the file under <filepath> after it
+        failed processing, and record it in preparation for error reporting.
+
+        If the file was able to through parse successfully then <extcsv> should
+        be the Extended CSV object generated by parsing. Passing the value
+        None for that parameter means the file failed during parsing.
+
+        Since the file has failed processing, its metadata values cannot be
+        trusted and the <contributor> parameter is used as a best guess of
+        who submitted the file, perhaps based on its FTP acount name.
+
+        :param filepath: Path to an incoming data file.
+        :param contributor: Acronym of the contributor that submitted the file.
+        :param extcsv: Extended CSV object from parsing the file, if available.
+        :returns: void
+        """
+
+        self._report_batch['Processing Status'] = 'F'
+
+        self._load_processing_results_common(filepath, contributor, extcsv)
+
+        self._report_batch['Outgoing Path'] = None
+        self._report_batch['URN'] = None
 
     def filepath(self, run=0):
         """
@@ -274,50 +442,6 @@ class OperatorReport:
         severe = error_class != 'Warning'
         return message, severe
 
-    def write_passing_file(self, filepath, extcsv, data_record):
-        """
-        Write out all warnings found while processing <filepath>, complete
-        with metadata from the source Extended CSV <extcsv> and the
-        generated data record <data_record>.
-
-        :param filepath: Path to an incoming data file.
-        :param extcsv: Extended CSV object generated from the incoming file.
-        :param data_record: Data record generated from the incoming file.
-        :returns: void
-        """
-
-        contributor = extcsv.extcsv['DATA_GENERATION']['Agency']
-        self._load_processing_results(filepath, contributor, extcsv=extcsv,
-                                      data_record=data_record)
-        self._report_batch['Processing Status'] = 'P'
-
-        if self._working_directory is not None:
-            self.write()
-
-    def write_failing_file(self, filepath, contributor, extcsv=None):
-        """
-        Write out all warnings and errors found while processing <filepath>,
-        complete with metadata from the source Extended CSV <extcsv>
-        if available. If <extcsv> is None, <agency> must be provided to
-        be able to label the file with its contributing agency.
-
-        If the file was able to be parsed, an Extended CSV object was created
-        that must be used to determine file metadata. If the file fails to be
-        parsed, that metadata will be unavailable and most fields will be
-        left blank.
-
-        :param filepath: Path to an incoming data file.
-        :param contributor: Acronym of contributor who submitted the file.
-        :param extcsv: Extended CSV object generated from the file.
-        :returns: void
-        """
-
-        self._load_processing_results(filepath, contributor, extcsv=extcsv)
-        self._report_batch['Processing Status'] = 'F'
-
-        if self._working_directory is not None:
-            self.write()
-
     def write(self):
         """
         Write a new operator report into the working directory (or update an
@@ -384,7 +508,7 @@ class OperatorReport:
         self.operator_report.close()
 
 
-class RunReport:
+class RunReport(Report):
     """
     A WOUDC Data Registry run report is the simplest kind of report file
     generated by the Data Registry during a processing command call.
@@ -414,58 +538,49 @@ class RunReport:
         :param run: Sequence number of the current processing attempt in
                     the processing run, or a special value (see above).
         """
-        self._working_directory = root
 
-        if root is None:
-            self._run_number = 0
-        else:
-            self._run_number = run or self._determine_run_number()
+        super(RunReport, self).__init__(root, run)
 
         self._contributor_status = {}
         self._contributors = {
             'unknown': 'UNKNOWN'
         }
 
-    def _find_operator_reports(self):
+    def _load_processing_results_pass(self, filepath, contributor):
         """
-        Returns a list of operator report file names that already exist
-        in the instance's working directory. If the working directory is
-        null, then the list will be empty.
+        Associates the file given under <filepath> with the contributor
+        acronym <contributor>, and records that the file was processed
+        successfully.
 
-        :returns: List of existing operator report filenames.
-        """
-
-        date_pattern = r'\d{4}-\d{2}-\d{2}'
-        operator_report_pattern = r'^operator-report-{}-run\d+.csv$' \
-                                  .format(date_pattern)
-
-        operator_reports = []
-        for filename in os.listdir(self._working_directory):
-            if re.match(operator_report_pattern, filename):
-                operator_reports.append(filename)
-
-        return operator_reports
-
-    def _determine_run_number(self):
-        """
-        Returns the next run number that would continue the processing
-        run in this report's working directory, based on previous outputs.
-
-        :returns: Next run number in the working directory.
+        :param filepath: Path to an incoming data file.
+        :param contributor: Acronym of the contributor that submitted the file.
+        :returns: void
         """
 
-        highest_report_number = 0
-        operator_reports = self._find_operator_reports()
+        contributor_raw = contributor.replace('-', '').lower()
+        self._contributors[contributor_raw] = contributor
 
-        run_number_pattern = r'run(\d+).csv$'
-        for operator_report_name in operator_reports:
-            match = re.search(run_number_pattern, operator_report_name)
-            report_number = int(match.group(1))
+        if contributor not in self._contributor_status:
+            self._contributor_status[contributor] = []
+        self._contributor_status[contributor].append(('Pass', filepath))
 
-            if report_number > highest_report_number:
-                highest_report_number = report_number
+    def _load_processing_results_fail(self, filepath, contributor):
+        """
+        Associates the file given under <filepath> with the contributor
+        acronym <contributor>, and records that the file failed to process.
 
-        return highest_report_number + 1
+        :param filepath: Path to an incoming data file.
+        :param contributor: Acronym of the contributor that submitted the file.
+        :returns: void
+        """
+
+        contributor_raw = contributor.replace('-', '').lower()
+        if contributor_raw not in self._contributors:
+            self._contributors[contributor_raw] = contributor
+
+        if contributor not in self._contributor_status:
+            self._contributor_status[contributor] = []
+        self._contributor_status[contributor].append(('Fail', filepath))
 
     def filepath(self, run=0):
         """
@@ -484,49 +599,6 @@ class RunReport:
             filename = 'run{}'.format(run)
 
             return os.path.join(self._working_directory, filename)
-
-    def write_passing_file(self, filepath, contributor):
-        """
-        Record that the file <filepath> failed processing, and record it
-        undre the contributor ID <contributor>.
-
-        Immediately adds on to an existing run report if one exists.
-
-        :param filepath: Path to an incoming data file.
-        :param contributor: Acronym of contributor who submitted the file.
-        :returns: void
-        """
-
-        contributor_raw = contributor.replace('-', '').lower()
-        self._contributors[contributor_raw] = contributor
-
-        if contributor not in self._contributor_status:
-            self._contributor_status[contributor] = []
-        self._contributor_status[contributor].append(('P', filepath))
-
-        self.write()
-
-    def write_failing_file(self, filepath, contributor):
-        """
-        Record that the file <filepath> failed processing, and record it
-        undre the contributor ID <contributor>.
-
-        Immediately adds on to an existing run report if one exists.
-
-        :param filepath: Path to an incoming data file.
-        :param contributor: Acronym of contributor who submitted the file.
-        :returns: void
-        """
-
-        contributor_raw = contributor.replace('-', '').lower()
-        if contributor_raw not in self._contributors:
-            self._contributors[contributor_raw] = contributor
-
-        if contributor not in self._contributor_status:
-            self._contributor_status[contributor] = []
-        self._contributor_status[contributor].append(('F', filepath))
-
-        self.write()
 
     def write(self):
         """
@@ -570,10 +642,7 @@ class RunReport:
             process_results = self._contributor_status[contributor]
 
             for status, filepath in process_results:
-                if status == 'F':
-                    package += 'Fail: {}\n'.format(filepath)
-                else:
-                    package += 'Pass: {}\n'.format(filepath)
+                package += '{}: {}\n'.format(status, filepath)
 
             blocks.append(package)
 
