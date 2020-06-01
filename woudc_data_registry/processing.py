@@ -228,8 +228,7 @@ class Process(object):
                                     ' addition.')
                         instrument_ok = True
                     else:
-                        instrument_ok = self.add_instrument(verify=verify_only,
-                                                            bypass=False)
+                        instrument_ok = self.add_instruments(bypass=False)
 
                     if instrument_ok:
                         self._add_to_report(201)
@@ -256,7 +255,7 @@ class Process(object):
             LOGGER.info(msg)
         else:
             dataset = self.extcsv.extcsv['CONTENT']['Category']
-            dataset_validator = get_validator(dataset)
+            dataset_validator = get_validator(dataset, self.reports)
 
             time_series_ok = self.check_time_series()
             dataset_validated = dataset_validator.check_all(self.extcsv)
@@ -289,7 +288,7 @@ class Process(object):
         :returns: void
         """
 
-        data_records = []
+        data_records = set()
 
         if not config.EXTRAS['processing']['registry_enabled']:
             LOGGER.info('Data registry persistence disabled, skipping.')
@@ -300,7 +299,7 @@ class Process(object):
                 self.registry.save(model)
 
                 if isinstance(model, DataRecord):
-                    data_records.append(model)
+                    data_records.add(model)
 
         if not config.EXTRAS['processing']['search_index_enabled']:
             LOGGER.info('Search index persistence disabled, skipping.')
@@ -317,7 +316,7 @@ class Process(object):
 
                     if not prev_version or now_version > prev_version:
                         allow_update_model = True
-                        data_records.append(model)
+                        data_records.add(model)
                     else:
                         allow_update_model = False
 
@@ -326,10 +325,11 @@ class Process(object):
                     self.search_index.index(type(model),
                                             model.__geo_interface__)
 
+        LOGGER.info('Saving data record CSVs to WAF')
         for record in data_records:
-            LOGGER.info('Saving data record CSV to WAF')
-            os.makedirs(os.path.dirname(record.output_filepath), exist_ok=True)
-            shutil.copy2(record.ingest_filepath, record.output_filepath)
+            waf_filepath = record.get_waf_path(config.WDR_WAF_BASEDIR)
+            os.makedirs(os.path.dirname(waf_filepath), exist_ok=True)
+            shutil.copy2(record.ingest_filepath, waf_filepath)
 
         LOGGER.info('Persistence complete')
         self._registry_updates = []

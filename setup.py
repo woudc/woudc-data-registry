@@ -61,9 +61,17 @@ class PyTest(Command):
 
     def run(self):
         import subprocess
-        errno = subprocess.call([sys.executable,
-                                 'woudc_data_registry/tests/test_data_registry.py'])  # noqa
-        raise SystemExit(errno)
+
+        test_suite_filepaths = [
+            'woudc_data_registry/tests/test_data_registry.py',
+            'woudc_data_registry/tests/test_report_generation.py'
+        ]
+
+        for filepath in test_suite_filepaths:
+            errno = subprocess.call([sys.executable, filepath])
+
+            if errno != 0:
+                raise SystemExit(errno)
 
 
 def read(filename, encoding='utf-8'):
