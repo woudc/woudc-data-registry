@@ -43,9 +43,10 @@
 #
 # =================================================================
 
-import os
 import csv
 import logging
+import os
+import re
 
 from datetime import date
 from collections import OrderedDict
@@ -622,6 +623,31 @@ class EmailSummary:
         filename = 'failed-files-{}'.format(today)
 
         return os.path.join(self._working_directory, filename)
+
+    def find_operator_reports(self):
+        """
+        Returns a list of absolute paths to all operator reports in
+        the instance's working directory.
+
+        :returns: List of operator report paths.
+        """
+
+        run_number = 1
+        parent_dir = '{}/run{}'.format(self._working_directory, run_number)
+
+        operator_report_pattern = 'operator-report-\d{4}-\d{2}-\d{2}.csv'
+        operator_report_paths = []
+
+        while os.path.exists(parent_dir) and os.path.isdir(parent_dir):
+            for filename in os.listdir(parent_dir):
+                if re.match(operator_report_pattern, filename):
+                    fullpath = os.path.join(parent_dir, filename)
+                    operator_report_paths.append(fullpath)
+
+            run_number += 1
+            parent_dir = '{}/run{}'.format(self._working_directory, run_number)
+
+        return operator_report_paths
 
     def write(self, addresses):
         """

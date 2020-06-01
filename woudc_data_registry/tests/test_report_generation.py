@@ -596,6 +596,47 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report_path = pathlib.Path(email_report.filepath())
         self.assertEquals(str(email_report_path.parent), SANDBOX_DIR)
 
+    def test_find_operator_report_empty(self):
+        """Test that no operator reports are found when none exist"""
+
+        project_root = resolve_test_data_path('data/reports')
+        email_report = report.EmailSummary(project_root)
+
+        operator_reports = email_report.find_operator_reports()
+
+        self.assertEquals([], operator_reports)
+
+    def test_find_operator_report_one_run(self):
+        """Test that operator reports are found when one exists"""
+
+        project_root = resolve_test_data_path('data/reports/one_pass')
+        email_report = report.EmailSummary(project_root)
+
+        operator_reports = email_report.find_operator_reports()
+        expected_parent = resolve_test_data_path('data/reports/one_pass/run1')
+
+        self.assertEquals(1, len(operator_reports))
+        self.assertIn(expected_parent, operator_reports[0])
+
+    def test_find_operator_report_many_runs(self):
+        """
+        Test that all operator reports are found when they are spread
+        across multiple run directories
+        """
+
+        project_root = resolve_test_data_path('data/reports/six_reports')
+        email_report = report.EmailSummary(project_root)
+
+        operator_reports = email_report.find_operator_reports()
+        expected_path_pattern = \
+            'data/reports/six_reports/run{}/operator-report-9999-12-31.csv'
+
+        self.assertEquals(6, len(operator_reports))
+
+        for run_number in range(1, 6 + 1):
+            expected_path = resolve_test_data_path(
+                expected_path_pattern.format(run_number))
+            self.assertIn(expected_path, set(operator_reports))
 
 if __name__ == '__main__':
     unittest.main()
