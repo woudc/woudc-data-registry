@@ -83,16 +83,19 @@ def orchestrate(source, working_dir, metadata_only=False,
     files_to_process = []
 
     if os.path.isfile(source):
-        ftp_path = Path(source).parent.resolve()
-        ftp_parent = os.path.basename(str(ftp_path))
-        files_to_process = [(source, ftp_parent)]
+        fullpath = Path(source).parent.resolve()
+        parent_dir = os.path.basename(str(fullpath))
+
+        # Use parent dir to guess the contributor acronym during processing
+        # runs, where the parent path is the contributor's FTP name.
+        files_to_process = [(source, parent_dir)]
     elif os.path.isdir(source):
         for root, dirs, files in os.walk(source):
-            ftp_parent = os.path.basename(root)
+            parent_dir = os.path.basename(root)
 
             for f in files:
                 fullpath = os.path.join(root, f)
-                files_to_process.append((fullpath, ftp_parent))
+                files_to_process.append((fullpath, parent_dir))
 
     files_to_process.sort()
 
