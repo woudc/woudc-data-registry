@@ -638,6 +638,61 @@ class EmailSummaryTest(SandboxTestSuite):
                 expected_path_pattern.format(run_number))
             self.assertIn(expected_path, set(operator_reports))
 
+    def test_email_summary_single_pass(self):
+
+        """Test email report generation for a single passing file"""
+
+        output_root = resolve_test_data_path('data/reports/one_pass')
+        email_report = report.EmailSummary(output_root)
+
+        emails = {'MSC': 'placeholder@site.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(output_root, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 5)
+
+            self.assertEquals(lines[0], 'MSC (placeholder@site.com)')
+            self.assertEquals(lines[1][-1], '1')
+            self.assertEquals(lines[2][-1], '1')
+            self.assertEquals(lines[3][-1], '0')
+            self.assertEquals(lines[4][-1], '0')
+
+    def test_email_summary_single_fail(self):
+        """Test email report generation for a single failing file"""
+
+        output_root = resolve_test_data_path('data/reports/one_fail')
+        email_report = report.EmailSummary(output_root)
+
+        emails = {'MSC': 'placeholder@site.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(output_root, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 8)
+
+            self.assertEquals(lines[0], 'MSC (placeholder@site.com')
+            self.assertEquals(lines[1][-1], '1')
+            self.assertEquals(lines[2][-1], '0')
+            self.assertEquals(lines[3][-1], '0')
+            self.assertEquals(lines[4][-1], '1')
+
+            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertNotIn('.csv', lines[6])
+            self.assertEquals(lines[7], 'file1.csv')
+
 
 if __name__ == '__main__':
     unittest.main()
