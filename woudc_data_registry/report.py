@@ -776,33 +776,33 @@ class EmailSummary:
                            filename not in passing_files_map[contributor]:
                             local_error_map[contributor][filename].add(msg)
 
-        # Analyze new passing files in this operator report.
-        for contributor in local_pass_map:
-            ensure_dict_key(failing_files_map, contributor, {})
+            # Analyze new passing files in this operator report.
+            for contributor in local_pass_map:
+                ensure_dict_key(failing_files_map, contributor, {})
 
-            for filename in local_pass_map[contributor]:
-                if filename not in failing_files_map[contributor]:
-                    # File passed in its first appearance.
-                    ensure_dict_key(passing_files_map, contributor, set())
-                    passing_files_map[contributor].add(filename)
-                else:
-                    # File failed previously and passed now, meaning all its
-                    # past errors were fixed.
-                    ensure_dict_key(fixed_files_map, contributor, {})
-                    ensure_dict_key(fixed_files_map[contributor],
-                                    filename, {})
+                for filename in local_pass_map[contributor]:
+                    if filename not in failing_files_map[contributor]:
+                        # File passed in its first appearance.
+                        ensure_dict_key(passing_files_map, contributor, set())
+                        passing_files_map[contributor].add(filename)
+                    else:
+                        # File failed previously and passed now, meaning
+                        # all its past errors were fixed.
+                        ensure_dict_key(fixed_files_map, contributor, {})
+                        ensure_dict_key(fixed_files_map[contributor],
+                                        filename, set())
 
-                    errors = failing_files_map[contributor].pop(filename)
-                    fixed_files_map[contributor][filename].update(errors)
+                        errors = failing_files_map[contributor].pop(filename)
+                        fixed_files_map[contributor][filename].update(errors)
 
-        # Look for new failing files from the last operator report
-        for contributor in local_error_map:
-            ensure_dict_key(failing_files_map, contributor, {})
+            # Look for new failing files from the last operator report
+            for contributor in local_error_map:
+                ensure_dict_key(failing_files_map, contributor, {})
 
-            for filename, errors in local_error_map[contributor].items():
-                ensure_dict_key(failing_files_map[contributor],
-                                filename, set())
-                failing_files_map[contributor][filename].update(errors)
+                for filename, errors in local_error_map[contributor].items():
+                    ensure_dict_key(failing_files_map[contributor],
+                                    filename, set())
+                    failing_files_map[contributor][filename].update(errors)
 
         return passing_files_map, fixed_files_map, failing_files_map
 
