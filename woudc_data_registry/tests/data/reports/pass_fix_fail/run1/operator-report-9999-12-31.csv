@@ -1,0 +1,11 @@
+Processing Status,Error Type,Error Code,Line Number,Message,Dataset,Data Level,Data Form,Agency,Station Type,Station ID,Filename,Incoming Path,Outgoing Path,URN
+P,Warning,200,,Data file successfully persisted,TotalOzone,1.0,1,MSC,STN,023,file1.csv,/path/to/file1.csv
+F,Error,73,,#PLATFORM.Name in file does not match registry,Broad-band,1.0,1,MSC,STN,194,file2.csv,/path/to/file2.csv
+F,Error,74,,#PLATFORM.Country in file does not match registry,Broad-band,1.0,1,MSC,STN,194,file2.csv,/path/to/file2.csv
+F,Error,209,,Data file failed to validate,Broad-band,1.0,1,MSC,STN,194,file2.csv,/path/to/file2.csv
+F,Error,73,,#PLATFORM.Name in file does not match registry,Broad-band,1.0,1,MSC,STN,194,file3.csv,/path/to/file3.csv
+F,Error,74,,#PLATFORM.Country in file does not match registry,Broad-band,1.0,1,MSC,STN,194,file3.csv,/path/to/file3.csv
+F,Error,209,,Data file failed to validate,Broad-band,1.0,1,MSC,STN,194,file3.csv,/path/to/file3.csv
+F,Error,13,,No non-core data tables found,,,,MSC,STN,194,file4.csv,/path/to/file4.csv
+F,Error,209,,Data file failed to validate,,,,MSC,STN,194,file4.csv,/path/to/file4.csv
+P,Warning,200,,Data file successfully persisted,TotalOzone,1.0,1,MSC,STN,023,file5.csv,/path/to/file5.csv

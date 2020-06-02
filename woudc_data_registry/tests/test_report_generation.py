@@ -693,7 +693,7 @@ class EmailSummaryTest(SandboxTestSuite):
             self.assertNotIn('.csv', lines[6])
             self.assertEquals(lines[7], 'file1.csv')
 
-    def test_email_summary_one_run_mixed(self):
+    def test_email_summary_one_run_mixed_pass_fail(self):
         """
         Test email report generation with passing and failing files
         all in one operator report
@@ -913,6 +913,133 @@ class EmailSummaryTest(SandboxTestSuite):
             self.assertEquals(lines[5], 'Summary of Fixes:')
             self.assertNotIn('.csv', lines[6])
             self.assertEquals(lines[7], 'file1.csv')
+
+    def test_email_report_mixed_pass_fix(self):
+        """
+        Test email report generation when some files pass immediately
+        and others are fixed between runs.
+        """
+
+        input_root = resolve_test_data_path('data/reports/pass_and_fix')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {'MSC': 'placeholder@mail.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 11)
+
+            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEquals(lines[1], 'Total files received: 9')
+            self.assertEquals(lines[2], 'Number of passed files: 5')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 4')
+            self.assertEquals(lines[4], 'Number of failed files: 0')
+
+            self.assertEquals(lines[5], 'Summary of Fixes:')
+            self.assertNotIn('.csv', lines[6])
+            self.assertEquals(lines[7], 'File5.csv')
+            self.assertEquals(lines[8], 'file2.csv')
+            self.assertEquals(lines[9], 'file3.csv')
+            self.assertEquals(lines[10], 'file9.csv')
+
+    def test_email_report_mixed_fail_fix(self):
+        """
+        Test email report generation when some files fail irrecoverably
+        and others are fixed between runs
+        """
+
+        input_root = resolve_test_data_path('data/reports/fix_and_fail')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {'MSC': 'placeholder@mail.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 17)
+
+            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEquals(lines[1], 'Total files received: 8')
+            self.assertEquals(lines[2], 'Number of passed files: 0')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 3')
+            self.assertEquals(lines[4], 'Number of failed files: 5')
+
+            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertNotIn('.csv', lines[6])
+            self.assertEquals(lines[7], 'file1.csv')
+            self.assertEquals(lines[8], 'file3.csv')
+            self.assertEquals(lines[9], 'file4.csv')
+            self.assertEquals(lines[10], 'file7.csv')
+            self.assertEquals(lines[11], 'file8.csv')
+
+            self.assertEquals(lines[12], 'Summary of Fixes:')
+            self.assertNotIn('.csv', lines[13])
+            self.assertEquals(lines[14], 'file2.csv')
+            self.assertEquals(lines[15], 'file5.csv')
+            self.assertEquals(lines[16], 'file6.csv')
+
+    def test_email_summary_mixed_pass_fix_fail(self):
+        """
+        Test email report generation when some files pass immediately,
+        some fail irrecoverably, and others are fixed between runs.
+        """
+
+        input_root = resolve_test_data_path('data/reports/pass_fix_fail')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {'MSC': 'placeholder@mail.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 19)
+
+            # Output may be sorted in various ways, so just check that all
+            # files are in the right block and are all accounted for.
+            fail_group = ['file4.csv', 'file9.csv']
+            first_fix_of_pair = ['file2.csv', 'file6.csv']
+            second_fix_of_pair = ['file3.csv', 'file8.csv']
+
+            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEquals(lines[1], 'Total files received: 11')
+            self.assertEquals(lines[2], 'Number of passed files: 5')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 4')
+            self.assertEquals(lines[4], 'Number of failed files: 2')
+
+            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertNotIn('.csv', lines[6])
+            self.assertIn(lines[7], fail_group)
+            self.assertNotIn('.csv', lines[8])
+            self.assertIn(lines[9], fail_group)
+
+            self.assertEquals(lines[10], 'Summary of Fixes:')
+            self.assertNotIn('.csv', lines[11])
+            self.assertNotIn('.csv', lines[12])
+            self.assertIn(lines[13], first_fix_of_pair)
+            self.assertIn(lines[14], second_fix_of_pair)
+            self.assertNotIn('.csv', lines[15])
+            self.assertNotIn('.csv', lines[16])
+            self.assertIn(lines[17], first_fix_of_pair)
+            self.assertIn(lines[18], second_fix_of_pair)
 
 
 if __name__ == '__main__':
