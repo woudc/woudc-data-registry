@@ -57,6 +57,21 @@ from woudc_data_registry import config
 LOGGER = logging.getLogger(__name__)
 
 
+def ensure_dict_key(dict_, key, default):
+    """
+    If dictionary key <key> is not already present in dictionary <dict_>,
+    add it there and give it the value <default>.
+
+    :param dict_: A dictionary.
+    :param key: A dictionary key.
+    :param default: Value to add to dict_[key] if the key is not already there.
+    :returns: void
+    """
+
+    if key not in dict_:
+        dict_[key] = default
+
+
 class Report:
     """
     Superclass for WOUDC Data Registry reports that are generated during
@@ -635,7 +650,7 @@ class EmailSummary:
         run_number = 1
         parent_dir = '{}/run{}'.format(self._working_directory, run_number)
 
-        operator_report_pattern = 'operator-report-\d{4}-\d{2}-\d{2}.csv'
+        operator_report_pattern = r'operator-report-\d{4}-\d{2}-\d{2}.csv'
         operator_report_paths = []
 
         while os.path.exists(parent_dir) and os.path.isdir(parent_dir):
@@ -648,6 +663,95 @@ class EmailSummary:
             parent_dir = '{}/run{}'.format(self._working_directory, run_number)
 
         return operator_report_paths
+
+    def summarize_operator_reports(self, operator_report_paths):
+        """
+        Reads and analyzes the operator reports identified in
+        <operator_report_paths>, returning statistics on how files performed
+        through the course of a processing run.
+
+        The report filepaths in <operator_report_paths> must be ordered by
+        when they happened in the processing run.
+
+        The returned statistics are three dictionaries. Each one maps
+        contributor acronyms to nested, inner maps, with content like this:
+
+        First dictionary: set of filepaths for files under that agency that
+                          passed the first time they were processed.
+        Second dictionary: map of filepaths to sets of error messages that were
+                           fixed over the course of the processing run.
+        Third dictionary: map of filepaths to sets of error messages that were
+                          never fixed and caused the file to fail processing.
+
+        :param operator_report_paths: List of operator report absolute paths
+                                      in the order they were generated.
+        :returns: Three dictionaries describing passing files, fixed files,
+                  and failing files per contributor.
+        """
+
+        passing_files_map = {}
+        fixed_files_map = {}
+        failing_files_map = {}
+
+        for report_path in operator_report_paths:
+            with open(report_path) as operator_report:
+                reader = csv.reader(operator_report, escapechar='\\')
+                next(reader)  # Discard header line
+
+                local_pass_map = {}
+                local_error_map = {}
+
+                for line in reader:
+                    status = line[0]
+                    error_type = line[1]
+                    msg = line[4]
+
+                    contributor = line[8] or 'UNKNOWN'
+                    filename = line[11]
+
+                    if status == 'P':  # File has been processed successfully.
+                        ensure_dict_key(local_pass_map, contributor, set())
+                        local_pass_map[contributor].add(filename)
+                    elif error_type == 'Error':  # File encountered an error.
+                        ensure_dict_key(local_error_map, contributor, {})
+                        ensure_dict_key(local_error_map[contributor],
+                                        filename, set())
+
+                        # Ignore duplicate version errors resulting from an
+                        # already-passed file being accidentally run again.
+                        if contributor not in passing_files_map or \
+                           filename not in passing_files_map[contributor]:
+                            local_error_map[contributor][filename].add(msg)
+
+        # Analyze new passing files in this operator report.
+        for contributor in local_pass_map:
+            ensure_dict_key(failing_files_map, contributor, {})
+
+            for filename in local_pass_map[contributor]:
+                if filename not in failing_files_map[contributor]:
+                    # File passed in its first appearance.
+                    ensure_dict_key(passing_files_map, contributor, set())
+                    passing_files_map[contributor].add(filename)
+                else:
+                    # File failed previously and passed now, meaning all its
+                    # past errors were fixed.
+                    ensure_dict_key(fixed_files_map, contributor, {})
+                    ensure_dict_key(fixed_files_map[contributor],
+                                    filename, {})
+
+                    errors = failing_files_map[contributor].pop(filename)
+                    fixed_files_map[contributor][filename].update(errors)
+
+        # Look for new failing files from the last operator report
+        for contributor in local_error_map:
+            ensure_dict_key(failing_files_map, contributor, {})
+
+            for filename, errors in local_error_map[contributor].items():
+                ensure_dict_key(failing_files_map[contributor],
+                                filename, set())
+                failing_files_map[contributor][filename].update(errors)
+
+        return passing_files_map, fixed_files_map, failing_files_map
 
     def write(self, addresses):
         """
