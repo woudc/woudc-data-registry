@@ -92,6 +92,29 @@ def invert_dict(dict_):
     return inverted
 
 
+def group_dict_keys(dict_):
+    """
+    Returns a dictionary in which groups of keys that all map to the same value
+    are condensed, with a tuple of all such keys mapping to their shared value.
+
+    Requires the values of <dict> to be collections of hashable elements.
+
+    :param dict_: A `dict` with hashable collections as values.
+    :returns: Another `dict` where groups of keys map to their shared values.
+    """
+
+    inverted = invert_dict(dict_)
+    collected = {}
+
+    for value, keylist in inverted.items():
+        ordered_keylist = tuple(sorted(keylist))
+
+        ensure_dict_key(collected, ordered_keylist, set())
+        collected[ordered_keylist].add(value)
+
+    return collected
+
+
 class Report:
     """
     Superclass for WOUDC Data Registry reports that are generated during
@@ -803,16 +826,16 @@ class EmailSummary:
         passing_files, fixed_files_to_errors, failing_files_to_errors = \
             self.summarize_operator_reports(operator_report_paths)
 
-        fixed_files = {}
-        failed_files = {}
+        fixed_filelists = {}
+        failed_filelists = {}
 
         for contributor, filemap in fixed_files_to_errors.items():
-            fixed_files[contributor] = invert_dict(filemap)
+            fixed_filelists[contributor] = group_dict_keys(filemap)
         for contributor, filemap in failing_files_to_errors.items():
-            failed_files[contributor] = invert_dict(filemap)
+            failed_filelists[contributor] = group_dict_keys(filemap)
 
         contributors = set(passing_files.keys()) \
-            | set(fixed_files.keys()) | set(failed_files.keys())
+            | set(fixed_filelists.keys()) | set(failed_filelists.keys())
         sorted_contributors = sorted(contributors)
 
         if 'UNKNOWN' in sorted_contributors:
@@ -844,8 +867,8 @@ class EmailSummary:
             if fail_count > 0:
                 fail_summary = 'Summary of Failures:\n'
 
-                for error, filelist in failed_files[contributor].items():
-                    fail_summary += '{}\n'.format(error)
+                for filelist, errors in failed_filelists[contributor].items():
+                    fail_summary += '\n'.join(errors) + '\n'
                     fail_summary += '\n'.join(sorted(filelist)) + '\n'
 
                 feedback_block += fail_summary
@@ -853,8 +876,8 @@ class EmailSummary:
             if fix_count > 0:
                 fix_summary = 'Summary of Fixes:\n'
 
-                for error, filelist in fixed_files[contributor].items():
-                    fix_summary += '{}\n'.format(error)
+                for filelist, errors in fixed_filelists[contributor].items():
+                    fix_summary += '\n'.join(errors) + '\n'
                     fix_summary += '\n'.join(sorted(filelist)) + '\n'
 
                 feedback_block += fix_summary
