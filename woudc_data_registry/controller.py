@@ -158,8 +158,8 @@ def orchestrate(source, working_dir,
 
                 click.echo('Not ingested')
                 failed.append(file_to_process)
-            except Exception as err:                 
-                click.echo('Processing failed: {}'.format(err))                 
+            except Exception as err:
+                click.echo('Processing failed: {}'.format(err))
                 failed.append(file_to_process)
 
     registry.close_session()
