@@ -77,8 +77,8 @@ class OperatorReportTest(SandboxTestSuite):
         """Test that error/warning feedback responds to input files"""
 
         # The two error files below have different error types for error 1.
-        all_warnings = resolve_test_data_path('data/reports/all_warnings.csv')
-        all_errors = resolve_test_data_path('data/reports/all_errors.csv')
+        all_warnings = resolve_test_data_path('config/all_warnings.csv')
+        all_errors = resolve_test_data_path('config/all_errors.csv')
 
         with report.OperatorReport(SANDBOX_DIR) as op_report:
             op_report.read_error_definitions(all_warnings)
@@ -248,7 +248,7 @@ class OperatorReportTest(SandboxTestSuite):
         when a mixture of the two is processed
         """
 
-        infile_root = resolve_test_data_path('data/reports/pass_and_fail')
+        infile_root = resolve_test_data_path('data/general/pass_and_fail')
 
         warnings = {}
         errors = {}
@@ -436,7 +436,7 @@ class RunReportTest(SandboxTestSuite):
         when a mixture of the two is processed
         """
 
-        infile_root = resolve_test_data_path('data/reports/pass_and_fail')
+        infile_root = resolve_test_data_path('data/general/pass_and_fail')
 
         agency = 'MSC'
 
@@ -494,7 +494,7 @@ class RunReportTest(SandboxTestSuite):
     def test_run_report_multiple_agencies(self):
         """Test that files in the run report are grouped by agency"""
 
-        infile_root = resolve_test_data_path('data/reports/agencies')
+        infile_root = resolve_test_data_path('data/general/agencies')
 
         expected_passes = {}
         expected_fails = {}
@@ -637,6 +637,7 @@ class EmailSummaryTest(SandboxTestSuite):
             expected_path = resolve_test_data_path(
                 expected_path_pattern.format(run_number))
             self.assertIn(expected_path, set(operator_reports))
+
 
 if __name__ == '__main__':
     unittest.main()
