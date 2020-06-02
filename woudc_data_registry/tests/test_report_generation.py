@@ -683,7 +683,7 @@ class EmailSummaryTest(SandboxTestSuite):
             lines = output.read().splitlines()
             self.assertEquals(len(lines), 8)
 
-            self.assertEquals(lines[0], 'MSC (placeholder@site.com')
+            self.assertEquals(lines[0], 'MSC (placeholder@site.com)')
             self.assertEquals(lines[1], 'Total files received: 1')
             self.assertEquals(lines[2], 'Number of passed files: 0')
             self.assertEquals(lines[3], 'Number of manually repaired files: 0')
@@ -796,7 +796,7 @@ class EmailSummaryTest(SandboxTestSuite):
             self.assertEquals(lines[3], 'Number of manually repaired files: 0')
             self.assertEquals(lines[4], 'Number of failed files: 0')
 
-            self.assertEquals(lines[6], 'DWD-MOHp (dwd@mail.com')
+            self.assertEquals(lines[6], 'DWD-MOHp (dwd@mail.com)')
             self.assertEquals(lines[7], 'Total files received: 3')
             self.assertEquals(lines[8], 'Number of passed files: 2')
             self.assertEquals(lines[9], 'Number of manually repaired files: 0')
@@ -809,13 +809,15 @@ class EmailSummaryTest(SandboxTestSuite):
             self.assertEquals(lines[15], 'MLCD-LU (mlcd@mail.com)')
             self.assertEquals(lines[16], 'Total files received: 3')
             self.assertEquals(lines[17], 'Number of passed files: 3')
-            self.assertEquals(lines[18], 'Number of manually repaired files: 0')
+            self.assertEquals(lines[18],
+                              'Number of manually repaired files: 0')
             self.assertEquals(lines[19], 'Number of failed files: 0')
 
             self.assertEquals(lines[21], 'MSC (msc@mail.com)')
             self.assertEquals(lines[22], 'Total files received: 5')
             self.assertEquals(lines[23], 'Number of passed files: 4')
-            self.assertEquals(lines[24], 'Number of manually repaired files: 0')
+            self.assertEquals(lines[24],
+                              'Number of manually repaired files: 0')
             self.assertEquals(lines[25], 'Number of failed files: 1')
 
             self.assertEquals(lines[26], 'Summary of Failures:')

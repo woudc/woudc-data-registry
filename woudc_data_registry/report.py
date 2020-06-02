@@ -72,6 +72,26 @@ def ensure_dict_key(dict_, key, default):
         dict_[key] = default
 
 
+def invert_dict(dict_):
+    """
+    Returns a dictionary which contains the same items as <dict_>, except
+    the (sets of) values have become keys and the keys have become
+    sets of values.
+
+    :param dict_: A dictionary, with sets/collections as values.
+    :returns: Another dictionary with values mapping to sets of keys.
+    """
+
+    inverted = {}
+
+    for key, valueset in dict_.items():
+        for value in valueset:
+            ensure_dict_key(inverted, value, set())
+            inverted[value].add(key)
+
+    return inverted
+
+
 class Report:
     """
     Superclass for WOUDC Data Registry reports that are generated during
@@ -712,6 +732,7 @@ class EmailSummary:
                 for line in reader:
                     status = line[0]
                     error_type = line[1]
+                    error_code = int(line[2])
                     msg = line[4]
 
                     contributor = line[8] or 'UNKNOWN'
@@ -720,7 +741,8 @@ class EmailSummary:
                     if status == 'P':  # File has been processed successfully.
                         ensure_dict_key(local_pass_map, contributor, set())
                         local_pass_map[contributor].add(filename)
-                    elif error_type == 'Error':  # File encountered an error.
+                    elif error_type == 'Error' and error_code != 209:
+                        # File encountered an error with a meaningful message.
                         ensure_dict_key(local_error_map, contributor, {})
                         ensure_dict_key(local_error_map[contributor],
                                         filename, set())
@@ -778,11 +800,19 @@ class EmailSummary:
         """
 
         operator_report_paths = self.find_operator_reports()
-        passing_files, fixed_files, failing_files = \
+        passing_files, fixed_files_to_errors, failing_files_to_errors = \
             self.summarize_operator_reports(operator_report_paths)
 
+        fixed_files = {}
+        failed_files = {}
+
+        for contributor, filemap in fixed_files_to_errors.items():
+            fixed_files[contributor] = invert_dict(filemap)
+        for contributor, filemap in failing_files_to_errors.items():
+            failed_files[contributor] = invert_dict(filemap)
+
         contributors = set(passing_files.keys()) \
-            | set(fixed_files.keys()) | set(failing_files.keys())
+            | set(fixed_files.keys()) | set(failed_files.keys())
         sorted_contributors = sorted(contributors)
 
         if 'UNKNOWN' in sorted_contributors:
@@ -793,8 +823,8 @@ class EmailSummary:
         blocks = []
         for contributor in sorted_contributors:
             pass_count = len(passing_files.get(contributor, ()))
-            fix_count = len(fixed_files.get(contributor, ()))
-            fail_count = len(failing_files.get(contributor, ()))
+            fix_count = len(fixed_files_to_errors.get(contributor, ()))
+            fail_count = len(failing_files_to_errors.get(contributor, ()))
 
             total_count = pass_count + fix_count + fail_count
 
@@ -810,6 +840,24 @@ class EmailSummary:
                 'Number of manually repaired files: {}\n' \
                 'Number of failed files: {}\n' \
                 .format(header, total_count, pass_count, fix_count, fail_count)
+
+            if fail_count > 0:
+                fail_summary = 'Summary of Failures:\n'
+
+                for error, filelist in failed_files[contributor].items():
+                    fail_summary += '{}\n'.format(error)
+                    fail_summary += '\n'.join(sorted(filelist)) + '\n'
+
+                feedback_block += fail_summary
+
+            if fix_count > 0:
+                fix_summary = 'Summary of Fixes:\n'
+
+                for error, filelist in fixed_files[contributor].items():
+                    fix_summary += '{}\n'.format(error)
+                    fix_summary += '\n'.join(sorted(filelist)) + '\n'
+
+                feedback_block += fix_summary
 
             blocks.append(feedback_block)
 
