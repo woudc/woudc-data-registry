@@ -612,19 +612,27 @@ class EmailSummary:
     The `EmailSummary` class is responsible for writing email summary files.
     """
 
-    def __init__(self, root):
+    def __init__(self, input_root, output_root=None):
         """
-        Initialize a new EmailSummary that will write to the directory <root>.
+        Initialize a new EmailSummary that will write to a directory.
 
-        The path <root> is important for two reasons. First, as the processing
-        run's working directory it contains all the logs and reports from
-        the run, which are used to detect file status. Second, it is the
-        output directory where the email summary file itself is written
+        Email summary files are made by reading operator reports from
+        <input_root> and analyzing errors and warnings. <input_root>
+        should be the path to a past processing run's working directory.
 
-        :param root: Path to the processing run's working directory.
+        The email summary file will be written inside <output_root>, if
+        provided. Otherwise it will write its file to <input_root> instead.
+
+        :param input_root: Path to the processing run's working directory.
+        :param output_root: Path to where the email summary should be written.
         """
 
-        self._working_directory = root
+        self._working_directory = input_root
+
+        if output_root is not None:
+            self._output_directory = output_root
+        else:
+            self._output_directory = input_root
 
     def filepath(self):
         """
@@ -637,7 +645,7 @@ class EmailSummary:
         today = date.today().strftime('%Y-%m-%d')
         filename = 'failed-files-{}'.format(today)
 
-        return os.path.join(self._working_directory, filename)
+        return os.path.join(self._output_directory, filename)
 
     def find_operator_reports(self):
         """

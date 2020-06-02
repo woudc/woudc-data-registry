@@ -642,15 +642,15 @@ class EmailSummaryTest(SandboxTestSuite):
 
         """Test email report generation for a single passing file"""
 
-        output_root = resolve_test_data_path('data/reports/one_pass')
-        email_report = report.EmailSummary(output_root)
+        input_root = resolve_test_data_path('data/reports/one_pass')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
 
         emails = {'MSC': 'placeholder@site.com'}
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
         output_filename = 'failed-files-{}'.format(today)
-        output_path = os.path.join(output_root, output_filename)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
 
@@ -667,15 +667,15 @@ class EmailSummaryTest(SandboxTestSuite):
     def test_email_summary_single_fail(self):
         """Test email report generation for a single failing file"""
 
-        output_root = resolve_test_data_path('data/reports/one_fail')
-        email_report = report.EmailSummary(output_root)
+        input_root = resolve_test_data_path('data/reports/one_fail')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
 
         emails = {'MSC': 'placeholder@site.com'}
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
         output_filename = 'failed-files-{}'.format(today)
-        output_path = os.path.join(output_root, output_filename)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
 
@@ -699,15 +699,15 @@ class EmailSummaryTest(SandboxTestSuite):
         all in one operator report
         """
 
-        output_root = resolve_test_data_path('data/reports//pass_and_fail')
-        email_report = report.EmailSummary(output_root)
+        input_root = resolve_test_data_path('data/reports//pass_and_fail')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
 
         emails = {'MSC': 'placeholder@site.com'}
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
         output_filename = 'failed-files-{}'.format(today)
-        output_path = os.path.join(output_root, output_filename)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
 
@@ -734,15 +734,15 @@ class EmailSummaryTest(SandboxTestSuite):
         experiences multiple error types.
         """
 
-        output_root = resolve_test_data_path('data/reports/multiple_causes')
-        email_report = report.EmailSummary(output_root)
+        input_root = resolve_test_data_path('data/reports/multiple_causes')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
 
         emails = {'MSC': 'placeholder@site.com'}
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
         output_filename = 'failed-files-{}'.format(today)
-        output_path = os.path.join(output_root, output_filename)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
 
@@ -769,8 +769,8 @@ class EmailSummaryTest(SandboxTestSuite):
     def test_email_report_multiple_agencies(self):
         """Test email report generation where input has multiple agencies"""
 
-        output_root = resolve_test_data_path('data/reports/agencies')
-        email_report = report.EmailSummary(output_root)
+        input_root = resolve_test_data_path('data/reports/agencies')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
 
         emails = {
             'CAS-IAP': 'casiap@mail.com',
@@ -782,7 +782,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         today = datetime.now().strftime('%Y-%m-%d')
         output_filename = 'failed-files-{}'.format(today)
-        output_path = os.path.join(output_root, output_filename)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
 
