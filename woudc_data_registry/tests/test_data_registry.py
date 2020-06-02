@@ -43,11 +43,13 @@
 #
 # =================================================================
 
-from datetime import date, datetime, time
 import os
 import unittest
 
-from woudc_data_registry import (parser, report, util)
+from datetime import date, datetime, time
+
+from woudc_data_registry import parser, report, util
+
 from woudc_data_registry import dataset_validators as dv
 from woudc_data_registry.parser import DOMAINS
 
@@ -58,8 +60,8 @@ def dummy_extCSV(source):
     with dummy output settings (no logs or reports).
     """
 
-    report_ = report.ReportWriter()
-    return parser.ExtendedCSV(source, report_)
+    with report.OperatorReport() as error_bank:
+        return parser.ExtendedCSV(source, error_bank)
 
 
 def resolve_test_data_path(test_data_file):
@@ -865,12 +867,13 @@ class DatasetValidationTest(unittest.TestCase):
     def test_get_validator(self):
         """Test that get_validator returns the correct Validator classes"""
 
-        null_reporter = report.ReportWriter()
         datasets = ['Broad-band', 'Lidar', 'Multi-band', 'OzoneSonde',
                     'RocketSonde', 'Spectral', 'TotalOzone', 'TotalOzoneObs']
+
         for dataset in datasets:
-            validator_name = '{}Validator'.format(dataset.replace('-', ''))
-            validator = dv.get_validator(dataset, null_reporter)
+            with report.OperatorReport() as null_reporter:
+                validator_name = '{}Validator'.format(dataset.replace('-', ''))
+                validator = dv.get_validator(dataset, null_reporter)
 
             if hasattr(dv, validator_name):
                 self.assertIsInstance(validator, getattr(dv, validator_name))
