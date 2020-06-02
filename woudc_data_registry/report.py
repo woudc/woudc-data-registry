@@ -769,4 +769,43 @@ class EmailSummary:
         :returns: void
         """
 
-        pass
+        operator_report_paths = self.find_operator_reports()
+        passing_files, fixed_files, failing_files = \
+            self.summarize_operator_reports(operator_report_paths)
+
+        contributors = set(passing_files.keys()) \
+            | set(fixed_files.keys()) | set(failing_files.keys())
+        sorted_contributors = sorted(contributors)
+
+        if 'UNKNOWN' in sorted_contributors:
+            # Move UNKNOWN to always be at the end of the report.
+            sorted_contributors.remove('UNKNOWN')
+            sorted_contributors.append('UNKNOWN')
+
+        blocks = []
+        for contributor in sorted_contributors:
+            pass_count = len(passing_files.get(contributor, ()))
+            fix_count = len(fixed_files.get(contributor, ()))
+            fail_count = len(failing_files.get(contributor, ()))
+
+            total_count = pass_count + fix_count + fail_count
+
+            if contributor in addresses:
+                email = addresses[contributor]
+                header = '{} ({})'.format(contributor, email)
+            else:
+                header = contributor
+
+            feedback_block = '{}\n' \
+                'Total files received: {}\n' \
+                'Number of passed files: {}\n' \
+                'Number of manually repaired files: {}\n' \
+                'Number of failed files: {}\n' \
+                .format(header, total_count, pass_count, fix_count, fail_count)
+
+            blocks.append(feedback_block)
+
+        email_report_path = self.filepath()
+        with open(email_report_path, 'w') as email_report:
+            content = '\n'.join(blocks)
+            email_report.write(content)
