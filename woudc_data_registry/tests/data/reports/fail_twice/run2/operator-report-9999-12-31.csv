@@ -1,0 +1,3 @@
+Processing Status,Error Type,Error Code,Line Number,Message,Dataset,Data Level,Data Form,Agency,Station Type,Station ID,Filename,Incoming Path,Outgoing Path,URN
+F,Error,96,,Submitted file version and #DATA_GENERAION.Date identical to previously submitted file,TotalOzone,1.0,1,MSC,STN,241,file1.csv,/path/to/file1.csv
+F,Error,209,,Data file failed to validate,TotalOzone,1.0,1,MSC,STN,241,file1.csv,/path/to/file1.csv

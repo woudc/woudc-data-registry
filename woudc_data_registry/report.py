@@ -751,6 +751,7 @@ class EmailSummary:
 
                 local_pass_map = {}
                 local_error_map = {}
+                local_files_encountered = {}
 
                 for line in reader:
                     status = line[0]
@@ -760,6 +761,9 @@ class EmailSummary:
 
                     contributor = line[8] or 'UNKNOWN'
                     filename = line[11]
+
+                    ensure_dict_key(local_files_encountered, contributor, set())  # noqa
+                    local_files_encountered[contributor].add(filename)
 
                     if status == 'P':  # File has been processed successfully.
                         ensure_dict_key(local_pass_map, contributor, set())
@@ -785,15 +789,6 @@ class EmailSummary:
                         # File passed in its first appearance.
                         ensure_dict_key(passing_files_map, contributor, set())
                         passing_files_map[contributor].add(filename)
-                    else:
-                        # File failed previously and passed now, meaning
-                        # all its past errors were fixed.
-                        ensure_dict_key(fixed_files_map, contributor, {})
-                        ensure_dict_key(fixed_files_map[contributor],
-                                        filename, set())
-
-                        errors = failing_files_map[contributor].pop(filename)
-                        fixed_files_map[contributor][filename].update(errors)
 
             # Look for new failing files from the last operator report
             for contributor in local_error_map:
@@ -803,6 +798,45 @@ class EmailSummary:
                     ensure_dict_key(failing_files_map[contributor],
                                     filename, set())
                     failing_files_map[contributor][filename].update(errors)
+
+            # Look for previous errors that were fixed in this operator report.
+            for contributor in failing_files_map:
+                ensure_dict_key(local_error_map, contributor, {})
+                ensure_dict_key(fixed_files_map, contributor, {})
+                ensure_dict_key(local_files_encountered, contributor, set())
+
+                for filename in failing_files_map[contributor]:
+                    if filename not in local_files_encountered[contributor]:
+                        continue
+
+                    ensure_dict_key(local_error_map[contributor],
+                                    filename, set())
+                    ensure_dict_key(fixed_files_map[contributor],
+                                    filename, set())
+
+                    # Find errors that are in past runs but not this run.
+                    fixed_errors = failing_files_map[contributor][filename] \
+                        - local_error_map[contributor][filename]
+
+                    # Transfer all such errors from fails to fixes.
+                    fixed_files_map[contributor][filename].update(fixed_errors)
+                    failing_files_map[contributor][filename].difference_update(
+                        fixed_errors)
+
+        # Remove any keys that map to empty sets.
+        for contributor in fixed_files_map:
+            for filename in list(fixed_files_map[contributor].keys()):
+                if len(fixed_files_map[contributor][filename]) == 0:
+                    del fixed_files_map[contributor][filename]
+        for contributor in failing_files_map:
+            for filename in list(failing_files_map[contributor].keys()):
+                if len(failing_files_map[contributor][filename]) == 0:
+                    del failing_files_map[contributor][filename]
+                else:
+                    # Also stop recording fixes for a failing file.
+                    if contributor in fixed_files_map \
+                       and filename in fixed_files_map[contributor]:
+                        del fixed_files_map[contributor][filename]
 
         return passing_files_map, fixed_files_map, failing_files_map
 
