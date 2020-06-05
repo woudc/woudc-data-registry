@@ -69,6 +69,20 @@ WMO_REGION_ENUM = Enum('I', 'II', 'III', 'IV', 'V', 'VI', 'the Antarctic',
                        'International Waters', name='wmo_region_id')
 
 
+def elasticise_datetime(dt):
+    """
+    Returns a version of <dt> formatted for Elasticsearch indexing.
+
+    :param dt: A datetime.datetime or datetime.date object.
+    :returns: A string (or None) version of <dt> for Elasticsearch.
+    """
+
+    if dt is None:
+        return None
+    else:
+        return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
 class Country(base):
     """
     Data Registry Country
@@ -122,7 +136,7 @@ class Country(base):
                 'country_name_en': self.name_en,
                 'country_name_fr': self.name_fr,
                 'wmo_region_id': self.wmo_region_id,
-                'wmo_membership': self.wmo_membership,
+                'wmo_membership': elasticise_datetime(self.wmo_membership),
                 'regional_involvement': self.regional_involvement,
                 'link': self.link
             }
@@ -220,9 +234,10 @@ class Contributor(base):
                 'wmo_region_id': self.wmo_region_id,
                 'url': self.url,
                 'active': self.active,
-                'start_date': self.start_date,
-                'end_date': self.end_date,
-                'last_validated_datetime': self.last_validated_datetime
+                'start_date': elasticise_datetime(self.start_date),
+                'end_date': elasticise_datetime(self.end_date),
+                'last_validated_datetime':
+                    elasticise_datetime(self.last_validated_datetime)
             }
         }
 
@@ -351,8 +366,8 @@ class Instrument(base):
                 'name': self.name,
                 'model': self.model,
                 'serial': self.serial,
-                'start_date': self.start_date,
-                'end_date': self.end_date,
+                'start_date': elasticise_datetime(self.start_date),
+                'end_date': elasticise_datetime(self.end_date),
                 'waf_url': '/'.join([waf_basepath, dataset_folder,
                                      station_folder, instrument_folder])
             }
@@ -497,9 +512,10 @@ class Station(base):
                 'country_name_fr': self.country.name_fr,
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
-                'start_date': self.start_date,
-                'end_date': self.end_date,
-                'last_validated_datetime': self.last_validated_datetime,
+                'start_date': elasticise_datetime(self.start_date),
+                'end_date': elasticise_datetime(self.end_date),
+                'last_validated_datetime':
+                    elasticise_datetime(self.last_validated_datetime),
                 'gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename)
             }
         }
@@ -607,8 +623,8 @@ class Deployment(base):
                 'contributor_name': self.contributor.name,
                 'contributor_project': self.contributor.project_id,
                 'contributor_url': self.contributor.url,
-                'start_date': self.start_date,
-                'end_date': self.end_date
+                'start_date': elasticise_datetime(self.start_date),
+                'end_date': elasticise_datetime(self.end_date)
             }
         }
 
@@ -864,7 +880,8 @@ class DataRecord(base):
                 'content_level': self.content_level,
                 'content_form': self.content_form,
 
-                'data_generation_date': self.data_generation_date,
+                'data_generation_date':
+                    elasticise_datetime(self.data_generation_date),
                 'data_generation_agency': self.data_generation_agency,
                 'data_generation_version': self.data_generation_version,
                 'data_generation_scientific_authority': self.data_generation_scientific_authority,  # noqa
@@ -880,15 +897,19 @@ class DataRecord(base):
                 'instrument_number': self.instrument_number,
 
                 'timestamp_utcoffset': self.timestamp_utcoffset,
-                'timestamp_date': self.timestamp_date,
+                'timestamp_date': elasticise_datetime(self.timestamp_date),
                 'timestamp_time': None if self.timestamp_time is None \
                     else self.timestamp_time.isoformat(),
 
                 'published': self.published,
-                'received_datetime': self.received_datetime,
-                'inserted_datetime': self.inserted_datetime,
-                'processed_datetime': self.processed_datetime,
-                'published_datetime': self.published_datetime,
+                'received_datetime':
+                    elasticise_datetime(self.received_datetime),
+                'inserted_datetime':
+                    elasticise_datetime(self.inserted_datetime),
+                'processed_datetime':
+                    elasticise_datetime(self.processed_datetime),
+                'published_datetime':
+                    elasticise_datetime(self.published_datetime),
 
                 'number_of_observations': self.number_of_observations,
 
