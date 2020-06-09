@@ -59,30 +59,14 @@ from sqlalchemy.orm import relationship
 
 from woudc_data_registry import config, registry
 from woudc_data_registry.search import SearchIndex, search
-from woudc_data_registry.util import point2geojsongeometry
+from woudc_data_registry.util import point2geojsongeometry, strftime_rfc3339
 
 base = declarative_base()
 
 LOGGER = logging.getLogger(__name__)
 
-RFC3339_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 WMO_REGION_ENUM = Enum('I', 'II', 'III', 'IV', 'V', 'VI', 'the Antarctic',
                        'International Waters', name='wmo_region_id')
-
-
-def strftime_rfc3339(datetimeobj=None):
-    """
-    Returns a version of <datetimeobj> as an RFC3339-formatted string
-    (YYYY-MM-DD'T'HH:MM:SS'Z').
-
-    :param datetimeobj: A datetime.datetime or datetime.date object.
-    :returns: A string (or None) version of <datetimeobj> in RFC3339 format.
-    """
-
-    if datetimeobj is None:
-        return None
-    else:
-        return datetimeobj.strftime(RFC3339_DATETIME_FORMAT)
 
 
 class Country(base):
