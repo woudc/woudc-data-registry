@@ -414,8 +414,8 @@ MAPPINGS = {
             }
         }
     },
-    'contributors': {
-        'index': 'contributor',
+    'contributions': {
+        'index': 'contribution',
         'properties': {
             'identifier': {
                 'type': 'text',

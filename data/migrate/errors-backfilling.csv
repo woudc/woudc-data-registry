@@ -92,8 +92,8 @@ Error Code,Error Type,Message Template,Notes
 101,Error,No ozone data in #DAILY table
 102,Warning,#DAILY.Date found in non-chronological order
 103,Warning,#DAILY.Date has different year than #TIMESTAMP.Date
-104,Warning,Duplicate observations found in #DAILY table for Date={date}
-105,Warning,Multiple observations found with #DAILY.Date {date}
+104,Warning,Duplicate observations found in #DAILY table
+105,Warning,Multiple observations found with #DAILY.Date {value}
 106,Warning,#TIMESTAMP.Date before #DAILY does not equal first date of #DAILY
 107,Warning,#TIMESTAMP.Date after #DAILY does not equal last date of #DAILY
 108,Warning,More than two #TIMESTAMP tables found in file
@@ -103,11 +103,11 @@ Error Code,Error Type,Message Template,Notes
 112,Warning,#MONTHLY.{field} differs from derived value
 113,Error,Cannot derive #MONTHLY table: missing #DAILY.ColumnO3
 114,Warning,#OBSERVATIONS.Time found in non-chronological order
-115,Warning,Duplicate observations found in #OBSERVATIONS table for Time={time}
-116,Warning,Multiple observations found with #OBSERVATIONS.Time {time}
+115,Warning,Duplicate observations found in #OBSERVATIONS table
+116,Warning,Multiple observations found with #OBSERVATIONS.Time {value}
 118,Warning,#{table}.Date found in non-chronological order,Reserved for Umkehr data tables
-119,Warning,Duplicate observations found in #{table} for Date={date},Reserved for Umkehr data tables
-120,Warning,Multiple observations found with #{table}.Date {date},Reserved for Umkehr data tables
+119,Warning,Duplicate observations found in #{table} table,Reserved for Umkehr data tables
+120,Warning,Multiple observations found with #{table}.Date {value},Reserved for Umkehr data tables
 121,Warning,#TIMESTAMP.Date before #{table} does not equal first date of #{table},Reserved for Umkehr data tables
 122,Warning,#TIMESTAMP.Date after #{table} does not equal last date of #{table},Reserved for Umkehr data tables
 123,Warning,#TIMESTAMP table after #{table} is missing\, deriving based on requirements,Reserved for Umkehr data tables
