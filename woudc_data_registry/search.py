@@ -430,35 +430,35 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'station_id': {
-                'type' : 'text',
+                'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
             'station_name': {
-                'type' : 'text',
+                'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'country_id' : {
-                'type' : 'text',
+            'country_id': {
+                'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'country_name_en' : {
-                'type' : 'text',
+            'country_name_en': {
+                'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'country_name_fr' : {
-                'type' : 'text',
+            'country_name_fr': {
+                'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
             'instrument_id': {
-                'type' : 'text',
+                'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'instrument_name': { 
-                'type' : 'text',
+            'instrument_name': {
+                'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
             'instrument_model': {
-                'type' : 'text',
+                'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
             'start_date': {
