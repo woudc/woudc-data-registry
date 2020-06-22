@@ -49,6 +49,8 @@ import io
 
 LOGGER = logging.getLogger(__name__)
 
+RFC3339_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+
 
 def point2geojsongeometry(x, y, z=None):
     """
@@ -137,6 +139,21 @@ def parse_integer_range(bounds_string):
         upper_bound = lower_bound
 
     return (lower_bound, upper_bound)
+
+
+def strftime_rfc3339(datetimeobj=None):
+    """
+    Returns a version of <datetimeobj> as an RFC3339-formatted string
+    (YYYY-MM-DD'T'HH:MM:SS'Z').
+
+    :param datetimeobj: A datetime.datetime or datetime.date object.
+    :returns: A string (or None) version of <datetimeobj> in RFC3339 format.
+    """
+
+    if datetimeobj is None:
+        return None
+    else:
+        return datetimeobj.strftime(RFC3339_DATETIME_FORMAT)
 
 
 def is_text_file(file_):
