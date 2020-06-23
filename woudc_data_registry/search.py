@@ -449,15 +449,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'instrument_id': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
             'instrument_name': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'instrument_model': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },

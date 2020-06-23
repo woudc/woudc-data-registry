@@ -916,45 +916,54 @@ class Contribution():
                        'instrument_name']
 
     project_id = Column(String, ForeignKey('projects.project_id'),
-                        nullable=False)
+                        nullable=False, default='WOUDC')
     contribution_id = Column(String, primary_key=True)
     dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
                         nullable=False)
     station_id = Column(String, ForeignKey('stations.station_id'),
                         nullable=False)
-    station_name = Column(String, nullable=False)
-    country_id = Column(String, nullable=False)
-    country_name_en = Column(String, nullable=False)
-    country_name_fr = Column(String, nullable=False)
-    instrument_id = Column(String, nullable=False)
+
     instrument_name = Column(String,
                              ForeignKey('instruments.name'), nullable=False)
-    instrument_model = Column(String, nullable=False)
-    start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=False)
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
     z = Column(Float, nullable=False)
 
-    def __init__(self):
+    station = relationship('Station', backref=__tablename__)
 
-        self.project_id = dict()
-        self.contribution_id = ""
-        self.dataset_id = dict()
-        self.station_id = dict()
-        self.country_id = dict()
-        self.country_name_en = dict()
-        self.country_name_fr = dict()
-        self.instrument_id = dict()
-        self.instrument_name = dict()
-        self.instrument_model = dict()
-        self.start_date = dict()
-        self.end_date = dict()
+    def __init__(self, dict_):
+
+        self.project_id = dict_['project_id']
+        self.contribution_id = dict_['contribution_id']
+        self.dataset_id = dict_['dataset_id']
+        self.station_id = dict_['station_id']
+        self.station_name = dict_['station_name']
+        self.country_id = dict_['country_id']
+        self.country_name_en = dict_['country_name_en']
+        self.country_name_fr = dict_['country_name_fr']
+        self.instrument_name = dict_['instrument_name']
+        self.start_date = dict_['start_date']
+        self.end_date = dict_['end_date']
         self.generate_ids()
 
-        self.x = -1
-        self.y = -1
-        self.z = -1
+        try:
+            if isinstance(dict_['start_date'], datetime.date):
+                self.start_date = dict_['start_date']
+            else:
+                self.start_date = datetime.datetime.strptime(
+                    dict_['start_date'], '%Y-%m-%d').date()
+            if dict_['end_date'] is None \
+                    or isinstance(dict_['end_date'], datetime.date):
+                self.end_date = dict_['end_date']
+            elif dict_['end_date']:
+                self.end_date = datetime.datetime.strptime(
+                    dict_['end_date'], '%Y-%m-%d').date()
+        except Exception as err:
+            LOGGER.error(err)
+
+        self.x = dict_['x']
+        self.y = dict_['y']
+        self.z = dict_['z']
 
     @property
     def __geo_interface__(self):
@@ -971,9 +980,7 @@ class Contribution():
                 'country_id': self.country_id,
                 'country_name_en': self.country_name_en,
                 'country_name_fr': self.country_name_fr,
-                'instrument_id': self.instrument_id,
                 'instrument_name': self.instrument_name,
-                'instrument_model': self.instrument_model,
                 'start_date': self.start_date,
                 'end_date': self.end_date
             }
@@ -990,6 +997,115 @@ class Contribution():
             components = [getattr(self, field)
                           for field in self.id_dependencies]
             self.contribution_id = ':'.join(map(str, components))
+
+
+"""function that forms contributions from other model lists"""
+
+
+def build_contributions(project_models,
+                        station_models, instrument_models, country_models,
+                        deployment_models, contributor_models):
+    
+    # List to store the final contribution_models
+    contribution_models = []
+
+    # Turn lists holding essential information into dictionary with key
+    # that is common with another list in order to allow for fast lookup
+    country_dict = {country_models[i].country_id: country_models[i]
+                    for i in range(0, len(country_models))}
+    instrument_dict = {instrument_models[i].name: instrument_models[i]
+                       for i in range(0, len(instrument_models))}
+    contributor_dict = {contributor_models[i].contributor_id:
+                        contributor_models[i]
+                        for i in range(0, len(contributor_models))}
+
+    # deployment dict will have stations as
+    # keys in order to help connect them to projects
+    deployment_dict = {deployment_models[i].station_id:
+                       deployment_models[i]
+                       for i in range(0, len(deployment_models))}
+
+    # contribution dict used to check for duplicate contribution id
+    contribution_dict = {}
+
+    for key in instrument_dict:
+
+        # station info
+        station_id = instrument_dict[key].station.station_id
+        station_name = instrument_dict[key].station.station_name_id
+
+        # country info
+        country_id = instrument_dict[key].station.country.country_id
+        country_name_en = instrument_dict[key].station.country.name_en
+        country_name_fr = instrument_dict[key].station.country.name_fr
+
+
+        # instrument info
+        instrument_name = instrument_dict[key].name
+
+        start_date = instrument_dict[key].start_date
+        end_date = instrument_dict[key].end_date
+        dataset_id = instrument_dict[key].dataset_id
+
+        x = instrument_dict[key].x
+        y = instrument_dict[key].y
+        z = instrument_dict[key].z
+
+        # get the contributor id first from
+        # the deployment at the specific station
+        contributor_id = \
+            deployment_dict[station_id].contributor_id
+
+        # now access the project from contributor
+        project_id = contributor_dict[contributor_id].project_id
+
+        # form the contribution id by combining the
+        # strings present in Contributions dependencies
+        contribution_id = project_id + ":" + dataset_id + ":" \
+            + station_id + ":" + instrument_name
+        
+
+        # check if contribution id is in the index already
+        if contribution_id in contribution_dict.keys():
+
+            # if it is then update the start
+            # and end date for that contribution id
+            # since the dict points to the list can just update the dict
+            # only update start date if less than the current start date
+            # only update end date if greater than the current end date
+            if start_date < contribution_dict[contribution_id].start_date:
+
+                contribution_dict[contribution_id].start_date = start_date
+
+            elif end_date > contribution_dict[contribution_id].end_date:
+
+                contribution_dict[contribution_id].end_date = end_date
+
+        else:
+
+            # otherwise create a new contribution
+            # create dictionary for creating object
+
+            data = {'contribution_id': contribution_id,
+                    'project_id': project_id,
+                    'dataset_id': dataset_id,
+                    'station_id': station_id,
+                    'station_name': station_name,
+                    'country_id': country_id,
+                    'country_name_en': country_name_en,
+                    'country_name_fr': country_name_fr,
+                    'instrument_name': instrument_name,
+                    'start_date': start_date,
+                    'end_date': end_date,
+                    'x': x,
+                    'y': y,
+                    'z': z}
+
+            contribution = Contribution(data)
+            contribution_models.append(contribution)
+            contribution_dict[contribution_id] = contribution
+
+    return contribution_models
 
 
 def unpack_station_names(rows):
@@ -1252,111 +1368,12 @@ def sync(ctx):
         Deployment,
         DataRecord,
     ]
-    contribution_models = list()
-
-    """function to form all the contributions from the other models lists"""
-    def build_contributions(contribution_models, project_models,
-                            station_models, instrument_models, country_models,
-                            deployment_models, contributor_models):
-
-        """turn lists holding essential information into dictionaries with key
-        that is common with another list in order to allow for fast lookup"""
-        country_dict = {country_models[i].country_id: country_models[i]
-                        for i in range(0, len(country_models))}
-        instrument_dict = {instrument_models[i].name: instrument_models[i]
-                           for i in range(0, len(instrument_models))}
-        contributor_dict = {contributor_models[i].contributor_id:
-                            contributor_models[i]
-                            for i in range(0, len(contributor_models))}
-
-        """deployment_dict will have stations as
-        keys in order to help connect them to projects """
-        deployment_dict = {deployment_models[i].station_id:
-                           deployment_models[i]
-                           for i in range(0, len(deployment_models))}
-
-        """contribution dict used to check for duplicate contribution id"""
-        contribution_dict = {contribution_models[i].contribution_id:
-                             contribution_models[i]
-                             for i in range(0, len(contribution_models))}
-
-        for key in instrument_dict:
-
-            for station in station_models:
-
-                """station info"""
-                station_id = station.station_id
-                station_name = station.station_name_id
-
-                """country info"""
-                country_id = station.country_id
-                country_name_en = country_dict[country_id].name_en
-                country_name_fr = country_dict[country_id].name_fr
-
-                """instrument info"""
-                instrument_id = instrument_dict[key].instrument_id
-                instrument_name = instrument_dict[key].name
-                instrument_model = instrument_dict[key].model
-
-                start_date = instrument_dict[key].start_date
-                end_date = instrument_dict[key].end_date
-                dataset_id = instrument_dict[key].dataset_id
-
-                x = instrument_dict[key].x
-                y = instrument_dict[key].y
-                z = instrument_dict[key].z
-
-                """ get the contributor id first from
-                the deployment at the specific station"""
-                contributor_id = \
-                    deployment_dict[station.station_id].contributor_id
-
-                """ now access the project from contributor"""
-                project_id = contributor_dict[contributor_id].project_id
-
-                """form the contribution id by combining the
-                strings present in Contributions dependencies"""
-                contribution_id = project_id + ":" + dataset_id + ":" \
-                    + station_id + ":" + instrument_name
-
-                """check if the contribution id is in the index already"""
-                if contribution_id in contribution_dict.keys():
-
-                    """if it is then update the start
-                    and end date for that contribution id"""
-                    for index in contribution_models:
-                        if contribution_models[index].contribution_id \
-                                == contribution_id:
-                            contribution_models[index].start_date = start_date
-                            contribution_models[index].end_date = end_date
-                else:
-
-                    """otherwise create a new contribution
-                    object with this id and add to the list"""
-                    C = Contribution()
-                    C.contribution_id = contribution_id
-                    C.project_id = project_id
-                    C.dataset_id = dataset_id
-                    C.station_id = station_id
-                    C.station_name = station_name
-                    C.country_id = country_id
-                    C.country_name_en = country_name_en
-                    C.country_name_fr = country_name_fr
-                    C.instrument_id = instrument_id
-                    C.instrument_name = instrument_name
-                    C.instrument_model = instrument_model
-                    C.start_date = start_date
-                    C.end_date = end_date
-                    C.x = x
-                    C.y = y
-                    C.z = z
-
-                    contribution_models.append(C)
+    contribution_models = []
 
     registry_ = registry.Registry()
     search_index = SearchIndex()
 
-    models_dict = dict()
+    models_dict = {}
     search_index_config = config.EXTRAS.get('search_index', {})
 
     click.echo('Begin data registry backend sync on ', nl=False)
@@ -1372,13 +1389,13 @@ def sync(ctx):
         click.echo('{}...'.format(plural_caps))
 
         registry_contents = registry_.query_full_index(clazz)
-        models_dict_key = ""
+        models_dict_key = ''
 
         for index in registry_contents:
             models_dict_key = str(type(index))[7:-1]
             break
 
-        models_dict.update({models_dict_key: registry_contents})
+        models_dict[models_dict_key] = registry_contents
 
         registry_docs = [obj.__geo_interface__ for obj in registry_contents]
 
@@ -1387,12 +1404,11 @@ def sync(ctx):
         click.echo('Purging excess models...')
         search_index.unindex_except(clazz, registry_docs)
 
-    click.echo('Done')
+    click.echo('Build and store contributions in search')
 
     """call build_contributions by indexing the dictionary"""
 
-    build_contributions(contribution_models,
-                        models_dict["'woudc_data_registry.models.Project'"],
+    contribution_models = build_contributions(models_dict["'woudc_data_registry.models.Project'"],
                         models_dict["'woudc_data_registry.models.Station'"],
                         models_dict["'woudc_data_registry.models.Instrument'"],
                         models_dict["'woudc_data_registry.models.Country'"],
@@ -1404,6 +1420,8 @@ def sync(ctx):
     contribution_docs = \
         [model.__geo_interface__ for model in contribution_models]
     search_index.index(Contribution, contribution_docs)
+
+    click.echo('done')
 
 
 search.add_command(sync)
