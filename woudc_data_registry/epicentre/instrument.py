@@ -53,6 +53,8 @@ from woudc_data_registry.util import json_serial
 
 from woudc_data_registry import config
 
+from datetime import datetime
+
 save_to_registry = config.EXTRAS['cli']['registry_enabled']
 save_to_index = config.EXTRAS['cli']['search_index_enabled']
 
@@ -67,11 +69,15 @@ def build_instrument(ecsv):
     serial = str(ecsv.extcsv['INSTRUMENT']['Number'])
     station = str(ecsv.extcsv['PLATFORM']['ID'])
     dataset = ecsv.extcsv['CONTENT']['Category']
+    contributor = str(ecsv.extcsv['CONTRIBUTOR']['ID'])
     location = [ecsv.extcsv['LOCATION'].get(f, None)
                 for f in ['Longitude', 'Latitude', 'Height']]
     timestamp_date = ecsv.extcsv['TIMESTAMP']['Date']
 
-    instrument_id = ':'.join([name, model, serial, station, dataset])
+    instrument_id = ':'.join([name, model, serial,
+                              station, dataset, contributor])
+    deployment = ':'.join([station, contributor])
+
     model = {
         'identifier': instrument_id,
         'name': name,
@@ -79,6 +85,7 @@ def build_instrument(ecsv):
         'serial': serial,
         'station_id': station,
         'dataset_id': dataset,
+        'deployment_id': deployment,
         'start_date': timestamp_date,
         'end_date': timestamp_date,
         'x': location[0],
@@ -127,6 +134,8 @@ def show(ctx, identifier):
 @click.option('-st', '--station', 'station', required=True,
               help='station ID')
 @click.option('-d', '--dataset', 'dataset', required=True, help='dataset')
+@click.option('-c', '--contributor', 'contributor', required=True,
+              help='contributor')
 @click.option('-n', '--name', 'name', required=True, help='instrument name')
 @click.option('-m', '--model', 'model', required=True,
               help='instrument model')
@@ -135,7 +144,7 @@ def show(ctx, identifier):
 @click.option('-g', '--geometry', 'geometry', required=True,
               help='latitude,longitude[,height]')
 @click.pass_context
-def add(ctx, station, dataset, name, model, serial, geometry):
+def add(ctx, station, dataset, contributor, name, model, serial, geometry):
     """Add an instrument"""
 
     geom_tokens = geometry.split(',')
@@ -145,12 +154,14 @@ def add(ctx, station, dataset, name, model, serial, geometry):
     instrument_ = {
         'station_id': station,
         'dataset_id': dataset,
+        'contributor': contributor,
         'name': name,
         'model': model,
         'serial': serial,
-        'x': geom_tokens[1],
-        'y': geom_tokens[0],
-        'z': geom_tokens[2]
+        'start_date': datetime.now(),
+        'x': int(geom_tokens[1]),
+        'y': int(geom_tokens[0]),
+        'z': int(geom_tokens[2])
     }
 
     result = add_metadata(Instrument, instrument_,
@@ -163,13 +174,15 @@ def add(ctx, station, dataset, name, model, serial, geometry):
               help='identifier')
 @click.option('-st', '--station', 'station', help='station ID')
 @click.option('-d', '--dataset', 'dataset', help='dataset')
+@click.option('-t', '--deployment', 'deployment', help='deployment ID')
 @click.option('-n', '--name', 'name', help='instrument name')
 @click.option('-m', '--model', 'model', help='instrument model')
 @click.option('-s', '--serial', 'serial', help='instrument serial number')
 @click.option('-g', '--geometry', 'geometry',
               help='latitude,longitude[,height]')
 @click.pass_context
-def update(ctx, identifier, station, dataset, name, model, serial, geometry):
+def update(ctx, identifier, station, dataset,
+           deployment, name, model, serial, geometry):
     """Update instrument information"""
 
     instrument_ = {}
@@ -178,6 +191,8 @@ def update(ctx, identifier, station, dataset, name, model, serial, geometry):
         instrument_['station_id'] = station
     if dataset:
         instrument_['dataset_id'] = dataset
+    if deployment:
+        instrument_['deployment_id'] = deployment
     if name:
         instrument_['name'] = name
     if model:
@@ -218,8 +233,7 @@ def delete(ctx, identifier):
     if click.confirm(q):  # noqa
         delete_metadata(Instrument, identifier,
                         save_to_registry, save_to_index)
-
-    click.echo('Instrument {} deleted'.format(identifier))
+        click.echo('Instrument {} deleted'.format(identifier))
 
 
 instrument.add_command(list_)

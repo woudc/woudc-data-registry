@@ -278,13 +278,17 @@ class Instrument(base):
     __tablename__ = 'instruments'
 
     id_field = 'instrument_id'
-    id_dependencies = ['name', 'model', 'serial', 'station_id', 'dataset_id']
+    id_dependencies = ['name', 'model', 'serial',
+                       'station_id', 'dataset_id', 'contributor']
 
     instrument_id = Column(String, primary_key=True)
     station_id = Column(String, ForeignKey('stations.station_id'),
                         nullable=False)
     dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
                         nullable=False)
+    deployment_id = Column(String, ForeignKey('deployments.deployment_id'),
+                           nullable=False)
+
     name = Column(String, nullable=False)
     model = Column(String, nullable=False)
     serial = Column(String, nullable=False)
@@ -299,17 +303,18 @@ class Instrument(base):
     # relationships
     station = relationship('Station', backref=__tablename__)
     dataset = relationship('Dataset', backref=__tablename__)
+    deployment = relationship('Deployment', backref=__tablename__)
 
     def __init__(self, dict_):
         self.station_id = dict_['station_id']
         self.dataset_id = dict_['dataset_id']
+        self.contributor = dict_['contributor']
 
         self.name = dict_['name']
         self.model = dict_['model']
         self.serial = dict_['serial']
 
         self.generate_ids()
-
         try:
             if isinstance(dict_['start_date'], datetime.date):
                 self.start_date = dict_['start_date']
@@ -348,6 +353,7 @@ class Instrument(base):
                 'station_name': self.station.station_name.name,
                 'data_class': self.dataset.data_class,
                 'dataset': self.dataset_id,
+                'deployment_id': self.deployment_id,
                 'name': self.name,
                 'model': self.model,
                 'serial': self.serial,
@@ -369,6 +375,10 @@ class Instrument(base):
             components = [getattr(self, field)
                           for field in self.id_dependencies]
             self.instrument_id = ':'.join(map(str, components))
+
+        # build the deployment id below
+        temp = {self.station_id, self.contributor}
+        self.deployment_id = ':'.join(temp)
 
 
 class Project(base):

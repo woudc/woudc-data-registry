@@ -748,7 +748,8 @@ class Process(object):
             self.extcsv.extcsv['INSTRUMENT']['Number'] = serial = 'UNKNOWN'
 
         instrument = build_instrument(self.extcsv)
-        fields = ['name', 'model', 'serial', 'station_id', 'dataset_id']
+        fields = ['name', 'model', 'serial',
+                  'station_id', 'dataset_id', 'deployment_id']
         case_insensitive = ['name', 'model', 'serial']
 
         model = {field: getattr(instrument, field) for field in fields}
