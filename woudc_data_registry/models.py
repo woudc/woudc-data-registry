@@ -308,7 +308,8 @@ class Instrument(base):
     def __init__(self, dict_):
         self.station_id = dict_['station_id']
         self.dataset_id = dict_['dataset_id']
-        self.contributor = dict_['contributor']
+        self.contributor_id = ':'.join([dict_['contributor'],
+                                        dict_['project']])
 
         self.name = dict_['name']
         self.model = dict_['model']
@@ -353,7 +354,7 @@ class Instrument(base):
                 'station_name': self.station.station_name.name,
                 'data_class': self.dataset.data_class,
                 'dataset': self.dataset_id,
-                'deployment_id': self.deployment_id,
+                'contributor_name': self.contributor.name,
                 'name': self.name,
                 'model': self.model,
                 'serial': self.serial,
@@ -377,8 +378,7 @@ class Instrument(base):
             self.instrument_id = ':'.join(map(str, components))
 
         # build the deployment id below
-        temp = {self.station_id, self.contributor}
-        self.deployment_id = ':'.join(temp)
+        self.deployment_id = ':'.join([self.station_id, self.contributor_id])
 
 
 class Project(base):

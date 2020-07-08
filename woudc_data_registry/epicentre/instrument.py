@@ -69,14 +69,16 @@ def build_instrument(ecsv):
     serial = str(ecsv.extcsv['INSTRUMENT']['Number'])
     station = str(ecsv.extcsv['PLATFORM']['ID'])
     dataset = ecsv.extcsv['CONTENT']['Category']
-    contributor = str(ecsv.extcsv['CONTRIBUTOR']['ID'])
+    contributor = str(ecsv.extcsv['DATA_GENERATION']['Agency'])
+    project = str(ecsv.extcsv['CONTENT']['Class'])
     location = [ecsv.extcsv['LOCATION'].get(f, None)
                 for f in ['Longitude', 'Latitude', 'Height']]
     timestamp_date = ecsv.extcsv['TIMESTAMP']['Date']
 
+    contributor_id = ':'.join([contributor, project])
+
     instrument_id = ':'.join([name, model, serial,
                               station, dataset, contributor])
-    deployment = ':'.join([station, contributor])
 
     model = {
         'identifier': instrument_id,
@@ -85,7 +87,7 @@ def build_instrument(ecsv):
         'serial': serial,
         'station_id': station,
         'dataset_id': dataset,
-        'deployment_id': deployment,
+        'contributor_id': contributor_id,
         'start_date': timestamp_date,
         'end_date': timestamp_date,
         'x': location[0],
@@ -135,7 +137,7 @@ def show(ctx, identifier):
               help='station ID')
 @click.option('-d', '--dataset', 'dataset', required=True, help='dataset')
 @click.option('-c', '--contributor', 'contributor', required=True,
-              help='contributor')
+              help='contributor ID')
 @click.option('-n', '--name', 'name', required=True, help='instrument name')
 @click.option('-m', '--model', 'model', required=True,
               help='instrument model')
@@ -154,7 +156,7 @@ def add(ctx, station, dataset, contributor, name, model, serial, geometry):
     instrument_ = {
         'station_id': station,
         'dataset_id': dataset,
-        'contributor': contributor,
+        'contributor_id': contributor,
         'name': name,
         'model': model,
         'serial': serial,
@@ -174,7 +176,7 @@ def add(ctx, station, dataset, contributor, name, model, serial, geometry):
               help='identifier')
 @click.option('-st', '--station', 'station', help='station ID')
 @click.option('-d', '--dataset', 'dataset', help='dataset')
-@click.option('-t', '--deployment', 'deployment', help='deployment ID')
+@click.option('-c', '--contributor', 'contributor', help='contributor ID')
 @click.option('-n', '--name', 'name', help='instrument name')
 @click.option('-m', '--model', 'model', help='instrument model')
 @click.option('-s', '--serial', 'serial', help='instrument serial number')
@@ -182,7 +184,7 @@ def add(ctx, station, dataset, contributor, name, model, serial, geometry):
               help='latitude,longitude[,height]')
 @click.pass_context
 def update(ctx, identifier, station, dataset,
-           deployment, name, model, serial, geometry):
+           contributor, name, model, serial, geometry):
     """Update instrument information"""
 
     instrument_ = {}
@@ -191,8 +193,8 @@ def update(ctx, identifier, station, dataset,
         instrument_['station_id'] = station
     if dataset:
         instrument_['dataset_id'] = dataset
-    if deployment:
-        instrument_['deployment_id'] = deployment
+    if station and contributor:
+        instrument_['deployment_id'] = ':'.join([station, contributor])
     if name:
         instrument_['name'] = name
     if model:

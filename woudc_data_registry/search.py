@@ -624,7 +624,7 @@ class SearchIndex(object):
             # <target> is a document ID, delete normally.
             result = self.connection.delete(index=index_name, id=target)
 
-            if not result['result'] == 'deleted':
+            if result['result'] != 'deleted':
                 msg = 'Data record {} does not exist'.format(target)
                 LOGGER.error(msg)
                 raise SearchIndexError(msg)
@@ -632,7 +632,7 @@ class SearchIndex(object):
             # <target> is the single GeoJSON object to delete.
             result = self.connection.delete(index=index_name, id=target['id'])
 
-            if not result['result'] == 'deleted':
+            if result['result'] != 'deleted':
                 msg = 'Data record {} does not exist'.format(target['id'])
                 LOGGER.error(msg)
                 raise SearchIndexError(msg)
