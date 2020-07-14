@@ -51,7 +51,7 @@ from woudc_data_registry.epicentre.metadata import (
 from woudc_data_registry.models import Instrument
 from woudc_data_registry.util import json_serial
 
-from woudc_data_registry import config
+from woudc_data_registry import config, registry
 
 from datetime import datetime
 
@@ -75,8 +75,6 @@ def build_instrument(ecsv):
                 for f in ['Longitude', 'Latitude', 'Height']]
     timestamp_date = ecsv.extcsv['TIMESTAMP']['Date']
 
-    contributor_id = ':'.join([contributor, project])
-
     instrument_id = ':'.join([name, model, serial,
                               station, dataset, contributor])
 
@@ -87,7 +85,8 @@ def build_instrument(ecsv):
         'serial': serial,
         'station_id': station,
         'dataset_id': dataset,
-        'contributor_id': contributor_id,
+        'contributor': contributor,
+        'project': project,
         'start_date': timestamp_date,
         'end_date': timestamp_date,
         'x': location[0],
@@ -188,13 +187,26 @@ def update(ctx, identifier, station, dataset,
     """Update instrument information"""
 
     instrument_ = {}
+    registry_ = registry.Registry()
 
     if station:
         instrument_['station_id'] = station
     if dataset:
         instrument_['dataset_id'] = dataset
-    if station and contributor:
-        instrument_['deployment_id'] = ':'.join([station, contributor])
+    if station or contributor:
+        temp_index = registry_.query_full_index(Instrument)
+        i = 0
+        for i in range(len(temp_index)):
+            if temp_index[i].instrument_id == identifier:
+                break
+        if station and (not contributor):
+            cbtr = temp_index[i].deployment.contributor_id
+            instrument_['deployment_id'] = ':'.join([station, cbtr])
+        elif contributor and (not station):
+            stn = temp_index[i].station_id
+            instrument_['deployment_id'] = ':'.join([stn, contributor])
+        elif contributor and station:
+            instrument_['deployment_id'] = ':'.join([station, contributor])
     if name:
         instrument_['name'] = name
     if model:

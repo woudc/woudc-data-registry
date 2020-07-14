@@ -279,7 +279,8 @@ class Instrument(base):
 
     id_field = 'instrument_id'
     id_dependencies = ['name', 'model', 'serial',
-                       'station_id', 'dataset_id', 'contributor']
+                       'station_id', 'dataset_id', 'contributor',
+                       'project']
 
     instrument_id = Column(String, primary_key=True)
     station_id = Column(String, ForeignKey('stations.station_id'),
@@ -308,8 +309,8 @@ class Instrument(base):
     def __init__(self, dict_):
         self.station_id = dict_['station_id']
         self.dataset_id = dict_['dataset_id']
-        self.contributor_id = ':'.join([dict_['contributor'],
-                                        dict_['project']])
+        self.contributor = dict_['contributor']
+        self.project = dict_['project']
 
         self.name = dict_['name']
         self.model = dict_['model']
@@ -354,7 +355,7 @@ class Instrument(base):
                 'station_name': self.station.station_name.name,
                 'data_class': self.dataset.data_class,
                 'dataset': self.dataset_id,
-                'contributor_name': self.contributor.name,
+                'contributor_name': self.deployment.contributor.name,
                 'name': self.name,
                 'model': self.model,
                 'serial': self.serial,
@@ -378,7 +379,8 @@ class Instrument(base):
             self.instrument_id = ':'.join(map(str, components))
 
         # build the deployment id below
-        self.deployment_id = ':'.join([self.station_id, self.contributor_id])
+        self.deployment_id = ':'.join([self.station_id, self.contributor,
+                                      self.project])
 
 
 class Project(base):
