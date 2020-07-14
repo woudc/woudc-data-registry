@@ -194,12 +194,14 @@ def update(ctx, identifier, station, dataset,
         instrument_['dataset_id'] = dataset
     if station or contributor:
         if station and (not contributor):
-            cbtr = get_metadata(Instrument,
-                                identifier)[0].deployment.contributor_id
+            inst = get_metadata(Instrument, identifier)
+            cbtr = inst[0].deployment.contributor_id
             instrument_['deployment_id'] = ':'.join([station, cbtr])
         elif contributor and (not station):
-            stn = get_metadata(Instrument, identifier)[0].station_id
+            inst = get_metadata(Instrument, identifier)
+            stn = inst[0].station_id
             instrument_['deployment_id'] = ':'.join([stn, contributor])
+
         elif contributor and station:
             instrument_['deployment_id'] = ':'.join([station, contributor])
     if name:
