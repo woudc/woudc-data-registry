@@ -51,7 +51,7 @@ from woudc_data_registry.epicentre.metadata import (
 from woudc_data_registry.models import Instrument
 from woudc_data_registry.util import json_serial
 
-from woudc_data_registry import config, registry
+from woudc_data_registry import config
 
 from datetime import datetime
 
@@ -187,23 +187,18 @@ def update(ctx, identifier, station, dataset,
     """Update instrument information"""
 
     instrument_ = {}
-    registry_ = registry.Registry()
 
     if station:
         instrument_['station_id'] = station
     if dataset:
         instrument_['dataset_id'] = dataset
     if station or contributor:
-        temp_index = registry_.query_full_index(Instrument)
-        i = 0
-        for i in range(len(temp_index)):
-            if temp_index[i].instrument_id == identifier:
-                break
         if station and (not contributor):
-            cbtr = temp_index[i].deployment.contributor_id
+            cbtr = get_metadata(Instrument,
+                                identifier)[0].deployment.contributor_id
             instrument_['deployment_id'] = ':'.join([station, cbtr])
         elif contributor and (not station):
-            stn = temp_index[i].station_id
+            stn = get_metadata(Instrument, identifier)[0].station_id
             instrument_['deployment_id'] = ':'.join([stn, contributor])
         elif contributor and station:
             instrument_['deployment_id'] = ':'.join([station, contributor])

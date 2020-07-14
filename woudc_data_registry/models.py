@@ -279,8 +279,7 @@ class Instrument(base):
 
     id_field = 'instrument_id'
     id_dependencies = ['name', 'model', 'serial',
-                       'station_id', 'dataset_id', 'contributor',
-                       'project']
+                       'dataset_id', 'deployment_id']
 
     instrument_id = Column(String, primary_key=True)
     station_id = Column(String, ForeignKey('stations.station_id'),
@@ -371,16 +370,15 @@ class Instrument(base):
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
+        if hasattr(self, 'contributor') and hasattr(self, 'project'):
+            self.deployment_id = ':'.join([self.station_id, self.contributor,
+                                          self.project])
 
         if all([hasattr(self, field) and getattr(self, field) is not None
                 for field in self.id_dependencies]):
             components = [getattr(self, field)
                           for field in self.id_dependencies]
             self.instrument_id = ':'.join(map(str, components))
-
-        # build the deployment id below
-        self.deployment_id = ':'.join([self.station_id, self.contributor,
-                                      self.project])
 
 
 class Project(base):
