@@ -278,13 +278,17 @@ class Instrument(base):
     __tablename__ = 'instruments'
 
     id_field = 'instrument_id'
-    id_dependencies = ['name', 'model', 'serial', 'station_id', 'dataset_id']
+    id_dependencies = ['name', 'model', 'serial',
+                       'dataset_id', 'deployment_id']
 
     instrument_id = Column(String, primary_key=True)
     station_id = Column(String, ForeignKey('stations.station_id'),
                         nullable=False)
     dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
                         nullable=False)
+    deployment_id = Column(String, ForeignKey('deployments.deployment_id'),
+                           nullable=False)
+
     name = Column(String, nullable=False)
     model = Column(String, nullable=False)
     serial = Column(String, nullable=False)
@@ -299,17 +303,19 @@ class Instrument(base):
     # relationships
     station = relationship('Station', backref=__tablename__)
     dataset = relationship('Dataset', backref=__tablename__)
+    deployment = relationship('Deployment', backref=__tablename__)
 
     def __init__(self, dict_):
         self.station_id = dict_['station_id']
         self.dataset_id = dict_['dataset_id']
+        self.contributor = dict_['contributor']
+        self.project = dict_['project']
 
         self.name = dict_['name']
         self.model = dict_['model']
         self.serial = dict_['serial']
 
         self.generate_ids()
-
         try:
             if isinstance(dict_['start_date'], datetime.date):
                 self.start_date = dict_['start_date']
@@ -348,6 +354,7 @@ class Instrument(base):
                 'station_name': self.station.station_name.name,
                 'data_class': self.dataset.data_class,
                 'dataset': self.dataset_id,
+                'contributor_name': self.deployment.contributor.name,
                 'name': self.name,
                 'model': self.model,
                 'serial': self.serial,
@@ -363,6 +370,9 @@ class Instrument(base):
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
+        if hasattr(self, 'contributor') and hasattr(self, 'project'):
+            self.deployment_id = ':'.join([self.station_id, self.contributor,
+                                          self.project])
 
         if all([hasattr(self, field) and getattr(self, field) is not None
                 for field in self.id_dependencies]):

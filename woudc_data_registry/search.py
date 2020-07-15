@@ -241,6 +241,10 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'contributor_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'model': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
@@ -652,7 +656,7 @@ class SearchIndex(object):
         :returns: `bool` of whether the operation was successful.
         """
 
-        search_index_config = config.EXTRAS('search_index', {})
+        search_index_config = config.EXTRAS.get('search_index', {})
         enabled_flag = '{}_enabled'.format(domain.__tablename__)
 
         if not search_index_config.get(enabled_flag, True):
@@ -667,7 +671,7 @@ class SearchIndex(object):
             # <target> is a document ID, delete normally.
             result = self.connection.delete(index=index_name, id=target)
 
-            if not result['found']:
+            if result['result'] != 'deleted':
                 msg = 'Data record {} does not exist'.format(target)
                 LOGGER.error(msg)
                 raise SearchIndexError(msg)
@@ -675,7 +679,7 @@ class SearchIndex(object):
             # <target> is the single GeoJSON object to delete.
             result = self.connection.delete(index=index_name, id=target['id'])
 
-            if not result['found']:
+            if result['result'] != 'deleted':
                 msg = 'Data record {} does not exist'.format(target['id'])
                 LOGGER.error(msg)
                 raise SearchIndexError(msg)
