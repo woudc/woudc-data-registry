@@ -321,6 +321,7 @@ Datasets:
           occurrences: 1
           required_fields:
             - Date
+          optonal_fields:
             - WLCode
             - ObsCode
             - ColumnO3

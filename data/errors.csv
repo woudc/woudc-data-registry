@@ -100,7 +100,7 @@ Error Code,Error Type,Message Template,Notes
 109,Warning,#TIMESTAMP table after #DAILY is missing\, deriving based on requirements
 110,Warning,Missing #MONTHLY table\, deriving based on requirements
 111,Warning,Missing value for #MONTHLY.{field}\, deriving based on requirements
-112,Error,#MONTHLY.{field} differs from derived value
+112,Warning,#MONTHLY.{field} differs from derived value
 113,Error,Cannot derive #MONTHLY table: missing #DAILY.ColumnO3
 114,Warning,#OBSERVATIONS.Time found in non-chronological order
 115,Warning,Duplicate observations found in #OBSERVATIONS table
