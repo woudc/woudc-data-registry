@@ -919,6 +919,173 @@ class DataRecord(base):
         return 'DataRecord({}, {})'.format(self.data_record_id, self.url)
 
 
+class Contribution(base):
+    """
+    Data Registry Contribution
+
+    """
+    __tablename__ = 'contributions'
+
+    id_field = 'contribution_id'
+    id_dependencies = ['project_id', 'dataset_id', 'station_id',
+                       'instrument_name']
+
+    project_id = Column(String, ForeignKey('projects.project_id'),
+                        nullable=False, default='WOUDC')
+    contribution_id = Column(String, primary_key=True)
+    dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
+                        nullable=False)
+    station_id = Column(String, ForeignKey('stations.station_id'),
+                        nullable=False)
+    country_id = Column(String, ForeignKey('countries.country_id'),
+                        nullable=False)
+
+    instrument_name = Column(String, nullable=False)
+
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
+
+    station = relationship('Station', backref=__tablename__)
+    country = relationship('Country', backref=__tablename__)
+    dataset = relationship('Dataset', backref=__tablename__)
+
+    def __init__(self, dict_):
+
+        self.project_id = dict_['project_id']
+        self.contribution_id = dict_['contribution_id']
+        self.station_id = dict_['station_id']
+        self.country_id = dict_['country_id']
+        self.instrument_name = dict_['instrument_name']
+        self.dataset_id = dict_['dataset_id']
+        self.start_date = dict_['start_date']
+        self.end_date = dict_['end_date']
+        self.generate_ids()
+
+        try:
+            if isinstance(dict_['start_date'], datetime.date):
+                self.start_date = dict_['start_date']
+            else:
+                self.start_date = datetime.datetime.strptime(
+                    dict_['start_date'], '%Y-%m-%d').date()
+            if dict_['end_date'] is None \
+                    or isinstance(dict_['end_date'], datetime.date):
+                self.end_date = dict_['end_date']
+            elif dict_['end_date']:
+                self.end_date = datetime.datetime.strptime(
+                    dict_['end_date'], '%Y-%m-%d').date()
+        except Exception as err:
+            LOGGER.error(err)
+
+    @property
+    def __geo_interface__(self):
+        return {
+            'id': self.contribution_id,
+            'type': 'Feature',
+            'geometry': point2geojsongeometry(self.station.x,
+                                              self.station.y, self.station.z),
+            'properties': {
+                'identifier': self.contribution_id,
+                'project_id': self.project_id,
+                'dataset_id': self.dataset_id,
+                'station_id': self.station_id,
+                'station_name': self.station.station_name.name,
+                'country_id': self.station.country_id,
+                'country_name_en': self.station.country.name_en,
+                'country_name_fr': self.station.country.name_fr,
+                'instrument_name': self.instrument_name,
+                'start_date': self.start_date,
+                'end_date': self.end_date
+            }
+        }
+
+    def __repr__(self):
+        return 'Contribution ({})'.format(self.contribution_id)
+
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.contribution_id = ':'.join(map(str, components))
+
+
+def build_contributions(instrument_models):
+    """function that forms contributions from other model lists"""
+
+    # List to store the final contribution_models
+    contribution_models = []
+
+    # contribution dict used to check for duplicate contribution id
+    contribution_dict = {}
+
+    for instrument in instrument_models:
+
+        # station info
+        station_id = instrument.station.station_id
+        # country info
+        country_id = instrument.station.country.country_id
+
+        # instrument info
+        instrument_name = instrument.name
+        start_date = instrument.start_date
+        end_date = instrument.end_date
+        dataset_id = instrument.dataset_id
+
+        # now access the project from contributor
+        project_id = instrument.deployment.contributor.project_id
+
+        # form the contribution id by combining the
+        # strings present in Contributions dependencies
+        contribution_id = ':'.join([project_id, dataset_id,
+                                    station_id, instrument_name])
+
+        # check if contribution id is in the index already
+        if contribution_id in contribution_dict.keys():
+
+            # if it is then update the start
+            # and end date for that contribution id
+            # since the dict points to the list can just update the dict
+            # only update start date if less than the current start date
+            # only update end date if greater than the current end date
+            if start_date < contribution_dict[contribution_id].start_date:
+
+                contribution_dict[contribution_id].start_date = start_date
+
+            elif contribution_dict[contribution_id].end_date is not None \
+                    and end_date is not None:
+
+                if end_date > contribution_dict[contribution_id].end_date:
+
+                    contribution_dict[contribution_id].end_date = end_date
+
+            elif contribution_dict[contribution_id] is None \
+                    and end_date is not None:
+
+                contribution_dict[contribution_id].end_date = end_date
+
+        else:
+
+            # otherwise create a new contribution
+            # create dictionary for creating object
+
+            data = {'contribution_id': contribution_id,
+                    'project_id': project_id,
+                    'dataset_id': dataset_id,
+                    'station_id': station_id,
+                    'country_id': country_id,
+                    'instrument_name': instrument_name,
+                    'start_date': start_date,
+                    'end_date': end_date,
+                    }
+
+            contribution = Contribution(data)
+            contribution_models.append(contribution)
+            contribution_dict[contribution_id] = contribution
+
+    return contribution_models
+
+
 def unpack_station_names(rows):
     """
     Collects CSV data on station names from the iterable <rows>
@@ -1002,7 +1169,6 @@ def teardown(ctx):
               help='Causes records to be stored in the search index as well')
 def init(ctx, datadir, init_search_index):
     """initialize core system metadata"""
-
     import os
 
     if datadir is None:
@@ -1029,6 +1195,7 @@ def init(ctx, datadir, init_search_index):
     station_name_models = []
     instrument_models = []
     deployment_models = []
+    contribution_models = []
 
     click.echo('Loading WMO countries metadata')
     with open(wmo_countries) as jsonfile:
@@ -1134,6 +1301,14 @@ def init(ctx, datadir, init_search_index):
     for model in deployment_models:
         registry_.save(model)
 
+    instrument_from_registry = registry_.query_full_index(Instrument)
+
+    contribution_models = build_contributions(instrument_from_registry)
+
+    click.echo('Storing contributions in data registry')
+    for model in contribution_models:
+        registry_.save(model)
+
     if init_search_index:
         search_index = SearchIndex()
 
@@ -1148,7 +1323,8 @@ def init(ctx, datadir, init_search_index):
             [model.__geo_interface__ for model in instrument_models]
         deployment_docs = \
             [model.__geo_interface__ for model in deployment_models]
-
+        contribution_docs = \
+            [model.__geo_interface__ for model in contribution_models]
         click.echo('Storing projects in search index')
         search_index.index(Project, project_docs)
         click.echo('Storing datasets in search index')
@@ -1163,6 +1339,8 @@ def init(ctx, datadir, init_search_index):
         search_index.index(Instrument, instrument_docs)
         click.echo('Storing deployments in search index')
         search_index.index(Deployment, deployment_docs)
+        click.echo('Storing contributions in search index')
+        search_index.index(Contribution, contribution_docs)
 
 
 @click.command('sync')
@@ -1178,7 +1356,8 @@ def sync(ctx):
         Station,
         Instrument,
         Deployment,
-        DataRecord
+        DataRecord,
+        Contribution
     ]
 
     registry_ = registry.Registry()

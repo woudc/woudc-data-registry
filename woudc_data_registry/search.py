@@ -437,6 +437,53 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             }
         }
+    },
+    'contributions': {
+        'index': 'contribution',
+        'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'project_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'dataset_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'instrument_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'start_date': {
+                'type': 'date'
+            },
+            'end_date': {
+                'type': 'date'
+            }
+        }
     }
 }
 

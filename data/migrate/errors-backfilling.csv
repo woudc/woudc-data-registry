@@ -92,7 +92,7 @@ Error Code,Error Type,Message Template,Notes
 101,Error,No ozone data in #DAILY table
 102,Warning,#DAILY.Date found in non-chronological order
 103,Warning,#DAILY.Date has different year than #TIMESTAMP.Date
-104,Warning,Duplicate observations found in #DAILY table for Date={date}
+104,Warning,Duplicate observations found in #DAILY table for Date=(date)
 105,Warning,Multiple observations found with #DAILY.Date {date}
 106,Warning,#TIMESTAMP.Date before #DAILY does not equal first date of #DAILY
 107,Warning,#TIMESTAMP.Date after #DAILY does not equal last date of #DAILY
