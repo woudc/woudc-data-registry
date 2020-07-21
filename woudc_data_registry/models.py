@@ -1005,37 +1005,30 @@ class Contribution(base):
             self.contribution_id = ':'.join(map(str, components))
 
 
-"""function that forms contributions from other model lists"""
-
-
 def build_contributions(instrument_models):
+    """function that forms contributions from other model lists"""
 
     # List to store the final contribution_models
     contribution_models = []
 
-    # Turn lists holding essential information into dictionary with key
-    # that is common with another list in order to allow for fast lookup
-    instrument_dict = {instrument.instrument_id: instrument
-                       for instrument in instrument_models}
-
     # contribution dict used to check for duplicate contribution id
     contribution_dict = {}
 
-    for key in instrument_dict:
+    for instrument in instrument_models:
 
         # station info
-        station_id = instrument_dict[key].station.station_id
+        station_id = instrument.station.station_id
         # country info
-        country_id = instrument_dict[key].station.country.country_id
+        country_id = instrument.station.country.country_id
 
         # instrument info
-        instrument_name = instrument_dict[key].name
-        start_date = instrument_dict[key].start_date
-        end_date = instrument_dict[key].end_date
-        dataset_id = instrument_dict[key].dataset_id
+        instrument_name = instrument.name
+        start_date = instrument.start_date
+        end_date = instrument.end_date
+        dataset_id = instrument.dataset_id
 
         # now access the project from contributor
-        project_id = instrument_dict[key].deployment.contributor.project_id
+        project_id = instrument.deployment.contributor.project_id
 
         # form the contribution id by combining the
         # strings present in Contributions dependencies
