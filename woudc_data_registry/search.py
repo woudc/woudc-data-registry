@@ -54,12 +54,15 @@ from woudc_data_registry import config
 
 LOGGER = logging.getLogger(__name__)
 
+
 typedefs = {
     'keyword': {
         'type': 'keyword',
         'ignore_above': 256
     }
 }
+
+DATE_FORMAT = 'date_time_no_millis'
 
 MAPPINGS = {
     'projects': {
@@ -104,7 +107,8 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'wmo_membership': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'regional_involvement': {
                 'type': 'text',
@@ -155,13 +159,16 @@ MAPPINGS = {
                 'type': 'boolean'
             },
             'start_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'end_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'last_validated_datetime': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             }
         }
     },
@@ -200,13 +207,16 @@ MAPPINGS = {
                 'type': 'boolean'
             },
             'start_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'end_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'last_validated_datetime': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'gaw_url': {
                 'type': 'text',
@@ -241,6 +251,10 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'contributor_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'model': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
@@ -250,10 +264,12 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'start_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'end_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'waf_url': {
                 'type': 'text',
@@ -305,10 +321,12 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'start_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'end_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             }
         }
     },
@@ -338,7 +356,8 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'data_generation_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'data_generation_version': {
                 'type': 'float'
@@ -384,7 +403,8 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'timestamp_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'timestamp_time': {
                 'type': 'text',
@@ -394,16 +414,20 @@ MAPPINGS = {
                 'type': 'boolean'
             },
             'received_datetime': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'inserted_datetime': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'processed_datetime': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'published_datetime': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'number_of_observations': {
                 'type': 'integer'
@@ -411,6 +435,53 @@ MAPPINGS = {
             'url': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
+            }
+        }
+    },
+    'contributions': {
+        'index': 'contribution',
+        'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'project_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'dataset_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'instrument_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'start_date': {
+                'type': 'date'
+            },
+            'end_date': {
+                'type': 'date'
             }
         }
     }
@@ -605,7 +676,7 @@ class SearchIndex(object):
         :returns: `bool` of whether the operation was successful.
         """
 
-        search_index_config = config.EXTRAS('search_index', {})
+        search_index_config = config.EXTRAS.get('search_index', {})
         enabled_flag = '{}_enabled'.format(domain.__tablename__)
 
         if not search_index_config.get(enabled_flag, True):
@@ -620,7 +691,7 @@ class SearchIndex(object):
             # <target> is a document ID, delete normally.
             result = self.connection.delete(index=index_name, id=target)
 
-            if not result['found']:
+            if result['result'] != 'deleted':
                 msg = 'Data record {} does not exist'.format(target)
                 LOGGER.error(msg)
                 raise SearchIndexError(msg)
@@ -628,7 +699,7 @@ class SearchIndex(object):
             # <target> is the single GeoJSON object to delete.
             result = self.connection.delete(index=index_name, id=target['id'])
 
-            if not result['found']:
+            if result['result'] != 'deleted':
                 msg = 'Data record {} does not exist'.format(target['id'])
                 LOGGER.error(msg)
                 raise SearchIndexError(msg)

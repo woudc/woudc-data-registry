@@ -59,7 +59,7 @@ from sqlalchemy.orm import relationship
 
 from woudc_data_registry import config, registry
 from woudc_data_registry.search import SearchIndex, search
-from woudc_data_registry.util import point2geojsongeometry
+from woudc_data_registry.util import point2geojsongeometry, strftime_rfc3339
 
 base = declarative_base()
 
@@ -122,7 +122,7 @@ class Country(base):
                 'country_name_en': self.name_en,
                 'country_name_fr': self.name_fr,
                 'wmo_region_id': self.wmo_region_id,
-                'wmo_membership': self.wmo_membership,
+                'wmo_membership': strftime_rfc3339(self.wmo_membership),
                 'regional_involvement': self.regional_involvement,
                 'link': self.link
             }
@@ -220,9 +220,10 @@ class Contributor(base):
                 'wmo_region_id': self.wmo_region_id,
                 'url': self.url,
                 'active': self.active,
-                'start_date': self.start_date,
-                'end_date': self.end_date,
-                'last_validated_datetime': self.last_validated_datetime
+                'start_date': strftime_rfc3339(self.start_date),
+                'end_date': strftime_rfc3339(self.end_date),
+                'last_validated_datetime':
+                    strftime_rfc3339(self.last_validated_datetime)
             }
         }
 
@@ -278,13 +279,17 @@ class Instrument(base):
     __tablename__ = 'instruments'
 
     id_field = 'instrument_id'
-    id_dependencies = ['name', 'model', 'serial', 'station_id', 'dataset_id']
+    id_dependencies = ['name', 'model', 'serial',
+                       'dataset_id', 'deployment_id']
 
     instrument_id = Column(String, primary_key=True)
     station_id = Column(String, ForeignKey('stations.station_id'),
                         nullable=False)
     dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
                         nullable=False)
+    deployment_id = Column(String, ForeignKey('deployments.deployment_id'),
+                           nullable=False)
+
     name = Column(String, nullable=False)
     model = Column(String, nullable=False)
     serial = Column(String, nullable=False)
@@ -299,17 +304,19 @@ class Instrument(base):
     # relationships
     station = relationship('Station', backref=__tablename__)
     dataset = relationship('Dataset', backref=__tablename__)
+    deployment = relationship('Deployment', backref=__tablename__)
 
     def __init__(self, dict_):
         self.station_id = dict_['station_id']
         self.dataset_id = dict_['dataset_id']
+        self.contributor = dict_['contributor']
+        self.project = dict_['project']
 
         self.name = dict_['name']
         self.model = dict_['model']
         self.serial = dict_['serial']
 
         self.generate_ids()
-
         try:
             if isinstance(dict_['start_date'], datetime.date):
                 self.start_date = dict_['start_date']
@@ -348,11 +355,12 @@ class Instrument(base):
                 'station_name': self.station.station_name.name,
                 'data_class': self.dataset.data_class,
                 'dataset': self.dataset_id,
+                'contributor_name': self.deployment.contributor.name,
                 'name': self.name,
                 'model': self.model,
                 'serial': self.serial,
-                'start_date': self.start_date,
-                'end_date': self.end_date,
+                'start_date': strftime_rfc3339(self.start_date),
+                'end_date': strftime_rfc3339(self.end_date),
                 'waf_url': '/'.join([waf_basepath, dataset_folder,
                                      station_folder, instrument_folder])
             }
@@ -363,6 +371,9 @@ class Instrument(base):
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
+        if hasattr(self, 'contributor') and hasattr(self, 'project'):
+            self.deployment_id = ':'.join([self.station_id, self.contributor,
+                                          self.project])
 
         if all([hasattr(self, field) and getattr(self, field) is not None
                 for field in self.id_dependencies]):
@@ -497,9 +508,10 @@ class Station(base):
                 'country_name_fr': self.country.name_fr,
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
-                'start_date': self.start_date,
-                'end_date': self.end_date,
-                'last_validated_datetime': self.last_validated_datetime,
+                'start_date': strftime_rfc3339(self.start_date),
+                'end_date': strftime_rfc3339(self.end_date),
+                'last_validated_datetime':
+                    strftime_rfc3339(self.last_validated_datetime),
                 'gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename)
             }
         }
@@ -607,8 +619,8 @@ class Deployment(base):
                 'contributor_name': self.contributor.name,
                 'contributor_project': self.contributor.project_id,
                 'contributor_url': self.contributor.url,
-                'start_date': self.start_date,
-                'end_date': self.end_date
+                'start_date': strftime_rfc3339(self.start_date),
+                'end_date': strftime_rfc3339(self.end_date)
             }
         }
 
@@ -864,7 +876,8 @@ class DataRecord(base):
                 'content_level': self.content_level,
                 'content_form': self.content_form,
 
-                'data_generation_date': self.data_generation_date,
+                'data_generation_date':
+                    strftime_rfc3339(self.data_generation_date),
                 'data_generation_agency': self.data_generation_agency,
                 'data_generation_version': self.data_generation_version,
                 'data_generation_scientific_authority': self.data_generation_scientific_authority,  # noqa
@@ -880,15 +893,17 @@ class DataRecord(base):
                 'instrument_number': self.instrument_number,
 
                 'timestamp_utcoffset': self.timestamp_utcoffset,
-                'timestamp_date': self.timestamp_date,
+                'timestamp_date': strftime_rfc3339(self.timestamp_date),
                 'timestamp_time': None if self.timestamp_time is None \
                     else self.timestamp_time.isoformat(),
 
                 'published': self.published,
-                'received_datetime': self.received_datetime,
-                'inserted_datetime': self.inserted_datetime,
-                'processed_datetime': self.processed_datetime,
-                'published_datetime': self.published_datetime,
+                'received_datetime': strftime_rfc3339(self.received_datetime),
+                'inserted_datetime': strftime_rfc3339(self.inserted_datetime),
+                'processed_datetime':
+                    strftime_rfc3339(self.processed_datetime),
+                'published_datetime':
+                    strftime_rfc3339(self.published_datetime),
 
                 'number_of_observations': self.number_of_observations,
 
@@ -902,6 +917,173 @@ class DataRecord(base):
 
     def __repr__(self):
         return 'DataRecord({}, {})'.format(self.data_record_id, self.url)
+
+
+class Contribution(base):
+    """
+    Data Registry Contribution
+
+    """
+    __tablename__ = 'contributions'
+
+    id_field = 'contribution_id'
+    id_dependencies = ['project_id', 'dataset_id', 'station_id',
+                       'instrument_name']
+
+    project_id = Column(String, ForeignKey('projects.project_id'),
+                        nullable=False, default='WOUDC')
+    contribution_id = Column(String, primary_key=True)
+    dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
+                        nullable=False)
+    station_id = Column(String, ForeignKey('stations.station_id'),
+                        nullable=False)
+    country_id = Column(String, ForeignKey('countries.country_id'),
+                        nullable=False)
+
+    instrument_name = Column(String, nullable=False)
+
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
+
+    station = relationship('Station', backref=__tablename__)
+    country = relationship('Country', backref=__tablename__)
+    dataset = relationship('Dataset', backref=__tablename__)
+
+    def __init__(self, dict_):
+
+        self.project_id = dict_['project_id']
+        self.contribution_id = dict_['contribution_id']
+        self.station_id = dict_['station_id']
+        self.country_id = dict_['country_id']
+        self.instrument_name = dict_['instrument_name']
+        self.dataset_id = dict_['dataset_id']
+        self.start_date = dict_['start_date']
+        self.end_date = dict_['end_date']
+        self.generate_ids()
+
+        try:
+            if isinstance(dict_['start_date'], datetime.date):
+                self.start_date = dict_['start_date']
+            else:
+                self.start_date = datetime.datetime.strptime(
+                    dict_['start_date'], '%Y-%m-%d').date()
+            if dict_['end_date'] is None \
+                    or isinstance(dict_['end_date'], datetime.date):
+                self.end_date = dict_['end_date']
+            elif dict_['end_date']:
+                self.end_date = datetime.datetime.strptime(
+                    dict_['end_date'], '%Y-%m-%d').date()
+        except Exception as err:
+            LOGGER.error(err)
+
+    @property
+    def __geo_interface__(self):
+        return {
+            'id': self.contribution_id,
+            'type': 'Feature',
+            'geometry': point2geojsongeometry(self.station.x,
+                                              self.station.y, self.station.z),
+            'properties': {
+                'identifier': self.contribution_id,
+                'project_id': self.project_id,
+                'dataset_id': self.dataset_id,
+                'station_id': self.station_id,
+                'station_name': self.station.station_name.name,
+                'country_id': self.station.country_id,
+                'country_name_en': self.station.country.name_en,
+                'country_name_fr': self.station.country.name_fr,
+                'instrument_name': self.instrument_name,
+                'start_date': self.start_date,
+                'end_date': self.end_date
+            }
+        }
+
+    def __repr__(self):
+        return 'Contribution ({})'.format(self.contribution_id)
+
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.contribution_id = ':'.join(map(str, components))
+
+
+def build_contributions(instrument_models):
+    """function that forms contributions from other model lists"""
+
+    # List to store the final contribution_models
+    contribution_models = []
+
+    # contribution dict used to check for duplicate contribution id
+    contribution_dict = {}
+
+    for instrument in instrument_models:
+
+        # station info
+        station_id = instrument.station.station_id
+        # country info
+        country_id = instrument.station.country.country_id
+
+        # instrument info
+        instrument_name = instrument.name
+        start_date = instrument.start_date
+        end_date = instrument.end_date
+        dataset_id = instrument.dataset_id
+
+        # now access the project from contributor
+        project_id = instrument.deployment.contributor.project_id
+
+        # form the contribution id by combining the
+        # strings present in Contributions dependencies
+        contribution_id = ':'.join([project_id, dataset_id,
+                                    station_id, instrument_name])
+
+        # check if contribution id is in the index already
+        if contribution_id in contribution_dict.keys():
+
+            # if it is then update the start
+            # and end date for that contribution id
+            # since the dict points to the list can just update the dict
+            # only update start date if less than the current start date
+            # only update end date if greater than the current end date
+            if start_date < contribution_dict[contribution_id].start_date:
+
+                contribution_dict[contribution_id].start_date = start_date
+
+            elif contribution_dict[contribution_id].end_date is not None \
+                    and end_date is not None:
+
+                if end_date > contribution_dict[contribution_id].end_date:
+
+                    contribution_dict[contribution_id].end_date = end_date
+
+            elif contribution_dict[contribution_id] is None \
+                    and end_date is not None:
+
+                contribution_dict[contribution_id].end_date = end_date
+
+        else:
+
+            # otherwise create a new contribution
+            # create dictionary for creating object
+
+            data = {'contribution_id': contribution_id,
+                    'project_id': project_id,
+                    'dataset_id': dataset_id,
+                    'station_id': station_id,
+                    'country_id': country_id,
+                    'instrument_name': instrument_name,
+                    'start_date': start_date,
+                    'end_date': end_date,
+                    }
+
+            contribution = Contribution(data)
+            contribution_models.append(contribution)
+            contribution_dict[contribution_id] = contribution
+
+    return contribution_models
 
 
 def unpack_station_names(rows):
@@ -987,7 +1169,6 @@ def teardown(ctx):
               help='Causes records to be stored in the search index as well')
 def init(ctx, datadir, init_search_index):
     """initialize core system metadata"""
-
     import os
 
     if datadir is None:
@@ -1014,6 +1195,7 @@ def init(ctx, datadir, init_search_index):
     station_name_models = []
     instrument_models = []
     deployment_models = []
+    contribution_models = []
 
     click.echo('Loading WMO countries metadata')
     with open(wmo_countries) as jsonfile:
@@ -1119,6 +1301,14 @@ def init(ctx, datadir, init_search_index):
     for model in deployment_models:
         registry_.save(model)
 
+    instrument_from_registry = registry_.query_full_index(Instrument)
+
+    contribution_models = build_contributions(instrument_from_registry)
+
+    click.echo('Storing contributions in data registry')
+    for model in contribution_models:
+        registry_.save(model)
+
     if init_search_index:
         search_index = SearchIndex()
 
@@ -1133,7 +1323,8 @@ def init(ctx, datadir, init_search_index):
             [model.__geo_interface__ for model in instrument_models]
         deployment_docs = \
             [model.__geo_interface__ for model in deployment_models]
-
+        contribution_docs = \
+            [model.__geo_interface__ for model in contribution_models]
         click.echo('Storing projects in search index')
         search_index.index(Project, project_docs)
         click.echo('Storing datasets in search index')
@@ -1148,6 +1339,8 @@ def init(ctx, datadir, init_search_index):
         search_index.index(Instrument, instrument_docs)
         click.echo('Storing deployments in search index')
         search_index.index(Deployment, deployment_docs)
+        click.echo('Storing contributions in search index')
+        search_index.index(Contribution, contribution_docs)
 
 
 @click.command('sync')
@@ -1163,7 +1356,8 @@ def sync(ctx):
         Station,
         Instrument,
         Deployment,
-        DataRecord
+        DataRecord,
+        Contribution
     ]
 
     registry_ = registry.Registry()
