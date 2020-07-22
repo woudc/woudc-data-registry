@@ -132,18 +132,14 @@ Datasets:
             - IntegratedO3
             - CorrectionCode
             - SondeTotalO3
-            - CorrectionFactor
-            - TotalO3
-            - WLCode
-            - ObsType
-            - Instrument
-            - Number
+            - NormalizationFactor
+            - BackgroundCorrection
+            - SampleTemperatureType
         PROFILE:
           rows: 1+
           occurrences: 1
           required_fields:
             - Pressure
-            - O3PartialPressure
             - Temperature
             - WindSpeed
             - WindDirection
@@ -151,7 +147,15 @@ Datasets:
             - Duration
             - GPHeight
             - RelativeHumidity
+            - Latitude
+            - Longitude
+            - Height
+          optional_fields:
+            - O3PartialPressure
             - SampleTemperature
+            - SondeCurrent
+            - PumpMotorCurrent
+            - PumpMotorVoltage
         AUXILIARY_DATA:
           rows: 1
           occurrences: 0-1
@@ -169,6 +173,124 @@ Datasets:
           optional_fields:
             - Pressure
             - Correction
+        INTERFACE_CARD:
+          rows: 1+
+          occurrences: 0-1
+          optional_fields:
+            - Manufacturer
+            - Model
+            - Number
+        SAMPLING_METHOD:
+          rows: 1+
+          occurrences: 0-1
+          optional_fields:
+            - TypeOzoneFreeAir
+            - CorrectionWettingFlow
+            - SurfaceOzone
+            - DurationSurfaceOzoneExposure
+            - LengthBG
+            - WMOTropopausePressure
+            - BurstOzonePressure
+            - GroundEquipment
+            - ProcessingSoftware
+        PUMP_SETTINGS:
+          rows: 1+
+          occurrences: 0-1
+          optional_fields:
+            - MotorCurrent
+            - HeadPressure
+            - VacuumPressure
+        PRELAUNCH: 
+          rows: 1+
+          occurrences: 0-1
+          optional_fields:
+            - Duration
+            - Pressure
+            - O3PartialPressure
+            - Temperature
+            - WindSpeed
+            - WindDirection
+            - LevelCode
+            - GPHeight
+            - RelativeHumidity
+            - SampleTemperature
+            - SondeCurrent
+            - PumpMotorCurrent
+            - PumpMotorVoltage
+            - Latitude
+            - Longitude
+            - Height
+        PREFLIGHT_SUMMARY:
+          rows: 1+
+          occurrences: 0-1
+          optional_fields:
+            - ib0
+            - ib1
+            - ib2
+            - SolutionType
+            - SolutionVolume
+            - PumpFlowRate
+            - OzoneSondeResponseTime
+        UNCERTAINTY:
+          rows: 1+
+          occurrences: 0-1
+          optional_fields:
+            - Duration
+            - Pressure
+            - O3PartialPressure
+            - Temperature
+            - WindSpeed
+            - WindDirection
+            - LevelCode
+            - GPHeight
+            - RelativeHumidity
+            - SampleTemperature
+            - SondeCurrent
+            - PumpMotorCurrent
+            - PumpMotorVoltage
+            - Latitude
+            - Longitude
+            - Height     
+        RADIOSONDE:
+          rows: 1+
+          occurrences: 0-1
+          optional_fields:
+            - Manufacturer
+            - Model
+            - Number 
+        OZONE_REFERENCE:
+          rows: 1+
+          occurrences: 0-1
+          optional_fields:
+            - Name
+            - Model
+            - Version
+            - Number
+            - TotalO3
+            - WLCode
+            - ObsType
+            - UTC_Mean    
+        DESELECTED_DATA:
+          rows: 1+
+          occurrences: 0-1
+          optional_fields:
+            - Duration
+            - Pressure
+            - O3PartialPressure
+            - Temperature
+            - WindSpeed
+            - WindDirection
+            - LevelCode
+            - GPHeight
+            - RelativeHumidity
+            - SampleTemperature
+            - SondeCurrent
+            - PumpMotorCurrent
+            - PumpMotorVoltage
+            - Latitude
+            - Longitude
+            - Height    
+
         data_table: PROFILE
       "2":
         FLIGHT_SUMMARY:
@@ -321,7 +443,7 @@ Datasets:
           occurrences: 1
           required_fields:
             - Date
-          optonal_fields:
+          optional_fields:
             - WLCode
             - ObsCode
             - ColumnO3
@@ -407,10 +529,10 @@ Datasets:
             - ObsCode
             - Airmass
             - ColumnO3
-            - StdDevO3
+          optional_fields:
             - ColumnSO2
             - StdDevSO2
-          optional_fields:
+            - StdDevO3
             - ZA
             - NdFilter
             - TempC

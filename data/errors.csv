@@ -10,7 +10,7 @@ Error Code,Error Type,Message Template,Notes
 9,Error,Table #{table} has no fields
 10,Error,Table #{table} has no fields,Placeholder for optional-table-specific error
 11,Error,Required table #{table} contains no data
-12,Error,Optional table #{table} contains no data
+12,Warning,Optional table #{table} contains no data
 13,Error,No non-core data tables found
 14,Error,Unexpected empty line between table header and fields
 15,Error,Unrecognized data {row}
