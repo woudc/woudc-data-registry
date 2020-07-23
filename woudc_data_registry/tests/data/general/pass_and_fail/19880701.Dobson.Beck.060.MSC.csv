@@ -1,8 +1,3 @@
-*
-* This file was generated using WODC 80 column formatted data
-* 'na' is used where a model or instrument number is not available
-*
-
 #CONTENT
 Class,Category,Level,Form
 WOUDC,TotalOzone,1.0,1
@@ -49,9 +44,6 @@ Date,WLCode,ObsCode,ColumnO3,StdDevO3,UTC_Begin,UTC_End,UTC_Mean,nObs,mMu,Column
 1988-07-27,0,4,316.0,,,,,11,,
 1988-07-28,0,7,319.0,,,,,10,,
 1988-07-29,0,7,320.0,,,,,13,,
-
-* OC;  BP SCALE.  Revised Oct/97.                                            
-
 
 #TIMESTAMP
 UTCOffset,Date,Time

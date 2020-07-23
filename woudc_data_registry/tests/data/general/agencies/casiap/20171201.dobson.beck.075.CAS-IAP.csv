@@ -1,4 +1,3 @@
-
 #CONTENT
 Class,Category,Level,Form
 WOUDC,TotalOzone,1.0,1
@@ -52,8 +51,6 @@ Date,WLCode,ObsCode,ColumnO3,StdDevO3,UTC_Begin,UTC_End,UTC_Mean,nObs,mMu,Column
 2017-12-26,0,0,353.0,,,, 4,,,
 2017-12-27,0,9,338.0,,,, 3,,,
 2017-12-31,0,0,359.0,,,, 4,,,
-
-* ObsCode=9; ON DIRECT SUN THROUGH THIN CLOUD, FOG OR HAZE.
 
 #TIMESTAMP
 UTCOffset,Date,Time
