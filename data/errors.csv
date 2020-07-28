@@ -10,7 +10,7 @@ Error Code,Error Type,Message Template,Notes
 9,Error,Table #{table} has no fields
 10,Error,Table #{table} has no fields,Placeholder for optional-table-specific error
 11,Error,Required table #{table} contains no data
-12,Error,Optional table #{table} contains no data
+12,Warning,Optional table #{table} contains no data
 13,Error,No non-core data tables found
 14,Error,Unexpected empty line between table header and fields
 15,Error,Unrecognized data {row}
@@ -100,7 +100,7 @@ Error Code,Error Type,Message Template,Notes
 109,Warning,#TIMESTAMP table after #DAILY is missing\, deriving based on requirements
 110,Warning,Missing #MONTHLY table\, deriving based on requirements
 111,Warning,Missing value for #MONTHLY.{field}\, deriving based on requirements
-112,Error,#MONTHLY.{field} differs from derived value
+112,Warning,#MONTHLY.{field} differs from derived value
 113,Error,Cannot derive #MONTHLY table: missing #DAILY.ColumnO3
 114,Warning,#OBSERVATIONS.Time found in non-chronological order
 115,Warning,Duplicate observations found in #OBSERVATIONS table
@@ -117,4 +117,6 @@ Error Code,Error Type,Message Template,Notes
 201,Warning,New instrument added
 202,Warning,New deployment added
 203,Warning,New station name added
+204,Warning,New contribution added
+209,Error,Data file failed to validate
 1000,Error,Unassigned error message

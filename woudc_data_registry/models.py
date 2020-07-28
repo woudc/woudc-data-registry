@@ -1263,19 +1263,19 @@ def init(ctx, datadir, init_search_index):
             ship = Station(row)
             station_models.append(ship)
 
-    click.echo('Loading instruments metadata')
-    with open(instruments) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            instrument = Instrument(row)
-            instrument_models.append(instrument)
-
     click.echo('Loading deployments metadata')
     with open(deployments) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             deployment = Deployment(row)
             deployment_models.append(deployment)
+
+    click.echo('Loading instruments metadata')
+    with open(instruments) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            instrument = Instrument(row)
+            instrument_models.append(instrument)
 
     click.echo('Storing projects in data registry')
     for model in project_models:
@@ -1295,11 +1295,11 @@ def init(ctx, datadir, init_search_index):
     click.echo('Storing stations in data registry')
     for model in station_models:
         registry_.save(model)
-    click.echo('Storing instruments in data registry')
-    for model in instrument_models:
-        registry_.save(model)
     click.echo('Storing deployment records in data registry')
     for model in deployment_models:
+        registry_.save(model)
+    click.echo('Storing instruments in data registry')
+    for model in instrument_models:
         registry_.save(model)
 
     instrument_from_registry = registry_.query_full_index(Instrument)
@@ -1320,10 +1320,10 @@ def init(ctx, datadir, init_search_index):
 
         contributor_docs = \
             [model.__geo_interface__ for model in contributor_models]
-        instrument_docs = \
-            [model.__geo_interface__ for model in instrument_models]
         deployment_docs = \
             [model.__geo_interface__ for model in deployment_models]
+        instrument_docs = \
+            [model.__geo_interface__ for model in instrument_models]
         contribution_docs = \
             [model.__geo_interface__ for model in contribution_models]
         click.echo('Storing projects in search index')
@@ -1336,10 +1336,10 @@ def init(ctx, datadir, init_search_index):
         search_index.index(Contributor, contributor_docs)
         click.echo('Storing stations in search index')
         search_index.index(Station, station_docs)
-        click.echo('Storing instruments in search index')
-        search_index.index(Instrument, instrument_docs)
         click.echo('Storing deployments in search index')
         search_index.index(Deployment, deployment_docs)
+        click.echo('Storing instruments in search index')
+        search_index.index(Instrument, instrument_docs)
         click.echo('Storing contributions in search index')
         search_index.index(Contribution, contribution_docs)
 

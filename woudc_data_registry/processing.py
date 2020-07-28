@@ -55,12 +55,14 @@ from datetime import datetime
 from woudc_data_registry import config
 from woudc_data_registry.models import (Contributor, DataRecord, Dataset,
                                         Deployment, Instrument, Project,
-                                        Station, StationName)
+                                        Station, StationName, Contribution)
 from woudc_data_registry.parser import DOMAINS
 from woudc_data_registry.dataset_validators import get_validator
+from woudc_data_registry.models import build_contributions
 
 from woudc_data_registry.epicentre.station import build_station_name
 from woudc_data_registry.epicentre.instrument import build_instrument
+from woudc_data_registry.epicentre.metadata import get_metadata
 from woudc_data_registry.epicentre.deployment import build_deployment
 
 
@@ -277,7 +279,8 @@ class Process(object):
             self._search_index_updates.append(data_record)
 
             self._add_to_report(200)
-            return data_record
+            return data_record    
+
 
     def persist(self):
         """
@@ -289,7 +292,8 @@ class Process(object):
         """
 
         data_records = []
-
+        
+        instrument_in_list = False
         if not config.EXTRAS['processing']['registry_enabled']:
             LOGGER.info('Data registry persistence disabled, skipping.')
         else:
@@ -297,10 +301,22 @@ class Process(object):
             for model in self._registry_updates:
                 LOGGER.debug('Saving {} to registry'.format(str(model)))
                 self.registry.save(model)
-
+                
+                if (str(type(model))[7:-1]) == "'woudc_data_registry.models.Instrument'":
+                    instrument_in_list = True
+                
                 if isinstance(model, DataRecord):
                     data_records.append(model)
 
+            if instrument_in_list:
+                self._add_to_report(204)
+                contribution = self.add_contribution(bypass=False)
+                
+                print(contribution)
+                if isinstance(contribution, DataRecord):
+                    data_records.append(contribution)
+                self.search_index_updates.append(contribution)
+                    
         if not config.EXTRAS['processing']['search_index_enabled']:
             LOGGER.info('Search index persistence disabled, skipping.')
         else:
@@ -434,6 +450,30 @@ class Process(object):
             return True
         else:
             return False
+
+    def add_contribution(self, bypass=False):
+        """check if instrument Extended CSV has valid parameters for creating
+        a contribution object"""
+        instrument_list = []
+        instrument = build_instrument(self.extcsv)
+
+        instrument_list.append(get_metadata(Instrument, instrument.instrument_id))
+                
+        contribution = (build_contributions(instrument_list))[0]
+
+        if bypass:
+            LOGGER.info('Bypass mode. Skipping permission check')
+            allow_add_contribution = True
+        else: 
+            response = input('Contribution {} not found. Add? (y/n) [n]: ' 
+                             .format(contribution.contribution_id))
+            allow_add_contribution = response.lower() in ['y', 'yes']
+
+        if allow_add_contribution:
+            LOGGER.info('Saving contribution to registry...')
+            self.registry.save(contribution)
+        return contribution
+
 
     def check_project(self):
         """
