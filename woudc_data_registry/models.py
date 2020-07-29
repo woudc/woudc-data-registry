@@ -59,7 +59,7 @@ from sqlalchemy.orm import relationship
 
 from woudc_data_registry import config, registry
 from woudc_data_registry.search import SearchIndex, search
-from woudc_data_registry.util import point2geojsongeometry
+from woudc_data_registry.util import point2geojsongeometry, strftime_rfc3339
 
 base = declarative_base()
 
@@ -122,7 +122,7 @@ class Country(base):
                 'country_name_en': self.name_en,
                 'country_name_fr': self.name_fr,
                 'wmo_region_id': self.wmo_region_id,
-                'wmo_membership': self.wmo_membership,
+                'wmo_membership': strftime_rfc3339(self.wmo_membership),
                 'regional_involvement': self.regional_involvement,
                 'link': self.link
             }
@@ -220,9 +220,10 @@ class Contributor(base):
                 'wmo_region_id': self.wmo_region_id,
                 'url': self.url,
                 'active': self.active,
-                'start_date': self.start_date,
-                'end_date': self.end_date,
-                'last_validated_datetime': self.last_validated_datetime
+                'start_date': strftime_rfc3339(self.start_date),
+                'end_date': strftime_rfc3339(self.end_date),
+                'last_validated_datetime':
+                    strftime_rfc3339(self.last_validated_datetime)
             }
         }
 
@@ -358,8 +359,8 @@ class Instrument(base):
                 'name': self.name,
                 'model': self.model,
                 'serial': self.serial,
-                'start_date': self.start_date,
-                'end_date': self.end_date,
+                'start_date': strftime_rfc3339(self.start_date),
+                'end_date': strftime_rfc3339(self.end_date),
                 'waf_url': '/'.join([waf_basepath, dataset_folder,
                                      station_folder, instrument_folder])
             }
@@ -507,9 +508,10 @@ class Station(base):
                 'country_name_fr': self.country.name_fr,
                 'wmo_region_id': self.wmo_region_id,
                 'active': self.active,
-                'start_date': self.start_date,
-                'end_date': self.end_date,
-                'last_validated_datetime': self.last_validated_datetime,
+                'start_date': strftime_rfc3339(self.start_date),
+                'end_date': strftime_rfc3339(self.end_date),
+                'last_validated_datetime':
+                    strftime_rfc3339(self.last_validated_datetime),
                 'gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename)
             }
         }
@@ -617,8 +619,8 @@ class Deployment(base):
                 'contributor_name': self.contributor.name,
                 'contributor_project': self.contributor.project_id,
                 'contributor_url': self.contributor.url,
-                'start_date': self.start_date,
-                'end_date': self.end_date
+                'start_date': strftime_rfc3339(self.start_date),
+                'end_date': strftime_rfc3339(self.end_date)
             }
         }
 
@@ -874,7 +876,8 @@ class DataRecord(base):
                 'content_level': self.content_level,
                 'content_form': self.content_form,
 
-                'data_generation_date': self.data_generation_date,
+                'data_generation_date':
+                    strftime_rfc3339(self.data_generation_date),
                 'data_generation_agency': self.data_generation_agency,
                 'data_generation_version': self.data_generation_version,
                 'data_generation_scientific_authority': self.data_generation_scientific_authority,  # noqa
@@ -890,15 +893,17 @@ class DataRecord(base):
                 'instrument_number': self.instrument_number,
 
                 'timestamp_utcoffset': self.timestamp_utcoffset,
-                'timestamp_date': self.timestamp_date,
+                'timestamp_date': strftime_rfc3339(self.timestamp_date),
                 'timestamp_time': None if self.timestamp_time is None \
                     else self.timestamp_time.isoformat(),
 
                 'published': self.published,
-                'received_datetime': self.received_datetime,
-                'inserted_datetime': self.inserted_datetime,
-                'processed_datetime': self.processed_datetime,
-                'published_datetime': self.published_datetime,
+                'received_datetime': strftime_rfc3339(self.received_datetime),
+                'inserted_datetime': strftime_rfc3339(self.inserted_datetime),
+                'processed_datetime':
+                    strftime_rfc3339(self.processed_datetime),
+                'published_datetime':
+                    strftime_rfc3339(self.published_datetime),
 
                 'number_of_observations': self.number_of_observations,
 
@@ -1297,6 +1302,14 @@ def init(ctx, datadir, init_search_index):
         registry_.save(model)
     click.echo('Storing instruments in data registry')
     for model in instrument_models:
+        registry_.save(model)
+
+    instrument_from_registry = registry_.query_full_index(Instrument)
+
+    contribution_models = build_contributions(instrument_from_registry)
+
+    click.echo('Storing contributions in data registry')
+    for model in contribution_models:
         registry_.save(model)
 
     instrument_from_registry = registry_.query_full_index(Instrument)
