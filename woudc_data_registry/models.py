@@ -923,7 +923,7 @@ class Contribution(base):
 
     id_field = 'contribution_id'
     id_dependencies = ['project_id', 'dataset_id', 'station_id',
-                       'instrument_name']
+                       'instrument_id']
 
     project_id = Column(String, ForeignKey('projects.project_id'),
                         nullable=False, default='WOUDC')
@@ -934,9 +934,8 @@ class Contribution(base):
                         nullable=False)
     country_id = Column(String, ForeignKey('countries.country_id'),
                         nullable=False)
-
-    instrument_name = Column(String, nullable=False)
-    contributor_name = Column(String, nullable=False)
+    instrument_id = Column(String, ForeignKey('instruments.instrument_id'),
+                           nullable=False)
 
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=True)
@@ -944,15 +943,15 @@ class Contribution(base):
     station = relationship('Station', backref=__tablename__)
     country = relationship('Country', backref=__tablename__)
     dataset = relationship('Dataset', backref=__tablename__)
+    instrument = relationship('Instrument', backref=__tablename__)
 
     def __init__(self, dict_):
 
         self.project_id = dict_['project_id']
         self.contribution_id = dict_['contribution_id']
         self.station_id = dict_['station_id']
+        self.instrument_id = dict_['instrument_id']
         self.country_id = dict_['country_id']
-        self.instrument_name = dict_['instrument_name']
-        self.contributor_name = dict_['contributor_name']
         self.dataset_id = dict_['dataset_id']
         self.start_date = dict_['start_date']
         self.end_date = dict_['end_date']
@@ -989,8 +988,9 @@ class Contribution(base):
                 'country_id': self.station.country_id,
                 'country_name_en': self.station.country.name_en,
                 'country_name_fr': self.station.country.name_fr,
-                'instrument_name': self.instrument_name,
-                'contributor_name': self.contributor_name,
+                'instrument_name': self.instrument.name,
+                'contributor_name': self.instrument.
+                deployment.contributor.name,
                 'start_date': self.start_date,
                 'end_date': self.end_date
             }
@@ -1025,20 +1025,18 @@ def build_contributions(instrument_models):
         country_id = instrument.station.country.country_id
 
         # instrument info
-        instrument_name = instrument.name
+        instrument_id = instrument.instrument_id
         start_date = instrument.start_date
         end_date = instrument.end_date
         dataset_id = instrument.dataset_id
 
         # now access the project from contributor
         project_id = instrument.deployment.contributor.project_id
-        # contributor name
-        contributor_name = instrument.deployment.contributor.name
 
         # form the contribution id by combining the
         # strings present in Contributions dependencies
         contribution_id = ':'.join([project_id, dataset_id,
-                                    station_id, instrument_name])
+                                    station_id, instrument_id])
 
         # check if contribution id is in the index already
         if contribution_id in contribution_dict.keys():
@@ -1074,8 +1072,7 @@ def build_contributions(instrument_models):
                     'dataset_id': dataset_id,
                     'station_id': station_id,
                     'country_id': country_id,
-                    'instrument_name': instrument_name,
-                    'contributor_name': contributor_name,
+                    'instrument_id': instrument_id,
                     'start_date': start_date,
                     'end_date': end_date,
                     }
