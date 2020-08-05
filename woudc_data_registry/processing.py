@@ -241,12 +241,35 @@ class Process(object):
         else:
             location_ok = self.check_location()
 
+        LOGGER.info('Validating contribution')
+        contribution_ok = False
+        if not all([instrument_ok, project_ok,
+                    dataset_ok, instrument_model_ok,
+                    platform_ok, location_ok]):
+            LOGGER.warning('Contribution is not valid due to'
+                           ' fields it depends on being invalid')
+            contribution_ok = False
+
+        if verify_only:
+            LOGGER.info('Verify mode. Skipping Contribution addition.')
+            contribution_ok = True
+        else:
+            contribution_exists = self.check_contribution()
+            if not contribution_exists:
+                contribution_ok = self.add_contribution(bypass=False)
+            else:
+                contribution_ok = True
+
+            if contribution_ok:
+                self._add_to_report(204)
+
         content_ok = self.check_content()
         data_generation_ok = self.check_data_generation()
 
         if not all([project_ok, dataset_ok, contributor_ok,
                     platform_ok, deployment_ok, instrument_ok,
-                    location_ok, content_ok, data_generation_ok]):
+                    location_ok, content_ok, data_generation_ok,
+                    contribution_ok]):
             self._add_to_report(209)
             return None
 
@@ -263,26 +286,6 @@ class Process(object):
             if not all([time_series_ok, dataset_validated]):
                 self._add_to_report(209)
                 return None
-
-        LOGGER.info('Validating contribution')
-        if not all([instrument_ok, project_ok,
-                    dataset_ok, instrument_model_ok,
-                    platform_ok, location_ok]):
-            LOGGER.warning('Contribution is not valid due to'
-                           ' fields it depends on being invalid')
-            contribution_ok = False
-
-        if verify_only:
-            LOGGER.info('Verify mode. Skipping Contribution addition.')
-            contribution_ok = True
-        else:
-            contribution_ok = self.add_contribution(bypass=False)
-
-        if contribution_ok:
-            self._add_to_report(204)
-        else:
-            self._add_to_report(209)
-            return None
 
         LOGGER.info('Validating data record')
         data_record = DataRecord(self.extcsv)
@@ -456,28 +459,58 @@ class Process(object):
             return False
 
     def add_contribution(self, bypass=False):
-        """check if instrument Extended CSV has valid parameters for creating
-        a contribution object"""
+        """
+        Create a new contribution record from the input Extended CSV file's
+        various fields and queue it to be saved the next time the publish
+        method is called
+
+        Unless <bypass> is provided and True, there will be a permission
+        prompt before a record is created. If permission is denied, no
+        new contribution will be queued and False will be returned.
+
+        :param bypass: `bool` of whether to skip permission checks
+                       to add the contribution.
+        :returns: `bool` of whether the operation was successful.
+        """
+
         instrument = build_instrument(self.extcsv)
+
         project_id = self.extcsv.extcsv['CONTENT']['Class']
         dataset_id = self.extcsv.extcsv['CONTENT']['Category']
         station_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
         country_id = self.extcsv.extcsv['PLATFORM']['Country']
-        instrument_id = instrument.instrument_id
-        start_date = instrument.start_date
-        end_date = instrument.end_date
+
+        agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
+
+        instrument_name = instrument.name
+
+        start_date = self.extcsv.extcsv['TIMESTAMP']['Date']
+        end_date = None
+
+        contributor_id = ':'.join([agency, project_id])
+        contributor_name = ""
+        contributor_from_registry = self.registry.query_full_index(Contributor)
+
+        for contributor in contributor_from_registry:
+            if contributor_id == contributor.contributor_id:
+                contributor_name = contributor.name
+                break
+
         contribution_id = ':'.join([project_id, dataset_id,
-                                    station_id, instrument_id])
-        data = {'contribution_id': contribution_id,
-                'project_id': project_id,
-                'dataset_id': dataset_id,
-                'station_id': station_id,
-                'country_id': country_id,
-                'instrument_id': instrument_id,
-                'start_date': start_date,
-                'end_date': end_date,
-                }
-        contribution = Contribution(data)
+                                    station_id, instrument_name])
+
+        contribution_data = {'contribution_id': contribution_id,
+                             'project_id': project_id,
+                             'dataset_id': dataset_id,
+                             'station_id': station_id,
+                             'country_id': country_id,
+                             'instrument_name': instrument_name,
+                             'contributor_name': contributor_name,
+                             'start_date': start_date,
+                             'end_date': end_date,
+                             }
+
+        contribution = Contribution(contribution_data)
 
         if bypass:
             LOGGER.info('Bypass mode. Skipping permission check')
@@ -494,6 +527,46 @@ class Process(object):
             return True
         else:
             return False
+
+    def check_contribution(self):
+        """
+        Checks if a contribution object with an id created using
+        the Extended CSV source file's fields already exists
+        within the data registry
+        """
+
+        instrument = build_instrument(self.extcsv)
+
+        project_id = self.extcsv.extcsv['CONTENT']['Class']
+        dataset_id = self.extcsv.extcsv['CONTENT']['Category']
+        station_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
+
+        timestamp_date = self.extcsv.extcsv['TIMESTAMP']['Date']
+
+        instrument_name = instrument.name
+
+        contribution_id = ':'.join([project_id, dataset_id,
+                                    station_id, instrument_name])
+
+        contribution = self.registry.query_by_field(Contribution,
+                                                    'contribution_id',
+                                                    contribution_id)
+        if not contribution:
+            LOGGER.warning('Contribution {} not found'.format(contribution_id))
+            return False
+        else:
+            LOGGER.warning('Found contribution match for {}'
+                           .format(contribution_id))
+            if contribution.start_date > timestamp_date:
+                contribution.start_date = timestamp_date
+                self._registry_updates.append(contribution)
+                LOGGER.debug('Contribution start date updated')
+            elif contribution.end_date  \
+                    and contribution.end_date < timestamp_date:
+                contribution.end_date = timestamp_date
+                self._registry_updates.append(contribution)
+                LOGGER.debug('Contribution end date updated')
+            return True
 
     def check_project(self):
         """
