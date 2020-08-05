@@ -44,6 +44,7 @@
 # =================================================================
 
 import os
+from pathlib import Path
 
 import click
 import logging
@@ -57,14 +58,14 @@ from woudc_data_registry.processing import Process
 
 from woudc_data_registry.registry import Registry
 from woudc_data_registry.search import SearchIndex
-from woudc_data_registry.report import ReportWriter
+from woudc_data_registry.report import OperatorReport, RunReport
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-def orchestrate(source, working_dir,
-                metadata_only=False, verify_only=False, bypass=False):
+def orchestrate(source, working_dir, metadata_only=False,
+                verify_only=False, bypass=False):
     """
     Core orchestation workflow
 
@@ -82,11 +83,19 @@ def orchestrate(source, working_dir,
     files_to_process = []
 
     if os.path.isfile(source):
-        files_to_process = [source]
+        fullpath = Path(source).parent.resolve()
+        parent_dir = os.path.basename(str(fullpath))
+
+        # Use parent dir to guess the contributor acronym during processing
+        # runs, where the parent path is the contributor's FTP name.
+        files_to_process = [(source, parent_dir)]
     elif os.path.isdir(source):
         for root, dirs, files in os.walk(source):
+            parent_dir = os.path.basename(root)
+
             for f in files:
-                files_to_process.append(os.path.join(root, f))
+                fullpath = os.path.join(root, f)
+                files_to_process.append((fullpath, parent_dir))
 
     files_to_process.sort()
 
@@ -96,15 +105,21 @@ def orchestrate(source, working_dir,
     registry = Registry()
     search_engine = SearchIndex()
 
-    reporter = ReportWriter(working_dir)
+    with OperatorReport(working_dir) as op_report, \
+         click.progressbar(files_to_process, label='Processing files') as run_:  # noqa
 
-    with click.progressbar(files_to_process, label='Processing files') as run_:
-        for file_to_process in run_:
+        run_report = RunReport(working_dir)
+
+        for file_to_process, contributor in run_:
             click.echo('Processing filename: {}'.format(file_to_process))
 
             LOGGER.info('Detecting file')
             if not is_text_file(file_to_process):
-                if reporter.add_message(1):  # If code 1 is an error
+                _, is_error = op_report.add_message(1)
+                if is_error:
+                    op_report.write_failing_file(file_to_process, contributor)
+                    run_report.write_failing_file(file_to_process, contributor)
+
                     failed.append(file_to_process)
                     continue
 
@@ -112,21 +127,27 @@ def orchestrate(source, working_dir,
                 contents = read_file(file_to_process)
 
                 LOGGER.info('Parsing data record')
-                extcsv = ExtendedCSV(contents, reporter)
+                extcsv = ExtendedCSV(contents, op_report)
 
                 LOGGER.info('Validating Extended CSV')
                 extcsv.validate_metadata_tables()
+                contributor = extcsv.extcsv['DATA_GENERATION']['Agency']
+
                 if not metadata_only:
                     extcsv.validate_dataset_tables()
                 LOGGER.info('Valid Extended CSV')
 
-                p = Process(registry, search_engine, reporter)
-                data_record = p.validate(extcsv, metadata_only=metadata_only,
-                                         bypass=bypass)
+                p = Process(registry, search_engine, op_report)
+                data_record = p.validate(extcsv, bypass=bypass,
+                                         metadata_only=metadata_only)
 
                 if data_record is None:
                     click.echo('Not ingesting')
                     failed.append(file_to_process)
+
+                    op_report.write_failing_file(file_to_process,
+                                                 contributor, extcsv)
+                    run_report.write_failing_file(file_to_process, contributor)
                 else:
                     data_record.ingest_filepath = file_to_process
                     data_record.filename = os.path.basename(file_to_process)
@@ -141,6 +162,10 @@ def orchestrate(source, working_dir,
                         p.persist()
                         click.echo('Ingested successfully')
 
+                    op_report.write_passing_file(file_to_process, extcsv,
+                                                 data_record)
+                    run_report.write_passing_file(file_to_process, contributor)
+
                     passed.append(file_to_process)
 
             except UnicodeDecodeError as err:
@@ -148,19 +173,31 @@ def orchestrate(source, working_dir,
 
                 click.echo('Not ingested')
                 failed.append(file_to_process)
+
+                op_report.write_failing_file(file_to_process, contributor)
+                run_report.write_failing_file(file_to_process, contributor)
             except NonStandardDataError as err:
                 LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
 
                 click.echo('Not ingested')
                 failed.append(file_to_process)
+
+                op_report.write_failing_file(file_to_process, contributor)
+                run_report.write_failing_file(file_to_process, contributor)
             except MetadataValidationError as err:
                 LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
 
                 click.echo('Not ingested')
                 failed.append(file_to_process)
+
+                op_report.write_failing_file(file_to_process, contributor)
+                run_report.write_failing_file(file_to_process, contributor)
             except Exception as err:
                 click.echo('Processing failed: {}'.format(err))
                 failed.append(file_to_process)
+
+                op_report.write_failing_file(file_to_process, contributor)
+                run_report.write_failing_file(file_to_process, contributor)
 
     registry.close_session()
 
@@ -184,16 +221,16 @@ def data():
 @click.pass_context
 @click.argument('source', type=click.Path(exists=True, resolve_path=True,
                                           dir_okay=True, file_okay=True))
-@click.option('--working-dir', '-w', 'working_dir', default=None,
+@click.option('--report', '-r', 'reports_dir', default=None,
               help='Path to main output directory for logs and reports')
 @click.option('--lax', '-l', 'lax', is_flag=True,
               help='Only validate core metadata tables')
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-def ingest(ctx, source, working_dir, lax, bypass):
+def ingest(ctx, source, reports_dir, lax, bypass):
     """ingest a single data submission or directory of files"""
 
-    orchestrate(source, working_dir, metadata_only=lax, bypass=bypass)
+    orchestrate(source, reports_dir, metadata_only=lax, bypass=bypass)
 
 
 @click.command()

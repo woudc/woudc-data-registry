@@ -54,12 +54,15 @@ from woudc_data_registry import config
 
 LOGGER = logging.getLogger(__name__)
 
+
 typedefs = {
     'keyword': {
         'type': 'keyword',
         'ignore_above': 256
     }
 }
+
+DATE_FORMAT = 'date_time_no_millis'
 
 MAPPINGS = {
     'projects': {
@@ -104,7 +107,8 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'wmo_membership': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'regional_involvement': {
                 'type': 'text',
@@ -155,13 +159,16 @@ MAPPINGS = {
                 'type': 'boolean'
             },
             'start_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'end_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'last_validated_datetime': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             }
         }
     },
@@ -200,13 +207,16 @@ MAPPINGS = {
                 'type': 'boolean'
             },
             'start_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'end_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'last_validated_datetime': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'gaw_url': {
                 'type': 'text',
@@ -254,10 +264,12 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'start_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'end_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'waf_url': {
                 'type': 'text',
@@ -309,10 +321,12 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'start_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'end_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             }
         }
     },
@@ -342,7 +356,8 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'data_generation_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'data_generation_version': {
                 'type': 'float'
@@ -388,7 +403,8 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'timestamp_date': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'timestamp_time': {
                 'type': 'text',
@@ -398,16 +414,20 @@ MAPPINGS = {
                 'type': 'boolean'
             },
             'received_datetime': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'inserted_datetime': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'processed_datetime': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'published_datetime': {
-                'type': 'date'
+                'type': 'date',
+                'format': DATE_FORMAT
             },
             'number_of_observations': {
                 'type': 'integer'
