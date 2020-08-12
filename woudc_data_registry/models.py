@@ -1308,15 +1308,7 @@ def init(ctx, datadir, init_search_index):
     instrument_from_registry = registry_.query_full_index(Instrument)
 
     contribution_models = build_contributions(instrument_from_registry)
-
-    click.echo('Storing contributions in data registry')
-    for model in contribution_models:
-        registry_.save(model)
-
-    instrument_from_registry = registry_.query_full_index(Instrument)
-
-    contribution_models = build_contributions(instrument_from_registry)
-
+    
     click.echo('Storing contributions in data registry')
     for model in contribution_models:
         registry_.save(model)
