@@ -474,8 +474,6 @@ class Process(object):
         :returns: `bool` of whether the operation was successful.
         """
 
-        instrument = build_instrument(self.extcsv)
-
         project_id = self.extcsv.extcsv['CONTENT']['Class']
         dataset_id = self.extcsv.extcsv['CONTENT']['Category']
         station_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
@@ -483,7 +481,7 @@ class Process(object):
 
         agency = self.extcsv.extcsv['DATA_GENERATION']['Agency']
 
-        instrument_name = instrument.name
+        instrument_name = self.extcsv.extcsv['INSTRUMENT']['Name']
 
         start_date = self.extcsv.extcsv['TIMESTAMP']['Date']
         end_date = None
@@ -536,15 +534,13 @@ class Process(object):
         within the data registry
         """
 
-        instrument = build_instrument(self.extcsv)
-
         project_id = self.extcsv.extcsv['CONTENT']['Class']
         dataset_id = self.extcsv.extcsv['CONTENT']['Category']
         station_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
 
         timestamp_date = self.extcsv.extcsv['TIMESTAMP']['Date']
 
-        instrument_name = instrument.name
+        instrument_name = self.extcsv.extcsv['INSTRUMENT']['Name']
 
         contribution_id = ':'.join([project_id, dataset_id,
                                     station_id, instrument_name])
