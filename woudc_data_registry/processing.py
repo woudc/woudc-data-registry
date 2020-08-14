@@ -484,9 +484,9 @@ class Process(object):
         end_date = None
 
         contributor_id = ':'.join([agency, project_id])
-        contributor_from_registry = self.registry.query_by_field(Contributor,
-                                                                'contributor_id',
-                                                                contributor_id)
+        contributor_from_registry = \
+            self.registry.query_by_field(Contributor,
+                                         'contributor_id', contributor_id)
         contributor_name = contributor_from_registry.name
         contribution_id = ':'.join([project_id, dataset_id,
                                     station_id, instrument_name])
