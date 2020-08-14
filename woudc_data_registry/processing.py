@@ -242,7 +242,7 @@ class Process(object):
             location_ok = self.check_location()
 
         LOGGER.info('Validating contribution')
-        contribution_ok = False
+        contribution_ok = True
         if not all([instrument_ok, project_ok,
                     dataset_ok, instrument_model_ok,
                     platform_ok, location_ok]):
@@ -250,17 +250,14 @@ class Process(object):
                            ' fields it depends on being invalid')
             contribution_ok = False
 
-        if verify_only:
+        if verify_only and contribution_ok:
             LOGGER.info('Verify mode. Skipping Contribution addition.')
-            contribution_ok = True
-        else:
+        elif contribution_ok:
             contribution_exists = self.check_contribution()
             if not contribution_exists:
                 contribution_ok = self.add_contribution(bypass=False)
-            else:
-                contribution_ok = True
 
-            if contribution_ok:
+            if contribution_ok and (not contribution_exists):
                 self._add_to_report(204)
 
         content_ok = self.check_content()
@@ -487,14 +484,10 @@ class Process(object):
         end_date = None
 
         contributor_id = ':'.join([agency, project_id])
-        contributor_name = ""
-        contributor_from_registry = self.registry.query_full_index(Contributor)
-
-        for contributor in contributor_from_registry:
-            if contributor_id == contributor.contributor_id:
-                contributor_name = contributor.name
-                break
-
+        contributor_from_registry = self.registry.query_by_field(Contributor,
+                                                                'contributor_id',
+                                                                contributor_id)
+        contributor_name = contributor_from_registry.name
         contribution_id = ':'.join([project_id, dataset_id,
                                     station_id, instrument_name])
 

@@ -160,9 +160,9 @@ def add(ctx, station, dataset, contributor, name, model, serial, geometry):
         'model': model,
         'serial': serial,
         'start_date': datetime.now(),
-        'x': int(geom_tokens[1]),
-        'y': int(geom_tokens[0]),
-        'z': int(geom_tokens[2])
+        'x': float(geom_tokens[1]),
+        'y': float(geom_tokens[0]),
+        'z': float(geom_tokens[2])
     }
 
     result = add_metadata(Instrument, instrument_,
