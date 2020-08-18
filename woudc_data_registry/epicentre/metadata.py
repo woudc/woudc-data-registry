@@ -131,7 +131,7 @@ def add_metadata(entity, dict_, save_to_registry=True, save_to_index=True):
                 'station_id': station_id,
                 'name': name,
                 'first_seen': date.today()
-            }, es=False)
+            }, save_to_index=False)
 
     c = entity(dict_)
     if save_to_registry:

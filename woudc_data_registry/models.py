@@ -939,8 +939,8 @@ class Contribution(base):
                         nullable=False)
     country_id = Column(String, ForeignKey('countries.country_id'),
                         nullable=False)
-
     instrument_name = Column(String, nullable=False)
+    contributor_name = Column(String, nullable=False)
 
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=True)
@@ -954,8 +954,9 @@ class Contribution(base):
         self.project_id = dict_['project_id']
         self.contribution_id = dict_['contribution_id']
         self.station_id = dict_['station_id']
-        self.country_id = dict_['country_id']
         self.instrument_name = dict_['instrument_name']
+        self.contributor_name = dict_['contributor_name']
+        self.country_id = dict_['country_id']
         self.dataset_id = dict_['dataset_id']
         self.start_date = dict_['start_date']
         self.end_date = dict_['end_date']
@@ -993,6 +994,7 @@ class Contribution(base):
                 'country_name_en': self.station.country.name_en,
                 'country_name_fr': self.station.country.name_fr,
                 'instrument_name': self.instrument_name,
+                'contributor_name': self.contributor_name,
                 'start_date': self.start_date,
                 'end_date': self.end_date
             }
@@ -1033,6 +1035,7 @@ def build_contributions(instrument_models):
         dataset_id = instrument.dataset_id
 
         # now access the project from contributor
+        contributor_name = instrument.deployment.contributor.name
         project_id = instrument.deployment.contributor.project_id
 
         # form the contribution id by combining the
@@ -1075,6 +1078,7 @@ def build_contributions(instrument_models):
                     'station_id': station_id,
                     'country_id': country_id,
                     'instrument_name': instrument_name,
+                    'contributor_name': contributor_name,
                     'start_date': start_date,
                     'end_date': end_date,
                     }
@@ -1262,19 +1266,19 @@ def init(ctx, datadir, init_search_index):
             ship = Station(row)
             station_models.append(ship)
 
-    click.echo('Loading instruments metadata')
-    with open(instruments) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            instrument = Instrument(row)
-            instrument_models.append(instrument)
-
     click.echo('Loading deployments metadata')
     with open(deployments) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             deployment = Deployment(row)
             deployment_models.append(deployment)
+
+    click.echo('Loading instruments metadata')
+    with open(instruments) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            instrument = Instrument(row)
+            instrument_models.append(instrument)
 
     click.echo('Storing projects in data registry')
     for model in project_models:
@@ -1294,11 +1298,11 @@ def init(ctx, datadir, init_search_index):
     click.echo('Storing stations in data registry')
     for model in station_models:
         registry_.save(model)
-    click.echo('Storing instruments in data registry')
-    for model in instrument_models:
-        registry_.save(model)
     click.echo('Storing deployment records in data registry')
     for model in deployment_models:
+        registry_.save(model)
+    click.echo('Storing instruments in data registry')
+    for model in instrument_models:
         registry_.save(model)
 
     instrument_from_registry = registry_.query_full_index(Instrument)
@@ -1319,10 +1323,10 @@ def init(ctx, datadir, init_search_index):
 
         contributor_docs = \
             [model.__geo_interface__ for model in contributor_models]
-        instrument_docs = \
-            [model.__geo_interface__ for model in instrument_models]
         deployment_docs = \
             [model.__geo_interface__ for model in deployment_models]
+        instrument_docs = \
+            [model.__geo_interface__ for model in instrument_models]
         contribution_docs = \
             [model.__geo_interface__ for model in contribution_models]
         click.echo('Storing projects in search index')
@@ -1335,10 +1339,10 @@ def init(ctx, datadir, init_search_index):
         search_index.index(Contributor, contributor_docs)
         click.echo('Storing stations in search index')
         search_index.index(Station, station_docs)
-        click.echo('Storing instruments in search index')
-        search_index.index(Instrument, instrument_docs)
         click.echo('Storing deployments in search index')
         search_index.index(Deployment, deployment_docs)
+        click.echo('Storing instruments in search index')
+        search_index.index(Instrument, instrument_docs)
         click.echo('Storing contributions in search index')
         search_index.index(Contribution, contribution_docs)
 
