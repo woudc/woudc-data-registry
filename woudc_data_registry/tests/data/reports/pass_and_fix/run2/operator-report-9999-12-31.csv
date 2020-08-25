@@ -1,0 +1,9 @@
+Processing Status,Error Type,Error Code,Line Number,Message,Dataset,Data Level,Data Form,Agency,Station Type,Station ID,Filename,Incoming Path,Outgoing Path,URN
+P,Warning,200,,Data file successfully persisted,OzoneSonde,1.0,1,MSC,STN,024,file2.csv,/path/to/file2.csv,,
+P,Warning,200,,Data file successfully persisted,OzoneSonde,1.0,1,MSC,STN,077,file3.csv,/path/to/file3.csv,,
+P,Warning,200,,Data file successfully persisted,OzoneSonde,1.0,1,MSC,STN,315,File5.csv,/path/to/File5.csv,,
+P,Warning,200,,Data file successfully persisted,Spectral,1.0,1,MSC,STN,018,file6.csv,/path/to/file6.csv,,
+P,Warning,200,,Data file successfully persisted,Spectral,1.0,1,MSC,STN,018,file7.csv,/path/to/file7.csv,,
+P,Warning,200,,Data file successfully persisted,OzoneSonde,1.0,1,MSC,STN,198,file8.csv,/path/to/file8.csv,,
+F,Error,2,,No core metadata tables found. Not an Extended CSV file,OzoneSonde,1.0,1,MSC,STN,077,file9.csv,/path/to/file9.csv,,
+F,Error,209,,Data file failed to validate,OzoneSonde,1.0,1,MSC,STN,077,file9.csv,/path/to/file9.csv,,

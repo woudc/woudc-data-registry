@@ -1,0 +1,2 @@
+Processing Status,Error Type,Error Code,Line Number,Message,Dataset,Data Level,Data Form,Agency,Station Type,Station ID,Filename,Incoming Path,Outgoing Path,URN
+P,Warning,200,,Data file successfully persisted,TotalOzone,1.0,1,MSC,STN,303,file1.csv,/path/to/file1.csv,,

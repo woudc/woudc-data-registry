@@ -56,9 +56,10 @@ from woudc_data_registry.parser import (ExtendedCSV, NonStandardDataError,
                                         MetadataValidationError)
 from woudc_data_registry.processing import Process
 
+from woudc_data_registry.models import Contributor
 from woudc_data_registry.registry import Registry
+from woudc_data_registry.report import OperatorReport, RunReport, EmailSummary
 from woudc_data_registry.search import SearchIndex
-from woudc_data_registry.report import OperatorReport, RunReport
 
 
 LOGGER = logging.getLogger(__name__)
@@ -248,5 +249,22 @@ def verify(ctx, source, lax, bypass):
                 verify_only=True, bypass=bypass)
 
 
+@click.command()
+@click.pass_context
+@click.option('--working-dir', '-w', 'working_dir', required=True,
+              type=click.Path(exists=True, resolve_path=True, file_okay=False))
+def generate_emails(ctx, working_dir):
+    """Write an email report based on the processing run in <working_dir>"""
+
+    registry = Registry()
+    email_summary = EmailSummary(working_dir)
+
+    contributors = registry.query_full_index(Contributor)
+    addresses = {model.acronym: model.email for model in contributors}
+
+    email_summary.write(addresses)
+
+
 data.add_command(ingest)
 data.add_command(verify)
+data.add_command(generate_emails, name='generate-emails')

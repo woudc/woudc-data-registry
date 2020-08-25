@@ -43,9 +43,10 @@
 #
 # =================================================================
 
-import os
 import csv
 import logging
+import os
+import re
 
 from datetime import date
 from collections import OrderedDict
@@ -54,6 +55,64 @@ from woudc_data_registry import config
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+def ensure_dict_key(dict_, key, default):
+    """
+    If dictionary key <key> is not already present in dictionary <dict_>,
+    add it there and give it the value <default>.
+
+    :param dict_: A dictionary.
+    :param key: A dictionary key.
+    :param default: Value to add to dict_[key] if the key is not already there.
+    :returns: void
+    """
+
+    if key not in dict_:
+        dict_[key] = default
+
+
+def invert_dict(dict_):
+    """
+    Returns a dictionary which contains the same items as <dict_>, except
+    the (sets of) values have become keys and the keys have become
+    sets of values.
+
+    :param dict_: A dictionary, with sets/collections as values.
+    :returns: Another dictionary with values mapping to sets of keys.
+    """
+
+    inverted = {}
+
+    for key, valueset in dict_.items():
+        for value in valueset:
+            ensure_dict_key(inverted, value, set())
+            inverted[value].add(key)
+
+    return inverted
+
+
+def group_dict_keys(dict_):
+    """
+    Returns a dictionary in which groups of keys that all map to the same value
+    are condensed, with a tuple of all such keys mapping to their shared value.
+
+    Requires the values of <dict> to be collections of hashable elements.
+
+    :param dict_: A `dict` with hashable collections as values.
+    :returns: Another `dict` where groups of keys map to their shared values.
+    """
+
+    inverted = invert_dict(dict_)
+    collected = {}
+
+    for value, keylist in inverted.items():
+        ordered_keylist = tuple(sorted(keylist))
+
+        ensure_dict_key(collected, ordered_keylist, set())
+        collected[ordered_keylist].add(value)
+
+    return collected
 
 
 class Report:
@@ -596,19 +655,27 @@ class EmailSummary:
     The `EmailSummary` class is responsible for writing email summary files.
     """
 
-    def __init__(self, root):
+    def __init__(self, input_root, output_root=None):
         """
-        Initialize a new EmailSummary that will write to the directory <root>.
+        Initialize a new EmailSummary that will write to a directory.
 
-        The path <root> is important for two reasons. First, as the processing
-        run's working directory it contains all the logs and reports from
-        the run, which are used to detect file status. Second, it is the
-        output directory where the email summary file itself is written
+        Email summary files are made by reading operator reports from
+        <input_root> and analyzing errors and warnings. <input_root>
+        should be the path to a past processing run's working directory.
 
-        :param root: Path to the processing run's working directory.
+        The email summary file will be written inside <output_root>, if
+        provided. Otherwise it will write its file to <input_root> instead.
+
+        :param input_root: Path to the processing run's working directory.
+        :param output_root: Path to where the email summary should be written.
         """
 
-        self._working_directory = root
+        self._working_directory = input_root
+
+        if output_root is not None:
+            self._output_directory = output_root
+        else:
+            self._output_directory = input_root
 
     def filepath(self):
         """
@@ -621,7 +688,157 @@ class EmailSummary:
         today = date.today().strftime('%Y-%m-%d')
         filename = 'failed-files-{}'.format(today)
 
-        return os.path.join(self._working_directory, filename)
+        return os.path.join(self._output_directory, filename)
+
+    def find_operator_reports(self):
+        """
+        Returns a list of absolute paths to all operator reports in
+        the instance's working directory.
+
+        :returns: List of operator report paths.
+        """
+
+        run_number = 1
+        parent_dir = '{}/run{}'.format(self._working_directory, run_number)
+
+        operator_report_pattern = r'operator-report-\d{4}-\d{2}-\d{2}.csv'
+        operator_report_paths = []
+
+        while os.path.exists(parent_dir) and os.path.isdir(parent_dir):
+            for filename in os.listdir(parent_dir):
+                if re.match(operator_report_pattern, filename):
+                    fullpath = os.path.join(parent_dir, filename)
+                    operator_report_paths.append(fullpath)
+
+            run_number += 1
+            parent_dir = '{}/run{}'.format(self._working_directory, run_number)
+
+        return operator_report_paths
+
+    def summarize_operator_reports(self, operator_report_paths):
+        """
+        Reads and analyzes the operator reports identified in
+        <operator_report_paths>, returning statistics on how files performed
+        through the course of a processing run.
+
+        The report filepaths in <operator_report_paths> must be ordered by
+        when they happened in the processing run.
+
+        The returned statistics are three dictionaries. Each one maps
+        contributor acronyms to nested, inner maps, with content like this:
+
+        First dictionary: set of filepaths for files under that agency that
+                          passed the first time they were processed.
+        Second dictionary: map of filepaths to sets of error messages that were
+                           fixed over the course of the processing run.
+        Third dictionary: map of filepaths to sets of error messages that were
+                          never fixed and caused the file to fail processing.
+
+        :param operator_report_paths: List of operator report absolute paths
+                                      in the order they were generated.
+        :returns: Three dictionaries describing passing files, fixed files,
+                  and failing files per contributor.
+        """
+
+        passing_files_map = {}
+        fixed_files_map = {}
+        failing_files_map = {}
+
+        for report_path in operator_report_paths:
+            with open(report_path) as operator_report:
+                reader = csv.reader(operator_report, escapechar='\\')
+                next(reader)  # Discard header line
+
+                local_pass_map = {}
+                local_error_map = {}
+                local_files_encountered = {}
+
+                for line in reader:
+                    status = line[0]
+                    error_type = line[1]
+                    error_code = int(line[2])
+                    msg = line[4]
+
+                    contributor = line[8] or 'UNKNOWN'
+                    filename = line[11]
+
+                    ensure_dict_key(local_files_encountered, contributor, set())  # noqa
+                    local_files_encountered[contributor].add(filename)
+
+                    if status == 'P':  # File has been processed successfully.
+                        ensure_dict_key(local_pass_map, contributor, set())
+                        local_pass_map[contributor].add(filename)
+                    elif error_type == 'Error' and error_code != 209:
+                        # File encountered an error with a meaningful message.
+                        ensure_dict_key(local_error_map, contributor, {})
+                        ensure_dict_key(local_error_map[contributor],
+                                        filename, set())
+
+                        # Ignore duplicate version errors resulting from an
+                        # already-passed file being accidentally run again.
+                        if contributor not in passing_files_map or \
+                           filename not in passing_files_map[contributor]:
+                            local_error_map[contributor][filename].add(msg)
+
+            # Analyze new passing files in this operator report.
+            for contributor in local_pass_map:
+                ensure_dict_key(failing_files_map, contributor, {})
+
+                for filename in local_pass_map[contributor]:
+                    if filename not in failing_files_map[contributor]:
+                        # File passed in its first appearance.
+                        ensure_dict_key(passing_files_map, contributor, set())
+                        passing_files_map[contributor].add(filename)
+
+            # Look for new failing files from the last operator report
+            for contributor in local_error_map:
+                ensure_dict_key(failing_files_map, contributor, {})
+
+                for filename, errors in local_error_map[contributor].items():
+                    ensure_dict_key(failing_files_map[contributor],
+                                    filename, set())
+                    failing_files_map[contributor][filename].update(errors)
+
+            # Look for previous errors that were fixed in this operator report.
+            for contributor in failing_files_map:
+                ensure_dict_key(local_error_map, contributor, {})
+                ensure_dict_key(fixed_files_map, contributor, {})
+                ensure_dict_key(local_files_encountered, contributor, set())
+
+                for filename in failing_files_map[contributor]:
+                    if filename not in local_files_encountered[contributor]:
+                        continue
+
+                    ensure_dict_key(local_error_map[contributor],
+                                    filename, set())
+                    ensure_dict_key(fixed_files_map[contributor],
+                                    filename, set())
+
+                    # Find errors that are in past runs but not this run.
+                    fixed_errors = failing_files_map[contributor][filename] \
+                        - local_error_map[contributor][filename]
+
+                    # Transfer all such errors from fails to fixes.
+                    fixed_files_map[contributor][filename].update(fixed_errors)
+                    failing_files_map[contributor][filename].difference_update(
+                        fixed_errors)
+
+        # Remove any keys that map to empty sets.
+        for contributor in fixed_files_map:
+            for filename in list(fixed_files_map[contributor].keys()):
+                if len(fixed_files_map[contributor][filename]) == 0:
+                    del fixed_files_map[contributor][filename]
+        for contributor in failing_files_map:
+            for filename in list(failing_files_map[contributor].keys()):
+                if len(failing_files_map[contributor][filename]) == 0:
+                    del failing_files_map[contributor][filename]
+                else:
+                    # Also stop recording fixes for a failing file.
+                    if contributor in fixed_files_map \
+                       and filename in fixed_files_map[contributor]:
+                        del fixed_files_map[contributor][filename]
+
+        return passing_files_map, fixed_files_map, failing_files_map
 
     def write(self, addresses):
         """
@@ -639,4 +856,69 @@ class EmailSummary:
         :returns: void
         """
 
-        pass
+        operator_report_paths = self.find_operator_reports()
+        passing_files, fixed_files_to_errors, failing_files_to_errors = \
+            self.summarize_operator_reports(operator_report_paths)
+
+        fixed_filelists = {}
+        failed_filelists = {}
+
+        for contributor, filemap in fixed_files_to_errors.items():
+            fixed_filelists[contributor] = group_dict_keys(filemap)
+        for contributor, filemap in failing_files_to_errors.items():
+            failed_filelists[contributor] = group_dict_keys(filemap)
+
+        contributors = set(passing_files.keys()) \
+            | set(fixed_filelists.keys()) | set(failed_filelists.keys())
+        sorted_contributors = sorted(contributors)
+
+        if 'UNKNOWN' in sorted_contributors:
+            # Move UNKNOWN to always be at the end of the report.
+            sorted_contributors.remove('UNKNOWN')
+            sorted_contributors.append('UNKNOWN')
+
+        blocks = []
+        for contributor in sorted_contributors:
+            pass_count = len(passing_files.get(contributor, ()))
+            fix_count = len(fixed_files_to_errors.get(contributor, ()))
+            fail_count = len(failing_files_to_errors.get(contributor, ()))
+
+            total_count = pass_count + fix_count + fail_count
+
+            if contributor in addresses:
+                email = addresses[contributor]
+                header = '{} ({})'.format(contributor, email)
+            else:
+                header = contributor
+
+            feedback_block = '{}\n' \
+                'Total files received: {}\n' \
+                'Number of passed files: {}\n' \
+                'Number of manually repaired files: {}\n' \
+                'Number of failed files: {}\n' \
+                .format(header, total_count, pass_count, fix_count, fail_count)
+
+            if fail_count > 0:
+                fail_summary = 'Summary of Failures:\n'
+
+                for filelist, errors in failed_filelists[contributor].items():
+                    fail_summary += '\n'.join(errors) + '\n'
+                    fail_summary += '\n'.join(sorted(filelist)) + '\n'
+
+                feedback_block += fail_summary
+
+            if fix_count > 0:
+                fix_summary = 'Summary of Fixes:\n'
+
+                for filelist, errors in fixed_filelists[contributor].items():
+                    fix_summary += '\n'.join(errors) + '\n'
+                    fix_summary += '\n'.join(sorted(filelist)) + '\n'
+
+                feedback_block += fix_summary
+
+            blocks.append(feedback_block)
+
+        email_report_path = self.filepath()
+        with open(email_report_path, 'w') as email_report:
+            content = '\n'.join(blocks)
+            email_report.write(content)

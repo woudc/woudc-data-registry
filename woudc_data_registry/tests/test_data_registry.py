@@ -276,12 +276,12 @@ class ParserTest(unittest.TestCase):
 
         # Error-free file
         contents = util.read_file(resolve_test_data_path(
-            'data/general/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv'))
+            'data/general/20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'))
 
         ecsv = dummy_extCSV(contents)
         ecsv.validate_metadata_tables()
 
-        self.assertEqual('20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv',
+        self.assertEqual('20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv',
                          ecsv.gen_woudc_filename())
 
         # Error-free file with a space in its instrument name
@@ -448,6 +448,16 @@ class ParserTest(unittest.TestCase):
         ecsv.validate_metadata_tables()
         self.assertTrue(set(DOMAINS['Common']).issubset(set(ecsv.extcsv)))
 
+    def test_comments(self):
+        """Test that comments in files are ignored while parsing"""
+
+        contents = util.read_file(resolve_test_data_path(
+            'data/general/ecsv-comments.csv'))
+
+        ecsv = dummy_extCSV(contents)
+        ecsv.validate_metadata_tables()
+        self.assertTrue(set(DOMAINS['Common']).issubset(set(ecsv.extcsv)))
+
     def test_determine_version_broadband(self):
         """Test assigning a table definition version with multiple options"""
 
@@ -500,25 +510,14 @@ class ParserTest(unittest.TestCase):
 
         self.assertEqual(ecsv.number_of_observations(), 13)
 
-        # Broad-band
+        # Broad-band (table has been partially deleted)
         contents = util.read_file(resolve_test_data_path(
             'data/general/20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'))
 
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
 
-        self.assertEqual(ecsv.number_of_observations(), 719)
-
-    def test_number_of_observations_large(self):
-        """Test counting of observation rows in a file with large tables"""
-
-        contents = util.read_file(resolve_test_data_path(
-            'data/general/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv'))
-
-        ecsv = parser.ExtendedCSV(contents)
-        ecsv.validate_metadata_tables()
-
-        self.assertEqual(ecsv.number_of_observations(), 5295)
+        self.assertEqual(ecsv.number_of_observations(), 5)
 
     def test_number_of_observations_duplicates(self):
         """Test counting of observation rows in a file with duplicate rows"""
@@ -543,7 +542,7 @@ class ParserTest(unittest.TestCase):
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
 
-        self.assertEqual(ecsv.number_of_observations(), 336)
+        self.assertEqual(ecsv.number_of_observations(), 15)
 
         # Spectral
         contents = util.read_file(resolve_test_data_path(
@@ -552,7 +551,7 @@ class ParserTest(unittest.TestCase):
         ecsv = parser.ExtendedCSV(contents)
         ecsv.validate_metadata_tables()
 
-        self.assertEqual(ecsv.number_of_observations(), 387)
+        self.assertEqual(ecsv.number_of_observations(), 15)
 
 
 class TimestampParsingTest(unittest.TestCase):
@@ -1332,7 +1331,7 @@ class UtilTest(unittest.TestCase):
         """test reading files"""
 
         contents = util.read_file(resolve_test_data_path(
-            'data/general/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv'))
+            'data/general/20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'))
 
         self.assertIsInstance(contents, str)
 
@@ -1354,7 +1353,7 @@ class UtilTest(unittest.TestCase):
         """test if file is text-based"""
 
         res = resolve_test_data_path(
-            'data/general/20040709.ECC.2Z.2ZL1.NOAA-CMDL.csv')
+            'data/general/20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv')
         self.assertTrue(util.is_text_file(res))
 
         res = resolve_test_data_path(

@@ -77,8 +77,8 @@ class OperatorReportTest(SandboxTestSuite):
         """Test that error/warning feedback responds to input files"""
 
         # The two error files below have different error types for error 1.
-        all_warnings = resolve_test_data_path('data/reports/all_warnings.csv')
-        all_errors = resolve_test_data_path('data/reports/all_errors.csv')
+        all_warnings = resolve_test_data_path('config/all_warnings.csv')
+        all_errors = resolve_test_data_path('config/all_errors.csv')
 
         with report.OperatorReport(SANDBOX_DIR) as op_report:
             op_report.read_error_definitions(all_warnings)
@@ -248,7 +248,7 @@ class OperatorReportTest(SandboxTestSuite):
         when a mixture of the two is processed
         """
 
-        infile_root = resolve_test_data_path('data/reports/pass_and_fail')
+        infile_root = resolve_test_data_path('data/general/pass_and_fail')
 
         warnings = {}
         errors = {}
@@ -436,7 +436,7 @@ class RunReportTest(SandboxTestSuite):
         when a mixture of the two is processed
         """
 
-        infile_root = resolve_test_data_path('data/reports/pass_and_fail')
+        infile_root = resolve_test_data_path('data/general/pass_and_fail')
 
         agency = 'MSC'
 
@@ -494,7 +494,7 @@ class RunReportTest(SandboxTestSuite):
     def test_run_report_multiple_agencies(self):
         """Test that files in the run report are grouped by agency"""
 
-        infile_root = resolve_test_data_path('data/reports/agencies')
+        infile_root = resolve_test_data_path('data/general/agencies')
 
         expected_passes = {}
         expected_fails = {}
@@ -595,6 +595,533 @@ class EmailSummaryTest(SandboxTestSuite):
 
         email_report_path = pathlib.Path(email_report.filepath())
         self.assertEquals(str(email_report_path.parent), SANDBOX_DIR)
+
+    def test_find_operator_report_empty(self):
+        """Test that no operator reports are found when none exist"""
+
+        project_root = resolve_test_data_path('data/reports')
+        email_report = report.EmailSummary(project_root)
+
+        operator_reports = email_report.find_operator_reports()
+
+        self.assertEquals([], operator_reports)
+
+    def test_find_operator_report_one_run(self):
+        """Test that operator reports are found when one exists"""
+
+        project_root = resolve_test_data_path('data/reports/one_pass')
+        email_report = report.EmailSummary(project_root)
+
+        operator_reports = email_report.find_operator_reports()
+        expected_parent = resolve_test_data_path('data/reports/one_pass/run1')
+
+        self.assertEquals(1, len(operator_reports))
+        self.assertIn(expected_parent, operator_reports[0])
+
+    def test_find_operator_report_many_runs(self):
+        """
+        Test that all operator reports are found when they are spread
+        across multiple run directories
+        """
+
+        project_root = resolve_test_data_path('data/reports/six_reports')
+        email_report = report.EmailSummary(project_root)
+
+        operator_reports = email_report.find_operator_reports()
+        expected_path_pattern = \
+            'data/reports/six_reports/run{}/operator-report-9999-12-31.csv'
+
+        self.assertEquals(6, len(operator_reports))
+
+        for run_number in range(1, 6 + 1):
+            expected_path = resolve_test_data_path(
+                expected_path_pattern.format(run_number))
+            self.assertIn(expected_path, set(operator_reports))
+
+    def test_email_summary_single_pass(self):
+
+        """Test email report generation for a single passing file"""
+
+        input_root = resolve_test_data_path('data/reports/one_pass')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {'MSC': 'placeholder@site.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 5)
+
+            self.assertEquals(lines[0], 'MSC (placeholder@site.com)')
+            self.assertEquals(lines[1], 'Total files received: 1')
+            self.assertEquals(lines[2], 'Number of passed files: 1')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
+            self.assertEquals(lines[4], 'Number of failed files: 0')
+
+    def test_email_summary_single_fail(self):
+        """Test email report generation for a single failing file"""
+
+        input_root = resolve_test_data_path('data/reports/one_fail')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {'MSC': 'placeholder@site.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 8)
+
+            self.assertEquals(lines[0], 'MSC (placeholder@site.com)')
+            self.assertEquals(lines[1], 'Total files received: 1')
+            self.assertEquals(lines[2], 'Number of passed files: 0')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
+            self.assertEquals(lines[4], 'Number of failed files: 1')
+
+            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertNotIn('.csv', lines[6])
+            self.assertEquals(lines[7], 'file1.csv')
+
+    def test_email_summary_one_run_mixed_pass_fail(self):
+        """
+        Test email report generation with passing and failing files
+        all in one operator report
+        """
+
+        input_root = resolve_test_data_path('data/reports//pass_and_fail')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {'MSC': 'placeholder@site.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 10)
+
+            self.assertEquals(lines[0], 'MSC (placeholder@site.com)')
+            self.assertEquals(lines[1], 'Total files received: 5')
+            self.assertEquals(lines[2], 'Number of passed files: 2')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
+            self.assertEquals(lines[4], 'Number of failed files: 3')
+
+            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertNotIn('.csv', lines[6])
+            # Alphabetical order of files: the first one has capital F.
+            self.assertEquals(lines[7], 'File5.csv')
+            self.assertEquals(lines[8], 'file2.csv')
+            self.assertEquals(lines[9], 'file3.csv')
+
+    def test_email_summary_multiple_causes_one_group(self):
+        """
+        Test email report generation where a single group of files
+        experiences multiple error types.
+        """
+
+        input_root = resolve_test_data_path('data/reports/multiple_causes')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {'MSC': 'placeholder@site.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 12)
+
+            self.assertEquals(lines[0], 'MSC (placeholder@site.com)')
+            self.assertEquals(lines[1], 'Total files received: 5')
+            self.assertEquals(lines[2], 'Number of passed files: 2')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
+            self.assertEquals(lines[4], 'Number of failed files: 3')
+
+            self.assertEquals(lines[5], 'Summary of Failures:')
+            # Three error descriptions shared by all the files below.
+            self.assertNotIn('.csv', lines[6])
+            self.assertNotIn('.csv', lines[7])
+            self.assertNotIn('.csv', lines[8])
+            # Alphabetical order of files: the first one has capital F.
+            self.assertEquals(lines[9], 'File5.csv')
+            self.assertEquals(lines[10], 'file2.csv')
+            self.assertEquals(lines[11], 'file3.csv')
+
+    def test_email_summary_multiple_agencies(self):
+        """Test email report generation where input has multiple agencies"""
+
+        input_root = resolve_test_data_path('data/reports/agencies')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {
+            'CAS-IAP': 'casiap@mail.com',
+            'DWD-MOHp': 'dwd@mail.com',
+            'MLCD-LU': 'mlcd@mail.com',
+            'MSC': 'msc@mail.com'
+        }
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 29)
+
+            self.assertEquals(lines[0], 'CAS-IAP (casiap@mail.com)')
+            self.assertEquals(lines[1], 'Total files received: 1')
+            self.assertEquals(lines[2], 'Number of passed files: 1')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
+            self.assertEquals(lines[4], 'Number of failed files: 0')
+
+            self.assertEquals(lines[6], 'DWD-MOHp (dwd@mail.com)')
+            self.assertEquals(lines[7], 'Total files received: 3')
+            self.assertEquals(lines[8], 'Number of passed files: 2')
+            self.assertEquals(lines[9], 'Number of manually repaired files: 0')
+            self.assertEquals(lines[10], 'Number of failed files: 1')
+
+            self.assertEquals(lines[11], 'Summary of Failures:')
+            self.assertNotIn('.csv', lines[12])
+            self.assertEquals(lines[13], 'file2.csv')
+
+            self.assertEquals(lines[15], 'MLCD-LU (mlcd@mail.com)')
+            self.assertEquals(lines[16], 'Total files received: 3')
+            self.assertEquals(lines[17], 'Number of passed files: 3')
+            self.assertEquals(lines[18],
+                              'Number of manually repaired files: 0')
+            self.assertEquals(lines[19], 'Number of failed files: 0')
+
+            self.assertEquals(lines[21], 'MSC (msc@mail.com)')
+            self.assertEquals(lines[22], 'Total files received: 5')
+            self.assertEquals(lines[23], 'Number of passed files: 4')
+            self.assertEquals(lines[24],
+                              'Number of manually repaired files: 0')
+            self.assertEquals(lines[25], 'Number of failed files: 1')
+
+            self.assertEquals(lines[26], 'Summary of Failures:')
+            self.assertNotIn('.csv', lines[27])
+            self.assertEquals(lines[28], 'file4.csv')
+
+    def test_email_summary_multiple_runs(self):
+        """Test email report generation across multiple operator reports"""
+
+        input_root = resolve_test_data_path('data/reports/multiple_runs')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {
+            'CAS-IAP': 'casiap@mail.com',
+            'DWD-MOHp': 'dwd@mail.com',
+            'MLCD-LU': 'mlcd@mail.com',
+            'MSC': 'msc@mail.com'
+        }
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 29)
+
+            self.assertEquals(lines[0], 'CAS-IAP (casiap@mail.com)')
+            self.assertEquals(lines[1], 'Total files received: 1')
+            self.assertEquals(lines[2], 'Number of passed files: 1')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
+            self.assertEquals(lines[4], 'Number of failed files: 0')
+
+            self.assertEquals(lines[6], 'DWD-MOHp (dwd@mail.com)')
+            self.assertEquals(lines[7], 'Total files received: 3')
+            self.assertEquals(lines[8], 'Number of passed files: 2')
+            self.assertEquals(lines[9], 'Number of manually repaired files: 0')
+            self.assertEquals(lines[10], 'Number of failed files: 1')
+
+            self.assertEquals(lines[11], 'Summary of Failures:')
+            self.assertNotIn('.csv', lines[12])
+            self.assertEquals(lines[13], 'file2.csv')
+
+            self.assertEquals(lines[15], 'MLCD-LU (mlcd@mail.com)')
+            self.assertEquals(lines[16], 'Total files received: 3')
+            self.assertEquals(lines[17], 'Number of passed files: 3')
+            self.assertEquals(lines[18],
+                              'Number of manually repaired files: 0')
+            self.assertEquals(lines[19], 'Number of failed files: 0')
+
+            self.assertEquals(lines[21], 'MSC (msc@mail.com)')
+            self.assertEquals(lines[22], 'Total files received: 5')
+            self.assertEquals(lines[23], 'Number of passed files: 4')
+            self.assertEquals(lines[24],
+                              'Number of manually repaired files: 0')
+            self.assertEquals(lines[25], 'Number of failed files: 1')
+
+            self.assertEquals(lines[26], 'Summary of Failures:')
+            self.assertNotIn('.csv', lines[27])
+            self.assertEquals(lines[28], 'file4.csv')
+
+    def test_email_summary_single_fix(self):
+        """
+        Test email report generation for a single file that is fixed
+        between two operator reports
+        """
+
+        input_root = resolve_test_data_path('data/reports/one_fix')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {'MSC': 'placeholder@mail.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 8)
+
+            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEquals(lines[1], 'Total files received: 1')
+            self.assertEquals(lines[2], 'Number of passed files: 0')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 1')
+            self.assertEquals(lines[4], 'Number of failed files: 0')
+
+            self.assertEquals(lines[5], 'Summary of Fixes:')
+            self.assertNotIn('.csv', lines[6])
+            self.assertEquals(lines[7], 'file1.csv')
+
+    def test_email_report_mixed_pass_fix(self):
+        """
+        Test email report generation when some files pass immediately
+        and others are fixed between runs.
+        """
+
+        input_root = resolve_test_data_path('data/reports/pass_and_fix')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {'MSC': 'placeholder@mail.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 11)
+
+            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEquals(lines[1], 'Total files received: 9')
+            self.assertEquals(lines[2], 'Number of passed files: 5')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 4')
+            self.assertEquals(lines[4], 'Number of failed files: 0')
+
+            self.assertEquals(lines[5], 'Summary of Fixes:')
+            self.assertNotIn('.csv', lines[6])
+            self.assertEquals(lines[7], 'File5.csv')
+            self.assertEquals(lines[8], 'file2.csv')
+            self.assertEquals(lines[9], 'file3.csv')
+            self.assertEquals(lines[10], 'file9.csv')
+
+    def test_email_report_mixed_fail_fix(self):
+        """
+        Test email report generation when some files fail irrecoverably
+        and others are fixed between runs
+        """
+
+        input_root = resolve_test_data_path('data/reports/fix_and_fail')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {'MSC': 'placeholder@mail.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 17)
+
+            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEquals(lines[1], 'Total files received: 8')
+            self.assertEquals(lines[2], 'Number of passed files: 0')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 3')
+            self.assertEquals(lines[4], 'Number of failed files: 5')
+
+            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertNotIn('.csv', lines[6])
+            self.assertEquals(lines[7], 'file1.csv')
+            self.assertEquals(lines[8], 'file3.csv')
+            self.assertEquals(lines[9], 'file4.csv')
+            self.assertEquals(lines[10], 'file7.csv')
+            self.assertEquals(lines[11], 'file8.csv')
+
+            self.assertEquals(lines[12], 'Summary of Fixes:')
+            self.assertNotIn('.csv', lines[13])
+            self.assertEquals(lines[14], 'file2.csv')
+            self.assertEquals(lines[15], 'file5.csv')
+            self.assertEquals(lines[16], 'file6.csv')
+
+    def test_email_summary_fix_but_still_fail(self):
+        """
+        Test email report generation when files are fixed between runs,
+        only to have an irrecoverable error show up.
+        """
+
+        input_root = resolve_test_data_path('data/reports/fail_twice')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {'MSC': 'placeholder@mail.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 8)
+
+            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEquals(lines[1], 'Total files received: 1')
+            self.assertEquals(lines[2], 'Number of passed files: 0')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
+            self.assertEquals(lines[4], 'Number of failed files: 1')
+
+            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertNotIn('.csv', lines[6])
+            self.assertEquals(lines[7], 'file1.csv')
+
+    def test_email_summary_mixed_pass_fix_fail(self):
+        """
+        Test email report generation when some files pass immediately,
+        some fail irrecoverably, and others are fixed between runs.
+        """
+
+        input_root = resolve_test_data_path('data/reports/pass_fix_fail')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {'MSC': 'placeholder@mail.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 19)
+
+            # Output may be sorted in various ways, so just check that all
+            # files are in the right block and are all accounted for.
+            fail_group = ['file4.csv', 'file9.csv']
+            first_fix_of_pair = ['file2.csv', 'file6.csv']
+            second_fix_of_pair = ['file3.csv', 'file8.csv']
+
+            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEquals(lines[1], 'Total files received: 11')
+            self.assertEquals(lines[2], 'Number of passed files: 5')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 4')
+            self.assertEquals(lines[4], 'Number of failed files: 2')
+
+            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertNotIn('.csv', lines[6])
+            self.assertIn(lines[7], fail_group)
+            self.assertNotIn('.csv', lines[8])
+            self.assertIn(lines[9], fail_group)
+
+            self.assertEquals(lines[10], 'Summary of Fixes:')
+            self.assertNotIn('.csv', lines[11])
+            self.assertNotIn('.csv', lines[12])
+            self.assertIn(lines[13], first_fix_of_pair)
+            self.assertIn(lines[14], second_fix_of_pair)
+            self.assertNotIn('.csv', lines[15])
+            self.assertNotIn('.csv', lines[16])
+            self.assertIn(lines[17], first_fix_of_pair)
+            self.assertIn(lines[18], second_fix_of_pair)
+
+    def test_email_summary_multiple_causes(self):
+        """
+        Test email report generation when files fail or are fixed due to
+        multiple different issues.
+        """
+
+        input_root = resolve_test_data_path(
+            'data/reports/multiple_causes_two_runs')
+        email_report = report.EmailSummary(input_root, SANDBOX_DIR)
+
+        emails = {'MSC': 'placeholder@mail.com'}
+        email_report.write(emails)
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        output_filename = 'failed-files-{}'.format(today)
+        output_path = os.path.join(SANDBOX_DIR, output_filename)
+
+        self.assertTrue(os.path.exists(output_path))
+
+        with open(output_path) as output:
+            lines = output.read().splitlines()
+            self.assertEquals(len(lines), 17)
+
+            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEquals(lines[1], 'Total files received: 5')
+            self.assertEquals(lines[2], 'Number of passed files: 0')
+            self.assertEquals(lines[3], 'Number of manually repaired files: 2')
+            self.assertEquals(lines[4], 'Number of failed files: 3')
+
+            fix_group = ['file1.csv', 'file3.csv']
+            fail_group = ['file2.csv', 'file4.csv', 'file5.csv']
+
+            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertNotIn('.csv', lines[6])
+            self.assertIn(lines[7], fail_group)
+            self.assertNotIn('.csv', lines[8])
+            self.assertIn(lines[9], fail_group)
+            self.assertNotIn('.csv', lines[10])
+            self.assertIn(lines[11], fail_group)
+
+            self.assertEquals(lines[12], 'Summary of Fixes:')
+            self.assertNotIn('.csv', lines[13])
+            self.assertIn(lines[14], fix_group)
+            self.assertNotIn('.csv', lines[15])
+            self.assertIn(lines[16], fix_group)
+
+            # Check that all error causes (messages) are distinct.
+            self.assertEquals(len(set([lines[6], lines[8], lines[10]])), 3)
+            self.assertEquals(len(set([lines[13], lines[15]])), 2)
 
 
 if __name__ == '__main__':

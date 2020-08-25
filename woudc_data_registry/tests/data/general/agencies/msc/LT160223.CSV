@@ -1,0 +1,47 @@
+#CONTENT
+Class,Category,Level,Form
+WOUDC,OzoneSonde,1.0,1
+#DATA_GENERATION
+Date, Agency, Version, ScientificAuthority
+2017-02-13,MSC,1.0,Jonathan Davies
+#PLATFORM
+Type,ID,Name,Country,GAW_ID
+STN,018,Alert,CAN,
+#INSTRUMENT
+Name,Model,Number
+ECC,Z,Z19219
+#LOCATION
+Latitude,Longitude,Height
+82.49,-62.34,75.0
+#TIMESTAMP
+UTCOffset,Date,Time
++00:00:00,2016-02-23,19:29:00
+*----- correction applied for 1% KI solution in ENSCI sonde ----------
+*Original Data File - 16022319.29z
+#FLIGHT_SUMMARY
+IntegratedO3,CorrectionCode,SondeTotalO3,CorrectionFactor,TotalO3,WLCode,ObsType,Instrument,Number
+98.8274093625,6,,,,,,,
+#AUXILIARY_DATA
+MeteoSonde,ib1,ib2,PumpRate,BackgroundCorr,SampleTemperatureType,MinutesGroundO3
+Vaisala RS92/Digicora III,,0.045,30.75,Pressure_ib2,Pump,
+#PUMP_CORRECTION
+Pressure,Correction
+2.0,1.16
+3.0,1.124
+5.0,1.087
+10.0,1.054
+20.0,1.033
+30.0,1.024
+50.0,1.015
+100.0,1.01
+200.0,1.007
+300.0,1.005
+500.0,1.002
+1000.0,1.0
+#PROFILE
+Pressure,O3PartialPressure,Temperature,WindSpeed,WindDirection,LevelCode,Duration,GPHeight,RelativeHumidity,SampleTemperature
+992.18,2.928,-15.3,0.8,191,,18.0,147.0,60,27.56
+990.97,2.947,-14.8,0.7,183,,20.0,156.0,57,27.53
+990.00,3.014,-14.5,0.6,175,,22.0,165.0,55,27.52
+988.55,3.072,-14.4,0.6,165,,24.0,174.0,53,27.5
+987.35,3.139,-14.1,0.6,155,,26.0,184.0,53,27.48
