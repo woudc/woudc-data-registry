@@ -920,10 +920,8 @@ class DataRecord(base):
 
 
 class Contribution(base):
-    """
-    Data Registry Contribution
+    """Data Registry Contribution"""
 
-    """
     __tablename__ = 'contributions'
 
     id_field = 'contribution_id'
@@ -1010,6 +1008,97 @@ class Contribution(base):
             components = [getattr(self, field)
                           for field in self.id_dependencies]
             self.contribution_id = ':'.join(map(str, components))
+
+
+class Notification(base):
+    """Data Registry News Item"""
+
+    __tablename__ = 'notifications'
+
+    id_field = 'notification_id'
+    id_dependencies = ['title_en', 'published_date']
+
+    notification_id = Column(String, primary_key=True)
+
+    title_en = Column(String, nullable=False)
+    title_fr = Column(String, nullable=False)
+
+    description_en = Column(String, nullable=False)
+    description_fr = Column(String, nullable=False)
+
+    keywords_en = Column(String, nullable=False)
+    keywords_fr = Column(String, nullable=False)
+
+    published_date = Column(Date, nullable=False)
+    banner = Column(Boolean, nullable=False, default=False)
+    visible = Column(Boolean, nullable=False, default=True)
+
+    x = Column(Float, nullable=False)
+    y = Column(Float, nullable=False)
+
+    def __init__(self, dict_):
+        """serializer"""
+
+        self.title_en = dict_['title_en']
+        self.title_fr = dict_['title_fr']
+
+        self.description_en = dict_['description_en']
+        self.description_fr = dict_['description_fr']
+
+        self.set_keywords_en(dict_['keywords_en'])
+        self.set_keywords_fr(dict_['keywords_fr'])
+
+        self.published_date = dict_['published']
+        self.banner = dict_.get('banner', False)
+        self.visible = dict_.get('visible', True)
+
+        self.x = dict_['x']
+        self.y = dict_['y']
+
+        self.generate_ids()
+
+    def get_keywords_en(self):
+        return self.keywords_en.split(',')
+
+    def set_keywords_en(self, keywords):
+        self.keywords_en = ','.join(keywords)
+
+    def get_keywords_fr(self):
+        return self.keywords_fr.split(',')
+
+    def set_keywords_fr(self, keywords):
+        self.keywords_fr = ','.join(keywords)
+
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.notification_id = ':'.join(map(str, components))
+
+    @property
+    def __geo_interface__(self):
+        return {
+            'id': self.notification_id,
+            'type': 'Feature',
+            'geometry': point2geojsongeometry(self.x, self.y),
+            'properties': {
+                'title_en': self.title_en,
+                'title_fr': self.title_fr,
+                'description_en': self.description_en,
+                'description_fr': self.description_fr,
+                'keywords_en': self.get_keywords_en(),
+                'keywords_fr': self.get_keywords_fr(),
+                'published_date': strftime_rfc3339(self.published_date),
+                'banner': self.banner,
+                'visible': self.visible
+            }
+        }
+
+    def __repr__(self):
+        return 'Notification ({})'.format(self.notification_id)
 
 
 def build_contributions(instrument_models):
@@ -1188,6 +1277,7 @@ def init(ctx, datadir, init_search_index):
     projects = os.path.join(datadir, 'projects.csv')
     instruments = os.path.join(datadir, 'instruments.csv')
     deployments = os.path.join(datadir, 'deployments.csv')
+    notifications = os.path.join(datadir, 'notifications.csv')
 
     registry_ = registry.Registry()
 
@@ -1200,6 +1290,7 @@ def init(ctx, datadir, init_search_index):
     instrument_models = []
     deployment_models = []
     contribution_models = []
+    notification_models = []
 
     click.echo('Loading WMO countries metadata')
     with open(wmo_countries) as jsonfile:
@@ -1280,6 +1371,18 @@ def init(ctx, datadir, init_search_index):
             instrument = Instrument(row)
             instrument_models.append(instrument)
 
+    click.echo('Loading news items')
+    with open(notifications) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            row['keywords_en'] = row['tags_en'].split(',')
+            row['keywords_fr'] = row['tags_fr'].split(',')
+            row['banner'] = row['banner'] == 't'
+            row['visible'] = row['visible'] == 't'
+
+            notification = Notification(row)
+            notification_models.append(notification)
+
     click.echo('Storing projects in data registry')
     for model in project_models:
         registry_.save(model)
@@ -1303,6 +1406,9 @@ def init(ctx, datadir, init_search_index):
         registry_.save(model)
     click.echo('Storing instruments in data registry')
     for model in instrument_models:
+        registry_.save(model)
+    click.echo('Storing news items in data registry')
+    for model in notification_models:
         registry_.save(model)
 
     instrument_from_registry = registry_.query_full_index(Instrument)
@@ -1329,6 +1435,9 @@ def init(ctx, datadir, init_search_index):
             [model.__geo_interface__ for model in instrument_models]
         contribution_docs = \
             [model.__geo_interface__ for model in contribution_models]
+        notification_docs = \
+            [model.__geo_interface__ for model in notification_models]
+
         click.echo('Storing projects in search index')
         search_index.index(Project, project_docs)
         click.echo('Storing datasets in search index')
@@ -1345,6 +1454,8 @@ def init(ctx, datadir, init_search_index):
         search_index.index(Instrument, instrument_docs)
         click.echo('Storing contributions in search index')
         search_index.index(Contribution, contribution_docs)
+        click.echo('Storing news items in search index')
+        search_index.index(Notification, notification_docs)
 
 
 @click.command('sync')
@@ -1361,7 +1472,8 @@ def sync(ctx):
         Instrument,
         Deployment,
         DataRecord,
-        Contribution
+        Contribution,
+        Notification
     ]
 
     registry_ = registry.Registry()
