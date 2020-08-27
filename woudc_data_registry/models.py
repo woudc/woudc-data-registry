@@ -920,10 +920,8 @@ class DataRecord(base):
 
 
 class Contribution(base):
-    """
-    Data Registry Contribution
+    """Data Registry Contribution"""
 
-    """
     __tablename__ = 'contributions'
 
     id_field = 'contribution_id'
@@ -1010,6 +1008,94 @@ class Contribution(base):
             components = [getattr(self, field)
                           for field in self.id_dependencies]
             self.contribution_id = ':'.join(map(str, components))
+
+
+class Notification(base):
+    """Data Registry News Item"""
+
+    __tablename__ = 'notifications'
+
+    id_field = 'notification_id'
+    id_dependencies = ['title_en', 'published_date']
+
+    notification_id = Column(String, primary_key=True)
+
+    title_en = Column(String, nullable=False)
+    title_fr = Column(String, nullable=False)
+
+    description_en = Column(String, nullable=False)
+    description_fr = Column(String, nullable=False)
+
+    keywords_en = Column(String, nullable=False)
+    keywords_fr = Column(String, nullable=False)
+
+    published_date = Column(Date, nullable=False)
+    removed = Column(Boolean, nullable=False, default=False)
+
+    x = Column(Float, nullable=False)
+    y = Column(Float, nullable=False)
+
+    def __init__(self, dict_):
+        """serializer"""
+
+        self.title_en = dict_['title_en']
+        self.title_fr = dict_['title_fr']
+
+        self.description_en = dict_['description_en']
+        self.description_fr = dict_['description_fr']
+
+        self.set_keywords_en(dict_['keywords_en'])
+        self.set_keywords_fr(dict_['keywords_fr'])
+
+        self.published_date = dict_['published']
+        self.removed = dict_.get('removed', False)
+
+        self.x = dict_['x']
+        self.y = dict_['y']
+
+        self.generate_ids()
+
+    def get_keywords_en(self):
+        return self.keywords_en.split(',')
+
+    def set_keywords_en(self, keywords):
+        self.keywords_en = ','.join(keywords)
+
+    def get_keywords_fr(self):
+        return self.keywords_fr.split(',')
+
+    def set_keywords_fr(self, keywords):
+        self.keywords_fr = ','.join(keywords)
+
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.notification_id = ':'.join(map(str, components))
+
+    @property
+    def __geo_interface__(self):
+        return {
+            'id': self.notification_id,
+            'type': 'Feature',
+            'geometry': point2geojsongeometry(self.x, self.y),
+            'properties': {
+                'title_en': self.title_en,
+                'title_fr': self.title_fr,
+                'description_en': self.description_en,
+                'description_fr': self.description_fr,
+                'keywords_en': self.get_keywords_en(),
+                'keywords_fr': self.get_keywords_fr(),
+                'published_date': self.published_date,
+                'removed': self.removed
+            }
+        }
+
+    def __repr__(self):
+        return 'Notification ({})'.format(self.notification_id)
 
 
 def build_contributions(instrument_models):
