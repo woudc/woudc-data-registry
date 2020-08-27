@@ -1274,6 +1274,7 @@ def init(ctx, datadir, init_search_index):
     projects = os.path.join(datadir, 'projects.csv')
     instruments = os.path.join(datadir, 'instruments.csv')
     deployments = os.path.join(datadir, 'deployments.csv')
+    notifications = os.path.join(datadir, 'notifications.csv')
 
     registry_ = registry.Registry()
 
@@ -1286,6 +1287,7 @@ def init(ctx, datadir, init_search_index):
     instrument_models = []
     deployment_models = []
     contribution_models = []
+    notification_models = []
 
     click.echo('Loading WMO countries metadata')
     with open(wmo_countries) as jsonfile:
@@ -1366,6 +1368,17 @@ def init(ctx, datadir, init_search_index):
             instrument = Instrument(row)
             instrument_models.append(instrument)
 
+    click.echo('Loading news items')
+    with open(notifications) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            row['keywords_en'] = row['tags_en'].split(',')
+            row['keywords_fr'] = row['tags_fr'].split(',')
+            row['removed'] = row['removed'] == 't'
+
+            notification = Notification(row)
+            notification_models.append(notification)
+
     click.echo('Storing projects in data registry')
     for model in project_models:
         registry_.save(model)
@@ -1389,6 +1402,9 @@ def init(ctx, datadir, init_search_index):
         registry_.save(model)
     click.echo('Storing instruments in data registry')
     for model in instrument_models:
+        registry_.save(model)
+    click.echo('Storing news items in data registry')
+    for model in notification_models:
         registry_.save(model)
 
     instrument_from_registry = registry_.query_full_index(Instrument)
