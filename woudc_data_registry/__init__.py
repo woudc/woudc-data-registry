@@ -51,6 +51,7 @@ from woudc_data_registry.epicentre.contributor import contributor
 from woudc_data_registry.epicentre.station import station
 from woudc_data_registry.epicentre.deployment import deployment
 from woudc_data_registry.epicentre.instrument import instrument
+from woudc_data_registry.epicentre.notification import notification
 from woudc_data_registry.models import admin
 from woudc_data_registry.log import setup_logger
 
@@ -73,3 +74,4 @@ cli.add_command(deployment)
 cli.add_command(instrument)
 cli.add_command(epicentre.dataset)
 cli.add_command(epicentre.project)
+cli.add_command(notification)
