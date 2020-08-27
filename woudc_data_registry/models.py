@@ -1030,7 +1030,8 @@ class Notification(base):
     keywords_fr = Column(String, nullable=False)
 
     published_date = Column(Date, nullable=False)
-    removed = Column(Boolean, nullable=False, default=False)
+    banner = Column(Boolean, nullable=False, default=False)
+    visible = Column(Boolean, nullable=False, default=True)
 
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
@@ -1048,7 +1049,8 @@ class Notification(base):
         self.set_keywords_fr(dict_['keywords_fr'])
 
         self.published_date = dict_['published']
-        self.removed = dict_.get('removed', False)
+        self.banner = dict_.get('banner', False)
+        self.visible = dict_.get('visible', True)
 
         self.x = dict_['x']
         self.y = dict_['y']
@@ -1090,7 +1092,8 @@ class Notification(base):
                 'keywords_en': self.get_keywords_en(),
                 'keywords_fr': self.get_keywords_fr(),
                 'published_date': strftime_rfc3339(self.published_date),
-                'removed': self.removed
+                'banner': self.banner,
+                'visible': self.visible
             }
         }
 
@@ -1374,7 +1377,8 @@ def init(ctx, datadir, init_search_index):
         for row in reader:
             row['keywords_en'] = row['tags_en'].split(',')
             row['keywords_fr'] = row['tags_fr'].split(',')
-            row['removed'] = row['removed'] == 't'
+            row['banner'] = row['banner'] == 't'
+            row['visible'] = row['visible'] == 't'
 
             notification = Notification(row)
             notification_models.append(notification)

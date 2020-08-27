@@ -520,9 +520,12 @@ MAPPINGS = {
                 'type': 'date',
                 'format': DATE_FORMAT
             },
-            'removed': {
+            'banner': {
                 'type': 'boolean'
             },
+            'visible': {
+                'type': 'boolean'
+            }
         }
     }
 }
