@@ -1089,7 +1089,7 @@ class Notification(base):
                 'description_fr': self.description_fr,
                 'keywords_en': self.get_keywords_en(),
                 'keywords_fr': self.get_keywords_fr(),
-                'published_date': self.published_date,
+                'published_date': strftime_rfc3339(self.published_date),
                 'removed': self.removed
             }
         }
@@ -1431,6 +1431,9 @@ def init(ctx, datadir, init_search_index):
             [model.__geo_interface__ for model in instrument_models]
         contribution_docs = \
             [model.__geo_interface__ for model in contribution_models]
+        notification_docs = \
+            [model.__geo_interface__ for model in notification_models]
+
         click.echo('Storing projects in search index')
         search_index.index(Project, project_docs)
         click.echo('Storing datasets in search index')
@@ -1447,6 +1450,8 @@ def init(ctx, datadir, init_search_index):
         search_index.index(Instrument, instrument_docs)
         click.echo('Storing contributions in search index')
         search_index.index(Contribution, contribution_docs)
+        click.echo('Storing news items in search index')
+        search_index.index(Notification, notification_docs)
 
 
 @click.command('sync')
@@ -1463,7 +1468,8 @@ def sync(ctx):
         Instrument,
         Deployment,
         DataRecord,
-        Contribution
+        Contribution,
+        Notification
     ]
 
     registry_ = registry.Registry()

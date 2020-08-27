@@ -488,6 +488,42 @@ MAPPINGS = {
                 'type': 'date'
             }
         }
+    },
+    'notifications': {
+        'index': 'notification',
+        'properties': {
+            'title_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'title_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'description_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'description_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'keywords_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'keywords_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'published_date': {
+                'type': 'date',
+                'format': DATE_FORMAT
+            },
+            'removed': {
+                'type': 'boolean'
+            },
+        }
     }
 }
 
@@ -655,18 +691,18 @@ class SearchIndex(object):
                                    body=wrapper)
         else:
             # Index/update multiple documents using bulk API.
-            wrapper = [{
+            wrapper = ({
                 '_op_type': 'update',
                 '_index': index_name,
                 '_type': '_doc',
                 '_id': document['id'],
                 'doc': document,
                 'doc_as_upsert': True
-            } for document in target]
+            } for document in target)
 
-            LOGGER.debug('Indexing {} documents into {}'
-                         .format(len(target), index_name))
-            helpers.bulk(self.connection, wrapper)
+            LOGGER.debug('Indexing documents into {}'.format(index_name))
+            helpers.bulk(self.connection, wrapper,
+                         raise_on_error=False, raise_on_exception=False)
 
         return True
 
@@ -709,14 +745,15 @@ class SearchIndex(object):
                 raise SearchIndexError(msg)
         else:
             # Delete multiple documents using bulk API.
-            wrapper = [{
+            wrapper = ({
                 '_op_type': 'delete',
                 '_index': index_name,
                 '_type': '_doc',
                 '_id': document['id']
-            } for document in target]
+            } for document in target)
 
-            helpers.bulk(self.connection, wrapper)
+            helpers.bulk(self.connection, wrapper,
+                         raise_on_error=False, raise_on_exception=False)
 
         return True
 
