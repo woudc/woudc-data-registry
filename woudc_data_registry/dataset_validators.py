@@ -179,45 +179,60 @@ class TotalOzoneValidator(DatasetValidator):
         rows_to_remove = []
 
         daily_columns = zip(*extcsv.extcsv['DAILY'].values())
+	
+        stringType = False
 
         in_order = True
         prev_date = None
         for index, row in enumerate(daily_columns):
             line_num = daily_startline + index
             daily_date = row[0]
+            if isinstance(daily_date,(str,int,type(None))) or isinstance(timestamp1_date,(str,int,type(None))) or isinstance(prev_date,(str,int,type(None))):
+                if not (self._add_to_report(103, line_num) and self._add_to_report(104, line_num) and self._add_to_report(105, line_num, date=daily_date)):
+                   success = False
+                break
+            else:
+                if daily_date.year != timestamp1_date.year:
+                    if not self._add_to_report(103, line_num):
+                        success = False
 
-            if daily_date.year != timestamp1_date.year:
-                if not self._add_to_report(103, line_num):
+                if prev_date and daily_date < prev_date:
+                    in_order = False
+                prev_date = daily_date
+
+                if daily_date not in dates_encountered:
+                    dates_encountered[daily_date] = row
+                elif row == dates_encountered[daily_date]:
+                    if not self._add_to_report(104, line_num, date=daily_date):
+                        success = False
+                    rows_to_remove.append(index)
+                elif not self._add_to_report(105, line_num, date=daily_date):
                     success = False
-
-            if prev_date and daily_date < prev_date:
-                in_order = False
-            prev_date = daily_date
-
-            if daily_date not in dates_encountered:
-                dates_encountered[daily_date] = row
-            elif row == dates_encountered[daily_date]:
-                if not self._add_to_report(104, line_num, date=daily_date):
-                    success = False
-                rows_to_remove.append(index)
-            elif not self._add_to_report(105, line_num, date=daily_date):
-                success = False
 
         rows_to_remove.reverse()
-        for index in rows_to_remove:
-            for column in extcsv.extcsv['DAILY'].values():
-                column.pop(index)
+        dateList = extcsv.extcsv['DAILY']['Date']
+        for date in dateList:
+            if isinstance(date,(str,int)):
+                stringType = True
+                if not self._add_to_report(102, daily_startline):
+                    success = False
+                break
+	  
+        if not stringType:
+            for index in rows_to_remove:
+                for column in extcsv.extcsv['DAILY'].values():
+                    column.pop(index)
 
-        if not in_order:
-            if not self._add_to_report(102, daily_startline):
-                success = False
+            if not in_order:
+                if not self._add_to_report(102, daily_startline):
+                    success = False
 
-            sorted_dates = sorted(extcsv.extcsv['DAILY']['Date'])
-            sorted_daily = [dates_encountered[date_] for date_ in sorted_dates]
+                sorted_dates = sorted(extcsv.extcsv['DAILY']['Date'])
+                sorted_daily = [dates_encountered[date_] for date_ in sorted_dates]
 
-            for field_num, field in enumerate(extcsv.extcsv['DAILY'].keys()):
-                column = list(map(lambda row: row[field_num], sorted_daily))
-                extcsv.extcsv['DAILY'][field] = column
+                for field_num, field in enumerate(extcsv.extcsv['DAILY'].keys()):
+                    column = list(map(lambda row: row[field_num], sorted_daily))
+                    extcsv.extcsv['DAILY'][field] = column
 
         return success
 
@@ -424,9 +439,16 @@ class TotalOzoneObsValidator(DatasetValidator):
         for index, row in enumerate(observations):
             line_num = observations_valueline + index
             time = row[0]
-
-            if prev_time and time < prev_time:
-                in_order = False
+            #check if any of the times are invalid and return if they are
+            #avoids comparison between different object types that may have been parsed in
+            if isinstance(prev_time,(str,int,type(None))):
+                pass
+            elif isinstance(time,(str,int,type(None))): 
+                success = False
+                return success
+            else:
+                if prev_time and time < prev_time:
+                    in_order = False
             prev_time = time
 
             if time not in times_encountered:

@@ -746,12 +746,19 @@ class DataRecord(base):
         self._instrument_name = ecsv.extcsv['INSTRUMENT']['Name']
         self._instrument_model = str(ecsv.extcsv['INSTRUMENT']['Model'])
         self._instrument_number = str(ecsv.extcsv['INSTRUMENT']['Number'])
+        
+        self.deployment_id = ':'.join([
+	    self.station_id,
+	    self.data_generation_agency,
+            self.content_class
+        ])
+
         self.instrument_id = ':'.join([
             self.instrument_name,
             self.instrument_model,
             self.instrument_number,
-            self.station_id,
-            self.content_category
+            self.content_category,
+            self.deployment_id
         ])
 
         self.timestamp_utcoffset = ecsv.extcsv['TIMESTAMP']['UTCOffset']
@@ -850,7 +857,9 @@ class DataRecord(base):
         datasetdirname = '{}_{}_{}'.format(self.content_category,
                                            self.content_level,
                                            self.content_form)
-
+        
+        print(self.timestamp_date)
+        print(type(self.timestamp_date))
         url_tokens = [
             basepath.rstrip('/'),
             'Archive-NewFormat',
@@ -1054,8 +1063,9 @@ class Notification(base):
 
         self.x = dict_['x']
         self.y = dict_['y']
-
-        self.generate_ids()
+        print(dict_['published']) 
+        print(self.published_date)
+        self.notification_id = strftime_rfc3339(self.published_date)
 
     def get_keywords_en(self):
         return self.keywords_en.split(',')
@@ -1068,15 +1078,6 @@ class Notification(base):
 
     def set_keywords_fr(self, keywords):
         self.keywords_fr = ','.join(keywords)
-
-    def generate_ids(self):
-        """Builds and sets class ID field from other attributes"""
-
-        if all([hasattr(self, field) and getattr(self, field) is not None
-                for field in self.id_dependencies]):
-            components = [getattr(self, field)
-                          for field in self.id_dependencies]
-            self.notification_id = ':'.join(map(str, components))
 
     @property
     def __geo_interface__(self):
