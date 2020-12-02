@@ -1055,7 +1055,7 @@ class Notification(base):
         self.x = dict_['x']
         self.y = dict_['y']
 
-        self.generate_ids()
+        self.notification_id = strftime_rfc3339(self.published_date)
 
     def get_keywords_en(self):
         return self.keywords_en.split(',')
@@ -1068,15 +1068,6 @@ class Notification(base):
 
     def set_keywords_fr(self, keywords):
         self.keywords_fr = ','.join(keywords)
-
-    def generate_ids(self):
-        """Builds and sets class ID field from other attributes"""
-
-        if all([hasattr(self, field) and getattr(self, field) is not None
-                for field in self.id_dependencies]):
-            components = [getattr(self, field)
-                          for field in self.id_dependencies]
-            self.notification_id = ':'.join(map(str, components))
 
     @property
     def __geo_interface__(self):
