@@ -1,7 +1,7 @@
 language: python
 
 python:
-  - "3.4"
+  - "3.6"
 
 env:
   global:
@@ -40,11 +40,11 @@ install:
   - pip install -r requirements-pg.txt
   - pip install -r requirements-docs.txt
   - pip install coveralls
-  - python setup.py build
-  - python setup.py install
+  - python3 setup.py build
+  - python3 setup.py install
 
 script:
-  - python setup.py test
+  - python3 setup.py test
   - find . -type f -name "*.py" | xargs flake8
   - cd docs && make html && cd ..
 
@@ -53,5 +53,5 @@ after_success:
   - coverage run -a --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_report_generation
   - coverage report -m
   - coveralls
-  - python setup.py bdist_wheel --universal
+  - python3 setup.py bdist_wheel --universal
   - debuild -b -uc -us
