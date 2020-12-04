@@ -1063,9 +1063,8 @@ class Notification(base):
 
         self.x = dict_['x']
         self.y = dict_['y']
-        print(dict_['published']) 
-        print(self.published_date)
-        self.notification_id = strftime_rfc3339(self.published_date)
+        year_month_day = datetime.datetime.strptime(self.published_date[0:10], '%Y-%m-%d')
+        self.notification_id = strftime_rfc3339(year_month_day)
 
     def get_keywords_en(self):
         return self.keywords_en.split(',')
