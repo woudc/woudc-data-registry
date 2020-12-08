@@ -858,8 +858,6 @@ class DataRecord(base):
                                            self.content_level,
                                            self.content_form)
 
-        print(self.timestamp_date)
-        print(type(self.timestamp_date))
         url_tokens = [
             basepath.rstrip('/'),
             'Archive-NewFormat',
