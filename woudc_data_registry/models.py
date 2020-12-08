@@ -746,10 +746,10 @@ class DataRecord(base):
         self._instrument_name = ecsv.extcsv['INSTRUMENT']['Name']
         self._instrument_model = str(ecsv.extcsv['INSTRUMENT']['Model'])
         self._instrument_number = str(ecsv.extcsv['INSTRUMENT']['Number'])
-        
+
         self.deployment_id = ':'.join([
-	    self.station_id,
-	    self.data_generation_agency,
+            self.station_id,
+            self.data_generation_agency,
             self.content_class
         ])
 
@@ -857,7 +857,7 @@ class DataRecord(base):
         datasetdirname = '{}_{}_{}'.format(self.content_category,
                                            self.content_level,
                                            self.content_form)
-        
+
         print(self.timestamp_date)
         print(type(self.timestamp_date))
         url_tokens = [
@@ -1063,7 +1063,8 @@ class Notification(base):
 
         self.x = dict_['x']
         self.y = dict_['y']
-        year_month_day = datetime.datetime.strptime(self.published_date[0:10], '%Y-%m-%d')
+        year_month_day = datetime.datetime. \
+            strptime(self.published_date[0:10], '%Y-%m-%d')
         self.notification_id = strftime_rfc3339(year_month_day)
 
     def get_keywords_en(self):

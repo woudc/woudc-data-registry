@@ -193,12 +193,12 @@ def orchestrate(source, working_dir, metadata_only=False,
 
                 op_report.write_failing_file(file_to_process, contributor)
                 run_report.write_failing_file(file_to_process, contributor)
-            #except Exception as err:
-                #click.echo('Processing failed: {}'.format(err))
-                #failed.append(file_to_process)
+            except Exception as err:
+                click.echo('Processing failed: {}'.format(err))
+                failed.append(file_to_process)
 
-                #op_report.write_failing_file(file_to_process, contributor)
-                #run_report.write_failing_file(file_to_process, contributor)
+                op_report.write_failing_file(file_to_process, contributor)
+                run_report.write_failing_file(file_to_process, contributor)
 
     registry.close_session()
 
