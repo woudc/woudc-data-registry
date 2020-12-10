@@ -224,7 +224,7 @@ class TotalOzoneValidator(DatasetValidator):
                     success = False
 
                 sorted_dates = sorted(extcsv.extcsv['DAILY']['Date'])
-                sorted_daily = [dates_encountered[date]
+                sorted_daily = [dates_encountered[date_]
                                 for date_ in sorted_dates]
 
                 for field_num, field in \
