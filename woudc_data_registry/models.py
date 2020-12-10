@@ -1061,7 +1061,7 @@ class Notification(base):
 
         self.x = dict_['x']
         self.y = dict_['y']
-        
+
         year_month_day = datetime.datetime. \
             strptime(self.published_date[0:10], '%Y-%m-%d')
         self.notification_id = strftime_rfc3339(year_month_day)
