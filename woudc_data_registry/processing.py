@@ -1147,7 +1147,7 @@ class Process(object):
 
             for line, other_date in enumerate(date_column, valueline):
                 if (isinstance(other_date, (str, int, type(None)))
-                              or isinstance(dg_date, (str, int, type(None)))):
+                   or isinstance(dg_date, (str, int, type(None)))):
                     err_code = 91 if table.startswith('TIMESTAMP') else 92
                     if not self._add_to_report(err_code, line, table=table):
                         success = False
