@@ -70,6 +70,24 @@ Datasets:
               - Time
               - Irradiance
           data_table: GLOBAL
+    "2.0":
+      "1":
+        "1":
+          DIFFUSE:
+            rows: 1+
+            occurrences: 1+
+            required_fields:
+              - Time
+              - Irradiance
+          data_table: DIFFUSE
+        "2":
+          GLOBAL:
+            rows: 1+
+            occurrences: 1+
+            required_fields:
+              - Time
+              - Irradiance
+          data_table: GLOBAL
   Lidar:
     "1.0":
       "1":
@@ -549,6 +567,61 @@ Datasets:
         data_table: OBSERVATIONS
   Spectral:
     "1.0":
+      "1":
+        "1":
+          GLOBAL_SUMMARY:
+            rows: 1
+            occurrences: 1+
+            required_fields:
+              - Time
+              - IntACGIH
+              - IntCIE
+              - ZenAngle
+              - MuValue
+              - AzimAngle
+              - Flag
+              - TempC
+            optional_fields:
+              - O3
+              - Err_O3
+              - SO2
+              - Err_SO2
+              - F324
+          GLOBAL:
+            rows: 1+
+            occurrences: 1+
+            required_fields:
+              - Wavelength
+              - S-Irradiance
+              - Time
+            optional_fields:
+              - SZA
+          data_table: GLOBAL
+        "2":
+          GLOBAL_SUMMARY_NSF:
+            rows: 1
+            occurrences: 1+
+            required_fields:
+              - Filename
+              - Volume
+              - SZA
+              - Azimuth
+              - Sky_condition
+              - Minimum_useable_wavelength
+              - E290-320
+              - E320-400
+              - UVIndex
+          GLOBAL:
+            rows: 1+
+            occurrences: 1
+            required_fields:
+              - Wavelength
+              - S-Irradiance
+              - Time
+            optional_fields:
+              - SZA
+          data_table: GLOBAL
+    "2.0":
       "1":
         "1":
           GLOBAL_SUMMARY:
