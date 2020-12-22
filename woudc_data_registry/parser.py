@@ -695,7 +695,7 @@ class ExtendedCSV(object):
                 ]
 
                 if schema[table_type]['rows'] == 1:
-                    if converted == []:
+                    if not converted:
                         converted.append(None)
                     self.extcsv[table_name][field] = converted[0]
                 else:

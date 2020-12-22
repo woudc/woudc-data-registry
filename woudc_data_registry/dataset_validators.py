@@ -180,7 +180,7 @@ class TotalOzoneValidator(DatasetValidator):
 
         daily_columns = zip(*extcsv.extcsv['DAILY'].values())
 
-        stringType = False
+        is_string = False
 
         in_order = True
         prev_date = None
@@ -209,12 +209,12 @@ class TotalOzoneValidator(DatasetValidator):
         dateList = extcsv.extcsv['DAILY']['Date']
         for date in dateList:
             if isinstance(date, (str, int)):
-                stringType = True
+                is_string = True
                 if not self._add_to_report(102, daily_startline):
                     success = False
                 break
 
-        if not stringType:
+        if not is_string:
             for index in rows_to_remove:
                 for column in extcsv.extcsv['DAILY'].values():
                     column.pop(index)
@@ -224,7 +224,7 @@ class TotalOzoneValidator(DatasetValidator):
                     success = False
 
                 sorted_dates = sorted(extcsv.extcsv['DAILY']['Date'])
-                sorted_daily = [dates_encountered[date]
+                sorted_daily = [dates_encountered[date_]
                                 for date_ in sorted_dates]
 
                 for field_num, field in \
