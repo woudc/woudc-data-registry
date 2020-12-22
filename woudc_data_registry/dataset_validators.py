@@ -180,6 +180,8 @@ class TotalOzoneValidator(DatasetValidator):
 
         daily_columns = zip(*extcsv.extcsv['DAILY'].values())
 
+        is_string = False
+
         in_order = True
         prev_date = None
         for index, row in enumerate(daily_columns):
@@ -204,20 +206,32 @@ class TotalOzoneValidator(DatasetValidator):
                 success = False
 
         rows_to_remove.reverse()
-        for index in rows_to_remove:
-            for column in extcsv.extcsv['DAILY'].values():
-                column.pop(index)
+        dateList = extcsv.extcsv['DAILY']['Date']
+        for date in dateList:
+            if isinstance(date, (str, int)):
+                is_string = True
+                if not self._add_to_report(102, daily_startline):
+                    success = False
+                break
 
-        if not in_order:
-            if not self._add_to_report(102, daily_startline):
-                success = False
+        if not is_string:
+            for index in rows_to_remove:
+                for column in extcsv.extcsv['DAILY'].values():
+                    column.pop(index)
 
-            sorted_dates = sorted(extcsv.extcsv['DAILY']['Date'])
-            sorted_daily = [dates_encountered[date_] for date_ in sorted_dates]
+            if not in_order:
+                if not self._add_to_report(102, daily_startline):
+                    success = False
 
-            for field_num, field in enumerate(extcsv.extcsv['DAILY'].keys()):
-                column = list(map(lambda row: row[field_num], sorted_daily))
-                extcsv.extcsv['DAILY'][field] = column
+                sorted_dates = sorted(extcsv.extcsv['DAILY']['Date'])
+                sorted_daily = [dates_encountered[date_]
+                                for date_ in sorted_dates]
+
+                for field_num, field in \
+                        enumerate(extcsv.extcsv['DAILY'].keys()):
+                    column = list(map(lambda row: row[field_num],
+                                      sorted_daily))
+                    extcsv.extcsv['DAILY'][field] = column
 
         return success
 
@@ -425,8 +439,14 @@ class TotalOzoneObsValidator(DatasetValidator):
             line_num = observations_valueline + index
             time = row[0]
 
-            if prev_time and time < prev_time:
-                in_order = False
+            if isinstance(prev_time, (str, int, type(None))):
+                pass
+            elif isinstance(time, (str, int, type(None))):
+                success = False
+                return success
+            else:
+                if prev_time and time < prev_time:
+                    in_order = False
             prev_time = time
 
             if time not in times_encountered:

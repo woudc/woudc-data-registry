@@ -75,7 +75,7 @@ def list_(ctx):
     """List all news notifications"""
 
     for c in get_metadata(Notification):
-        click.echo('{} {}'.format(c.published, c.title_en))
+        click.echo('{} {}'.format(c.published_date, c.title_en))
 
 
 @click.command('show')

@@ -695,6 +695,8 @@ class ExtendedCSV(object):
                 ]
 
                 if schema[table_type]['rows'] == 1:
+                    if not converted:
+                        converted.append(None)
                     self.extcsv[table_name][field] = converted[0]
                 else:
                     self.extcsv[table_name][field] = converted
@@ -1027,6 +1029,10 @@ class ExtendedCSV(object):
 
         schema = self._noncore_table_schema
         success = True
+
+        if schema is None:
+            success = False
+            return success
 
         required_tables = [name for name, body in schema.items()
                            if 'required_fields' in body]

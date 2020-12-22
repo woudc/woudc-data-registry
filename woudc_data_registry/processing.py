@@ -244,7 +244,7 @@ class Process(object):
         LOGGER.info('Validating contribution')
         contribution_ok = True
         if not all([instrument_ok, project_ok,
-                    dataset_ok, instrument_model_ok,
+                    dataset_ok,
                     platform_ok, location_ok]):
             LOGGER.warning('Contribution is not valid due to'
                            ' fields it depends on being invalid')
@@ -487,7 +487,10 @@ class Process(object):
         contributor_from_registry = \
             self.registry.query_by_field(Contributor,
                                          'contributor_id', contributor_id)
-        contributor_name = contributor_from_registry.name
+        contributor_name = None
+        if contributor_from_registry is not None:
+            contributor_name = contributor_from_registry.name
+
         contribution_id = ':'.join([project_id, dataset_id,
                                     station_id, instrument_name])
 
@@ -547,15 +550,16 @@ class Process(object):
         else:
             LOGGER.warning('Found contribution match for {}'
                            .format(contribution_id))
-            if contribution.start_date > timestamp_date:
-                contribution.start_date = timestamp_date
-                self._registry_updates.append(contribution)
-                LOGGER.debug('Contribution start date updated')
-            elif contribution.end_date  \
-                    and contribution.end_date < timestamp_date:
-                contribution.end_date = timestamp_date
-                self._registry_updates.append(contribution)
-                LOGGER.debug('Contribution end date updated')
+            if not isinstance(timestamp_date, (str, int)):
+                if contribution.start_date > timestamp_date:
+                    contribution.start_date = timestamp_date
+                    self._registry_updates.append(contribution)
+                    LOGGER.debug('Contribution start date updated')
+                elif contribution.end_date  \
+                        and contribution.end_date < timestamp_date:
+                    contribution.end_date = timestamp_date
+                    self._registry_updates.append(contribution)
+                    LOGGER.debug('Contribution end date updated')
             return True
 
     def check_project(self):
@@ -627,8 +631,10 @@ class Process(object):
         if agency in ALIASES['Agency']:
             line = self.extcsv.line_num('DATA_GENERATION') + 2
             replacement = ALIASES['Agency'][agency]
-            if not self._add_to_report(23, line, replacement):
-                success = False
+
+            if not isinstance(replacement, str):
+                if not self._add_to_report(23, line, replacement):
+                    success = False
 
             agency = replacement
             self.extcsv.extcsv['DATA_GENERATION']['Agency'] = agency
@@ -785,14 +791,16 @@ class Process(object):
         else:
             LOGGER.debug('Found deployment match for {}'
                          .format(deployment_id))
-            if deployment.start_date > timestamp_date:
-                deployment.start_date = timestamp_date
-                self._registry_updates.append(deployment)
-                LOGGER.debug('Deployment start date updated.')
-            elif deployment.end_date and deployment.end_date < timestamp_date:
-                deployment.end_date = timestamp_date
-                self._registry_updates.append(deployment)
-                LOGGER.debug('Deployment end date updated.')
+            if not isinstance(timestamp_date, (str, int)):
+                if deployment.start_date > timestamp_date:
+                    deployment.start_date = timestamp_date
+                    self._registry_updates.append(deployment)
+                    LOGGER.debug('Deployment start date updated.')
+                elif (deployment.end_date and
+                        deployment.end_date < timestamp_date):
+                    deployment.end_date = timestamp_date
+                    self._registry_updates.append(deployment)
+                    LOGGER.debug('Deployment end date updated.')
             return True
 
     def check_instrument_name_and_model(self):
@@ -1138,10 +1146,17 @@ class Process(object):
                 date_column = [date_column]
 
             for line, other_date in enumerate(date_column, valueline):
-                if other_date > dg_date:
+                if (isinstance(other_date, (str, int, type(None)))
+                   or isinstance(dg_date, (str, int, type(None)))):
                     err_code = 91 if table.startswith('TIMESTAMP') else 92
                     if not self._add_to_report(err_code, line, table=table):
                         success = False
+                else:
+                    if other_date > dg_date:
+                        err_code = 91 if table.startswith('TIMESTAMP') else 92
+                        if not self._add_to_report(err_code,
+                                                   line, table=table):
+                            success = False
 
             time_column = body.get('Time', [])
             if not isinstance(time_column, list):
@@ -1149,7 +1164,10 @@ class Process(object):
 
             if ts_time:
                 for line, other_time in enumerate(time_column, valueline):
-                    if other_time and other_time < ts_time:
+                    if (isinstance(other_time, (str, int, type(None)))
+                            or isinstance(ts_time, (str, int, type(None)))):
+                        pass
+                    elif other_time and other_time < ts_time:
                         if not self._add_to_report(93, line):
                             success = False
 
@@ -1190,7 +1208,13 @@ class Process(object):
             return True
 
         old_dg_date = response.data_generation_date
-        old_version = float(response.data_generation_version)
+        # Set placeholder version number
+        old_version = 0.0
+        try:
+            old_version = float(response.data_generation_version)
+        except ValueError:
+            success = False
+            return success
 
         dg_date_equal = dg_date == old_dg_date
         dg_date_before = dg_date < old_dg_date

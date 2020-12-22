@@ -746,12 +746,19 @@ class DataRecord(base):
         self._instrument_name = ecsv.extcsv['INSTRUMENT']['Name']
         self._instrument_model = str(ecsv.extcsv['INSTRUMENT']['Model'])
         self._instrument_number = str(ecsv.extcsv['INSTRUMENT']['Number'])
+
+        self.deployment_id = ':'.join([
+            self.station_id,
+            self.data_generation_agency,
+            self.content_class
+        ])
+
         self.instrument_id = ':'.join([
             self.instrument_name,
             self.instrument_model,
             self.instrument_number,
-            self.station_id,
-            self.content_category
+            self.content_category,
+            self.deployment_id
         ])
 
         self.timestamp_utcoffset = ecsv.extcsv['TIMESTAMP']['UTCOffset']
@@ -1055,7 +1062,9 @@ class Notification(base):
         self.x = dict_['x']
         self.y = dict_['y']
 
-        self.notification_id = strftime_rfc3339(self.published_date)
+        year_month_day = datetime.datetime. \
+            strptime(self.published_date[0:10], '%Y-%m-%d')
+        self.notification_id = strftime_rfc3339(year_month_day)
 
     def get_keywords_en(self):
         return self.keywords_en.split(',')
