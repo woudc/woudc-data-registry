@@ -228,7 +228,7 @@ class Process(object):
                                     ' addition.')
                         instrument_ok = True
                     else:
-                        instrument_ok = self.add_instrument(bypass=False)
+                        instrument_ok = self.add_instrument(bypass=bypass)
 
                     if instrument_ok:
                         self._add_to_report(201)
@@ -255,7 +255,7 @@ class Process(object):
         elif contribution_ok:
             contribution_exists = self.check_contribution()
             if not contribution_exists:
-                contribution_ok = self.add_contribution(bypass=False)
+                contribution_ok = self.add_contribution(bypass=bypass)
 
             if contribution_ok and (not contribution_exists):
                 self._add_to_report(204)
