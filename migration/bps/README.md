@@ -28,7 +28,7 @@ cd to the conda install location
 source bin/activate woudc-data-registry
 ```
 # Data Registry Install and Configuration 
-The "python setup.py install" command installs the codebase into the
+The `python setup.py install` command installs the codebase into the
 system. After changes are made to the codebase, this command must be
 run in order to integrate the changes into the system. 
 
@@ -52,11 +52,11 @@ vim foo.env
 . foo.env
 ```
 # Table and Elasticsearch initialization
-The "woudc-data-registry admin registry setup" command generates tables within the WOUDC Data Registry
+The `woudc-data-registry admin registry setup` command generates tables within the WOUDC Data Registry
 psql database specified in the config (.yml) file. The tables are all empty
 at the moment and will be filled during the migration and data ingest steps.
 
-The "woudc-data-registry admin search setup" command works similarly to the registry setup
+The `woudc-data-registry admin search setup` command works similarly to the registry setup
 command except it generates indices within the Elasticsearch component instead. 
 The Elasticsearch component setup occurs the URL specified in the config(.yml) file. 
 All the indices are empty at the moment and will be filled during the sync step.
@@ -111,13 +111,11 @@ woudc-data-registry admin init -d /woudc-data-registry/woudc-data-registry/data
 # WOUDC data file ingest and sync into WOUDC Data Registry
 Environmental agencies around the world collect WOUDC data and generate/submit WOUDC extcsv files.
 These files can then be ingested and stored in the WOUDC Data Registry system. The 
-"woudc-data-registry data ingest /path/to/dir" command will ingest all files contained in the
+`woudc-data-registry data ingest /path/to/dir` command will ingest all files contained in the
 /path/to/dir directory and subdirectories. The ingest command contains several options including 
 skipping yes prompts and generating an operator report. 
 
-* Details on these options can be found at https://github.com/woudc/woudc-data-registry
-
-The "woudc-data-registry admin search sync" command syncs the contents of the WOUDC Data
+The `woudc-data-registry admin search sync` command syncs the contents of the WOUDC Data
 Registry database to the Elasticsearch component. After this command has been run, the data will be 
 queryable through Elasticsearch queries and accessible from the WOUDC API component.
 ```
