@@ -402,7 +402,7 @@ class OperatorReport(Report):
             return None
         else:
             today = date.today().strftime('%Y-%m-%d')
-            filename = 'operator-report-{}.csv'.format(today)
+            filename = 'operator-report.csv'
 
             return os.path.join(self._working_directory, filename)
 
