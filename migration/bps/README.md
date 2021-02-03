@@ -115,6 +115,8 @@ These files can then be ingested and stored in the WOUDC Data Registry system. T
 /path/to/dir directory and subdirectories. The ingest command contains several options including 
 skipping yes prompts and generating an operator report. 
 
+* Details on these options can be found at https://github.com/woudc/woudc-data-registry
+
 The `woudc-data-registry admin search sync` command syncs the contents of the WOUDC Data
 Registry database to the Elasticsearch component. After this command has been run, the data will be 
 queryable through Elasticsearch queries and accessible from the WOUDC API component.
