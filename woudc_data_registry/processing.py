@@ -1165,7 +1165,7 @@ class Process(object):
             if ts_time:
                 for line, other_time in enumerate(time_column, valueline):
                     if (isinstance(other_time, (str, int, type(None)))
-                            or isinstance(ts_time, (str, int, type(None)))):
+                            or isinstance(ts_time, (str, int, type(None))))
                         pass
                     elif other_time and other_time < ts_time:
                         if not self._add_to_report(93, line):
