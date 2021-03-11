@@ -110,9 +110,8 @@ class OperatorReportTest(SandboxTestSuite):
 
             agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
-            today = datetime.now().strftime('%Y-%m-%d')
             output_path = os.path.join(SANDBOX_DIR,
-                                       'operator-report-{}.csv'.format(today))
+                                       'operator-report.csv')
 
             op_report.add_message(200)  # File passes validation
             op_report.write_passing_file(infile, ecsv, data_record)
@@ -149,9 +148,8 @@ class OperatorReportTest(SandboxTestSuite):
 
             agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
-            today = datetime.now().strftime('%Y-%m-%d')
             output_path = os.path.join(SANDBOX_DIR,
-                                       'operator-report-{}.csv'.format(today))
+                                       'operator-report.csv')
 
             op_report.add_message(200)  # File passes validation
             op_report.write_passing_file(infile, ecsv, data_record)
@@ -206,9 +204,8 @@ class OperatorReportTest(SandboxTestSuite):
                 op_report.add_message(209)
                 op_report.write_failing_file(infile, agency, ecsv)
 
-        today = datetime.now().strftime('%Y-%m-%d')
         output_path = os.path.join(SANDBOX_DIR,
-                                   'operator-report-{}.csv'.format(today))
+                                   'operator-report.csv')
 
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
@@ -295,9 +292,8 @@ class OperatorReportTest(SandboxTestSuite):
                     op_report.add_message(209)
                     op_report.write_failing_file(fullpath, agency, ecsv)
 
-        today = datetime.now().strftime('%Y-%m-%d')
         output_path = os.path.join(SANDBOX_DIR,
-                                   'operator-report-{}.csv'.format(today))
+                                   'operator-report.csv')
 
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
