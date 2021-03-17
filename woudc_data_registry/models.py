@@ -361,8 +361,9 @@ class Instrument(base):
                 'serial': self.serial,
                 'start_date': strftime_rfc3339(self.start_date),
                 'end_date': strftime_rfc3339(self.end_date),
-                'waf_url': '/'.join([waf_basepath, dataset_folder,
-                                     station_folder, instrument_folder])
+                'waf_url': '/'.join([waf_basepath, 'Archive-NewFormat',
+                                     dataset_folder, station_folder,
+                                     instrument_folder])
             }
         }
 
