@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2021 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -45,35 +45,34 @@
 
 import click
 
-from woudc_data_registry.controller import data
-from woudc_data_registry import config, epicentre
-from woudc_data_registry.epicentre.contributor import contributor
-from woudc_data_registry.epicentre.station import station
-from woudc_data_registry.epicentre.deployment import deployment
-from woudc_data_registry.epicentre.instrument import instrument
-from woudc_data_registry.epicentre.notification import notification
-from woudc_data_registry.models import admin
-from woudc_data_registry.log import setup_logger
-from woudc_data_registry.product import product
-
-__version__ = '0.1.dev0'
-
-setup_logger(config.WDR_LOGGING_LOGLEVEL, config.WDR_LOGGING_LOGFILE)
-
 
 @click.group()
-@click.version_option(version=__version__)
-def cli():
+def uv_index():
+    """UV Index management"""
     pass
 
 
-cli.add_command(admin)
-cli.add_command(data)
-cli.add_command(product)
-cli.add_command(contributor)
-cli.add_command(station)
-cli.add_command(deployment)
-cli.add_command(instrument)
-cli.add_command(epicentre.dataset)
-cli.add_command(epicentre.project)
-cli.add_command(notification)
+@click.command()
+@click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
+              help='Bypass permission prompts while ingesting')
+def generate(ctx, bypass=False):
+    """Generate UV index"""
+
+    bypass_ = bypass
+
+    if not bypass_:
+        q = 'This command will erase and rebuild the UV index. Are you sure?'
+
+        if click.confirm(q):
+            bypass_ = True
+
+
+@click.command()
+def update(ctx):
+    """Update UV index"""
+
+    pass
+
+
+uv_index.add_command(generate)
+uv_index.add_command(update)
