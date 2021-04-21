@@ -1106,11 +1106,10 @@ class UVIndex(base):
     """Data Registry UV Index"""
 
     __tablename__ = 'uv_index_hourly'
-    __table_args__ = (UniqueConstraint('instrument_id', 'observation_date',
-                                       'observation_time', 'file_path'),)
 
     id_field = 'uv_id'
-    id_dependencies = ['instrument_id']
+    id_dependencies = ['instrument_id', 'observation_date',
+                       'observation_time', 'file_path']
 
     uv_id = Column(String, primary_key=True)
     file_path = Column(String, nullable=False)
@@ -1143,7 +1142,6 @@ class UVIndex(base):
     dataset = relationship('Dataset', backref=__tablename__)
 
     def __init__(self, dict_):
-        self.uv_id = dict_['uv_id']
 
         self.file_path = dict_['file_path']
 
@@ -1159,21 +1157,12 @@ class UVIndex(base):
         self.uv_index = dict_['uv_index']
         self.uv_index_qa = dict_['uv_index_qa']
 
-        try:
-            if isinstance(dict_['observation_date'], datetime.date):
-                self.observation_date = dict_['observation_date']
-            else:
-                self.observation_date = datetime.datetime.strptime(
-                    dict_['observation_date'], '%y-%m-%d').date()
-            if isinstance(dict_['observation_time'], datetime.time):
-                self.observation_time = dict_['observation_time']
-            else:
-                self.observation_time = datetime.datetime.strptime(
-                    dict_['observation_time'], '%H-%M-%S').time()
-        except Exception as err:
-            LOGGER.error(err)
+        self.observation_date = dict_['observation_date']
+        self.observation_time = dict_['observation_time']
 
-        self.observation_utcoffset = dict_['utcoffset']
+        self.generate_ids()
+
+        self.observation_utcoffset = dict_['observation_utcoffset']
 
         self.x = dict_['x']
         self.y = dict_['y']
@@ -1182,7 +1171,7 @@ class UVIndex(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.row_id,
+            'id': self.uv_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
@@ -1210,7 +1199,16 @@ class UVIndex(base):
         }
 
     def __repr__(self):
-        return 'UV_Index ({})'.format(self.row_id)
+        return 'UV_Index ({})'.format(self.uv_id)
+
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.uv_id = ':'.join(map(str, components))
 
 
 def build_contributions(instrument_models):
