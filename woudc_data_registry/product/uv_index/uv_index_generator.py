@@ -60,8 +60,6 @@ from datetime import datetime
 
 LOGGER = logging.getLogger(__name__)
 
-# formula_lookup = None
-
 
 def execute(path, formula_lookup, bypass):
     """
@@ -414,15 +412,6 @@ def compute_uv_index(ipath, extcsv, dataset, station,
             LOGGER.error(msg)
             raise err
 
-        package = {
-            'uv': None,
-            'date': None,
-            'time': None,
-            'utcoffset': None,
-            'zen_angle': None,
-            'qa': None
-        }
-
         # common broad-band fields
         try:
             date = extcsv.extcsv['TIMESTAMP']['Date'][0]
@@ -469,9 +458,16 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                        ' %s. Due to: %s') % (ipath, str(err))
                 LOGGER.error(msg)
                 raise err
-        print(irradiances)
-        print(times)
+
         for i in range(0, len(times)):
+            package = {
+                'uv': None,
+                'date': None,
+                'time': None,
+                'utcoffset': None,
+                'zen_angle': None,
+                'qa': None
+            }
             time = times[i]
             irradiance = irradiances[i]
             if '*' in formula:
@@ -572,7 +568,6 @@ def generate_uv_index(archivedir, bypass):
                     formula = form_toks[1]
                     formula_lookup[station_id]['kipp_zonen'][table] = formula
 
-    print(formula_lookup)
     LOGGER.info('Loaded formula lookup resource.')
 
     LOGGER.info('Computing UV-index...')
