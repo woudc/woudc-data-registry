@@ -326,7 +326,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                     msg = ('Unable to get {}.UVIndex'
                            ' from file: {}. Time: {}: {}'.format(
                                global_summary_nsf_t, ipath, time, err))
-                    LOGGER.error(msg)
+                    LOGGER.error(msg)    
                     pass
 
                 try:
