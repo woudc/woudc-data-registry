@@ -44,6 +44,8 @@
 # =================================================================
 
 import click
+from woudc_data_registry.product.uv_index.uv_index_generator \
+    import generate_uv_index
 
 
 @click.group()
@@ -53,9 +55,12 @@ def uv_index():
 
 
 @click.command()
+@click.pass_context
+@click.argument('src', type=click.Path(exists=True, resolve_path=True,
+                                       dir_okay=True, file_okay=True))
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-def generate(ctx, bypass=False):
+def generate(ctx, src, bypass=False):
     """Generate UV index"""
 
     bypass_ = bypass
@@ -65,6 +70,9 @@ def generate(ctx, bypass=False):
 
         if click.confirm(q):
             bypass_ = True
+
+    if bypass_:
+        generate_uv_index(src, bypass)
 
 
 @click.command()

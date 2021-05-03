@@ -1102,6 +1102,115 @@ class Notification(base):
         return 'Notification ({})'.format(self.notification_id)
 
 
+class UVIndex(base):
+    """Data Registry UV Index"""
+
+    __tablename__ = 'uv_index_hourly'
+
+    id_field = 'uv_id'
+    id_dependencies = ['instrument_id', 'observation_date',
+                       'observation_time', 'file_path']
+
+    uv_id = Column(String, primary_key=True)
+    file_path = Column(String, nullable=False)
+    dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
+                        nullable=False)
+    station_id = Column(String, ForeignKey('stations.station_id'),
+                        nullable=False)
+    country_id = Column(String, ForeignKey('countries.country_id'),
+                        nullable=False)
+    instrument_id = Column(String, ForeignKey('instruments.instrument_id'),
+                           nullable=False)
+
+    gaw_id = Column(String, nullable=True)
+
+    solar_zenith_angle = Column(Float, nullable=True)
+    uv_index = Column(Float, nullable=True)
+    uv_index_qa = Column(String, nullable=True)
+
+    observation_date = Column(Date, nullable=False)
+    observation_time = Column(Time, nullable=False)
+    observation_utcoffset = Column(String, nullable=True)
+
+    x = Column(Float, nullable=True)
+    y = Column(Float, nullable=True)
+    z = Column(Float, nullable=True)
+
+    # relationships
+    station = relationship('Station', backref=__tablename__)
+    instrument = relationship('Instrument', backref=__tablename__)
+    dataset = relationship('Dataset', backref=__tablename__)
+
+    def __init__(self, dict_):
+
+        self.file_path = dict_['file_path']
+
+        self.dataset_id = dict_['dataset_id']
+        self.station_id = dict_['station_id']
+        self.country_id = dict_['country_id']
+        self.instrument_id = dict_['instrument_id']
+
+        self.gaw_id = dict_['gaw_id']
+
+        self.solar_zenith_angle = dict_['solar_zenith_angle']
+
+        self.uv_index = dict_['uv_index']
+        self.uv_index_qa = dict_['uv_index_qa']
+
+        self.observation_date = dict_['observation_date']
+        self.observation_time = dict_['observation_time']
+
+        self.generate_ids()
+
+        self.observation_utcoffset = dict_['observation_utcoffset']
+
+        self.x = dict_['x']
+        self.y = dict_['y']
+        self.z = dict_['z']
+
+    @property
+    def __geo_interface__(self):
+        return {
+            'id': self.uv_id,
+            'type': 'Feature',
+            'geometry': point2geojsongeometry(self.x, self.y, self.z),
+            'properties': {
+                'identifier': self.uv_id,
+                'file_path': self.file_path,
+                'dataset_id': self.dataset_id,
+                'station_id': self.station_id,
+                'station_name': self.station.station_name.name,
+                'contributor_name':
+                self.instrument.deployment.contributor.name,
+                'country_id': self.station.country.country_id,
+                'country_name_en': self.station.country.name_en,
+                'country_name_fr': self.station.country.name_fr,
+                'gaw_id': self.gaw_id,
+                'solar_zenith_angle': self.solar_zenith_angle,
+                'observation_utcoffset': self.observation_utcoffset,
+                'observation_date': strftime_rfc3339(self.observation_date),
+                'observation_time': strftime_rfc3339(self.observation_time),
+                'instrument_name': self.instrument.name,
+                'instrument_model': self.instrument.model,
+                'instrument_serial': self.instrument.serial,
+                'uv_index': self.uv_index,
+                'uv_index_qa': self.uv_index_qa,
+            }
+        }
+
+    def __repr__(self):
+        return 'UV_Index ({})'.format(self.uv_id)
+
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.uv_id = ':'.join(map(str, components))
+
+
 def build_contributions(instrument_models):
     """function that forms contributions from other model lists"""
 
