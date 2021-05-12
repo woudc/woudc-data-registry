@@ -8,7 +8,7 @@ and displays the data to the public through various plots, graphs and tables.
 
 * Provided paths are relative to the root of the cloned repository on disk.
 
-# Environment Setup and Activation
+# Environment setup and activation
 In this section steps are provided to fetch the WOUDC Data Registry codebase from 
 github and setup the python environment it uses. Two methods to setup the 
 WOUDC Data Registry virtualenv are listed below. This python environment 
@@ -51,7 +51,7 @@ vim foo.env
 # Run contents of config file
 . foo.env
 ```
-# Table and Elasticsearch Initialization
+# Table and Elasticsearch initialization
 The `woudc-data-registry admin registry setup` command generates tables within the WOUDC Data Registry
 psql database specified in the config (.yml) file. The tables are all empty
 at the moment and will be filled during the migration and data ingest steps.
@@ -108,7 +108,7 @@ woudc-data-registry admin init -d /woudc-data-registry/data
 # Initalize WOUDC Data Registry without conda setup
 woudc-data-registry admin init -d /woudc-data-registry/woudc-data-registry/data
 ```
-# WOUDC Data File Ingest and Sync to Elasticsearch
+# WOUDC Data File Ingest and sync to Elasticsearch
 Environmental agencies around the world collect WOUDC data and generate/submit WOUDC extcsv files.
 These files can then be ingested and stored in the WOUDC Data Registry system. The 
 `woudc-data-registry data ingest /path/to/dir` command will ingest all files contained in the
