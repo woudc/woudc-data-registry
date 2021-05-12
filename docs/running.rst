@@ -201,3 +201,4 @@ entire index.
 woudc-data-registry product uv-index generate /path/to/archive/root 
     Delete all records from the uv_index_hourly table and use all Spectral 
     and Broadband files to generate uv_index_hourly records. 
+
