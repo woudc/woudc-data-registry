@@ -108,7 +108,7 @@ woudc-data-registry admin init -d /woudc-data-registry/data
 # Initalize WOUDC Data Registry without conda setup
 woudc-data-registry admin init -d /woudc-data-registry/woudc-data-registry/data
 ```
-# WOUDC Data File Ingest and sync to Elasticsearch
+# WOUDC data file ingest and sync to Elasticsearch
 Environmental agencies around the world collect WOUDC data and generate/submit WOUDC extcsv files.
 These files can then be ingested and stored in the WOUDC Data Registry system. The 
 `woudc-data-registry data ingest /path/to/dir` command will ingest all files contained in the
