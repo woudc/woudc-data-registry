@@ -528,7 +528,7 @@ def generate_uv_index(archivedir, bypass):
 
     # load formula-lookup
     LOGGER.info('Loading formula lookup resource...')
-    resource_dir = config.WDR_FORMULA_LOOKUP_PATH
+    resource_dir = config.WDR_UV_INDEX_FORMULA_LOOKUP
     formula_lookup = {}
     csv_rows = csv.reader(open(resource_dir))
 
