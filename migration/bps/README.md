@@ -127,23 +127,3 @@ woudc-data-registry data ingest /path/to/dir
 
 # Sync contents of the WOUDC Data Registry database to Elasticsearch
 woudc-data-registry admin search sync
-```
-# WOUDC UV Index Generation
-A UV Index table can be generated using data and metadata from WOUDC extcsv files. In particular
-files from the Broadband and Spectral datasets are used in this process. 
-
-The `woudc-data-registry product uv-index generate` command deletes all records from 
-the uv_index_hourly table and then uses all Spectral and Broadband files to generate 
-uv_index_hourly records. 
-
-The `woudc-data-registry product uv-index update` command works similarly to generate
-except the initial clear of the table does not occur and only files within a date range are used. 
-If only the start or end date is specified, all files prior to the end date or following
-the start date will be used. If neither is specified, all files will be ingested 
-similar to the generate command.
-```
-# Teardown and generate entire uv_index_hourly table
-woudc-data-registry product uv-index generate /path/to/archive/root
-
-# Only generate uv_index_hourly records within date range
-woudc-data-registry product uv-index update /path/to/archive/root -s start_date -e end_date
