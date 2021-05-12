@@ -206,6 +206,16 @@ coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.
 coverage report -m
 ```
 
+#### UV Index Generation
+
+```bash
+# Teardown and generate entire uv_index_hourly table
+woudc-data-registry product uv-index generate /path/to/archive/root
+
+
+# Only generate uv_index_hourly records within date range
+woudc-data-registry product uv-index update /path/to/archive/root
+
 #### Code Conventions
 
 * [PEP8](https://www.python.org/dev/peps/pep-0008)
