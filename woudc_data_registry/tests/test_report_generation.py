@@ -71,7 +71,7 @@ class OperatorReportTest(SandboxTestSuite):
 
         with report.OperatorReport(SANDBOX_DIR) as op_report:
             operator_path = pathlib.Path(op_report.filepath())
-            self.assertEquals(str(operator_path.parent), SANDBOX_DIR)
+            self.assertEqual(str(operator_path.parent), SANDBOX_DIR)
 
     def test_uses_error_definition(self):
         """Test that error/warning feedback responds to input files"""
@@ -122,8 +122,8 @@ class OperatorReportTest(SandboxTestSuite):
             next(reader)
 
             report_line = next(reader)
-            self.assertEquals(report_line[0], 'P')
-            self.assertEquals(report_line[2], '200')
+            self.assertEqual(report_line[0], 'P')
+            self.assertEqual(report_line[2], '200')
             self.assertIn(agency, report_line)
             self.assertIn(os.path.basename(infile), report_line)
 
@@ -163,15 +163,15 @@ class OperatorReportTest(SandboxTestSuite):
             for _ in range(expected_warnings):
                 report_line = next(reader)
 
-                self.assertEquals(report_line[0], 'P')
-                self.assertEquals(report_line[1], 'Warning')
+                self.assertEqual(report_line[0], 'P')
+                self.assertEqual(report_line[1], 'Warning')
                 self.assertIn(agency, report_line)
                 self.assertIn(os.path.basename(infile), report_line)
 
             report_line = next(reader)
-            self.assertEquals(report_line[0], 'P')
-            self.assertEquals(report_line[1], 'Warning')
-            self.assertEquals(report_line[2], '200')
+            self.assertEqual(report_line[0], 'P')
+            self.assertEqual(report_line[1], 'Warning')
+            self.assertEqual(report_line[2], '200')
             self.assertIn(agency, report_line)
             self.assertIn(os.path.basename(infile), report_line)
 
@@ -219,20 +219,20 @@ class OperatorReportTest(SandboxTestSuite):
             expected_errors = len(ecsv.errors)
             for _ in range(expected_warnings + expected_errors):
                 report_line = next(reader)
-                self.assertEquals(report_line[0], 'F')
+                self.assertEqual(report_line[0], 'F')
 
                 if report_line[1] == 'Warning':
                     warnings += 1
                 elif report_line[1] == 'Error':
                     errors += 1
 
-            self.assertEquals(warnings, expected_warnings)
-            self.assertEquals(errors, expected_errors)
+            self.assertEqual(warnings, expected_warnings)
+            self.assertEqual(errors, expected_errors)
 
             report_line = next(reader)
-            self.assertEquals(report_line[0], 'F')
-            self.assertEquals(report_line[1], 'Error')
-            self.assertEquals(report_line[2], '209')
+            self.assertEqual(report_line[0], 'F')
+            self.assertEqual(report_line[1], 'Error')
+            self.assertEqual(report_line[2], '209')
             self.assertIn(agency, report_line)
             self.assertIn(os.path.basename(infile), report_line)
 
@@ -302,13 +302,13 @@ class OperatorReportTest(SandboxTestSuite):
 
             for line in reader:
                 if expected_errors[line[12]] == 0:
-                    self.assertEquals(line[0], 'P')
-                    self.assertEquals(line[1], 'Warning')
+                    self.assertEqual(line[0], 'P')
+                    self.assertEqual(line[1], 'Warning')
                 else:
-                    self.assertEquals(line[0], 'F')
+                    self.assertEqual(line[0], 'F')
 
                 if line[2] == '200':
-                    self.assertEquals(expected_errors[line[12]], 0)
+                    self.assertEqual(expected_errors[line[12]], 0)
                 elif line[2] == '209':
                     self.assertGreater(expected_errors[line[12]], 0)
                 elif line[1] == 'Warning':
@@ -316,8 +316,8 @@ class OperatorReportTest(SandboxTestSuite):
                 elif line[1] == 'Error':
                     errors[line[12]] += 1
 
-        self.assertEquals(warnings, expected_warnings)
-        self.assertEquals(errors, expected_errors)
+        self.assertEqual(warnings, expected_warnings)
+        self.assertEqual(errors, expected_errors)
 
 
 class RunReportTest(SandboxTestSuite):
@@ -329,7 +329,7 @@ class RunReportTest(SandboxTestSuite):
         run_report = report.RunReport(SANDBOX_DIR)
 
         run_report_path = pathlib.Path(run_report.filepath())
-        self.assertEquals(str(run_report_path.parent), SANDBOX_DIR)
+        self.assertEqual(str(run_report_path.parent), SANDBOX_DIR)
 
     def test_passing_run_report(self):
         """Test that a passing file is written to the run report"""
@@ -355,10 +355,10 @@ class RunReportTest(SandboxTestSuite):
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 2)
+            self.assertEqual(len(lines), 2)
 
-            self.assertEquals(lines[0], agency)
-            self.assertEquals(lines[1], 'Pass: {}'.format(infile))
+            self.assertEqual(lines[0], agency)
+            self.assertEqual(lines[1], 'Pass: {}'.format(infile))
 
     def test_failing_run_report(self):
         """Test that a failing file is written to the run report"""
@@ -391,10 +391,10 @@ class RunReportTest(SandboxTestSuite):
         self.assertTrue(os.path.exists(output_path))
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 2)
+            self.assertEqual(len(lines), 2)
 
-            self.assertEquals(lines[0], agency)
-            self.assertEquals(lines[1], 'Fail: {}'.format(infile))
+            self.assertEqual(lines[0], agency)
+            self.assertEqual(lines[1], 'Fail: {}'.format(infile))
 
     def test_non_extcsv_run_report(self):
         """Test that an unparseable file is written to the run report"""
@@ -421,10 +421,10 @@ class RunReportTest(SandboxTestSuite):
                 self.assertTrue(os.path.exists(output_path))
                 with open(output_path) as output:
                     lines = output.read().splitlines()
-                    self.assertEquals(len(lines), 2)
+                    self.assertEqual(len(lines), 2)
 
-                    self.assertEquals(lines[0], agency)
-                    self.assertEquals(lines[1], 'Fail: {}'.format(infile))
+                    self.assertEqual(lines[0], agency)
+                    self.assertEqual(lines[1], 'Fail: {}'.format(infile))
 
     def test_mixed_run_report(self):
         """
@@ -467,17 +467,17 @@ class RunReportTest(SandboxTestSuite):
                     expected_fails.add(fullpath)
                     run_report.write_failing_file(fullpath, agency)
 
-        self.assertEquals(len(expected_passes), 6)
-        self.assertEquals(len(expected_fails), 4)
+        self.assertEqual(len(expected_passes), 6)
+        self.assertEqual(len(expected_fails), 4)
 
         output_path = os.path.join(SANDBOX_DIR, 'run_report')
         self.assertTrue(os.path.exists(output_path))
 
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(lines[0], agency)
-            self.assertEquals(len(lines),
-                              len(expected_passes) + len(expected_fails) + 1)
+            self.assertEqual(lines[0], agency)
+            self.assertEqual(len(lines),
+                             len(expected_passes) + len(expected_fails) + 1)
 
             for line in lines[1:]:
                 if line.startswith('Pass'):
@@ -549,15 +549,15 @@ class RunReportTest(SandboxTestSuite):
                         expected_fails[agency].add(fullpath)
                         run_report.write_failing_file(fullpath, agency)
 
-        self.assertEquals(len(expected_passes['CAS-IAP']), 1)
-        self.assertEquals(len(expected_passes['DWD-MOHp']), 2)
-        self.assertEquals(len(expected_passes['MLCD-LU']), 3)
-        self.assertEquals(len(expected_passes['MSC']), 4)
+        self.assertEqual(len(expected_passes['CAS-IAP']), 1)
+        self.assertEqual(len(expected_passes['DWD-MOHp']), 2)
+        self.assertEqual(len(expected_passes['MLCD-LU']), 3)
+        self.assertEqual(len(expected_passes['MSC']), 4)
 
-        self.assertEquals(len(expected_fails['CAS-IAP']), 0)
-        self.assertEquals(len(expected_fails['DWD-MOHp']), 1)
-        self.assertEquals(len(expected_fails['MLCD-LU']), 0)
-        self.assertEquals(len(expected_fails['MSC']), 1)
+        self.assertEqual(len(expected_fails['CAS-IAP']), 0)
+        self.assertEqual(len(expected_fails['DWD-MOHp']), 1)
+        self.assertEqual(len(expected_fails['MLCD-LU']), 0)
+        self.assertEqual(len(expected_fails['MSC']), 1)
 
         output_path = os.path.join(SANDBOX_DIR, 'run_report')
         self.assertTrue(os.path.exists(output_path))
@@ -590,7 +590,7 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report = report.EmailSummary(SANDBOX_DIR)
 
         email_report_path = pathlib.Path(email_report.filepath())
-        self.assertEquals(str(email_report_path.parent), SANDBOX_DIR)
+        self.assertEqual(str(email_report_path.parent), SANDBOX_DIR)
 
     def test_find_operator_report_empty(self):
         """Test that no operator reports are found when none exist"""
@@ -600,7 +600,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         operator_reports = email_report.find_operator_reports()
 
-        self.assertEquals([], operator_reports)
+        self.assertEqual([], operator_reports)
 
     def test_find_operator_report_one_run(self):
         """Test that operator reports are found when one exists"""
@@ -611,7 +611,7 @@ class EmailSummaryTest(SandboxTestSuite):
         operator_reports = email_report.find_operator_reports()
         expected_parent = resolve_test_data_path('data/reports/one_pass/run1')
 
-        self.assertEquals(1, len(operator_reports))
+        self.assertEqual(1, len(operator_reports))
         self.assertIn(expected_parent, operator_reports[0])
 
     def test_find_operator_report_many_runs(self):
@@ -627,7 +627,7 @@ class EmailSummaryTest(SandboxTestSuite):
         expected_path_pattern = \
             'data/reports/six_reports/run{}/operator-report-9999-12-31.csv'
 
-        self.assertEquals(6, len(operator_reports))
+        self.assertEqual(6, len(operator_reports))
 
         for run_number in range(1, 6 + 1):
             expected_path = resolve_test_data_path(
@@ -652,13 +652,13 @@ class EmailSummaryTest(SandboxTestSuite):
 
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 5)
+            self.assertEqual(len(lines), 5)
 
-            self.assertEquals(lines[0], 'MSC (placeholder@site.com)')
-            self.assertEquals(lines[1], 'Total files received: 1')
-            self.assertEquals(lines[2], 'Number of passed files: 1')
-            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
-            self.assertEquals(lines[4], 'Number of failed files: 0')
+            self.assertEqual(lines[0], 'MSC (placeholder@site.com)')
+            self.assertEqual(lines[1], 'Total files received: 1')
+            self.assertEqual(lines[2], 'Number of passed files: 1')
+            self.assertEqual(lines[3], 'Number of manually repaired files: 0')
+            self.assertEqual(lines[4], 'Number of failed files: 0')
 
     def test_email_summary_single_fail(self):
         """Test email report generation for a single failing file"""
@@ -677,17 +677,17 @@ class EmailSummaryTest(SandboxTestSuite):
 
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 8)
+            self.assertEqual(len(lines), 8)
 
-            self.assertEquals(lines[0], 'MSC (placeholder@site.com)')
-            self.assertEquals(lines[1], 'Total files received: 1')
-            self.assertEquals(lines[2], 'Number of passed files: 0')
-            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
-            self.assertEquals(lines[4], 'Number of failed files: 1')
+            self.assertEqual(lines[0], 'MSC (placeholder@site.com)')
+            self.assertEqual(lines[1], 'Total files received: 1')
+            self.assertEqual(lines[2], 'Number of passed files: 0')
+            self.assertEqual(lines[3], 'Number of manually repaired files: 0')
+            self.assertEqual(lines[4], 'Number of failed files: 1')
 
-            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertEqual(lines[5], 'Summary of Failures:')
             self.assertNotIn('.csv', lines[6])
-            self.assertEquals(lines[7], 'file1.csv')
+            self.assertEqual(lines[7], 'file1.csv')
 
     def test_email_summary_one_run_mixed_pass_fail(self):
         """
@@ -709,20 +709,20 @@ class EmailSummaryTest(SandboxTestSuite):
 
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 10)
+            self.assertEqual(len(lines), 10)
 
-            self.assertEquals(lines[0], 'MSC (placeholder@site.com)')
-            self.assertEquals(lines[1], 'Total files received: 5')
-            self.assertEquals(lines[2], 'Number of passed files: 2')
-            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
-            self.assertEquals(lines[4], 'Number of failed files: 3')
+            self.assertEqual(lines[0], 'MSC (placeholder@site.com)')
+            self.assertEqual(lines[1], 'Total files received: 5')
+            self.assertEqual(lines[2], 'Number of passed files: 2')
+            self.assertEqual(lines[3], 'Number of manually repaired files: 0')
+            self.assertEqual(lines[4], 'Number of failed files: 3')
 
-            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertEqual(lines[5], 'Summary of Failures:')
             self.assertNotIn('.csv', lines[6])
             # Alphabetical order of files: the first one has capital F.
-            self.assertEquals(lines[7], 'File5.csv')
-            self.assertEquals(lines[8], 'file2.csv')
-            self.assertEquals(lines[9], 'file3.csv')
+            self.assertEqual(lines[7], 'File5.csv')
+            self.assertEqual(lines[8], 'file2.csv')
+            self.assertEqual(lines[9], 'file3.csv')
 
     def test_email_summary_multiple_causes_one_group(self):
         """
@@ -744,23 +744,23 @@ class EmailSummaryTest(SandboxTestSuite):
 
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 12)
+            self.assertEqual(len(lines), 12)
 
-            self.assertEquals(lines[0], 'MSC (placeholder@site.com)')
-            self.assertEquals(lines[1], 'Total files received: 5')
-            self.assertEquals(lines[2], 'Number of passed files: 2')
-            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
-            self.assertEquals(lines[4], 'Number of failed files: 3')
+            self.assertEqual(lines[0], 'MSC (placeholder@site.com)')
+            self.assertEqual(lines[1], 'Total files received: 5')
+            self.assertEqual(lines[2], 'Number of passed files: 2')
+            self.assertEqual(lines[3], 'Number of manually repaired files: 0')
+            self.assertEqual(lines[4], 'Number of failed files: 3')
 
-            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertEqual(lines[5], 'Summary of Failures:')
             # Three error descriptions shared by all the files below.
             self.assertNotIn('.csv', lines[6])
             self.assertNotIn('.csv', lines[7])
             self.assertNotIn('.csv', lines[8])
             # Alphabetical order of files: the first one has capital F.
-            self.assertEquals(lines[9], 'File5.csv')
-            self.assertEquals(lines[10], 'file2.csv')
-            self.assertEquals(lines[11], 'file3.csv')
+            self.assertEqual(lines[9], 'File5.csv')
+            self.assertEqual(lines[10], 'file2.csv')
+            self.assertEqual(lines[11], 'file3.csv')
 
     def test_email_summary_multiple_agencies(self):
         """Test email report generation where input has multiple agencies"""
@@ -784,41 +784,41 @@ class EmailSummaryTest(SandboxTestSuite):
 
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 29)
+            self.assertEqual(len(lines), 29)
 
-            self.assertEquals(lines[0], 'CAS-IAP (casiap@mail.com)')
-            self.assertEquals(lines[1], 'Total files received: 1')
-            self.assertEquals(lines[2], 'Number of passed files: 1')
-            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
-            self.assertEquals(lines[4], 'Number of failed files: 0')
+            self.assertEqual(lines[0], 'CAS-IAP (casiap@mail.com)')
+            self.assertEqual(lines[1], 'Total files received: 1')
+            self.assertEqual(lines[2], 'Number of passed files: 1')
+            self.assertEqual(lines[3], 'Number of manually repaired files: 0')
+            self.assertEqual(lines[4], 'Number of failed files: 0')
 
-            self.assertEquals(lines[6], 'DWD-MOHp (dwd@mail.com)')
-            self.assertEquals(lines[7], 'Total files received: 3')
-            self.assertEquals(lines[8], 'Number of passed files: 2')
-            self.assertEquals(lines[9], 'Number of manually repaired files: 0')
-            self.assertEquals(lines[10], 'Number of failed files: 1')
+            self.assertEqual(lines[6], 'DWD-MOHp (dwd@mail.com)')
+            self.assertEqual(lines[7], 'Total files received: 3')
+            self.assertEqual(lines[8], 'Number of passed files: 2')
+            self.assertEqual(lines[9], 'Number of manually repaired files: 0')
+            self.assertEqual(lines[10], 'Number of failed files: 1')
 
-            self.assertEquals(lines[11], 'Summary of Failures:')
+            self.assertEqual(lines[11], 'Summary of Failures:')
             self.assertNotIn('.csv', lines[12])
-            self.assertEquals(lines[13], 'file2.csv')
+            self.assertEqual(lines[13], 'file2.csv')
 
-            self.assertEquals(lines[15], 'MLCD-LU (mlcd@mail.com)')
-            self.assertEquals(lines[16], 'Total files received: 3')
-            self.assertEquals(lines[17], 'Number of passed files: 3')
-            self.assertEquals(lines[18],
-                              'Number of manually repaired files: 0')
-            self.assertEquals(lines[19], 'Number of failed files: 0')
+            self.assertEqual(lines[15], 'MLCD-LU (mlcd@mail.com)')
+            self.assertEqual(lines[16], 'Total files received: 3')
+            self.assertEqual(lines[17], 'Number of passed files: 3')
+            self.assertEqual(lines[18],
+                             'Number of manually repaired files: 0')
+            self.assertEqual(lines[19], 'Number of failed files: 0')
 
-            self.assertEquals(lines[21], 'MSC (msc@mail.com)')
-            self.assertEquals(lines[22], 'Total files received: 5')
-            self.assertEquals(lines[23], 'Number of passed files: 4')
-            self.assertEquals(lines[24],
-                              'Number of manually repaired files: 0')
-            self.assertEquals(lines[25], 'Number of failed files: 1')
+            self.assertEqual(lines[21], 'MSC (msc@mail.com)')
+            self.assertEqual(lines[22], 'Total files received: 5')
+            self.assertEqual(lines[23], 'Number of passed files: 4')
+            self.assertEqual(lines[24],
+                             'Number of manually repaired files: 0')
+            self.assertEqual(lines[25], 'Number of failed files: 1')
 
-            self.assertEquals(lines[26], 'Summary of Failures:')
+            self.assertEqual(lines[26], 'Summary of Failures:')
             self.assertNotIn('.csv', lines[27])
-            self.assertEquals(lines[28], 'file4.csv')
+            self.assertEqual(lines[28], 'file4.csv')
 
     def test_email_summary_multiple_runs(self):
         """Test email report generation across multiple operator reports"""
@@ -842,41 +842,41 @@ class EmailSummaryTest(SandboxTestSuite):
 
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 29)
+            self.assertEqual(len(lines), 29)
 
-            self.assertEquals(lines[0], 'CAS-IAP (casiap@mail.com)')
-            self.assertEquals(lines[1], 'Total files received: 1')
-            self.assertEquals(lines[2], 'Number of passed files: 1')
-            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
-            self.assertEquals(lines[4], 'Number of failed files: 0')
+            self.assertEqual(lines[0], 'CAS-IAP (casiap@mail.com)')
+            self.assertEqual(lines[1], 'Total files received: 1')
+            self.assertEqual(lines[2], 'Number of passed files: 1')
+            self.assertEqual(lines[3], 'Number of manually repaired files: 0')
+            self.assertEqual(lines[4], 'Number of failed files: 0')
 
-            self.assertEquals(lines[6], 'DWD-MOHp (dwd@mail.com)')
-            self.assertEquals(lines[7], 'Total files received: 3')
-            self.assertEquals(lines[8], 'Number of passed files: 2')
-            self.assertEquals(lines[9], 'Number of manually repaired files: 0')
-            self.assertEquals(lines[10], 'Number of failed files: 1')
+            self.assertEqual(lines[6], 'DWD-MOHp (dwd@mail.com)')
+            self.assertEqual(lines[7], 'Total files received: 3')
+            self.assertEqual(lines[8], 'Number of passed files: 2')
+            self.assertEqual(lines[9], 'Number of manually repaired files: 0')
+            self.assertEqual(lines[10], 'Number of failed files: 1')
 
-            self.assertEquals(lines[11], 'Summary of Failures:')
+            self.assertEqual(lines[11], 'Summary of Failures:')
             self.assertNotIn('.csv', lines[12])
-            self.assertEquals(lines[13], 'file2.csv')
+            self.assertEqual(lines[13], 'file2.csv')
 
-            self.assertEquals(lines[15], 'MLCD-LU (mlcd@mail.com)')
-            self.assertEquals(lines[16], 'Total files received: 3')
-            self.assertEquals(lines[17], 'Number of passed files: 3')
-            self.assertEquals(lines[18],
-                              'Number of manually repaired files: 0')
-            self.assertEquals(lines[19], 'Number of failed files: 0')
+            self.assertEqual(lines[15], 'MLCD-LU (mlcd@mail.com)')
+            self.assertEqual(lines[16], 'Total files received: 3')
+            self.assertEqual(lines[17], 'Number of passed files: 3')
+            self.assertEqual(lines[18],
+                             'Number of manually repaired files: 0')
+            self.assertEqual(lines[19], 'Number of failed files: 0')
 
-            self.assertEquals(lines[21], 'MSC (msc@mail.com)')
-            self.assertEquals(lines[22], 'Total files received: 5')
-            self.assertEquals(lines[23], 'Number of passed files: 4')
-            self.assertEquals(lines[24],
-                              'Number of manually repaired files: 0')
-            self.assertEquals(lines[25], 'Number of failed files: 1')
+            self.assertEqual(lines[21], 'MSC (msc@mail.com)')
+            self.assertEqual(lines[22], 'Total files received: 5')
+            self.assertEqual(lines[23], 'Number of passed files: 4')
+            self.assertEqual(lines[24],
+                             'Number of manually repaired files: 0')
+            self.assertEqual(lines[25], 'Number of failed files: 1')
 
-            self.assertEquals(lines[26], 'Summary of Failures:')
+            self.assertEqual(lines[26], 'Summary of Failures:')
             self.assertNotIn('.csv', lines[27])
-            self.assertEquals(lines[28], 'file4.csv')
+            self.assertEqual(lines[28], 'file4.csv')
 
     def test_email_summary_single_fix(self):
         """
@@ -898,17 +898,17 @@ class EmailSummaryTest(SandboxTestSuite):
 
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 8)
+            self.assertEqual(len(lines), 8)
 
-            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
-            self.assertEquals(lines[1], 'Total files received: 1')
-            self.assertEquals(lines[2], 'Number of passed files: 0')
-            self.assertEquals(lines[3], 'Number of manually repaired files: 1')
-            self.assertEquals(lines[4], 'Number of failed files: 0')
+            self.assertEqual(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEqual(lines[1], 'Total files received: 1')
+            self.assertEqual(lines[2], 'Number of passed files: 0')
+            self.assertEqual(lines[3], 'Number of manually repaired files: 1')
+            self.assertEqual(lines[4], 'Number of failed files: 0')
 
-            self.assertEquals(lines[5], 'Summary of Fixes:')
+            self.assertEqual(lines[5], 'Summary of Fixes:')
             self.assertNotIn('.csv', lines[6])
-            self.assertEquals(lines[7], 'file1.csv')
+            self.assertEqual(lines[7], 'file1.csv')
 
     def test_email_report_mixed_pass_fix(self):
         """
@@ -930,20 +930,20 @@ class EmailSummaryTest(SandboxTestSuite):
 
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 11)
+            self.assertEqual(len(lines), 11)
 
-            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
-            self.assertEquals(lines[1], 'Total files received: 9')
-            self.assertEquals(lines[2], 'Number of passed files: 5')
-            self.assertEquals(lines[3], 'Number of manually repaired files: 4')
-            self.assertEquals(lines[4], 'Number of failed files: 0')
+            self.assertEqual(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEqual(lines[1], 'Total files received: 9')
+            self.assertEqual(lines[2], 'Number of passed files: 5')
+            self.assertEqual(lines[3], 'Number of manually repaired files: 4')
+            self.assertEqual(lines[4], 'Number of failed files: 0')
 
-            self.assertEquals(lines[5], 'Summary of Fixes:')
+            self.assertEqual(lines[5], 'Summary of Fixes:')
             self.assertNotIn('.csv', lines[6])
-            self.assertEquals(lines[7], 'File5.csv')
-            self.assertEquals(lines[8], 'file2.csv')
-            self.assertEquals(lines[9], 'file3.csv')
-            self.assertEquals(lines[10], 'file9.csv')
+            self.assertEqual(lines[7], 'File5.csv')
+            self.assertEqual(lines[8], 'file2.csv')
+            self.assertEqual(lines[9], 'file3.csv')
+            self.assertEqual(lines[10], 'file9.csv')
 
     def test_email_report_mixed_fail_fix(self):
         """
@@ -965,27 +965,27 @@ class EmailSummaryTest(SandboxTestSuite):
 
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 17)
+            self.assertEqual(len(lines), 17)
 
-            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
-            self.assertEquals(lines[1], 'Total files received: 8')
-            self.assertEquals(lines[2], 'Number of passed files: 0')
-            self.assertEquals(lines[3], 'Number of manually repaired files: 3')
-            self.assertEquals(lines[4], 'Number of failed files: 5')
+            self.assertEqual(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEqual(lines[1], 'Total files received: 8')
+            self.assertEqual(lines[2], 'Number of passed files: 0')
+            self.assertEqual(lines[3], 'Number of manually repaired files: 3')
+            self.assertEqual(lines[4], 'Number of failed files: 5')
 
-            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertEqual(lines[5], 'Summary of Failures:')
             self.assertNotIn('.csv', lines[6])
-            self.assertEquals(lines[7], 'file1.csv')
-            self.assertEquals(lines[8], 'file3.csv')
-            self.assertEquals(lines[9], 'file4.csv')
-            self.assertEquals(lines[10], 'file7.csv')
-            self.assertEquals(lines[11], 'file8.csv')
+            self.assertEqual(lines[7], 'file1.csv')
+            self.assertEqual(lines[8], 'file3.csv')
+            self.assertEqual(lines[9], 'file4.csv')
+            self.assertEqual(lines[10], 'file7.csv')
+            self.assertEqual(lines[11], 'file8.csv')
 
-            self.assertEquals(lines[12], 'Summary of Fixes:')
+            self.assertEqual(lines[12], 'Summary of Fixes:')
             self.assertNotIn('.csv', lines[13])
-            self.assertEquals(lines[14], 'file2.csv')
-            self.assertEquals(lines[15], 'file5.csv')
-            self.assertEquals(lines[16], 'file6.csv')
+            self.assertEqual(lines[14], 'file2.csv')
+            self.assertEqual(lines[15], 'file5.csv')
+            self.assertEqual(lines[16], 'file6.csv')
 
     def test_email_summary_fix_but_still_fail(self):
         """
@@ -1007,17 +1007,17 @@ class EmailSummaryTest(SandboxTestSuite):
 
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 8)
+            self.assertEqual(len(lines), 8)
 
-            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
-            self.assertEquals(lines[1], 'Total files received: 1')
-            self.assertEquals(lines[2], 'Number of passed files: 0')
-            self.assertEquals(lines[3], 'Number of manually repaired files: 0')
-            self.assertEquals(lines[4], 'Number of failed files: 1')
+            self.assertEqual(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEqual(lines[1], 'Total files received: 1')
+            self.assertEqual(lines[2], 'Number of passed files: 0')
+            self.assertEqual(lines[3], 'Number of manually repaired files: 0')
+            self.assertEqual(lines[4], 'Number of failed files: 1')
 
-            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertEqual(lines[5], 'Summary of Failures:')
             self.assertNotIn('.csv', lines[6])
-            self.assertEquals(lines[7], 'file1.csv')
+            self.assertEqual(lines[7], 'file1.csv')
 
     def test_email_summary_mixed_pass_fix_fail(self):
         """
@@ -1039,7 +1039,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 19)
+            self.assertEqual(len(lines), 19)
 
             # Output may be sorted in various ways, so just check that all
             # files are in the right block and are all accounted for.
@@ -1047,19 +1047,19 @@ class EmailSummaryTest(SandboxTestSuite):
             first_fix_of_pair = ['file2.csv', 'file6.csv']
             second_fix_of_pair = ['file3.csv', 'file8.csv']
 
-            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
-            self.assertEquals(lines[1], 'Total files received: 11')
-            self.assertEquals(lines[2], 'Number of passed files: 5')
-            self.assertEquals(lines[3], 'Number of manually repaired files: 4')
-            self.assertEquals(lines[4], 'Number of failed files: 2')
+            self.assertEqual(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEqual(lines[1], 'Total files received: 11')
+            self.assertEqual(lines[2], 'Number of passed files: 5')
+            self.assertEqual(lines[3], 'Number of manually repaired files: 4')
+            self.assertEqual(lines[4], 'Number of failed files: 2')
 
-            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertEqual(lines[5], 'Summary of Failures:')
             self.assertNotIn('.csv', lines[6])
             self.assertIn(lines[7], fail_group)
             self.assertNotIn('.csv', lines[8])
             self.assertIn(lines[9], fail_group)
 
-            self.assertEquals(lines[10], 'Summary of Fixes:')
+            self.assertEqual(lines[10], 'Summary of Fixes:')
             self.assertNotIn('.csv', lines[11])
             self.assertNotIn('.csv', lines[12])
             self.assertIn(lines[13], first_fix_of_pair)
@@ -1090,18 +1090,18 @@ class EmailSummaryTest(SandboxTestSuite):
 
         with open(output_path) as output:
             lines = output.read().splitlines()
-            self.assertEquals(len(lines), 17)
+            self.assertEqual(len(lines), 17)
 
-            self.assertEquals(lines[0], 'MSC (placeholder@mail.com)')
-            self.assertEquals(lines[1], 'Total files received: 5')
-            self.assertEquals(lines[2], 'Number of passed files: 0')
-            self.assertEquals(lines[3], 'Number of manually repaired files: 2')
-            self.assertEquals(lines[4], 'Number of failed files: 3')
+            self.assertEqual(lines[0], 'MSC (placeholder@mail.com)')
+            self.assertEqual(lines[1], 'Total files received: 5')
+            self.assertEqual(lines[2], 'Number of passed files: 0')
+            self.assertEqual(lines[3], 'Number of manually repaired files: 2')
+            self.assertEqual(lines[4], 'Number of failed files: 3')
 
             fix_group = ['file1.csv', 'file3.csv']
             fail_group = ['file2.csv', 'file4.csv', 'file5.csv']
 
-            self.assertEquals(lines[5], 'Summary of Failures:')
+            self.assertEqual(lines[5], 'Summary of Failures:')
             self.assertNotIn('.csv', lines[6])
             self.assertIn(lines[7], fail_group)
             self.assertNotIn('.csv', lines[8])
@@ -1109,15 +1109,15 @@ class EmailSummaryTest(SandboxTestSuite):
             self.assertNotIn('.csv', lines[10])
             self.assertIn(lines[11], fail_group)
 
-            self.assertEquals(lines[12], 'Summary of Fixes:')
+            self.assertEqual(lines[12], 'Summary of Fixes:')
             self.assertNotIn('.csv', lines[13])
             self.assertIn(lines[14], fix_group)
             self.assertNotIn('.csv', lines[15])
             self.assertIn(lines[16], fix_group)
 
             # Check that all error causes (messages) are distinct.
-            self.assertEquals(len(set([lines[6], lines[8], lines[10]])), 3)
-            self.assertEquals(len(set([lines[13], lines[15]])), 2)
+            self.assertEqual(len(set([lines[6], lines[8], lines[10]])), 3)
+            self.assertEqual(len(set([lines[13], lines[15]])), 2)
 
 
 if __name__ == '__main__':
