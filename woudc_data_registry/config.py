@@ -73,6 +73,7 @@ WDR_TABLE_CONFIG = os.getenv('WDR_TABLE_CONFIG', None)
 WDR_ERROR_CONFIG = os.getenv('WDR_ERROR_CONFIG', None)
 WDR_ALIAS_CONFIG = os.getenv('WDR_ALIAS_CONFIG', None)
 WDR_EXTRA_CONFIG = os.getenv('WDR_EXTRA_CONFIG', None)
+WDR_UV_INDEX_FORMULA_LOOKUP = os.getenv('WDR_UV_INDEX_FORMULA_LOOKUP', None)
 
 if WDR_DB_TYPE is None:
     msg = 'WDR_DB_TYPE is not set!'

@@ -188,3 +188,19 @@ woudc_data_registry data verify <input_source> <flags>
                metadata are important or when dataset-specific tables are
                known to contain errors but nothing can be done about them,
                such as during backfilling.
+
+------------
+UV Index generation
+------------
+
+A UV Index table can be generated using data and metadata from WOUDC extcsv files. In particular
+files from the Broadband and Spectral datasets are used in this process. Operations include generating
+the entire UV Index or generating the UV Index within a date range.
+
+woudc-data-registry product uv-index generate /path/to/archive/root 
+    Delete all records from the uv_index_hourly table and use all Spectral 
+    and Broadband files to generate uv_index_hourly records. 
+
+woudc-data-registry product uv-index update /path/to/archive/root
+    Use Broadband and Spectral files within a date range to generate
+    uv_index_hourly records. No deletion of records occurs.
