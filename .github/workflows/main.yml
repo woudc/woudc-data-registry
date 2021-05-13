@@ -36,7 +36,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install system dependencies 📦
-      run: sudo apt-get -y install debhelper devscripts fakeroot python3-setuptools
+      run: sudo apt-get install -y dh-python devscripts fakeroot debhelper python3-all python3-setuptools
     - name: Install requirements 📦
       run: |
         pip install -r requirements-dev.txt
