@@ -47,7 +47,7 @@ jobs:
     - name: run tests ⚙️
       run: python3 setup.py test
     - name: run flake8
-        run: find . -type f -name "*.py" | xargs flake8
+      run: find . -type f -name "*.py" | xargs flake8
     - name: build docs
       run: cd docs && make html && cd ..
     - name: test coverage ⚙️
