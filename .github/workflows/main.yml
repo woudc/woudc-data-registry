@@ -56,7 +56,7 @@ jobs:
         coverage run -a --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_data_registry
         coverage run -a --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_report_generation
         coverage report -m
-        coveralls
+        coveralls --service=github
     - name: build Python package 🏗️
       run: python3 setup.py bdist_wheel --universal
     - name: build Debian package 🏗️
