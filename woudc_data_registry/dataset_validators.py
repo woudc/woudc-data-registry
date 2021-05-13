@@ -52,7 +52,8 @@ from collections import OrderedDict
 LOGGER = logging.getLogger(__name__)
 
 DATASETS = ['Broad-band', 'Lidar', 'Multi-band', 'OzoneSonde', 'RocketSonde',
-            'Spectral', 'TotalOzone', 'TotalOzoneObs', 'UmkehrN14']
+            'Spectral', 'TotalOzone', 'TotalOzoneObs', 'UmkehrN14_1.0',
+            'UmkehrN14_2.0']
 
 
 def get_validator(dataset, reporter):
@@ -72,7 +73,7 @@ def get_validator(dataset, reporter):
         return TotalOzoneObsValidator(reporter)
     elif dataset == 'Spectral':
         return SpectralValidator(reporter)
-    elif dataset == 'UmkehrN14':
+    elif dataset == 'UmkehrN14_1.0' or dataset == 'UmkehrN14_2.0':
         return UmkehrValidator(reporter)
     elif dataset == 'Lidar':
         return LidarValidator(reporter)
