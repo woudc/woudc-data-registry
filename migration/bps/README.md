@@ -127,6 +127,3 @@ woudc-data-registry data ingest /path/to/dir
 
 # Sync contents of the WOUDC Data Registry database to Elasticsearch
 woudc-data-registry admin search sync
-
-# Only generate uv_index_hourly records within date range
-woudc-data-registry product uv-index update /path/to/archive/root -s start_date -e end_date
