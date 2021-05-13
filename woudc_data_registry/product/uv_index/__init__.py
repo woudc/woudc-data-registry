@@ -56,11 +56,11 @@ def uv_index():
 
 @click.command()
 @click.pass_context
-@click.argument('src', type=click.Path(exists=True, resolve_path=True,
-                                       dir_okay=True, file_okay=True))
+@click.argument('srcdir', type=click.Path(exists=True, resolve_path=True,
+                                          dir_okay=True, file_okay=True))
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-def generate(ctx, src, bypass=False):
+def generate(ctx, srcdir, bypass=False):
     """Generate UV index"""
 
     bypass_ = bypass
@@ -72,15 +72,7 @@ def generate(ctx, src, bypass=False):
             bypass_ = True
 
     if bypass_:
-        generate_uv_index(src, bypass)
-
-
-@click.command()
-def update(ctx):
-    """Update UV index"""
-
-    pass
+        generate_uv_index(srcdir, bypass)
 
 
 uv_index.add_command(generate)
-uv_index.add_command(update)
