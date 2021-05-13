@@ -1,0 +1,63 @@
+name: build ⚙️
+
+on: [ push, pull_request ]
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    env:
+      WDR_LOGGING_LOGLEVEL=ERROR
+      WDR_LOGGING_LOGFILE=/tmp/woudc-data-registry.log
+      WDR_DB_DEBUG=False
+      WDR_DB_TYPE=postgresql
+      WDR_DB_HOST=localhost
+      WDR_DB_PORT=5432
+      WDR_DB_NAME=woudc-data-registry
+      WDR_DB_USERNAME=postgres
+      WDR_DB_PASSWORD=postgres
+      PGPASSWORD=postgres
+      WDR_SEARCH_TYPE=elasticsearch
+      WDR_SEARCH_URL=http://localhost:9200/
+      WDR_WAF_BASEURL=https://woudc.org/archive/
+      WDR_WAF_BASEDIR=/tmp
+      WDR_TABLE_SCHEMA=data/tables-schema.json
+      WDR_TABLE_CONFIG=data/migrate/tables-backfilling.yml
+      WDR_ERROR_CONFIG=data/migrate/errors-backfilling.csv
+      WDR_ALIAS_CONFIG=data/aliases.yml
+      WDR_EXTRA_CONFIG=data/extra-options.yml
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      name: Setup Python ${{ matrix.python-version }}
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install system dependencies 📦
+      run: sudo apt-get -y install debhelper devscripts fakeroot python3-setuptools
+    - name: Install requirements 📦
+      run: |
+        pip install -r requirements-dev.txt
+        pip install -r requirements-pg.txt
+        pip install -r requirements-docs.txt
+        pip install coveralls
+    - name: Install package 📦
+      run: python3 setup.py install
+    - name: run tests ⚙️
+      run: python3 setup.py test
+    - name: run flake8
+        run: find . -type f -name "*.py" | xargs flake8
+    - name: build docs
+      run: cd docs && make html && cd ..
+    - name: test coverage ⚙️
+      run: |
+        coverage run -a --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_data_registry
+        coverage run -a --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_report_generation
+        coverage report -m
+        coveralls
+    - name: build Python package 🏗️
+      run: python3 setup.py bdist_wheel --universal
+    - name: build Debian package 🏗️
+      run: sudo debuild -b -uc -us
+
