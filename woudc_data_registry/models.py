@@ -740,14 +740,8 @@ class DataRecord(base):
         """serializer"""
 
         self.content_class = ecsv.extcsv['CONTENT']['Class']
+        self.content_category = ecsv.extcsv['CONTENT']['Category']
         self.content_level = ecsv.extcsv['CONTENT']['Level']
-
-        if ecsv.extcsv['CONTENT']['Category'] == 'UmkehrN14':
-            self.content_category = '_'.join([self.content_category,
-                                              str(self.content_level)])
-        else: 
-            self.content_category = ecsv.extcsv['CONTENT']['Category']
-
         self.content_form = ecsv.extcsv['CONTENT']['Form']
 
         self.data_generation_date = ecsv.extcsv['DATA_GENERATION']['Date']
