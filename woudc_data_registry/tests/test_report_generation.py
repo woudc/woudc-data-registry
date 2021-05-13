@@ -477,7 +477,7 @@ class RunReportTest(SandboxTestSuite):
             lines = output.read().splitlines()
             self.assertEqual(lines[0], agency)
             self.assertEqual(len(lines),
-                              len(expected_passes) + len(expected_fails) + 1)
+                             len(expected_passes) + len(expected_fails) + 1)
 
             for line in lines[1:]:
                 if line.startswith('Pass'):
@@ -806,14 +806,14 @@ class EmailSummaryTest(SandboxTestSuite):
             self.assertEqual(lines[16], 'Total files received: 3')
             self.assertEqual(lines[17], 'Number of passed files: 3')
             self.assertEqual(lines[18],
-                              'Number of manually repaired files: 0')
+                             'Number of manually repaired files: 0')
             self.assertEqual(lines[19], 'Number of failed files: 0')
 
             self.assertEqual(lines[21], 'MSC (msc@mail.com)')
             self.assertEqual(lines[22], 'Total files received: 5')
             self.assertEqual(lines[23], 'Number of passed files: 4')
             self.assertEqual(lines[24],
-                              'Number of manually repaired files: 0')
+                             'Number of manually repaired files: 0')
             self.assertEqual(lines[25], 'Number of failed files: 1')
 
             self.assertEqual(lines[26], 'Summary of Failures:')
@@ -864,14 +864,14 @@ class EmailSummaryTest(SandboxTestSuite):
             self.assertEqual(lines[16], 'Total files received: 3')
             self.assertEqual(lines[17], 'Number of passed files: 3')
             self.assertEqual(lines[18],
-                              'Number of manually repaired files: 0')
+                             'Number of manually repaired files: 0')
             self.assertEqual(lines[19], 'Number of failed files: 0')
 
             self.assertEqual(lines[21], 'MSC (msc@mail.com)')
             self.assertEqual(lines[22], 'Total files received: 5')
             self.assertEqual(lines[23], 'Number of passed files: 4')
             self.assertEqual(lines[24],
-                              'Number of manually repaired files: 0')
+                             'Number of manually repaired files: 0')
             self.assertEqual(lines[25], 'Number of failed files: 1')
 
             self.assertEqual(lines[26], 'Summary of Failures:')
