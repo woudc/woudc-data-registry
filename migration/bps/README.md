@@ -8,7 +8,7 @@ and displays the data to the public through various plots, graphs and tables.
 
 * Provided paths are relative to the root of the cloned repository on disk.
 
-# Environment Setup and Activation
+# Environment setup and activation
 In this section steps are provided to fetch the WOUDC Data Registry codebase from 
 github and setup the python environment it uses. Two methods to setup the 
 WOUDC Data Registry virtualenv are listed below. This python environment 
@@ -51,7 +51,7 @@ vim foo.env
 # Run contents of config file
 . foo.env
 ```
-# Table and Elasticsearch Initialization
+# Table and Elasticsearch initialization
 The `woudc-data-registry admin registry setup` command generates tables within the WOUDC Data Registry
 psql database specified in the config (.yml) file. The tables are all empty
 at the moment and will be filled during the migration and data ingest steps.
@@ -127,23 +127,6 @@ woudc-data-registry data ingest /path/to/dir
 
 # Sync contents of the WOUDC Data Registry database to Elasticsearch
 woudc-data-registry admin search sync
-```
-# WOUDC UV Index Generation
-A UV Index table can be generated using data and metadata from WOUDC extcsv files. In particular
-files from the Broadband and Spectral datasets are used in this process. 
-
-The `woudc-data-registry product uv-index generate` command deletes all records from 
-the uv_index_hourly table and then uses all Spectral and Broadband files to generate 
-uv_index_hourly records. 
-
-The `woudc-data-registry product uv-index update` command works similarly to generate
-except the initial clear of the table does not occur and only files within a date range are used. 
-If only the start or end date is specified, all files prior to the end date or following
-the start date will be used. If neither is specified, all files will be ingested 
-similar to the generate command.
-```
-# Teardown and generate entire uv_index_hourly table
-woudc-data-registry product uv-index generate /path/to/archive/root
 
 # Only generate uv_index_hourly records within date range
 woudc-data-registry product uv-index update /path/to/archive/root -s start_date -e end_date
