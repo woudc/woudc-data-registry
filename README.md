@@ -1,6 +1,6 @@
 # WOUDC Data Registry
 
-[![Build Status](https://travis-ci.org/woudc/woudc-data-registry.png)](https://travis-ci.org/woudc/woudc-data-registry)
+[![Build Status](https://github.com/woudc/woudc-data-registry/workflows/build%20%E2%9A%99%EF%B8%8F/badge.svg)](https://github.com/woudc/woudc-data-registry/actions)
 [![Coverage Status](https://coveralls.io/repos/github/woudc/woudc-data-registry/badge.svg?branch=master)](https://coveralls.io/github/woudc/woudc-data-registry?branch=master)
 [![Documentation](https://readthedocs.org/projects/woudc-data-registry/badge/)](https://woudc-data-registry.readthedocs.org)
 

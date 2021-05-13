@@ -52,6 +52,7 @@ jobs:
     - name: build docs
       run: cd docs && make html && cd ..
     - name: test coverage ⚙️
+      continue-on-error: true
       run: |
         coverage run -a --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_data_registry
         coverage run -a --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_report_generation
