@@ -347,10 +347,10 @@ class Instrument(base):
     @property
     def __geo_interface__(self):
         waf_basepath = config.WDR_WAF_BASEURL
-        
+
         if 'UmkehrN14' in self.dataset_id:
             if '1.0' in self.dataset_id:
-                dataset_folder = 'UmkehrN14_1.0_1' 
+                dataset_folder = 'UmkehrN14_1.0_1'
             else:
                 dataset_folder = 'UmkehrN14_2.0_1'
         else:
@@ -869,7 +869,7 @@ class DataRecord(base):
 
     def get_waf_path(self, basepath):
         """generate WAF URL"""
-        
+
         if 'UmkehrN14' in self.content_category:
             dataset_only = 'UmkehrN14'
         else:
