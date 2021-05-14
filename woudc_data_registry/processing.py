@@ -1047,7 +1047,7 @@ class Process(object):
                 if not self._add_to_report(55, valueline):
                     success = False
 
-        if dataset == 'UmkehrN14_1.0' or dataset == 'UmkehrN14_2.0':
+        if dataset in ['UmkehrN14_1.0', 'UmkehrN14_2.0']:
             table_index = 'UmkehrN14'
         else:
             table_index = dataset
