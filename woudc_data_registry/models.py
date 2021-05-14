@@ -253,7 +253,11 @@ class Dataset(base):
     data_class = Column(String, nullable=False)
 
     def __init__(self, dict_):
-        self.dataset_id = dict_['dataset_id']
+        if dict_['dataset_id'] == 'UmkehrN14':
+            self.dataset_id = '_'.join([dict_['dataset_id'],
+                                        str(dict_['data_level'])])
+        else:
+            self.dataset_id = dict_['dataset_id']
 
         self.data_class = dict_['data_class']
 
@@ -308,7 +312,11 @@ class Instrument(base):
 
     def __init__(self, dict_):
         self.station_id = dict_['station_id']
-        self.dataset_id = dict_['dataset_id']
+        if dict_['dataset_id'] == 'UmkehrN14':
+            self.dataset_id = '_'.join([dict_['dataset_id'],
+                                        str(dict_['data_level'])])
+        else:
+            self.dataset_id = dict_['dataset_id']
         self.contributor = dict_['contributor']
         self.project = dict_['project']
 
@@ -340,7 +348,14 @@ class Instrument(base):
     def __geo_interface__(self):
         waf_basepath = config.WDR_WAF_BASEURL
 
-        dataset_folder = '{}_1.0_1'.format(self.dataset_id)
+        if 'UmkehrN14' in self.dataset_id:
+            if '1.0' in self.dataset_id:
+                dataset_folder = 'UmkehrN14_1.0_1'
+            else:
+                dataset_folder = 'UmkehrN14_2.0_1'
+        else:
+            dataset_folder = '{}_1.0_1'.format(self.dataset_id)
+
         station_folder = '{}{}'.format(self.station.station_type.lower(),
                                        self.station_id)
         instrument_folder = self.name.lower()
@@ -855,7 +870,12 @@ class DataRecord(base):
     def get_waf_path(self, basepath):
         """generate WAF URL"""
 
-        datasetdirname = '{}_{}_{}'.format(self.content_category,
+        if 'UmkehrN14' in self.content_category:
+            dataset_only = 'UmkehrN14'
+        else:
+            dataset_only = self.content_category
+
+        datasetdirname = '{}_{}_{}'.format(dataset_only,
                                            self.content_level,
                                            self.content_form)
 

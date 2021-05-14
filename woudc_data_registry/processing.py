@@ -595,6 +595,10 @@ class Process(object):
         """
 
         dataset = self.extcsv.extcsv['CONTENT']['Category']
+        level = self.extcsv.extcsv['CONTENT']['Level']
+
+        if dataset == 'UmkehrN14':
+            dataset = '_'.join([dataset, str(level)])
 
         LOGGER.debug('Validating dataset {}'.format(dataset))
         dataset_model = {'dataset_id': dataset}
@@ -1043,7 +1047,12 @@ class Process(object):
                 if not self._add_to_report(55, valueline):
                     success = False
 
-        if str(level) not in DOMAINS['Datasets'][dataset]:
+        if dataset in ['UmkehrN14_1.0', 'UmkehrN14_2.0']:
+            table_index = 'UmkehrN14'
+        else:
+            table_index = dataset
+
+        if str(level) not in DOMAINS['Datasets'][table_index]:
             if not self._add_to_report(56, valueline, dataset=dataset):
                 success = False
 
