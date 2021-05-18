@@ -59,7 +59,7 @@ from woudc_data_registry.epicentre.metadata import add_metadata
 LOGGER = logging.getLogger(__name__)
 
 
-def execute(path, formula_lookup, bypass):
+def execute(path, formula_lookup, update, start_date, end_date, bypass):
     """
     Orchestrate uv-index generation process
     """
@@ -72,11 +72,12 @@ def execute(path, formula_lookup, bypass):
     ]
 
     registry_ = registry.Registry()
+    
+    if not update:
+        LOGGER.info('erasing current uv index')
 
-    LOGGER.info('erasing current uv index')
-
-    registry_.session.query(UVIndex).delete()
-    registry_.save()
+        registry_.session.query(UVIndex).delete()
+        registry_.save()
 
     # traverse directory of files
     for dataset in datasets:
@@ -326,7 +327,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                     msg = ('Unable to get {}.UVIndex'
                            ' from file: {}. Time: {}: {}'.format(
                                global_summary_nsf_t, ipath, time, err))
-                    LOGGER.error(msg)    
+                    LOGGER.error(msg)
                     pass
 
                 try:
@@ -508,7 +509,7 @@ def qa(country, uv):
         return 'E'
 
 
-def generate_uv_index(archivedir, bypass):
+def generate_uv_index(archivedir, update, start_date, end_date, bypass):
     if archivedir is None:
         raise RuntimeError('Missing required on disk archive')
 
@@ -557,5 +558,5 @@ def generate_uv_index(archivedir, bypass):
     LOGGER.info('Loaded formula lookup resource.')
 
     LOGGER.info('Computing UV-index...')
-    execute(archivedir, formula_lookup, bypass)
+    execute(archivedir, formula_lookup, update, start_date, end_date, bypass)
     LOGGER.info('Done.')
