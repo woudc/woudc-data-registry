@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2021 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -1349,6 +1349,51 @@ def admin():
     pass
 
 
+@click.command('config')
+@click.pass_context
+def show_config(ctx):
+
+    env_vars = [
+        'WDR_LOGGING_LOGLEVEL',
+        'WDR_LOGGING_LOGFILE',
+        'WDR_DB_DEBUG',
+        'WDR_DB_TYPE',
+        'WDR_DB_HOST',
+        'WDR_DB_PORT',
+        'WDR_DB_USERNAME',
+        'WDR_DB_PASSWORD',
+        'WDR_DB_NAME',
+        'WDR_SEARCH_TYPE',
+        'WDR_SEARCH_INDEX_BASENAME',
+        'WDR_SEARCH_URL',
+        'WDR_SEARCH_USERNAME',
+        'WDR_SEARCH_PASSWORD',
+        'WDR_WAF_BASEDIR',
+        'WDR_WAF_BASEURL',
+        'WDR_TABLE_SCHEMA',
+        'WDR_TABLE_CONFIG',
+        'WDR_ERROR_CONFIG',
+        'WDR_ALIAS_CONFIG',
+        'WDR_EXTRA_CONFIG',
+        'WDR_DATABASE_URL'
+    ]
+
+    for env_var in env_vars:
+        if env_var in ['WDR_DB_PASSWORD', 'WDR_SEARCH_PASSWORD']:
+            s = '{}: {}'.format(env_var, '*'*len(getattr(config, env_var)))
+        elif env_var == 'WDR_DATABASE_URL' and config.WDR_DB_TYPE == 'postgresql':  # noqa
+            value1 = getattr(config, env_var)
+            value_to_find = ':{}@'.format(config.WDR_DB_PASSWORD)
+            value_to_replace = ':{}@'.format('*'*len(config.WDR_DB_PASSWORD))
+            value = value1.replace(value_to_find, value_to_replace)
+
+            s = '{}: {}'.format(env_var, value)
+        else:
+            s = '{}: {}'.format(env_var, getattr(config, env_var))
+
+        click.echo(s)
+
+
 @click.command()
 @click.pass_context
 def setup(ctx):
@@ -1634,11 +1679,12 @@ def sync(ctx):
     click.echo('Done')
 
 
-search.add_command(sync)
+admin.add_command(init)
+admin.add_command(show_config)
+admin.add_command(registry__)
+admin.add_command(search)
 
 registry__.add_command(setup)
 registry__.add_command(teardown)
-admin.add_command(init)
 
-admin.add_command(registry__)
-admin.add_command(search)
+search.add_command(sync)

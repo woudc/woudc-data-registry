@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2021 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -45,6 +45,7 @@
 
 import logging
 import os
+
 import yaml
 
 from woudc_data_registry.util import str2bool

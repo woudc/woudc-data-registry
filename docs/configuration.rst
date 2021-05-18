@@ -89,3 +89,5 @@ WDR_ALIAS_CONFIG
     If encountered, any of these alternate spellings are substituted for one
     standard spelling, unless this substitution is marked as type Error in
     the error definitions file.
+
+To display all configurations from woudc-data-registry, run `woudc-data-registry admin config`

@@ -51,6 +51,9 @@ make ENV=foo.env createdb
 # drop database
 make ENV=foo.env dropdb
 
+# show configuration
+woudc-data-registry admin config
+
 # initialize model (database tables)
 woudc-data-registry admin registry setup
 
