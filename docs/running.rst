@@ -198,7 +198,22 @@ CSV data. In particular, files from the Broadband and Spectral datasets are used
 in this process. The UV Index can be generated from a single process to build the
 entire index.
 
-woudc-data-registry product uv-index generate /path/to/archive/root 
-    Delete all records from the uv_index_hourly table and use all Spectral 
-    and Broadband files to generate uv_index_hourly records. 
+woudc-data-registry product uv-index generate <flags> /path/to/archive/root
+    Delete all records from the uv_index_hourly table and use all Spectral
+    and Broadband files to generate uv_index_hourly records. <flags> are as
+    follows:
+ 
+    | -y (yes) Automatically accept all permission checks
 
+woudc-data-registry product uv-index update <options> <flags> /path/to/archive/root
+    Only generate uv_index_hourly table entries using files within a year range.
+    No records are deleted. If a start or end year is not specified, then no lower
+    or upper bound will be used within the year range.
+    <flags> are as follows.
+    
+    | -y (yes) Automatically accept all permission checks
+    
+    <options are as follows.
+
+    | -sy (start-year) Optional lower bound of year range 
+    | -ey (end-year) Optional upper bound of year range

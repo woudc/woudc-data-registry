@@ -59,7 +59,7 @@ from woudc_data_registry.epicentre.metadata import add_metadata
 LOGGER = logging.getLogger(__name__)
 
 
-def execute(path, formula_lookup, update, start_date, end_date, bypass):
+def execute(path, formula_lookup, update, start_year, end_year, bypass):
     """
     Orchestrate uv-index generation process
     """
@@ -72,7 +72,7 @@ def execute(path, formula_lookup, update, start_date, end_date, bypass):
     ]
 
     registry_ = registry.Registry()
-    
+
     if not update:
         LOGGER.info('erasing current uv index')
 
@@ -82,6 +82,24 @@ def execute(path, formula_lookup, update, start_date, end_date, bypass):
     # traverse directory of files
     for dataset in datasets:
         for dirname, dirnames, filenames in os.walk(dataset):
+            # only ingest years within range for update command
+            if update:
+                split_dir = dirname.split('/')
+                # determine if file year is valid for ingest
+                valid_year = True
+                for base in split_dir:
+                    if base.isnumeric():
+                        int_dir = int(base)
+                        if end_year and int(end_year) < int_dir:
+                            valid_year = False
+                            break
+                        elif start_year and int(start_year) > int_dir:
+                            valid_year = False
+                            break
+
+                if not valid_year:
+                    continue
+
             for filename in filenames:
 
                 ipath = os.path.join(dirname, filename)
@@ -509,7 +527,7 @@ def qa(country, uv):
         return 'E'
 
 
-def generate_uv_index(archivedir, update, start_date, end_date, bypass):
+def generate_uv_index(archivedir, update, start_year, end_year, bypass):
     if archivedir is None:
         raise RuntimeError('Missing required on disk archive')
 
@@ -558,5 +576,5 @@ def generate_uv_index(archivedir, update, start_date, end_date, bypass):
     LOGGER.info('Loaded formula lookup resource.')
 
     LOGGER.info('Computing UV-index...')
-    execute(archivedir, formula_lookup, update, start_date, end_date, bypass)
+    execute(archivedir, formula_lookup, update, start_year, end_year, bypass)
     LOGGER.info('Done.')

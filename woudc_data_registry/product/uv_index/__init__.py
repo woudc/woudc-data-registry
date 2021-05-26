@@ -74,20 +74,22 @@ def generate(ctx, srcdir, bypass=False):
     if bypass_:
         generate_uv_index(srcdir, False, None, None, bypass)
 
+
 @click.command()
 @click.pass_context
 @click.argument('srcdir', type=click.Path(exists=True, resolve_path=True,
                                           dir_okay=True, file_okay=True))
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-@click.option('--start-date', '-sd', 'start_date', default=None,
-              help='lower bound of date range')
-@click.option('--end-date', '-ed', 'end_date', default=None,
-              help='upper bound of date range')
-def update(ctx, srcdir, bypass=False):
+@click.option('--start-year', '-sy', 'start_year', default=None,
+              help='lower bound of date range inclusive')
+@click.option('--end-year', '-ey', 'end_year', default=None,
+              help='upper bound of date range inclusive')
+def update(ctx, srcdir, start_year, end_year, bypass=False):
     """Only generate UV index within date range"""
-    
-    generate_uv_index(srcdir, True, start_date, end_date, bypass)
+
+    generate_uv_index(srcdir, True, start_year, end_year, bypass)
 
 
 uv_index.add_command(generate)
+uv_index.add_command(update)
