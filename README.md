@@ -160,8 +160,8 @@ woudc-data-registry data ingest /path/to/dir -l
 woudc-data-registry product uv-index generate /path/to/archive/root
 
 
-# Only generate uv_index_hourly records within date range
-woudc-data-registry product uv-index update /path/to/archive/root
+# Only generate uv_index_hourly records within year range
+woudc-data-registry product uv-index update -sy start-year -ey end-year /path/to/archive/root
 ```
 
 #### Report Generation
@@ -231,3 +231,4 @@ All bugs, enhancements and issues are managed on [GitHub](https://github.com/wou
 ## Contact
 
 * [Tom Kralidis](https://github.com/tomkralidis)
+
