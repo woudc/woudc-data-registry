@@ -606,7 +606,7 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             }
         }
-    }     
+    }
 }
 
 

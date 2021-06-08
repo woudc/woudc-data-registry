@@ -1678,6 +1678,7 @@ def sync(ctx):
 
     click.echo('Done')
 
+
 @click.command('uv_sync')
 @click.pass_context
 def uv_sync(ctx):
@@ -1696,12 +1697,13 @@ def uv_sync(ctx):
 
     registry_contents = registry_.query_full_index(UVIndex)
     registry_docs = [obj.__geo_interface__ for obj in registry_contents]
-    
+
     click.echo('Clearing UVIndex search index')
     search_index.unindex(UVIndex, registry_docs)
-    
+
     click.echo('Sending UVIndex to search index...')
     search_index.index(UVIndex, registry_docs)
+
 
 admin.add_command(init)
 admin.add_command(show_config)
