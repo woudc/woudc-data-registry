@@ -1129,7 +1129,7 @@ class UVIndex(base):
 
     id_field = 'uv_id'
     id_dependencies = ['instrument_id', 'observation_date',
-                       'observation_time', 'file_path']
+                       'observation_time']
 
     uv_id = Column(String, primary_key=True)
     file_path = Column(String, nullable=False)
@@ -1678,6 +1678,30 @@ def sync(ctx):
 
     click.echo('Done')
 
+@click.command('uv_sync')
+@click.pass_context
+def uv_sync(ctx):
+    registry_ = registry.Registry()
+    search_index = SearchIndex()
+
+    search_index_config = config.EXTRAS.get('search_index', {})
+    plural_name = UVIndex.__tablename__
+    plural_caps = ''.join(map(str.capitalize, plural_name.split('_')))
+
+    enabled_flag = '{}_enabled'.format(plural_name)
+    if not search_index_config.get(enabled_flag, True):
+        click.echo('{} index frozen (skipping)'.format(plural_caps))
+
+    click.echo('{}...'.format(plural_caps))
+
+    registry_contents = registry_.query_full_index(UVIndex)
+    registry_docs = [obj.__geo_interface__ for obj in registry_contents]
+    
+    click.echo('Clearing UVIndex search index')
+    search_index.unindex(UVIndex, registry_docs)
+    
+    click.echo('Sending UVIndex to search index...')
+    search_index.index(UVIndex, registry_docs)
 
 admin.add_command(init)
 admin.add_command(show_config)
@@ -1688,3 +1712,4 @@ registry__.add_command(setup)
 registry__.add_command(teardown)
 
 search.add_command(sync)
+search.add_command(uv_sync)
