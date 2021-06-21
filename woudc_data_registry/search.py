@@ -527,6 +527,85 @@ MAPPINGS = {
                 'type': 'boolean'
             }
         }
+    },
+    'uv_index_hourly': {
+        'index': 'uv_index_hourly',
+        'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'file_path': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'dataset_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'gaw_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'solar_zenith_angle': {
+                'type': 'float'
+            },
+            'observation_utcoffset': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'observation_date': {
+                'type': 'date',
+                'format': DATE_FORMAT
+            },
+            'observation_time': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'instrument_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'instrument_model': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'instrument_serial': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'uv_index': {
+                'type': 'float',
+            },
+            'uv_index_qa': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            }
+        }
     }
 }
 

@@ -125,5 +125,9 @@ queryable through Elasticsearch queries and accessible from the WOUDC API compon
 # Ingest files into WOUDC Data Registry
 woudc-data-registry data ingest /path/to/dir
 
-# Sync contents of the WOUDC Data Registry database to Elasticsearch
+# Sync all tables of the WOUDC Data Registry database except uv_index_hourly to Elasticsearch
 woudc-data-registry admin search sync
+
+# Sync the uv_index_hourly table to Elasticsearch
+woudc-data-registry admin search uv_sync
+```
