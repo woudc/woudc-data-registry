@@ -1682,6 +1682,7 @@ def sync(ctx):
 @click.command('uv_sync')
 @click.pass_context
 def uv_sync(ctx):
+    """Sync uv_index_hourly table to Elasticsearch"""
     registry_ = registry.Registry()
     search_index = SearchIndex()
 
@@ -1695,14 +1696,24 @@ def uv_sync(ctx):
 
     click.echo('{}...'.format(plural_caps))
 
-    registry_contents = registry_.query_full_index(UVIndex)
+    registry_contents = []
+    for obj in registry_.session.query(UVIndex).yield_per(1):
+        LOGGER.debug('Querying chunk of  {}'.format(UVIndex))
+
+        registry_contents.append(obj)
+
+        if len(registry_contents) > 500000:
+            registry_docs = [item.__geo_interface__
+                             for item in registry_contents]
+            click.echo('Sending UVIndex to search index...')
+            search_index.index(UVIndex, registry_docs)
+            registry_contents.clear()
+
     registry_docs = [obj.__geo_interface__ for obj in registry_contents]
-
-    click.echo('Clearing UVIndex search index')
-    search_index.unindex(UVIndex, registry_docs)
-
     click.echo('Sending UVIndex to search index...')
     search_index.index(UVIndex, registry_docs)
+
+    click.echo('Done')
 
 
 admin.add_command(init)
