@@ -1679,7 +1679,7 @@ def sync(ctx):
     click.echo('Done')
 
 
-@click.command('uv_sync')
+@click.command()
 @click.pass_context
 def uv_sync(ctx):
     """Sync uv_index_hourly table to Elasticsearch"""
