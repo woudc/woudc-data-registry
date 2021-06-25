@@ -217,3 +217,16 @@ woudc-data-registry product uv-index update <options> <flags> /path/to/archive/r
 
     | -sy (start-year) Optional lower bound of year range 
     | -ey (end-year) Optional upper bound of year range
+
+-------------------------
+Peer data centre indexing
+-------------------------
+
+WOUDC supports indexing the following remote data centres:
+
+- Eubrewnet
+- NDACC
+
+woudc-data-registry peer eubrewenet index -fi /path/to/data-centre-file-index.txt
+
+woudc-data-registry peer ndacc index -fi /path/to/data-centre-file-index.txt

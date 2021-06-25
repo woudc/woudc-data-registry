@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2021 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -43,39 +43,73 @@
 #
 # =================================================================
 
+import csv
+import logging
+
 import click
 
-from woudc_data_registry import config, epicentre
-from woudc_data_registry.controller import data
-from woudc_data_registry.epicentre.contributor import contributor
-from woudc_data_registry.epicentre.deployment import deployment
-from woudc_data_registry.epicentre.instrument import instrument
-from woudc_data_registry.epicentre.notification import notification
-from woudc_data_registry.peer import peer
-from woudc_data_registry.epicentre.station import station
-from woudc_data_registry.log import setup_logger
-from woudc_data_registry.models import admin
-from woudc_data_registry.product import product
+from woudc_data_registry.models import PeerDataRecord
+from woudc_data_registry.registry import Registry
 
-__version__ = '0.1.dev0'
+LOGGER = logging.getLogger(__name__)
 
-setup_logger(config.WDR_LOGGING_LOGLEVEL, config.WDR_LOGGING_LOGFILE)
+
+def parse_index(csv_dict_reader):
+    """
+    iterates through CSV DictReader object
+
+    :param dict_reader: `csv.DictReader` object
+
+    :returns: generator of parsed rows
+    """
+
+    for row in csv_dict_reader:
+        print("ROW", row)
+        properties = dict(
+            source='eubrewnet',
+            measurement=row['Measurement'],
+            station_id=row['WOUDC_ID'],
+            station_name=row['Station_name'],
+            gaw_id=row['GAW_ID'],
+            station_type=row['Station_type'],
+            level=row['Product_level'],
+            instrument_type=row['Instrument_type'],
+            pi_name=row['PI_name'],
+            pi_email=row['PI_email'],
+            url=row['Link'],
+            y=row['Lat'],
+            x=row['Lon_E'],
+            z=row['Height'],
+            start_datetime=row['Start_time'],
+            end_datetime=row['End_time']
+        )
+        yield properties
 
 
 @click.group()
-@click.version_option(version=__version__)
-def cli():
+def eubrewnet():
+    """Eubrewnet data centre management"""
     pass
 
 
-cli.add_command(admin)
-cli.add_command(contributor)
-cli.add_command(data)
-cli.add_command(deployment)
-cli.add_command(epicentre.dataset)
-cli.add_command(epicentre.project)
-cli.add_command(instrument)
-cli.add_command(notification)
-cli.add_command(peer)
-cli.add_command(product)
-cli.add_command(station)
+@click.command()
+@click.pass_context
+@click.option('-fi', '--file-index', type=click.Path(exists=True,
+              resolve_path=True), help='Path to file index')
+def index(ctx, file_index):
+    """index EUBREWNET file index"""
+
+    if file_index is None:
+        raise click.ClickException('missing -fi/--file-index parameter')
+
+    registry_ = Registry()
+
+    click.echo('Indexing {}'.format(file_index))
+    with open(file_index, encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for dict_row in parse_index(reader):
+            peer_data_record = PeerDataRecord(dict_row)
+            registry_.save(peer_data_record)
+
+
+eubrewnet.add_command(index)

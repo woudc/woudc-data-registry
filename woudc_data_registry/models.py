@@ -59,7 +59,8 @@ from sqlalchemy.orm import relationship
 
 from woudc_data_registry import config, registry
 from woudc_data_registry.search import SearchIndex, search
-from woudc_data_registry.util import point2geojsongeometry, strftime_rfc3339
+from woudc_data_registry.util import (get_date, point2geojsongeometry,
+                                      strftime_rfc3339)
 
 base = declarative_base()
 
@@ -1122,6 +1123,125 @@ class Notification(base):
         return 'Notification ({})'.format(self.notification_id)
 
 
+class PeerDataRecord(base):
+    """Data Registry Peer Data Record"""
+
+    __tablename__ = 'peer_data_records'
+    __table_args__ = (UniqueConstraint('url'),)
+
+    id_field = 'url'
+
+    source = Column(String, nullable=False)
+    measurement = Column(String, nullable=False)
+    station_id = Column(String, nullable=False)
+    station_name_id = Column(String,
+                             ForeignKey('station_names.station_name_id'),
+                             nullable=False)
+    stn_type_enum = Enum('land', name='type')
+    station_type = Column(stn_type_enum, nullable=False, default='land')
+    gaw_id = Column(String, nullable=True)
+    instrument_type = Column(String, nullable=False)
+    level = Column(String, nullable=False)
+    pi = Column(String)
+    pi_name = Column(String)
+    pi_email = Column(String)
+
+    url = Column(String, nullable=False, primary_key=True)
+
+    start_datetime = Column(Date, nullable=False)
+    end_datetime = Column(Date, nullable=False)
+
+    x = Column(Float, nullable=False)
+    y = Column(Float, nullable=False)
+    z = Column(Float, nullable=False)
+
+    # relationships
+    station_name = relationship('StationName', backref=__tablename__)
+
+    # data management fields
+
+    published = Column(Boolean, nullable=False, default=True)
+
+    received_datetime = Column(DateTime, nullable=False,
+                               default=datetime.datetime.utcnow())
+
+    inserted_datetime = Column(DateTime, nullable=False,
+                               default=datetime.datetime.utcnow())
+
+    processed_datetime = Column(DateTime, nullable=False,
+                                default=datetime.datetime.utcnow())
+
+    published_datetime = Column(DateTime, nullable=False,
+                                default=datetime.datetime.utcnow())
+
+    last_validated_datetime = Column(DateTime, nullable=False,
+                                     default=datetime.datetime.utcnow())
+
+    def __init__(self, dict_):
+        """serializer"""
+
+        self.source = dict_['source']
+        self.measurement = dict_['measurement']
+
+        self.station_id = dict_['station_id']
+        self.station_name_id = '{}:{}' \
+            .format(self.station_id, dict_['station_name'])
+        self.station_type = dict_['station_type']
+        self.gaw_id = dict_.get('gaw_id')
+        self.instrument_type = dict_['instrument_type']
+        self.level = dict_['level']
+        self.pi_name = dict_.get('pi_name')
+        self.pi_email = dict_.get('pi_email')
+        self.url = dict_['url']
+
+        self._name = dict_['station_name']
+
+        try:
+            self.start_datetime = get_date(dict_['start_datetime'])
+            self.end_datetime = get_date(dict_['end_datetime'])
+        except Exception as err:
+            LOGGER.error(err)
+
+        self.last_validated_datetime = datetime.datetime.utcnow()
+
+        self.x = dict_['x']
+        self.y = dict_['y']
+        self.z = dict_['z']
+
+    @property
+    def name(self):
+        if hasattr(self, '_name'):
+            return self._name
+        else:
+            return self.station_name.name
+
+    @property
+    def __geo_interface__(self):
+        return {
+            'id': self.url,
+            'type': 'Feature',
+            'geometry': point2geojsongeometry(self.x, self.y, self.z),
+            'properties': {
+                'source': self.source,
+                'measurement': self.measurement,
+                'station_id': self.station_id,
+                'name': self.station_name_id,
+                'station_type': self.station_type,
+                'gaw_id': self.gaw_id,
+                'instrument_type': self.instrument_type,
+                'level': self.level,
+                'start_datetime': strftime_rfc3339(self.start_datetime),
+                'end_datetime': strftime_rfc3339(self.end_datetime),
+                'last_validated_datetime':
+                    strftime_rfc3339(self.last_validated_datetime),
+                'url': self.url
+            }
+        }
+
+    def __repr__(self):
+        return 'PeerDataRecord({})'.format(self.url)
+
+
 class UVIndex(base):
     """Data Registry UV Index"""
 
@@ -1648,7 +1768,8 @@ def sync(ctx):
         Deployment,
         DataRecord,
         Contribution,
-        Notification
+        Notification,
+        PeerDataRecord,
     ]
 
     registry_ = registry.Registry()

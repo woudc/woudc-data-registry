@@ -528,6 +528,67 @@ MAPPINGS = {
             }
         }
     },
+    'peer_data_records': {
+        'index': 'peer_data_record',
+        'properties': {
+            'source': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'measurement': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'woudc_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'gaw_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_type': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'instrument_type': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'agency': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'pi_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'pi_email': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'level': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'start_datetime': {
+                'type': 'date',
+                'format': DATE_FORMAT
+            },
+            'end_datetime': {
+                'type': 'date',
+                'format': DATE_FORMAT
+            }
+        }
+    },
     'uv_index_hourly': {
         'index': 'uv_index_hourly',
         'properties': {

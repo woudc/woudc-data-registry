@@ -216,3 +216,22 @@ def is_plural(value):
         return False
     else:
         return True
+
+
+def get_date(date_, force_date=False):
+    """
+    helper function to evaluate/transform date objects or strings
+    into datetime objects
+
+    :param date_: date value (`str` or `datetime.date`)
+
+    :returns: `datetime.date` representation of value
+    """
+
+    if isinstance(date_, date) or date_ is None:
+        return date_
+    else:
+        if not force_date:
+            return datetime.strptime(date_, RFC3339_DATETIME_FORMAT)
+        else:
+            return datetime.strptime(date_, '%Y-%m-%d').date()
