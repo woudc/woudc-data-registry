@@ -317,7 +317,7 @@ class TotalOzoneValidator(DatasetValidator):
         try:
             template_monthly = self.derive_monthly_from_daily(extcsv)
         except Exception as err:
-            print(err)
+            LOGGER.error(err)
             return False
 
         if 'MONTHLY' not in extcsv.extcsv:

@@ -64,7 +64,6 @@ def parse_index(csv_dict_reader):
     """
 
     for row in csv_dict_reader:
-        print("ROW", row)
         properties = dict(
             source='eubrewnet',
             measurement=row['Measurement'],
@@ -103,6 +102,11 @@ def index(ctx, file_index):
         raise click.ClickException('missing -fi/--file-index parameter')
 
     registry_ = Registry()
+
+    click.echo('Clearing existing EUBREWNET records')
+    registry_.session.query(PeerDataRecord).filter(
+        PeerDataRecord.source == 'eubrewnet').delete()
+    registry_.session.commit()
 
     click.echo('Indexing {}'.format(file_index))
     with open(file_index, encoding='utf-8') as csvfile:
