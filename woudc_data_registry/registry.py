@@ -197,7 +197,7 @@ class Registry(object):
                                 ' skipping'.format(obj.__tablename__))
                     return
 
-            LOGGER.debug('Saving')
+            LOGGER.debug('Saving {}'.format(obj))
             try:
                 self.session.commit()
             except SQLAlchemyError as err:
