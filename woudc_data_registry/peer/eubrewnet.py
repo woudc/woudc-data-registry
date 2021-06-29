@@ -108,7 +108,7 @@ def index(ctx, file_index):
         PeerDataRecord.source == 'eubrewnet').delete()
     registry_.session.commit()
 
-    click.echo('Indexing {}'.format(file_index))
+    click.echo('Indexing EUBREWNET records from {}'.format(file_index))
     with open(file_index, encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for dict_row in parse_index(reader):
