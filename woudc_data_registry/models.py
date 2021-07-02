@@ -1193,6 +1193,7 @@ class PeerDataRecord(base):
         self.pi_name = dict_.get('pi_name')
         self.pi_email = dict_.get('pi_email')
         self.url = dict_['url']
+        
         self._name = dict_['station_name']
 
         try:
