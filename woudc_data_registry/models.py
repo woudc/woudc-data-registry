@@ -1193,7 +1193,6 @@ class PeerDataRecord(base):
         self.pi_name = dict_.get('pi_name')
         self.pi_email = dict_.get('pi_email')
         self.url = dict_['url']
-
         self._name = dict_['station_name']
 
         try:
@@ -1218,10 +1217,11 @@ class PeerDataRecord(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.url,
+            'id': ''.join(self.url.split('%')[5:10]),
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
+                'identifier': ''.join(self.url.split('%')[5:10]),
                 'source': self.source,
                 'measurement': self.measurement,
                 'station_id': self.station_id,
