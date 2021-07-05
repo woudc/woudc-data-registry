@@ -1218,10 +1218,11 @@ class PeerDataRecord(base):
     @property
     def __geo_interface__(self):
         return {
-            'id': self.url,
+            'id': ''.join(self.url.split('%')[5:10]),
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
+                'identifier': ''.join(self.url.split('%')[5:10]),
                 'source': self.source,
                 'measurement': self.measurement,
                 'station_id': self.station_id,

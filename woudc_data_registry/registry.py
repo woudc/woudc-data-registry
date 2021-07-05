@@ -197,13 +197,14 @@ class Registry(object):
                                 ' skipping'.format(obj.__tablename__))
                     return
 
-            LOGGER.debug('Saving {}'.format(obj))
             try:
                 self.session.commit()
             except SQLAlchemyError as err:
                 LOGGER.error('Failed to persist {} due to: {}'
                              .format(obj, err))
                 self.session.rollback()
+
+            LOGGER.debug('Saving {}'.format(obj))
         except DataError as err:
             LOGGER.error('Failed to save to registry: {}'.format(err))
             self.session.rollback()
