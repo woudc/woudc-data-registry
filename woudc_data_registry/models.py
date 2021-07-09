@@ -1157,8 +1157,9 @@ class PeerDataRecord(base):
     station_name_id = Column(String,
                              ForeignKey('station_names.station_name_id'),
                              nullable=False)
-    stn_type_enum = Enum('land', name='stn_type')
-    station_type = Column(stn_type_enum, nullable=False, default='land')
+    stn_type_enum = Enum('STN','SHP','land', name='stn_type')
+    
+    station_type = Column(stn_type_enum, nullable=False, default='STN')
     gaw_id = Column(String, nullable=True)
     instrument_type = Column(String, nullable=False)
     level = Column(String, nullable=False)

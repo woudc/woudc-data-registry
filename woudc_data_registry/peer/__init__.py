@@ -48,7 +48,7 @@ import logging
 import click
 
 from woudc_data_registry.peer.eubrewnet import eubrewnet
-# from woudc_data_registry.peer.ndacc import ndacc
+from woudc_data_registry.peer.ndacc import ndacc
 
 
 LOGGER = logging.getLogger(__name__)
@@ -59,6 +59,5 @@ def peer():
     """Peer data centre management"""
     pass
 
-
 peer.add_command(eubrewnet)
-# peer.add_command(ndacc)
+peer.add_command(ndacc)
