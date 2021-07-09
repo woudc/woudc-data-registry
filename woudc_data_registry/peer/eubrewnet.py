@@ -62,10 +62,7 @@ def parse_index(csv_dict_reader):
 
     :returns: generator of parsed rows
     """
-    i=0
     for row in csv_dict_reader:
-        i+=1
-        # print('eubrewnet row ',i, row)
         properties = dict(
             source='eubrewnet',
             measurement=row['Measurement'],
@@ -99,7 +96,7 @@ def eubrewnet():
               resolve_path=True), help='Path to file index')
 def index(ctx, file_index):
     """index EUBREWNET file index"""
-    # print('EUBREWNET INDEX COMMAND')
+    
     if file_index is None:
         raise click.ClickException('missing -fi/--file-index parameter')
 
