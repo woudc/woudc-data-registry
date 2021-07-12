@@ -116,6 +116,8 @@ def execute(path, formula_lookup, update, start_year, end_year, bypass):
                 # get common fields
                 try:
                     dataset = extcsv.extcsv['CONTENT']['Category'][0]
+                    level = extcsv.extcsv['CONTENT']['Level'][0]
+                    form = extcsv.extcsv['CONTENT']['Form'][0]
                     project_id = extcsv.extcsv['CONTENT']['Class'][0]
                     station_type = extcsv.extcsv['PLATFORM']['Type'][0]
                     station_id = extcsv.extcsv['PLATFORM']['ID'][0]
@@ -131,6 +133,7 @@ def execute(path, formula_lookup, update, start_year, end_year, bypass):
                     instrument_longitude = \
                         extcsv.extcsv['LOCATION']['Longitude'][0]
                     instrument_height = extcsv.extcsv['LOCATION']['Height'][0]
+                    timestamp_date = extcsv.extcsv['TIMESTAMP']['Date'][0]
                 except Exception as err:
                     msg = 'Unable to get data from extcsv {}: {}'.format(
                         ipath, err)
@@ -228,20 +231,35 @@ def execute(path, formula_lookup, update, start_year, end_year, bypass):
                             add_metadata(Instrument, instrument_,
                                          True, False)
 
+                    # compute max daily uv index value
+                    uv_max = None
+                    for package in uv_packages:
+                        if uv_max:
+                            uv_max = max(package['uv'], uv_max)
+                        else:
+                            uv_max = package['uv']
+
                     # insert and save uv index model objects
                     for package in uv_packages:
                         ins_data = {
                             'file_path': ipath,
+                            'filename': filename,
                             'dataset_id': dataset,
+                            'dataset_level': level,
+                            'dataset_form': form,
                             'station_id': station_id,
+                            'station_type': station_type,
                             'country_id': country,
                             'instrument_id': instrument_id,
+                            'instrument_name': instrument_name,
                             'gaw_id': gaw_id,
                             'solar_zenith_angle': package['zen_angle'],
+                            'timestamp_date': timestamp_date,
                             'observation_date': package['date'],
                             'observation_time': package['time'],
                             'observation_utcoffset': package['utcoffset'],
                             'uv_index': package['uv'],
+                            'uv_daily_max': uv_max,
                             'uv_index_qa': package['qa'],
                             'x': instrument_longitude,
                             'y': instrument_latitude,

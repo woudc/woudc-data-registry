@@ -1253,6 +1253,7 @@ class UVIndex(base):
 
     uv_id = Column(String, primary_key=True)
     file_path = Column(String, nullable=False)
+    url = Column(String, nullable=False)
     dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
                         nullable=False)
     station_id = Column(String, ForeignKey('stations.station_id'),
@@ -1266,6 +1267,7 @@ class UVIndex(base):
 
     solar_zenith_angle = Column(Float, nullable=True)
     uv_index = Column(Float, nullable=True)
+    uv_daily_max = Column(Float, nullable=True)
     uv_index_qa = Column(String, nullable=True)
 
     observation_date = Column(Date, nullable=False)
@@ -1295,6 +1297,7 @@ class UVIndex(base):
         self.solar_zenith_angle = dict_['solar_zenith_angle']
 
         self.uv_index = dict_['uv_index']
+        self.uv_daily_max = dict_['uv_daily_max']
         self.uv_index_qa = dict_['uv_index_qa']
 
         self.observation_date = dict_['observation_date']
@@ -1304,12 +1307,38 @@ class UVIndex(base):
 
         self.observation_utcoffset = dict_['observation_utcoffset']
 
+        self.url = self.get_waf_path(dict_)
+
         self.x = dict_['x']
         self.y = dict_['y']
         self.z = dict_['z']
 
+    def get_waf_path(self, dict_):
+        """generate WAF url"""
+
+        datasetdirname = '{}_{}_{}'.format(self.dataset_id,
+                                           dict_['dataset_level'],
+                                           dict_['dataset_form'])
+        timestamp_date = datetime.datetime.strptime(
+            dict_['timestamp_date'], '%Y-%m-%d').date()
+        url_tokens = [
+            config.WDR_WAF_BASEURL.rstrip('/'),
+            'Archive-NewFormat',
+            datasetdirname,
+            '{}{}'.format(dict_['station_type'].lower(), self.station_id),
+            dict_['instrument_name'].lower(),
+            timestamp_date.strftime('%Y'),
+            dict_['filename']
+        ]
+
+        return '/'.join(url_tokens)
+
     @property
     def __geo_interface__(self):
+        gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
+            '/search/station/stationReportDetails'
+        gaw_pagename = '0-20008-0-{}'.format(self.station.gaw_id)
+
         return {
             'id': self.uv_id,
             'type': 'Feature',
@@ -1320,8 +1349,14 @@ class UVIndex(base):
                 'dataset_id': self.dataset_id,
                 'station_id': self.station_id,
                 'station_name': self.station.station_name.name,
+                'station_gaw_id': self.station.gaw_id,
+                'station_gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename),
                 'contributor_name':
                 self.instrument.deployment.contributor.name,
+                'contributor_acronym':
+                self.instrument.deployment.contributor.acronym,
+                'contributor_url':
+                self.instrument.deployment.contributor.url,
                 'country_id': self.station.country.country_id,
                 'country_name_en': self.station.country.name_en,
                 'country_name_fr': self.station.country.name_fr,
@@ -1334,7 +1369,9 @@ class UVIndex(base):
                 'instrument_model': self.instrument.model,
                 'instrument_serial': self.instrument.serial,
                 'uv_index': self.uv_index,
+                'uv_daily_max': self.uv_daily_max,
                 'uv_index_qa': self.uv_index_qa,
+                'url': self.url,
             }
         }
 
