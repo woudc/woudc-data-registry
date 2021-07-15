@@ -404,7 +404,8 @@ MAPPINGS = {
             },
             'timestamp_date': {
                 'type': 'date',
-                'format': DATE_FORMAT
+                'format': DATE_FORMAT,
+                'fields': {'raw': typedefs['keyword']}
             },
             'timestamp_time': {
                 'type': 'text',
@@ -612,7 +613,23 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'station_gaw_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_gaw_url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'contributor_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_acronym': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_url': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -641,7 +658,8 @@ MAPPINGS = {
             },
             'observation_date': {
                 'type': 'date',
-                'format': DATE_FORMAT
+                'format': DATE_FORMAT,
+                'fields': {'raw': typedefs['keyword']}
             },
             'observation_time': {
                 'type': 'text',
@@ -662,10 +680,17 @@ MAPPINGS = {
             'uv_index': {
                 'type': 'float',
             },
+            'uv_daily_max': {
+                'type': 'float',
+            },
             'uv_index_qa': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
-            }
+            },
+            'url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
         }
     }
 }
