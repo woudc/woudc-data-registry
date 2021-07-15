@@ -1388,6 +1388,140 @@ class UVIndex(base):
             self.uv_id = ':'.join(map(str, components))
 
 
+class TotalOzone(base):
+    """Data Registry TotalOzone model"""
+
+    __tablename__ = 'total_ozone'
+
+    id_field = 'ozone_id'
+    id_dependencies = ['instrument_id', 'daily_date', 'file_name']
+
+    ozone_id = Column(String, primary_key=True)
+    file_path = Column(String, nullable=False)
+    file_name = Column(String, nullable=False)
+    dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
+                        nullable=False)
+    station_id = Column(String, ForeignKey('stations.station_id'),
+                        nullable=False)
+    country_id = Column(String, ForeignKey('countries.country_id'),
+                        nullable=False)
+    instrument_id = Column(String, ForeignKey('instruments.instrument_id'),
+                           nullable=False)
+
+    gaw_id = Column(String, nullable=True)
+
+    daily_date = Column(Date, nullable=False)
+    daily_wlcode = Column(String, nullable=True)
+    daily_obscode = Column(String, nullable=True)
+    daily_columno3 = Column(Float, nullable=False)
+    daily_stdevo3 = Column(Float, nullable=True)
+    daily_utc_begin = Column(String, nullable=True)
+    daily_utc_end = Column(String, nullable=True)
+    daily_utc_mean = Column(String, nullable=True)
+    daily_nobs = Column(Float, nullable=True)
+    daily_mmu = Column(String, nullable=True)
+    daily_columnso2 = Column(Float, nullable=True)
+    monthly_date = Column(Date, nullable=False)
+    monthly_columno3 = Column(Float, nullable=False)
+    monthly_stdevo3 = Column(Float, nullable=True)
+    monthly_npts = Column(Float, nullable=True)
+
+    x = Column(Float, nullable=True)
+    y = Column(Float, nullable=True)
+    z = Column(Float, nullable=True)
+
+    # relationships
+    station = relationship('Station', backref=__tablename__)
+    instrument = relationship('Instrument', backref=__tablename__)
+    dataset = relationship('Dataset', backref=__tablename__)
+
+    def __init__(self, dict_):
+
+        self.file_path = dict_['file_path']
+        self.file_name = self.file_path.split('/')[-1]
+
+        self.dataset_id = dict_['dataset_id']
+        self.station_id = dict_['station_id']
+        self.country_id = dict_['country_id']
+        self.instrument_id = dict_['instrument_id']
+
+        self.daily_date = dict_['date']
+        self.daily_wlcode = dict_['wlcode']
+        self.daily_obscode = dict_['obscode']
+        self.daily_columno3 = dict_['columno3']
+        self.daily_stdevo3 = dict_['stddevo3']
+        self.daily_utc_begin = dict_['utc_begin']
+        self.daily_utc_end = dict_['utc_end']
+        self.daily_utc_mean = dict_['utc_mean']
+        self.daily_nobs = dict_['nobs']
+        self.daily_mmu = dict_['mmu']
+        self.daily_columnso2 = dict_['columnso2']
+
+        self.monthly_date = dict_['monthly_date']
+        self.monthly_columno3 = dict_['monthly_columno3']
+        self.monthly_stdevo3 = dict_['monthly_stdevo3']
+        self.monthly_npts = dict_['npts']
+
+        self.generate_ids()
+        self.x = dict_['x']
+        self.y = dict_['y']
+        self.z = dict_['z']
+
+    @property
+    def __geo_interface__(self):
+        return {
+            'id': self.ozone_id,
+            'type': 'Feature',
+            'geometry': point2geojsongeometry(self.x, self.y, self.z),
+            'properties': {
+                'identifier': self.ozone_id,
+                'file_path': self.file_path,
+                'dataset_id': self.dataset_id,
+                'station_id': self.station_id,
+                'station_name': self.station.station_name.name,
+                'contributor_name':
+                self.instrument.deployment.contributor.name,
+                'country_id': self.station.country.country_id,
+                'country_name_en': self.station.country.name_en,
+                'country_name_fr': self.station.country.name_fr,
+                'gaw_id': self.gaw_id,
+                'observation_utcoffset': self.observation_utcoffset,
+                'observation_date': strftime_rfc3339(self.observation_date),
+                'observation_time': strftime_rfc3339(self.observation_time),
+                'instrument_name': self.instrument.name,
+                'instrument_model': self.instrument.model,
+                'instrument_serial': self.instrument.serial,
+                'daily_date': self.daily_date,
+                'daily_wlcode': self.daily_wlcode,
+                'daily_obscode': self.daily_obscode,
+                'daily_columno3': self.daily_columno3,
+                'daily_stdevo3': self.daily_stdevo3,
+                'daily_utc_begin': self.daily_utc_begin,
+                'daily_utc_end': self.daily_utc_end,
+                'daily_utc_mean': self.daily_utc_mean,
+                'daily_nobs': self.daily_nobs,
+                'daily_mmu': self.daily_mmu,
+                'daily_columnso2': self.daily_columnso2,
+                'monthly_date': self.monthly_date,
+                'monthly_columno3': self.monthly_columno3,
+                'monthly_stdevo3': self.monthly_stdevo3,
+                'monthly_npts': self.monthly_npts,
+            }
+        }
+
+    def __repr__(self):
+        return 'Total_Ozone ({})'.format(self.ozone_id)
+
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.ozone_id = ':'.join(map(str, components))
+
+
 def build_contributions(instrument_models):
     """function that forms contributions from other model lists"""
 
