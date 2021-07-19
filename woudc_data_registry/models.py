@@ -1399,6 +1399,7 @@ class TotalOzone(base):
     ozone_id = Column(String, primary_key=True)
     file_path = Column(String, nullable=False)
     file_name = Column(String, nullable=False)
+    url = Column(String, nullable=False)
     dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
                         nullable=False)
     station_id = Column(String, ForeignKey('stations.station_id'),
@@ -1438,7 +1439,7 @@ class TotalOzone(base):
     def __init__(self, dict_):
 
         self.file_path = dict_['file_path']
-        self.file_name = self.file_path.split('/')[-1]
+        self.file_name = dict_['filename']
 
         self.dataset_id = dict_['dataset_id']
         self.station_id = dict_['station_id']
@@ -1462,10 +1463,33 @@ class TotalOzone(base):
         self.monthly_stdevo3 = dict_['monthly_stdevo3']
         self.monthly_npts = dict_['npts']
 
+        self.url = self.get_waf_path(dict_)
+
         self.generate_ids()
+
         self.x = dict_['x']
         self.y = dict_['y']
         self.z = dict_['z']
+
+    def get_waf_path(self, dict_):
+        """generate WAF url"""
+
+        datasetdirname = '{}_{}_{}'.format(self.dataset_id,
+                                           dict_['dataset_level'],
+                                           dict_['dataset_form'])
+        timestamp_date = datetime.datetime.strptime(
+            dict_['timestamp_date'], '%Y-%m-%d').date()
+        url_tokens = [
+            config.WDR_WAF_BASEURL.rstrip('/'),
+            'Archive-NewFormat',
+            datasetdirname,
+            '{}{}'.format(dict_['station_type'].lower(), self.station_id),
+            dict_['instrument_name'].lower(),
+            timestamp_date.strftime('%Y'),
+            self.file_name
+        ]
+
+        return '/'.join(url_tokens)
 
     @property
     def __geo_interface__(self):
@@ -1485,13 +1509,10 @@ class TotalOzone(base):
                 'country_name_en': self.station.country.name_en,
                 'country_name_fr': self.station.country.name_fr,
                 'gaw_id': self.gaw_id,
-                'observation_utcoffset': self.observation_utcoffset,
-                'observation_date': strftime_rfc3339(self.observation_date),
-                'observation_time': strftime_rfc3339(self.observation_time),
                 'instrument_name': self.instrument.name,
                 'instrument_model': self.instrument.model,
                 'instrument_serial': self.instrument.serial,
-                'daily_date': self.daily_date,
+                'daily_date': strftime_rfc3339(self.daily_date),
                 'daily_wlcode': self.daily_wlcode,
                 'daily_obscode': self.daily_obscode,
                 'daily_columno3': self.daily_columno3,
@@ -1502,10 +1523,11 @@ class TotalOzone(base):
                 'daily_nobs': self.daily_nobs,
                 'daily_mmu': self.daily_mmu,
                 'daily_columnso2': self.daily_columnso2,
-                'monthly_date': self.monthly_date,
+                'monthly_date': strftime_rfc3339(self.monthly_date),
                 'monthly_columno3': self.monthly_columno3,
                 'monthly_stdevo3': self.monthly_stdevo3,
                 'monthly_npts': self.monthly_npts,
+                'url': self.url,
             }
         }
 
@@ -1973,37 +1995,46 @@ def sync(ctx):
 
 @click.command()
 @click.pass_context
-def uv_sync(ctx):
-    """Sync uv_index_hourly table to Elasticsearch"""
+def product_sync(ctx):
+    """Sync products to Elasticsearch"""
+
+    products = [
+       TotalOzone,
+       UVIndex
+    ]
+
     registry_ = registry.Registry()
     search_index = SearchIndex()
 
     search_index_config = config.EXTRAS.get('search_index', {})
-    plural_name = UVIndex.__tablename__
-    plural_caps = ''.join(map(str.capitalize, plural_name.split('_')))
 
-    enabled_flag = '{}_enabled'.format(plural_name)
-    if not search_index_config.get(enabled_flag, True):
-        click.echo('{} index frozen (skipping)'.format(plural_caps))
+    for product in products:
+        plural_name = product.__tablename__
+        plural_caps = ''.join(map(str.capitalize, plural_name.split('_')))
 
-    click.echo('{}...'.format(plural_caps))
+        enabled_flag = '{}_enabled'.format(plural_name)
+        if not search_index_config.get(enabled_flag, True):
+            click.echo('{} index frozen (skipping)'.format(plural_caps))
 
-    registry_contents = []
-    for obj in registry_.session.query(UVIndex).yield_per(1):
-        LOGGER.debug('Querying chunk of  {}'.format(UVIndex))
+        click.echo('{}...'.format(plural_caps))
 
-        registry_contents.append(obj)
+        registry_contents = []
+        # Sync product to elasticsearch
+        for obj in registry_.session.query(product).yield_per(1):
+            LOGGER.debug('Querying chunk of  {}'.format(product))
 
-        if len(registry_contents) > 500000:
-            registry_docs = [item.__geo_interface__
-                             for item in registry_contents]
-            click.echo('Sending UVIndex to search index...')
-            search_index.index(UVIndex, registry_docs)
-            registry_contents.clear()
+            registry_contents.append(obj)
 
-    registry_docs = [obj.__geo_interface__ for obj in registry_contents]
-    click.echo('Sending UVIndex to search index...')
-    search_index.index(UVIndex, registry_docs)
+            if len(registry_contents) > 500000:
+                registry_docs = [item.__geo_interface__
+                                 for item in registry_contents]
+                click.echo('Sending models to search index...')
+                search_index.index(product, registry_docs)
+                registry_contents.clear()
+
+        registry_docs = [obj.__geo_interface__ for obj in registry_contents]
+        click.echo('Sending models to search index...')
+        search_index.index(product, registry_docs)
 
     click.echo('Done')
 
@@ -2017,4 +2048,4 @@ registry__.add_command(setup)
 registry__.add_command(teardown)
 
 search.add_command(sync)
-search.add_command(uv_sync)
+search.add_command(product_sync)

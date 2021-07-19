@@ -218,6 +218,21 @@ woudc-data-registry product uv-index update <options> <flags> /path/to/archive/r
     | -sy (start-year) Optional lower bound of year range 
     | -ey (end-year) Optional upper bound of year range
 
+-------------------
+Total Ozone table generation
+-------------------
+
+A Total Ozone table can be generated using data and metadata from WOUDC TotalOzone
+Extended CSV files. This table provides a more detailed representation of TotalOzone
+data and allows specific measurements to be directly queried.
+
+woudc-data-registry product total-ozone generate <flags> /path/to/archive/root
+    Delete all records from the total_ozone table and use all TotalOzone files 
+    to generate total_ozone records. <flags> are as
+    follows:
+
+    | -y (yes) Automatically accept all permission checks
+
 -------------------------
 Peer data centre indexing
 -------------------------

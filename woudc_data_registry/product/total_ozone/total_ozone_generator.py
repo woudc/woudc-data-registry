@@ -93,7 +93,10 @@ def execute(path, bypass):
                 try:
                     agency = extcsv.extcsv['DATA_GENERATION']['Agency'][0]
                     dataset_id = extcsv.extcsv['CONTENT']['Category'][0]
+                    level = extcsv.extcsv['CONTENT']['Level'][0]
+                    form = extcsv.extcsv['CONTENT']['Form'][0]
                     project_id = extcsv.extcsv['CONTENT']['Class'][0]
+                    station_type = extcsv.extcsv['PLATFORM']['Type'][0]
                     station_id = extcsv.extcsv['PLATFORM']['ID'][0]
                     country = extcsv.extcsv['PLATFORM']['Country'][0]
                     instrument_name = extcsv.extcsv['INSTRUMENT']['Name'][0]
@@ -105,6 +108,7 @@ def execute(path, bypass):
                     instrument_longitude = \
                         extcsv.extcsv['LOCATION']['Longitude'][0]
                     instrument_height = extcsv.extcsv['LOCATION']['Height'][0]
+                    timestamp_date = extcsv.extcsv['TIMESTAMP']['Date'][0]
                 except Exception as err:
                     msg = 'Unable to get metadata from extcsv {}: {}'.format(
                         ipath, err)
@@ -180,10 +184,15 @@ def execute(path, bypass):
                 for i in range(len(date)):
                     ins_data = {
                         'file_path': ipath,
+                        'filename': filename,
                         'dataset_id': dataset_id,
+                        'dataset_level': level,
+                        'dataset_form': form,
                         'station_id': station_id,
+                        'station_type': station_type,
                         'country_id': country,
                         'instrument_id': instrument_id,
+                        'instrument_name': instrument_name,
                         'date': conv(date[i]),
                         'wlcode': conv(wlcode[i]),
                         'obscode': conv(obscode[i]),
@@ -199,6 +208,7 @@ def execute(path, bypass):
                         'npts': conv(npts[0]),
                         'monthly_columno3': conv(monthly_co3[0]),
                         'monthly_stdevo3': conv(monthly_stdevo3[0]),
+                        'timestamp_date': timestamp_date,
                         'x': instrument_longitude,
                         'y': instrument_latitude,
                         'z': instrument_height,

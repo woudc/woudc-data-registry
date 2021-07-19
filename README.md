@@ -164,6 +164,13 @@ woudc-data-registry product uv-index generate /path/to/archive/root
 woudc-data-registry product uv-index update -sy start-year -ey end-year /path/to/archive/root
 ```
 
+#### Total Ozone Generation
+
+```bash
+# Teardown and generate entire total_ozone table
+woudc-data-registry product total-ozone generate /path/to/archive/root
+```
+
 #### Report Generation
 
 The `woudc-data-registry data ingest` command accepts a `-r/--report` flag, which is a path pointing to a directory.

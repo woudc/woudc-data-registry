@@ -692,6 +692,111 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
         }
+    },
+    'total_ozone': {
+        'index': 'total_ozone',
+        'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'file_path': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'dataset_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'gaw_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'daily_date': {
+                'type': 'date',
+                'format': DATE_FORMAT,
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'daily_wlcode': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'daily_obscode': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'daily_columno3': {
+                'type': 'float',
+            },
+            'daily_stdevo3': {
+                'type': 'float',
+            },
+            'daily_utc_begin': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'daily_utc_end': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'daily_utc_mean': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'daily_nobs': {
+                'type': 'float',
+            },
+            'daily_mmu': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'daily_columnso2': {
+                'type': 'float',
+            },
+            'monthly_date': {
+                'type': 'date',
+                'format': DATE_FORMAT,
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'monthly_columno3': {
+                'type': 'float',
+            },
+            'monthly_stdevo3': {
+                'type': 'float',
+            },
+            'monthly_npts': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+        }
     }
 }
 
