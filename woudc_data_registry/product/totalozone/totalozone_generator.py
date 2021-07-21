@@ -226,7 +226,7 @@ def conv(i):
         return None
 
 
-def generate_total_ozone(archivedir, bypass):
+def generate_totalozone(archivedir, bypass):
     if archivedir is None:
         raise RuntimeError('Missing required on disk archive')
     LOGGER.info('Computing TotalOzone table...')
