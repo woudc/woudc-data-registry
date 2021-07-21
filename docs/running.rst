@@ -228,7 +228,7 @@ data and allows specific measurements to be directly queried.
 
 woudc-data-registry product totalozone generate <flags> /path/to/archive/root
     Delete all records from the totalozone table and use all TotalOzone files 
-    to generate total_ozone records. <flags> are as
+    to generate totalozone records. <flags> are as
     follows:
 
     | -y (yes) Automatically accept all permission checks
