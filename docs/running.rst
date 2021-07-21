@@ -227,7 +227,7 @@ Extended CSV files. This table provides a more detailed representation of TotalO
 data and allows specific measurements to be directly queried.
 
 woudc-data-registry product totalozone generate <flags> /path/to/archive/root
-    Delete all records from the total_ozone table and use all TotalOzone files 
+    Delete all records from the totalozone table and use all TotalOzone files 
     to generate total_ozone records. <flags> are as
     follows:
 
