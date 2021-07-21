@@ -97,7 +97,7 @@ def parse_index(csv_dict_reader):
                 )
                 yield properties
             else:
-                LOGGER.error("Failed to persist PeerDataRecord(%s) due to missing station metadata ",row['url'])
+                LOGGER.error('Failed to persist PeerDataRecord({}) due to missing station metadata'.format(row['url']))
                 yield {}
 
 
