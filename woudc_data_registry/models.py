@@ -1391,7 +1391,7 @@ class UVIndex(base):
 class TotalOzone(base):
     """Data Registry TotalOzone model"""
 
-    __tablename__ = 'total_ozone'
+    __tablename__ = 'totalozone'
 
     id_field = 'ozone_id'
     id_dependencies = ['instrument_id', 'daily_date', 'file_name']
@@ -1532,7 +1532,7 @@ class TotalOzone(base):
         }
 
     def __repr__(self):
-        return 'Total_Ozone ({})'.format(self.ozone_id)
+        return 'TotalOzone ({})'.format(self.ozone_id)
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""

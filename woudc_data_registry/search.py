@@ -693,8 +693,8 @@ MAPPINGS = {
             },
         }
     },
-    'total_ozone': {
-        'index': 'total_ozone',
+    'totalozone': {
+        'index': 'totalozone',
         'properties': {
             'identifier': {
                 'type': 'text',
