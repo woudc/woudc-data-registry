@@ -226,7 +226,7 @@ A Total Ozone table can be generated using data and metadata from WOUDC TotalOzo
 Extended CSV files. This table provides a more detailed representation of TotalOzone
 data and allows specific measurements to be directly queried.
 
-woudc-data-registry product total-ozone generate <flags> /path/to/archive/root
+woudc-data-registry product totalozone generate <flags> /path/to/archive/root
     Delete all records from the total_ozone table and use all TotalOzone files 
     to generate total_ozone records. <flags> are as
     follows:
