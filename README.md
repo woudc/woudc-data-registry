@@ -168,7 +168,7 @@ woudc-data-registry product uv-index update -sy start-year -ey end-year /path/to
 
 ```bash
 # Teardown and generate entire total_ozone table
-woudc-data-registry product total-ozone generate /path/to/archive/root
+woudc-data-registry product totalozone generate /path/to/archive/root
 ```
 
 #### Report Generation
