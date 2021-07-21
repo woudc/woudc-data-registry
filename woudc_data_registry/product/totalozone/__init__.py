@@ -44,16 +44,36 @@
 # =================================================================
 
 import click
-
-from woudc_data_registry.product.uv_index import uv_index
-from woudc_data_registry.product.totalozone import totalozone
+from woudc_data_registry.product.totalozone.totalozone_generator \
+    import generate_totalozone
 
 
 @click.group()
-def product():
-    """Product management"""
+def totalozone():
+    """TotalOzone management"""
     pass
 
 
-product.add_command(uv_index)
-product.add_command(totalozone)
+@click.command()
+@click.pass_context
+@click.argument('srcdir', type=click.Path(exists=True, resolve_path=True,
+                                          dir_okay=True, file_okay=True))
+@click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
+              help='Bypass permission prompts while ingesting')
+def generate(ctx, srcdir, bypass=False):
+    """Generate TotalOzone table"""
+
+    bypass_ = bypass
+
+    if not bypass_:
+        q = ('This command will erase and rebuild'
+             ' the TotalOzone table. Are you sure?')
+
+        if click.confirm(q):
+            bypass_ = True
+
+    if bypass_:
+        generate_totalozone(srcdir, bypass)
+
+
+totalozone.add_command(generate)
