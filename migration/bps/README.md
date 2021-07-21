@@ -128,6 +128,6 @@ woudc-data-registry data ingest /path/to/dir
 # Sync all tables of the WOUDC Data Registry database except uv_index_hourly and totalozone to Elasticsearch
 woudc-data-registry admin search sync
 
-# Sync the uv_index_hourly and total_ozone table to Elasticsearch
+# Sync the uv_index_hourly and totalozone table to Elasticsearch
 woudc-data-registry admin search product-sync
 ```
