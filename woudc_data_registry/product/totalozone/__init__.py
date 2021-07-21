@@ -44,8 +44,8 @@
 # =================================================================
 
 import click
-from woudc_data_registry.product.totalozone.total_ozone_generator \
-    import generate_total_ozone
+from woudc_data_registry.product.totalozone.totalozone_generator \
+    import generate_totalozone
 
 
 @click.group()
@@ -73,7 +73,7 @@ def generate(ctx, srcdir, bypass=False):
             bypass_ = True
 
     if bypass_:
-        generate_total_ozone(srcdir, bypass)
+        generate_totalozone(srcdir, bypass)
 
 
 totalozone.add_command(generate)
