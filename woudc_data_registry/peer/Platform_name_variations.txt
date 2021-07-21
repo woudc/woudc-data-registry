@@ -1,11 +1,11 @@
 Incoming Name, Variation
-NY-ALESUND,Ny Ålesund
+NY-ALESUND, Ny Ålesund
 WALLOPS ISLAND, VA.,Wallops Island
-DUMONT D'URVILLE,Dumont d'Urville
-IZANA,Izaña (Tenerife)
-HOHENPEISSENBERG,Hohenpeissenberg
+DUMONT D'URVILLE, Dumont d'Urville
+IZANA, Izaña (Tenerife)
+HOHENPEISSENBERG, Hohenpeissenberg
 VALENTIA OBSERVATORY,Valentia
-DOME C II ,Concordia, Dôme C
-PORT-AUX-FRANCAIS (ILES KERGUELEN),Port-aux-Français (Iles Kerguélen)
-SYOWA,Syowa
-MACQUARIE ISLAND,Macquarie Island
+DOME C II, Concordia, Dôme C
+PORT-AUX-FRANCAIS (ILES KERGUELEN), Port-aux-Français (Iles Kerguélen)
+SYOWA, Syowa
+MACQUARIE ISLAND, Macquarie Island

@@ -96,7 +96,7 @@ def eubrewnet():
               resolve_path=True), help='Path to file index')
 def index(ctx, file_index):
     """index EUBREWNET file index"""
-    
+
     if file_index is None:
         raise click.ClickException('missing -fi/--file-index parameter')
 

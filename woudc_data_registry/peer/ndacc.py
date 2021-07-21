@@ -45,15 +45,18 @@
 
 import csv
 import logging
-
 import click
 
 from woudc_data_registry.models import PeerDataRecord
 from woudc_data_registry.registry import Registry
 
-from woudc_data_registry.peer.file_indices_extractor import *
+from woudc_data_registry.peer.file_indices_extractor import (
+    config_ndacc,
+    get_station_metadata
+)
 
 LOGGER = logging.getLogger(__name__)
+
 
 def parse_index(csv_dict_reader):
     """
@@ -70,12 +73,12 @@ def parse_index(csv_dict_reader):
     lookup_lists = config_ndacc(overwrite_flag)
 
     for row in csv_dict_reader:
-         if row['dataset'] in ['TOTALCOL', 'OZONE', 'UV']:
+        if row['dataset'] in ['TOTALCOL', 'OZONE', 'UV']:
             # Resolve station metadata lookup
             station_metadata = get_station_metadata(
                 row['oscar_site_name'], lookup_lists['stations'],
                 lookup_lists['name_variations'])
-            
+
             if None not in station_metadata:
                 properties = dict(
                     source='ndacc',
@@ -97,7 +100,9 @@ def parse_index(csv_dict_reader):
                 )
                 yield properties
             else:
-                LOGGER.error('Failed to persist PeerDataRecord({}) due to missing station metadata'.format(row['url']))
+                LOGGER.debug('No station metadata found.')
+                msg = 'Failed to persist PeerDataRecord({})'.format(row['url'])
+                LOGGER.error(msg)
                 yield {}
 
 
@@ -109,8 +114,10 @@ def ndacc():
 
 @click.command()
 @click.pass_context
-@click.option('-fi', '--file-index', type=click.Path(exists=True,
-              resolve_path=True), help='Path to file index')
+@click.option('-fi',
+              '--file-index',
+              type=click.Path(exists=True, resolve_path=True),
+              help='Path to file index')
 def index(ctx, file_index):
     """index NDACC file index"""
 
@@ -129,7 +136,7 @@ def index(ctx, file_index):
         reader = csv.DictReader(csvfile)
 
         for dict_row in parse_index(reader):
-            if dict_row!={}:
+            if dict_row != {}:
                 peer_data_record = PeerDataRecord(dict_row)
                 registry_.save(peer_data_record)
 
