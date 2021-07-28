@@ -780,9 +780,28 @@ class DataRecord(base):
 
         self.timestamp_utcoffset = ecsv.extcsv['TIMESTAMP']['UTCOffset']
         self.timestamp_date = ecsv.extcsv['TIMESTAMP']['Date']
+        date = datetime.datetime.strptime(
+                self.timestamp_date, '%Y-%m-%d').date()
+        offset = datetime.datetime.strptime(
+                self.timestamp_utcoffset[1:len(self.timestamp_utcoffset)],
+                '%H:%M:%S').time()
 
         if 'Time' in ecsv.extcsv['TIMESTAMP']:
             self.timestamp_time = ecsv.extcsv['TIMESTAMP']['Time']
+            time = datetime.datetime.strptime(
+                    self.timestamp_time, '%H:%M:%S').time()
+            dt = datetime.datetime.combine(date, time)
+        else:
+            dt = datetime.datetime.combine(date, time=datetime.time(0, 0, 0))
+
+        if self.timestamp_utcoffset[0] == '+':
+            self.timestamp_utc = dt + datetime.timedelta(hours=offset.hour,
+                                                         minutes=offset.minute,
+                                                         seconds=offset.second)
+        else:
+            self.timestamp_utc = dt - datetime.timedelta(hours=offset.hour,
+                                                         minutes=offset.minute,
+                                                         seconds=offset.second)
 
         self.x = ecsv.extcsv['LOCATION']['Longitude']
         self.y = ecsv.extcsv['LOCATION']['Latitude']
@@ -925,6 +944,7 @@ class DataRecord(base):
                 'timestamp_date': strftime_rfc3339(self.timestamp_date),
                 'timestamp_time': None if self.timestamp_time is None \
                     else self.timestamp_time.isoformat(),
+                'timestamp_utc': strftime_rfc3339(self.timestamp_utc),
 
                 'published': self.published,
                 'received_datetime': strftime_rfc3339(self.received_datetime),
@@ -1307,6 +1327,23 @@ class UVIndex(base):
 
         self.observation_utcoffset = dict_['observation_utcoffset']
 
+        date = datetime.datetime.strptime(
+                self.observation_date, '%Y-%m-%d').date()
+        offset = datetime.datetime.strptime(
+                self.observation_utcoffset[1:len(self.timestamp_utcoffset)],
+                '%H:%M:%S').time()
+        time = datetime.datetime.strptime(
+                self.observation_time, '%H:%M:%S').time()
+        dt = datetime.datetime.combine(date, time)
+        if self.observation_utcoffset[0] == '+':
+            self.timestamp_utc = dt + datetime.timedelta(hours=offset.hour,
+                                                         minutes=offset.minute,
+                                                         seconds=offset.second)
+        else:
+            self.timestamp_utc = dt - datetime.timedelta(hours=offset.hour,
+                                                         minutes=offset.minute,
+                                                         seconds=offset.second)
+
         self.url = self.get_waf_path(dict_)
 
         self.x = dict_['x']
@@ -1365,6 +1402,7 @@ class UVIndex(base):
                 'observation_utcoffset': self.observation_utcoffset,
                 'observation_date': strftime_rfc3339(self.observation_date),
                 'observation_time': strftime_rfc3339(self.observation_time),
+                'timestamp_utc': strftime_rfc3339(self.timestamp_utc),
                 'instrument_name': self.instrument.name,
                 'instrument_model': self.instrument.model,
                 'instrument_serial': self.instrument.serial,
