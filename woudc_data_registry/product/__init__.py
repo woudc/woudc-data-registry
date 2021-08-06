@@ -47,6 +47,7 @@ import click
 
 from woudc_data_registry.product.uv_index import uv_index
 from woudc_data_registry.product.totalozone import totalozone
+from woudc_data_registry.product.ozonesonde import ozonesonde
 
 
 @click.group()
@@ -57,3 +58,4 @@ def product():
 
 product.add_command(uv_index)
 product.add_command(totalozone)
+product.add_command(ozonesonde)
