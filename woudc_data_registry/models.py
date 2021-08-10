@@ -780,19 +780,19 @@ class DataRecord(base):
 
         self.timestamp_utcoffset = ecsv.extcsv['TIMESTAMP']['UTCOffset']
         self.timestamp_date = ecsv.extcsv['TIMESTAMP']['Date']
-        date = datetime.datetime.strptime(
-                self.timestamp_date, '%Y-%m-%d').date()
+        date = self.timestamp_date
         offset = datetime.datetime.strptime(
                 self.timestamp_utcoffset[1:len(self.timestamp_utcoffset)],
                 '%H:%M:%S').time()
 
         if 'Time' in ecsv.extcsv['TIMESTAMP']:
             self.timestamp_time = ecsv.extcsv['TIMESTAMP']['Time']
-            time = datetime.datetime.strptime(
-                    self.timestamp_time, '%H:%M:%S').time()
-            dt = datetime.datetime.combine(date, time)
-        else:
-            dt = datetime.datetime.combine(date, time=datetime.time(0, 0, 0))
+            if self.timestamp_time is not None:
+                time = self.timestamp_time
+                dt = datetime.datetime.combine(date, time)
+            else:
+                dt = datetime.datetime.combine(
+                        date, time=datetime.time(0, 0, 0))
 
         if self.timestamp_utcoffset[0] == '+':
             self.timestamp_utc = dt + datetime.timedelta(hours=offset.hour,
@@ -1327,13 +1327,11 @@ class UVIndex(base):
 
         self.observation_utcoffset = dict_['observation_utcoffset']
 
-        date = datetime.datetime.strptime(
-                self.observation_date, '%Y-%m-%d').date()
+        date = self.observation_date
         offset = datetime.datetime.strptime(
                 self.observation_utcoffset[1:len(self.timestamp_utcoffset)],
                 '%H:%M:%S').time()
-        time = datetime.datetime.strptime(
-                self.observation_time, '%H:%M:%S').time()
+        time = self.observation_time
         dt = datetime.datetime.combine(date, time)
         if self.observation_utcoffset[0] == '+':
             self.timestamp_utc = dt + datetime.timedelta(hours=offset.hour,
