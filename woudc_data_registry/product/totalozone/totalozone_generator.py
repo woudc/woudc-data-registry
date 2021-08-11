@@ -181,38 +181,45 @@ def execute(path, bypass):
                         add_metadata(Instrument, instrument_,
                                      True, False)
 
+                first = True
                 for i in range(len(date)):
-                    ins_data = {
-                        'file_path': ipath,
-                        'filename': filename,
-                        'dataset_id': dataset_id,
-                        'dataset_level': level,
-                        'dataset_form': form,
-                        'station_id': station_id,
-                        'station_type': station_type,
-                        'country_id': country,
-                        'instrument_id': instrument_id,
-                        'instrument_name': instrument_name,
-                        'date': conv(date[i]),
-                        'wlcode': conv(wlcode[i]),
-                        'obscode': conv(obscode[i]),
-                        'columno3': conv(columno3[i]),
-                        'stddevo3': conv(stddevo3[i]),
-                        'utc_begin': conv(utc_begin[i]),
-                        'utc_end': conv(utc_end[i]),
-                        'utc_mean': conv(utc_mean[i]),
-                        'nobs': conv(nobs[i]),
-                        'mmu': conv(mmu[i]),
-                        'columnso2': conv(columnso2[i]),
-                        'monthly_date': conv(monthly_date[0]),
-                        'npts': conv(npts[0]),
-                        'monthly_columno3': conv(monthly_co3[0]),
-                        'monthly_stdevo3': conv(monthly_stdevo3[0]),
-                        'timestamp_date': timestamp_date,
-                        'x': instrument_longitude,
-                        'y': instrument_latitude,
-                        'z': instrument_height,
-                    }
+                    if conv(columno3[i]):
+                        if first:
+                            observation_date = conv(date[i])
+                            first = False
+
+                        ins_data = {
+                            'file_path': ipath,
+                            'filename': filename,
+                            'dataset_id': dataset_id,
+                            'dataset_level': level,
+                            'dataset_form': form,
+                            'station_id': station_id,
+                            'station_type': station_type,
+                            'country_id': country,
+                            'instrument_id': instrument_id,
+                            'instrument_name': instrument_name,
+                            'observation_date': observation_date,
+                            'date': conv(date[i]),
+                            'wlcode': conv(wlcode[i]),
+                            'obscode': conv(obscode[i]),
+                            'columno3': conv(columno3[i]),
+                            'stddevo3': conv(stddevo3[i]),
+                            'utc_begin': conv(utc_begin[i]),
+                            'utc_end': conv(utc_end[i]),
+                            'utc_mean': conv(utc_mean[i]),
+                            'nobs': conv(nobs[i]),
+                            'mmu': conv(mmu[i]),
+                            'columnso2': conv(columnso2[i]),
+                            'monthly_date': conv(monthly_date[0]),
+                            'npts': conv(npts[0]),
+                            'monthly_columno3': conv(monthly_co3[0]),
+                            'monthly_stdevo3': conv(monthly_stdevo3[0]),
+                            'timestamp_date': timestamp_date,
+                            'x': instrument_longitude,
+                            'y': instrument_latitude,
+                            'z': instrument_height,
+                        }
                     ozone_object = TotalOzone(ins_data)
                     registry_.save(ozone_object)
 

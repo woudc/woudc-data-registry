@@ -1448,6 +1448,7 @@ class TotalOzone(base):
 
     gaw_id = Column(String, nullable=True)
 
+    observation_date = Column(Date, nullable=False)
     daily_date = Column(Date, nullable=False)
     daily_wlcode = Column(String, nullable=True)
     daily_obscode = Column(String, nullable=True)
@@ -1482,6 +1483,8 @@ class TotalOzone(base):
         self.station_id = dict_['station_id']
         self.country_id = dict_['country_id']
         self.instrument_id = dict_['instrument_id']
+        
+        self.observation_date = dict_['observation_date']
 
         self.daily_date = dict_['date']
         self.daily_wlcode = dict_['wlcode']
@@ -1530,6 +1533,10 @@ class TotalOzone(base):
 
     @property
     def __geo_interface__(self):
+        gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
+            '/search/station/stationReportDetails'
+        gaw_pagename = '0-20008-0-{}'.format(self.station.gaw_id)
+
         return {
             'id': self.ozone_id,
             'type': 'Feature',
@@ -1540,8 +1547,14 @@ class TotalOzone(base):
                 'dataset_id': self.dataset_id,
                 'station_id': self.station_id,
                 'station_name': self.station.station_name.name,
+                'station_gaw_id': self.station.gaw_id,
+                'station_gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename),
                 'contributor_name':
                 self.instrument.deployment.contributor.name,
+                'contributor_acronym': 
+                self.instrument.deployment.contributor.acronym,
+                'contributor_url':
+                self.instrument.deployment.contributor.url,
                 'country_id': self.station.country.country_id,
                 'country_name_en': self.station.country.name_en,
                 'country_name_fr': self.station.country.name_fr,
@@ -1549,6 +1562,7 @@ class TotalOzone(base):
                 'instrument_name': self.instrument.name,
                 'instrument_model': self.instrument.model,
                 'instrument_serial': self.instrument.serial,
+                'observation_date': strftime_rfc3339(self.observation_date),
                 'daily_date': strftime_rfc3339(self.daily_date),
                 'daily_wlcode': self.daily_wlcode,
                 'daily_obscode': self.daily_obscode,
