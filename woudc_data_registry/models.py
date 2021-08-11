@@ -1483,7 +1483,7 @@ class TotalOzone(base):
         self.station_id = dict_['station_id']
         self.country_id = dict_['country_id']
         self.instrument_id = dict_['instrument_id']
-        
+
         self.observation_date = dict_['observation_date']
 
         self.daily_date = dict_['date']
@@ -1551,7 +1551,7 @@ class TotalOzone(base):
                 'station_gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename),
                 'contributor_name':
                 self.instrument.deployment.contributor.name,
-                'contributor_acronym': 
+                'contributor_acronym':
                 self.instrument.deployment.contributor.acronym,
                 'contributor_url':
                 self.instrument.deployment.contributor.url,
