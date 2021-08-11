@@ -44,7 +44,6 @@
 # =================================================================
 
 import os
-import csv
 import logging
 import psycopg2
 
@@ -52,8 +51,7 @@ LOGGER = logging.getLogger(__name__)
 
 PROCESS = dict(
   # WOUDC platform station lookup
-  query="SELECT gaw_id,station_id,station_name_id,station_type from stations;",
-  station_alias='/woudc_data_registry/peer/Platform_name_variations.txt',
+  query="SELECT country_id,station_id,station_name_id from stations;"
 )
 
 
@@ -78,72 +76,28 @@ def load_station_metadata():
         station_name_start = station_nameid.index(':') + 1
         station_name = station_nameid[station_name_start:len(station_nameid)]
 
-        if station_row[3] == 'STN':
-            station_type_curr = 'land'
-        else:
-            station_type_curr = 'water'
-
         stations[station_name.lower()] = (
-                station_type_curr,  # station_type
-                station_row[1],     # station_id
-                station_row[0])     # gaw_id
+                station_row[0],  # country_id
+                station_row[1])  # station_id
 
     return stations
 
 
-def get_station_metadata(name, stations, variations):
+def get_station_metadata(name, stations):
     """Look up station metadata given a station name."""
     key = name
     if key is not None:
         key = name.lower()
     if key in stations:
         return stations[key]
-    elif variations is not None:
-        msg = 'Station metadata not found for station name: {}'.format(name)
-        LOGGER.debug(msg)
-
-        # If station metadata not found, retry station metadata
-        # lookup using station name alias.
-        alias = variations.get(name)
-        if alias is not None:
-            LOGGER.debug('Variation found for {}: {}'.format(name, alias))
-        return get_station_metadata(alias, stations, None)
     else:
-        LOGGER.debug('Variation not found for {}'.format(name))
+        LOGGER.debug('Metadata not found for {}'.format(name))
         return (None, None, None)
 
 
-def load_station_name_variations(path):
-    """Load WOUDC station name variations with OSCAR names."""
-    station_name_variations = {}
-    if True:
-        with open(path) as station_md_file:
-            station_list = csv.reader(station_md_file, delimiter=',')
-
-            # Skip header
-            next(station_list)
-
-            # Store station names as keys and
-            # (station type, station id) as values.
-            for line in station_list:
-                station_name_variations[line[0].lower()] = (line[1])
-
-        return station_name_variations
-    else:
-        LOGGER.debug(
-            'Station name variations text not found at {}'.format(path)
-        )
-        return station_name_variations
-
-
-def config_ndacc(overwrite_flag):
-    """Load lookup lists required for harvesting NDACC file index metadata."""
+def config_lookup(overwrite_flag):
+    """Load lookup lists required for harvesting file index metadata."""
     lookup_lists = {}
-    station_aliases_path = os.getcwd() + PROCESS['station_alias']
-
     lookup_lists['stations'] = load_station_metadata()
-    lookup_lists['name_variations'] = load_station_name_variations(
-                                        station_aliases_path
-    )
 
     return lookup_lists

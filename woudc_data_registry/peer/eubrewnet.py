@@ -51,6 +51,11 @@ import click
 from woudc_data_registry.models import PeerDataRecord
 from woudc_data_registry.registry import Registry
 
+from woudc_data_registry.peer.file_indices_extractor import (
+    config_lookup,
+    get_station_metadata
+)
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -62,26 +67,42 @@ def parse_index(csv_dict_reader):
 
     :returns: generator of parsed rows
     """
+
+    LOGGER.info('Start the execution of file index metadata extraction.')
+
+    overwrite_flag = True
+    lookup_lists = config_lookup(overwrite_flag)
+
     for row in csv_dict_reader:
-        properties = dict(
-            source='eubrewnet',
-            measurement=row['Measurement'],
-            station_id=row['WOUDC_ID'],
-            station_name=row['Station_name'],
-            gaw_id=row['GAW_ID'],
-            station_type=row['Station_type'],
-            level=row['Product_level'],
-            instrument_type=row['Instrument_type'],
-            pi_name=row['PI_name'],
-            pi_email=row['PI_email'],
-            url=row['Link'],
-            y=row['Lat'],
-            x=row['Lon_E'],
-            z=row['Height'],
-            start_datetime=row['Start_time'],
-            end_datetime=row['End_time']
-        )
-        yield properties
+        # Resolve station metadata lookup
+        station_metadata = get_station_metadata(
+            row['Station_name'], lookup_lists['stations'])
+        if None not in station_metadata:
+            properties = dict(
+                source='eubrewnet',
+                measurement=row['Measurement'],
+                station_id=row['WOUDC_ID'],
+                station_name=row['Station_name'],
+                gaw_id=row['GAW_ID'],
+                station_type=row['Station_type'],
+                level=row['Product_level'],
+                instrument_type=row['Instrument_type'],
+                country_id=station_metadata[0],
+                pi_name=row['PI_name'],
+                pi_email=row['PI_email'],
+                url=row['Link'],
+                y=row['Lat'],
+                x=row['Lon_E'],
+                z=row['Height'],
+                start_datetime=row['Start_time'],
+                end_datetime=row['End_time']
+            )
+            yield properties
+        else:
+            LOGGER.debug('No station metadata found.')
+            msg = 'Failed to persist PeerDataRecord({})'.format(row['url'])
+            LOGGER.error(msg)
+            yield {}
 
 
 @click.group()

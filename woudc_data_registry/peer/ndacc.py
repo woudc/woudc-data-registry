@@ -51,7 +51,7 @@ from woudc_data_registry.models import PeerDataRecord
 from woudc_data_registry.registry import Registry
 
 from woudc_data_registry.peer.file_indices_extractor import (
-    config_ndacc,
+    config_lookup,
     get_station_metadata
 )
 
@@ -70,14 +70,13 @@ def parse_index(csv_dict_reader):
     LOGGER.info('Start the execution of file index metadata extraction.')
 
     overwrite_flag = True
-    lookup_lists = config_ndacc(overwrite_flag)
+    lookup_lists = config_lookup(overwrite_flag)
 
     for row in csv_dict_reader:
         if row['dataset'] in ['TOTALCOL', 'OZONE', 'UV']:
             # Resolve station metadata lookup
             station_metadata = get_station_metadata(
-                row['oscar_site_name'], lookup_lists['stations'],
-                lookup_lists['name_variations'])
+                row['oscar_site_name'], lookup_lists['stations'])
 
             if None not in station_metadata:
                 properties = dict(
@@ -86,9 +85,10 @@ def parse_index(csv_dict_reader):
                     station_id=station_metadata[1],
                     station_name=row['oscar_site_name'],
                     gaw_id=row['gaw_id'],
-                    station_type=station_metadata[0],
+                    station_type=row['station_type'],
                     level=row['datalevel'],
                     instrument_type=row['instrument'],
+                    country_id=station_metadata[0],
                     pi_name=row['pi_name'],
                     pi_email=row['poc_email'],
                     url=row['url'],
