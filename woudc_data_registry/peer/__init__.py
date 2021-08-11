@@ -59,5 +59,6 @@ def peer():
     """Peer data centre management"""
     pass
 
+
 peer.add_command(eubrewnet)
 peer.add_command(ndacc)
