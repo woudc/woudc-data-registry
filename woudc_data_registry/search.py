@@ -715,7 +715,23 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'station_gaw_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_gaw_url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'contributor_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_acronym': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_url': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -733,6 +749,11 @@ MAPPINGS = {
             },
             'gaw_id': {
                 'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'observation_date': {
+                'type': 'date',
+                'format': DATE_FORMAT,
                 'fields': {'raw': typedefs['keyword']}
             },
             'daily_date': {
