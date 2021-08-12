@@ -532,6 +532,10 @@ MAPPINGS = {
     'peer_data_records': {
         'index': 'peer_data_record',
         'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'source': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
@@ -540,7 +544,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'woudc_id': {
+            'station_id': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -548,7 +552,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'station_name': {
+            'name': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -557,18 +561,6 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'instrument_type': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'agency': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'pi_name': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'pi_email': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -582,12 +574,19 @@ MAPPINGS = {
             },
             'start_datetime': {
                 'type': 'date',
-                'format': DATE_FORMAT
+                'format': DATE_FORMAT,
+                'fields': {'raw': typedefs['keyword']}
             },
             'end_datetime': {
                 'type': 'date',
-                'format': DATE_FORMAT
-            }
+                'format': DATE_FORMAT,
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'last_validated_datetime': {
+                'type': 'date',
+                'format': DATE_FORMAT,
+                'fields': {'raw': typedefs['keyword']}
+            },
         }
     },
     'uv_index_hourly': {
