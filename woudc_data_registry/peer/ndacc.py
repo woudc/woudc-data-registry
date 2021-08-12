@@ -45,7 +45,6 @@
 
 import csv
 import logging
-
 import click
 
 from woudc_data_registry.models import PeerDataRecord
@@ -74,66 +73,72 @@ def parse_index(csv_dict_reader):
     lookup_lists = config_lookup(overwrite_flag)
 
     for row in csv_dict_reader:
-        # Resolve station metadata lookup
-        station_metadata = get_station_metadata(
-            row['Station_name'], lookup_lists['stations'])
-        if None not in station_metadata:
-            properties = dict(
-                source='eubrewnet',
-                measurement=row['Measurement'],
-                station_id=row['WOUDC_ID'],
-                station_name=row['Station_name'],
-                gaw_id=row['GAW_ID'],
-                station_type=row['Station_type'],
-                level=row['Product_level'],
-                instrument_type=row['Instrument_type'],
-                country_id=station_metadata[0],
-                pi_name=row['PI_name'],
-                pi_email=row['PI_email'],
-                url=row['Link'],
-                y=row['Lat'],
-                x=row['Lon_E'],
-                z=row['Height'],
-                start_datetime=row['Start_time'],
-                end_datetime=row['End_time']
-            )
-            yield properties
-        else:
-            LOGGER.debug('No station metadata found.')
-            msg = 'Failed to persist PeerDataRecord({})'.format(row['url'])
-            LOGGER.error(msg)
-            yield {}
+        if row['dataset'] in ['TOTALCOL', 'OZONE', 'UV']:
+            # Resolve station metadata lookup
+            station_metadata = get_station_metadata(
+                row['oscar_site_name'], lookup_lists['stations'])
+
+            if None not in station_metadata:
+                properties = dict(
+                    source='ndacc',
+                    measurement=row['dataset'],
+                    station_id=station_metadata[1],
+                    station_name=row['oscar_site_name'],
+                    gaw_id=row['gaw_id'],
+                    station_type=row['station_type'],
+                    level=row['datalevel'],
+                    instrument_type=row['instrument'],
+                    country_id=station_metadata[0],
+                    pi_name=row['pi_name'],
+                    pi_email=row['poc_email'],
+                    url=row['url'],
+                    y=row['latitude'],
+                    x=row['longitude'],
+                    z=row['elevation'],
+                    start_datetime=row['datetime_begin'],
+                    end_datetime=row['datetime_end']
+                )
+                yield properties
+            else:
+                LOGGER.debug('No station metadata found.')
+                msg = 'Failed to persist PeerDataRecord({})'.format(row['url'])
+                LOGGER.error(msg)
+                yield {}
 
 
 @click.group()
-def eubrewnet():
-    """Eubrewnet data centre management"""
+def ndacc():
+    """NDACC data centre management"""
     pass
 
 
 @click.command()
 @click.pass_context
-@click.option('-fi', '--file-index', type=click.Path(exists=True,
-              resolve_path=True), help='Path to file index')
+@click.option('-fi',
+              '--file-index',
+              type=click.Path(exists=True, resolve_path=True),
+              help='Path to file index')
 def index(ctx, file_index):
-    """index EUBREWNET file index"""
+    """index NDACC file index"""
 
     if file_index is None:
         raise click.ClickException('missing -fi/--file-index parameter')
 
     registry_ = Registry()
 
-    click.echo('Clearing existing EUBREWNET records')
+    click.echo('Clearing existing NDACC records')
     registry_.session.query(PeerDataRecord).filter(
-        PeerDataRecord.source == 'eubrewnet').delete()
+        PeerDataRecord.source == 'ndacc').delete()
     registry_.session.commit()
 
-    click.echo('Indexing EUBREWNET records from {}'.format(file_index))
+    click.echo('Indexing NDACC records from {}'.format(file_index))
     with open(file_index, encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
+
         for dict_row in parse_index(reader):
-            peer_data_record = PeerDataRecord(dict_row)
-            registry_.save(peer_data_record)
+            if dict_row != {}:
+                peer_data_record = PeerDataRecord(dict_row)
+                registry_.save(peer_data_record)
 
 
-eubrewnet.add_command(index)
+ndacc.add_command(index)

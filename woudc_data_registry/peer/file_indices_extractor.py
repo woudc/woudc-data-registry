@@ -43,22 +43,61 @@
 #
 # =================================================================
 
+import os
 import logging
-
-import click
-
-from woudc_data_registry.peer.eubrewnet import eubrewnet
-from woudc_data_registry.peer.ndacc import ndacc
-
+import psycopg2
 
 LOGGER = logging.getLogger(__name__)
 
+PROCESS = dict(
+  # WOUDC platform station lookup
+  query="SELECT country_id,station_id,station_name_id from stations;"
+)
 
-@click.group()
-def peer():
-    """Peer data centre management"""
-    pass
+
+def load_station_metadata():
+    """Load WOUDC station metadata lookup list."""
+    # Query PostreSQL database station table for metadata
+    connection = psycopg2.connect(user=os.getenv('WDR_DB_USERNAME'),
+                                  password=os.getenv('WDR_DB_PASSWORD'),
+                                  host=os.getenv('WDR_DB_HOST'),
+                                  port=os.getenv('WDR_DB_PORT'),
+                                  database=os.getenv('WDR_DB_NAME'))
+    cursor = connection.cursor()
+    cursor.execute(PROCESS['query'])
+    records = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    stations = {}
+    for station_row in records:
+        station_nameid = station_row[2]
+        station_name_start = station_nameid.index(':') + 1
+        station_name = station_nameid[station_name_start:len(station_nameid)]
+
+        stations[station_name.lower()] = (
+                station_row[0],  # country_id
+                station_row[1])  # station_id
+
+    return stations
 
 
-peer.add_command(eubrewnet)
-peer.add_command(ndacc)
+def get_station_metadata(name, stations):
+    """Look up station metadata given a station name."""
+    key = name
+    if key is not None:
+        key = name.lower()
+    if key in stations:
+        return stations[key]
+    else:
+        LOGGER.debug('Metadata not found for {}'.format(name))
+        return (None, None, None)
+
+
+def config_lookup(overwrite_flag):
+    """Load lookup lists required for harvesting file index metadata."""
+    lookup_lists = {}
+    lookup_lists['stations'] = load_station_metadata()
+
+    return lookup_lists
