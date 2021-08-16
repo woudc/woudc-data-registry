@@ -1595,6 +1595,162 @@ class TotalOzone(base):
             self.ozone_id = ':'.join(map(str, components))
 
 
+class OzoneSonde(base):
+    """Data Registry OzoneSonde model"""
+
+    __tablename__ = 'ozonesonde'
+
+    id_field = 'ozone_id'
+    id_dependencies = ['instrument_id', 'timestamp_date', 'file_name']
+
+    ozone_id = Column(String, primary_key=True)
+    file_path = Column(String, nullable=False)
+    file_name = Column(String, nullable=False)
+    url = Column(String, nullable=False)
+    dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
+                        nullable=False)
+    station_id = Column(String, ForeignKey('stations.station_id'),
+                        nullable=False)
+    country_id = Column(String, ForeignKey('countries.country_id'),
+                        nullable=False)
+    instrument_id = Column(String, ForeignKey('instruments.instrument_id'),
+                           nullable=False)
+
+    flight_integratedo3 = Column(String, nullable=True)
+    flight_correctioncode = Column(String, nullable=True)
+    flight_sondetotalo3 = Column(String, nullable=True)
+    flight_correctionfactor = Column(String, nullable=True)
+    flight_totalo3 = Column(String, nullable=True)
+    flight_wlcode = Column(String, nullable=True)
+    flight_obstype = Column(String, nullable=True)
+    
+    profile_pressure = Column(ARRAY(String), nullable=True)    
+    profile_o3partialpressure = Column(ARRAY(String), nullable=True)
+    profile_temperature = Column(ARRAY(String), nullable=True)
+    profile_windspeed = Column(ARRAY(String), nullable=True)
+    profile_winddirection = Column(ARRAY(String), nullable=True)
+    profile_levelcode = Column(ARRAY(String), nullable=True)
+    profile_duration = Column(ARRAY(String), nullable=True)
+    profile_gpheight = Column(ARRAY(String), nullable=True)
+    profile_relativehumidity = Column(ARRAY(String), nullable=True)
+    profile_sampletemperature = Column(ARRAY(String), nullable=True)
+
+    timestamp_date = Column(Date, nullable=False)
+ 
+    x = Column(Float, nullable=True)
+    y = Column(Float, nullable=True)
+    z = Column(Float, nullable=True)
+
+    # relationships
+    station = relationship('Station', backref=__tablename__)
+    instrument = relationship('Instrument', backref=__tablename__)
+    dataset = relationship('Dataset', backref=__tablename__)
+
+    def __init__(self, dict_):
+
+        self.file_path = dict_['file_path']
+        self.file_name = dict_['filename']
+
+        self.dataset_id = dict_['dataset_id']
+        self.station_id = dict_['station_id']
+        self.country_id = dict_['country_id']
+        self.instrument_id = dict_['instrument_id']
+        self.timestamp_date = dict_['timestamp_date']
+        
+        self.flight_integratedo3 = dict_['integratedo3']
+        self.flight_correctioncode = dict_['correctioncode']
+        self.flight_sondetotalo3 = dict_['sondetotalo3']
+        self.flight_correctionfactor = dict_['correctionfactor']
+        self.flight_totalo3 = dict_['totalo3']
+        self.flight_wlcode = dict_['wlcode']
+        self.flight_obstype = dict_['obstype']
+
+        self.profile_pressure = dict_['profile_pressure']  
+        self.profile_o3partialpressure = dict_['o3partialpressure']
+        self.profile_temperature = dict_['temperature']
+        self.profile_windspeed = dict_['windspeed']
+        self.profile_winddirection = dict_['winddirection']
+        self.profile_levelcode = dict_['levelcode']
+        self.profile_duration = dict_['duration']
+        self.profile_gpheight = dict_['gpheight']
+        self.profile_relativehumidity = dict_['relativehumidity']
+        self.profile_sampletemperature = dict_['sampletemperature']
+
+        self.url = self.get_waf_path(dict_)
+
+        self.generate_ids()
+
+        self.x = dict_['x']
+        self.y = dict_['y']
+        self.z = dict_['z']
+
+    def get_waf_path(self, dict_):
+        """generate WAF url"""
+
+        datasetdirname = '{}_{}_{}'.format(self.dataset_id,
+                                           dict_['dataset_level'],
+                                           dict_['dataset_form'])
+        timestamp_date = datetime.datetime.strptime(
+            dict_['timestamp_date'], '%Y-%m-%d').date()
+        url_tokens = [
+            config.WDR_WAF_BASEURL.rstrip('/'),
+            'Archive-NewFormat',
+            datasetdirname,
+            '{}{}'.format(dict_['station_type'].lower(), self.station_id),
+            dict_['instrument_name'].lower(),
+            timestamp_date.strftime('%Y'),
+            self.file_name
+        ]
+
+        return '/'.join(url_tokens)
+
+    @property
+    def __geo_interface__(self):
+        return {
+            'id': self.ozone_id,
+            'type': 'Feature',
+            'geometry': point2geojsongeometry(self.x, self.y, self.z),
+            'properties': {
+                'identifier': self.ozone_id,
+                'file_path': self.file_path,
+                'dataset_id': self.dataset_id,
+                'station_id': self.station_id,
+                'station_name': self.station.station_name.name,
+                'station_gaw_id': self.station.gaw_id,
+                'station_gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename),
+                'contributor_name':
+                self.instrument.deployment.contributor.name,
+                'contributor_acronym':
+                self.instrument.deployment.contributor.acronym,
+                'contributor_url'
+                self.instrument.deployment.contributor.url,
+                'country_id': self.station.country.country_id,
+                'country_name_en': self.station.country.name_en,
+                'country_name_fr': self.station.country.name_fr,
+                'gaw_id': self.gaw_id,
+                'pressure': self.profile_pressure,
+                'o3partialpressure': self.profile_o3partialpressure,
+                'temperature': self.profile_temperature,
+                'instrument_name': self.instrument.name,
+                'instrument_model': self.instrument.model,
+                'instrument_serial': self.instrument.serial,
+                'url': self.url,
+            }
+        }
+
+    def __repr__(self):
+        return 'OzoneSonde ({})'.format(self.ozone_id)
+
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.ozone_id = ':'.join(map(str, components))
+
+
 def build_contributions(instrument_models):
     """function that forms contributions from other model lists"""
 
