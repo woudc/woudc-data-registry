@@ -817,7 +817,101 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
         }
-    }
+    },
+    'ozonesonde': {
+        'index': 'ozonesonde',
+        'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'file_path': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'dataset_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_gaw_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_gaw_url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_acronym': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'country_name_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'pressure': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'o3partialpressure': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'temperature': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'instrument_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'instrument_model': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'instrument_serial': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'timestamp_date': {
+                'type': 'date',
+                'format': DATE_FORMAT,
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            }
+        }
+    }        
 }
 
 

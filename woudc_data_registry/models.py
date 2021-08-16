@@ -52,7 +52,7 @@ import json
 import codecs
 from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
                         Float, Enum, ForeignKey, Integer, String, Time,
-                        UniqueConstraint, ForeignKeyConstraint)
+                        UniqueConstraint, ForeignKeyConstraint, ARRAY)
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -1706,6 +1706,10 @@ class OzoneSonde(base):
 
     @property
     def __geo_interface__(self):
+        gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
+            '/search/station/stationReportDetails'
+        gaw_pagename = '0-20008-0-{}'.format(self.station.gaw_id)
+
         return {
             'id': self.ozone_id,
             'type': 'Feature',
@@ -1722,18 +1726,18 @@ class OzoneSonde(base):
                 self.instrument.deployment.contributor.name,
                 'contributor_acronym':
                 self.instrument.deployment.contributor.acronym,
-                'contributor_url'
+                'contributor_url':
                 self.instrument.deployment.contributor.url,
                 'country_id': self.station.country.country_id,
                 'country_name_en': self.station.country.name_en,
                 'country_name_fr': self.station.country.name_fr,
-                'gaw_id': self.gaw_id,
                 'pressure': self.profile_pressure,
                 'o3partialpressure': self.profile_o3partialpressure,
                 'temperature': self.profile_temperature,
                 'instrument_name': self.instrument.name,
                 'instrument_model': self.instrument.model,
                 'instrument_serial': self.instrument.serial,
+                'timestamp_date': self.timestamp_date,
                 'url': self.url,
             }
         }
@@ -2206,6 +2210,7 @@ def product_sync(ctx):
     """Sync products to Elasticsearch"""
 
     products = [
+       OzoneSonde,
        TotalOzone,
        UVIndex
     ]
