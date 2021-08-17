@@ -780,28 +780,9 @@ class DataRecord(base):
 
         self.timestamp_utcoffset = ecsv.extcsv['TIMESTAMP']['UTCOffset']
         self.timestamp_date = ecsv.extcsv['TIMESTAMP']['Date']
-        date = self.timestamp_date
-        offset = datetime.datetime.strptime(
-                self.timestamp_utcoffset[1:len(self.timestamp_utcoffset)],
-                '%H:%M:%S').time()
 
         if 'Time' in ecsv.extcsv['TIMESTAMP']:
             self.timestamp_time = ecsv.extcsv['TIMESTAMP']['Time']
-            if self.timestamp_time is not None:
-                time = self.timestamp_time
-                dt = datetime.datetime.combine(date, time)
-            else:
-                dt = datetime.datetime.combine(
-                        date, time=datetime.time(0, 0, 0))
-
-        if self.timestamp_utcoffset[0] == '+':
-            self.timestamp_utc = dt + datetime.timedelta(hours=offset.hour,
-                                                         minutes=offset.minute,
-                                                         seconds=offset.second)
-        else:
-            self.timestamp_utc = dt - datetime.timedelta(hours=offset.hour,
-                                                         minutes=offset.minute,
-                                                         seconds=offset.second)
 
         self.x = ecsv.extcsv['LOCATION']['Longitude']
         self.y = ecsv.extcsv['LOCATION']['Latitude']
@@ -811,6 +792,28 @@ class DataRecord(base):
 
         self.extcsv = ecsv.extcsv
         self.number_of_observations = ecsv.number_of_observations()
+
+    @property
+    def timestamp_utc(self):
+        date = self.timestamp_date
+        offset = datetime.datetime.strptime(
+                self.timestamp_utcoffset[1:len(self.timestamp_utcoffset)],
+                '%H:%M:%S').time()
+        if self.timestamp_time is not None:
+            time = self.timestamp_time
+            dt = datetime.datetime.combine(date, time)
+        else:
+            dt = datetime.datetime.combine(
+                    date, time=datetime.time(0, 0, 0))
+        if self.timestamp_utcoffset[0] == '+':
+            timestamp_utc = dt + datetime.timedelta(hours=offset.hour,
+                                                    minutes=offset.minute,
+                                                    seconds=offset.second)
+        else:
+            timestamp_utc = dt - datetime.timedelta(hours=offset.hour,
+                                                    minutes=offset.minute,
+                                                    seconds=offset.second)
+        return timestamp_utc
 
     @property
     def platform_type(self):
@@ -1328,6 +1331,14 @@ class UVIndex(base):
 
         self.observation_utcoffset = dict_['observation_utcoffset']
 
+        self.url = self.get_waf_path(dict_)
+
+        self.x = dict_['x']
+        self.y = dict_['y']
+        self.z = dict_['z']
+
+    @property
+    def timestamp_utc(self):
         date = self.observation_date
         offset = datetime.datetime.strptime(
                 self.observation_utcoffset[1:len(self.timestamp_utcoffset)],
@@ -1335,19 +1346,14 @@ class UVIndex(base):
         time = self.observation_time
         dt = datetime.datetime.combine(date, time)
         if self.observation_utcoffset[0] == '+':
-            self.timestamp_utc = dt + datetime.timedelta(hours=offset.hour,
-                                                         minutes=offset.minute,
-                                                         seconds=offset.second)
+            timestamp_utc = dt + datetime.timedelta(hours=offset.hour,
+                                                    minutes=offset.minute,
+                                                    seconds=offset.second)
         else:
-            self.timestamp_utc = dt - datetime.timedelta(hours=offset.hour,
-                                                         minutes=offset.minute,
-                                                         seconds=offset.second)
-
-        self.url = self.get_waf_path(dict_)
-
-        self.x = dict_['x']
-        self.y = dict_['y']
-        self.z = dict_['z']
+            timestamp_utc = dt - datetime.timedelta(hours=offset.hour,
+                                                    minutes=offset.minute,
+                                                    seconds=offset.second)
+        return timestamp_utc
 
     def get_waf_path(self, dict_):
         """generate WAF url"""
