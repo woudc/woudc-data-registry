@@ -707,6 +707,7 @@ class DataRecord(base):
     timestamp_utcoffset = Column(String, nullable=False)
     timestamp_date = Column(Date, nullable=False)
     timestamp_time = Column(Time, nullable=True)
+    timestamp_utc = Column(DateTime, nullable=False)
 
     number_of_observations = Column(Integer, nullable=True)
 
@@ -1294,6 +1295,7 @@ class UVIndex(base):
     observation_date = Column(Date, nullable=False)
     observation_time = Column(Time, nullable=False)
     observation_utcoffset = Column(String, nullable=True)
+    timestamp_utc = Column(DateTime, nullable=False)
 
     x = Column(Float, nullable=True)
     y = Column(Float, nullable=True)
