@@ -1164,6 +1164,7 @@ class PeerDataRecord(base):
 
     station_type = Column(stn_type_enum, nullable=False, default='land')
     gaw_id = Column(String, nullable=True)
+    country_id = Column(String, nullable=False)
     instrument_type = Column(String, nullable=False)
     level = Column(String, nullable=False)
     pi = Column(String)
@@ -1211,6 +1212,7 @@ class PeerDataRecord(base):
         self.station_name_id = '{}:{}' \
             .format(self.station_id, dict_['station_name'])
         self.station_type = dict_['station_type']
+        self.country_id = dict_['country_id']
         self.gaw_id = dict_.get('gaw_id')
         self.instrument_type = dict_['instrument_type']
         self.level = dict_['level']
@@ -1252,6 +1254,7 @@ class PeerDataRecord(base):
                 'name': self.station_name_id,
                 'station_type': self.station_type,
                 'gaw_id': self.gaw_id,
+                'country_id': self.country_id,
                 'instrument_type': self.instrument_type,
                 'level': self.level,
                 'start_datetime': strftime_rfc3339(self.start_datetime),
