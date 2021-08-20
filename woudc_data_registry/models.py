@@ -1163,6 +1163,7 @@ class PeerDataRecord(base):
     stn_type_enum = Enum('land', 'landFixed', 'landOnIce', name='stn_type')
 
     station_type = Column(stn_type_enum, nullable=False, default='land')
+    agency = Column(String, nullable=True)
     gaw_id = Column(String, nullable=True)
     country_id = Column(String, nullable=False)
     instrument_type = Column(String, nullable=False)
@@ -1208,6 +1209,7 @@ class PeerDataRecord(base):
         self.source = dict_['source']
         self.measurement = dict_['measurement']
 
+        self.agency = dict_['agency']
         self.station_id = dict_['station_id']
         self.station_name_id = '{}:{}' \
             .format(self.station_id, dict_['station_name'])
@@ -1254,6 +1256,7 @@ class PeerDataRecord(base):
                 'name': self.station_name_id,
                 'station_type': self.station_type,
                 'gaw_id': self.gaw_id,
+                'agency': self.agency,
                 'country_id': self.country_id,
                 'instrument_type': self.instrument_type,
                 'level': self.level,
