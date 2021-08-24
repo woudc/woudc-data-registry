@@ -120,32 +120,40 @@ def execute(path, bypass):
 
                 # get data fields
                 try:
-                    integratedo3 = extcsv.extcsv['FLIGHT_SUMMARY']['IntegratedO3']
-                    correctioncode = extcsv.extcsv['FLIGHT_SUMMARY']['WLCode']
-                    sondetotalo3 = extcsv.extcsv['FLIGHT_SUMMARY']['SondeTotalO3']
-                    correctionfactor = extcsv.extcsv['FLIGHT_SUMMARY']['CorrectionFactor']
+                    integratedo3 = \
+                        extcsv.extcsv['FLIGHT_SUMMARY']['IntegratedO3']
+                    correctioncode = \
+                        extcsv.extcsv['FLIGHT_SUMMARY']['WLCode']
+                    sondetotalo3 = \
+                        extcsv.extcsv['FLIGHT_SUMMARY']['SondeTotalO3']
+                    correctionfactor = \
+                        extcsv.extcsv['FLIGHT_SUMMARY']['CorrectionFactor']
                     totalo3 = extcsv.extcsv['FLIGHT_SUMMARY']['TotalO3']
                     wlcode = extcsv.extcsv['FLIGHT_SUMMARY']['WLCode']
                     obstype = extcsv.extcsv['FLIGHT_SUMMARY']['ObsType']
-                    flight_instrument = extcsv.extcsv['FLIGHT_SUMMARY']['Instrument']
+                    flight_instrument = \
+                        extcsv.extcsv['FLIGHT_SUMMARY']['Instrument']
                     flight_number = extcsv.extcsv['FLIGHT_SUMMARY']['Number']
                     profile_pressure = extcsv.extcsv['PROFILE']['Pressure']
-                    o3partialpressure = extcsv.extcsv['PROFILE']['O3PartialPressure']
+                    o3partialpressure = \
+                        extcsv.extcsv['PROFILE']['O3PartialPressure']
                     temperature = extcsv.extcsv['PROFILE']['Temperature']
                     windspeed = extcsv.extcsv['PROFILE']['WindSpeed']
                     winddirection = extcsv.extcsv['PROFILE']['WindDirection']
                     levelcode = extcsv.extcsv['PROFILE']['LevelCode']
                     duration = extcsv.extcsv['PROFILE']['Duration']
                     gpheight = extcsv.extcsv['PROFILE']['GPHeight']
-                    relativehumidity = extcsv.extcsv['PROFILE']['RelativeHumidity']
-                    sampletemperature = extcsv.extcsv['PROFILE']['SampleTemperature']
+                    relativehumidity = \
+                        extcsv.extcsv['PROFILE']['RelativeHumidity']
+                    sampletemperature = \
+                        extcsv.extcsv['PROFILE']['SampleTemperature']
 
                 except Exception as err:
                     msg = 'Unable to parse OzoneSonde table row from file'
                     LOGGER.error(msg)
                     LOGGER.error(err)
                     continue
-                
+
                 # replace empty strings in data with None
                 for i in range(len(integratedo3)):
                     integratedo3[i] = conv(integratedo3[i])

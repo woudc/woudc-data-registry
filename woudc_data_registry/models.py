@@ -1623,8 +1623,8 @@ class OzoneSonde(base):
     flight_totalo3 = Column(String, nullable=True)
     flight_wlcode = Column(String, nullable=True)
     flight_obstype = Column(String, nullable=True)
-    
-    profile_pressure = Column(ARRAY(String), nullable=True)    
+
+    profile_pressure = Column(ARRAY(String), nullable=True)
     profile_o3partialpressure = Column(ARRAY(String), nullable=True)
     profile_temperature = Column(ARRAY(String), nullable=True)
     profile_windspeed = Column(ARRAY(String), nullable=True)
@@ -1636,7 +1636,7 @@ class OzoneSonde(base):
     profile_sampletemperature = Column(ARRAY(String), nullable=True)
 
     timestamp_date = Column(Date, nullable=False)
- 
+
     x = Column(Float, nullable=True)
     y = Column(Float, nullable=True)
     z = Column(Float, nullable=True)
@@ -1656,7 +1656,7 @@ class OzoneSonde(base):
         self.country_id = dict_['country_id']
         self.instrument_id = dict_['instrument_id']
         self.timestamp_date = dict_['timestamp_date']
-        
+
         self.flight_integratedo3 = dict_['integratedo3']
         self.flight_correctioncode = dict_['correctioncode']
         self.flight_sondetotalo3 = dict_['sondetotalo3']
@@ -1665,7 +1665,7 @@ class OzoneSonde(base):
         self.flight_wlcode = dict_['wlcode']
         self.flight_obstype = dict_['obstype']
 
-        self.profile_pressure = dict_['profile_pressure']  
+        self.profile_pressure = dict_['profile_pressure']
         self.profile_o3partialpressure = dict_['o3partialpressure']
         self.profile_temperature = dict_['temperature']
         self.profile_windspeed = dict_['windspeed']
@@ -2210,7 +2210,7 @@ def product_sync(ctx):
     """Sync products to Elasticsearch"""
 
     products = [
-       #OzoneSonde,
+       OzoneSonde,
        TotalOzone,
        UVIndex
     ]
@@ -2237,7 +2237,12 @@ def product_sync(ctx):
 
             registry_contents.append(obj)
 
-            if len(registry_contents) > 500000:
+            if product == 'OzoneSonde':
+                capacity = 50
+            else:
+                capacity = 500000
+
+            if len(registry_contents) > capacity:
                 registry_docs = [item.__geo_interface__
                                  for item in registry_contents]
                 click.echo('Sending models to search index...')

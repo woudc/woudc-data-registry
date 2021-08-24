@@ -873,10 +873,6 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'country_name_fr': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
             'pressure': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
@@ -911,7 +907,7 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             }
         }
-    }        
+    }
 }
 
 
