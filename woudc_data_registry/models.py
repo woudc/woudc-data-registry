@@ -1737,7 +1737,7 @@ class OzoneSonde(base):
                 'instrument_name': self.instrument.name,
                 'instrument_model': self.instrument.model,
                 'instrument_serial': self.instrument.serial,
-                'timestamp_date': self.timestamp_date,
+                'timestamp_date': strftime_rfc3339(self.timestamp_date),
                 'url': self.url,
             }
         }
@@ -2210,7 +2210,7 @@ def product_sync(ctx):
     """Sync products to Elasticsearch"""
 
     products = [
-       OzoneSonde,
+       #OzoneSonde,
        TotalOzone,
        UVIndex
     ]
