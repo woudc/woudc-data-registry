@@ -44,18 +44,36 @@
 # =================================================================
 
 import click
-
-from woudc_data_registry.product.uv_index import uv_index
-from woudc_data_registry.product.totalozone import totalozone
-from woudc_data_registry.product.ozonesonde import ozonesonde
+from woudc_data_registry.product.ozonesonde.ozonesonde_generator \
+    import generate_ozonesonde
 
 
 @click.group()
-def product():
-    """Product management"""
+def ozonesonde():
+    """OzoneSonde management"""
     pass
 
 
-product.add_command(uv_index)
-product.add_command(totalozone)
-product.add_command(ozonesonde)
+@click.command()
+@click.pass_context
+@click.argument('srcdir', type=click.Path(exists=True, resolve_path=True,
+                                          dir_okay=True, file_okay=True))
+@click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
+              help='Bypass permission prompts while ingesting')
+def generate(ctx, srcdir, bypass=False):
+    """Generate OzoneSonde table"""
+
+    bypass_ = bypass
+
+    if not bypass_:
+        q = ('This command will erase and rebuild'
+             ' the OzoneSonde table. Are you sure?')
+
+        if click.confirm(q):
+            bypass_ = True
+
+    if bypass_:
+        generate_ozonesonde(srcdir, bypass)
+
+
+ozonesonde.add_command(generate)

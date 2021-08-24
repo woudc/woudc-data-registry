@@ -233,6 +233,21 @@ woudc-data-registry product totalozone generate <flags> /path/to/archive/root
 
     | -y (yes) Automatically accept all permission checks
 
+-------------------
+OzoneSonde table generation
+-------------------
+
+An OzoneSonde table can be generated using data and metadata from WOUDC OzoneSonde
+Extended CSV files. This table provides a more detailed representation of OzoneSonde
+data and allows specific measurements to be directly queried.
+
+woudc-data-registry product totalozone generate <flags> /path/to/archive/root
+    Delete all records from the totalozone table and use all TotalOzone files
+    to generate totalozone records. <flags> are as
+    follows:
+
+    | -y (yes) Automatically accept all permission checks
+
 -------------------------
 Peer data centre indexing
 -------------------------
