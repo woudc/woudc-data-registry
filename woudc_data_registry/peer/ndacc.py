@@ -52,7 +52,7 @@ from woudc_data_registry.registry import Registry
 
 from woudc_data_registry.peer.file_indices_extractor import (
     config_lookup,
-    get_station_metadata
+    get_metadata
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -75,20 +75,21 @@ def parse_index(csv_dict_reader):
     for row in csv_dict_reader:
         if row['dataset'] in ['TOTALCOL', 'OZONE', 'UV']:
             # Resolve station metadata lookup
-            station_metadata = get_station_metadata(
-                row['oscar_site_name'], lookup_lists['stations'])
+            station_metadata = get_metadata(
+                row['oscar_site_name'], row['pi_affiliation'], lookup_lists)
 
-            if None not in station_metadata:
+            if None not in station_metadata[1:3]:
                 properties = dict(
                     source='ndacc',
                     measurement=row['dataset'],
-                    station_id=station_metadata[1],
+                    agency=station_metadata[0],
+                    station_id=station_metadata[2],
                     station_name=row['oscar_site_name'],
                     gaw_id=row['gaw_id'],
                     station_type=row['station_type'],
                     level=row['datalevel'],
                     instrument_type=row['instrument'],
-                    country_id=station_metadata[0],
+                    country_id=station_metadata[1],
                     pi_name=row['pi_name'],
                     pi_email=row['poc_email'],
                     url=row['url'],

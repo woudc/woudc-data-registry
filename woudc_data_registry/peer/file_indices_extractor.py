@@ -51,27 +51,33 @@ LOGGER = logging.getLogger(__name__)
 
 PROCESS = dict(
   # WOUDC platform station lookup
-  query="SELECT country_id,station_id,station_name_id from stations;"
+  station_query="SELECT country_id,station_id,station_name_id from stations;",
+  contributor_query="SELECT name,acronym from contributors"
 )
 
 
-def load_station_metadata():
-    """Load WOUDC station metadata lookup list."""
+def load_metadata():
+    """Load WOUDC station and agency metadata lookup list."""
     # Query PostreSQL database station table for metadata
     connection = psycopg2.connect(user=os.getenv('WDR_DB_USERNAME'),
                                   password=os.getenv('WDR_DB_PASSWORD'),
                                   host=os.getenv('WDR_DB_HOST'),
                                   port=os.getenv('WDR_DB_PORT'),
                                   database=os.getenv('WDR_DB_NAME'))
-    cursor = connection.cursor()
-    cursor.execute(PROCESS['query'])
-    records = cursor.fetchall()
+    station_cursor = connection.cursor()
+    station_cursor.execute(PROCESS['station_query'])
+    station_records = station_cursor.fetchall()
+    station_cursor.close()
 
-    cursor.close()
+    agency_cursor = connection.cursor()
+    agency_cursor.execute(PROCESS['contributor_query'])
+    agency_records = agency_cursor.fetchall()
+    agency_cursor.close()
+
     connection.close()
 
-    stations = {}
-    for station_row in records:
+    lookup_lists, stations, agencies = {}, {}, {}
+    for station_row in station_records:
         station_nameid = station_row[2]
         station_name_start = station_nameid.index(':') + 1
         station_name = station_nameid[station_name_start:len(station_nameid)]
@@ -79,25 +85,36 @@ def load_station_metadata():
         stations[station_name.lower()] = (
                 station_row[0],  # country_id
                 station_row[1])  # station_id
+    lookup_lists['stations'] = stations
 
-    return stations
+    for agency_row in agency_records:
+        agencies[agency_row[0]] = (agency_row[1])  # agency acronym
+    lookup_lists['agencies'] = agencies
+
+    return lookup_lists
 
 
-def get_station_metadata(name, stations):
+def get_metadata(stn_name, pi_name, lookup_lists):
     """Look up station metadata given a station name."""
-    key = name
-    if key is not None:
-        key = name.lower()
-    if key in stations:
-        return stations[key]
-    else:
-        LOGGER.debug('Metadata not found for {}'.format(name))
-        return (None, None, None)
+    stn_key = stn_name
+    agency_key = pi_name
+    stations, agencies = lookup_lists['stations'], lookup_lists['agencies']
+    agency_acronym, country_id, station_id = None, None, None
+    if stn_key is not None:
+        stn_key = stn_name.lower()
+    if stn_key in stations:
+        country_id = stations[stn_key][0]
+        station_id = stations[stn_key][1]
+    if agency_key in stations:
+        agency_acronym = agencies[agency_key]
+
+    metadata = (agency_acronym, country_id, station_id)
+    return metadata
 
 
 def config_lookup(overwrite_flag):
     """Load lookup lists required for harvesting file index metadata."""
     lookup_lists = {}
-    lookup_lists['stations'] = load_station_metadata()
+    lookup_lists = load_metadata()
 
     return lookup_lists

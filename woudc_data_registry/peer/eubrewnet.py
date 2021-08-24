@@ -53,7 +53,7 @@ from woudc_data_registry.registry import Registry
 
 from woudc_data_registry.peer.file_indices_extractor import (
     config_lookup,
-    get_station_metadata
+    get_metadata
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -75,19 +75,21 @@ def parse_index(csv_dict_reader):
 
     for row in csv_dict_reader:
         # Resolve station metadata lookup
-        station_metadata = get_station_metadata(
-            row['Station_name'], lookup_lists['stations'])
-        if None not in station_metadata:
+        station_metadata = get_metadata(
+            row['Station_name'], row['Agency'], lookup_lists)
+
+        if station_metadata[1] is not None:
             properties = dict(
                 source='eubrewnet',
                 measurement=row['Measurement'],
+                agency=row['Agency'],
                 station_id=row['WOUDC_ID'],
                 station_name=row['Station_name'],
                 gaw_id=row['GAW_ID'],
                 station_type=row['Station_type'],
                 level=row['Product_level'],
                 instrument_type=row['Instrument_type'],
-                country_id=station_metadata[0],
+                country_id=station_metadata[1],
                 pi_name=row['PI_name'],
                 pi_email=row['PI_email'],
                 url=row['Link'],
@@ -100,7 +102,7 @@ def parse_index(csv_dict_reader):
             yield properties
         else:
             LOGGER.debug('No station metadata found.')
-            msg = 'Failed to persist PeerDataRecord({})'.format(row['url'])
+            msg = 'Failed to persist PeerDataRecord({})'.format(row['Link'])
             LOGGER.error(msg)
             yield {}
 
