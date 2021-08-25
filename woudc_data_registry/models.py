@@ -795,25 +795,29 @@ class DataRecord(base):
 
     @property
     def timestamp_utc(self):
-        date = self.timestamp_date
-        offset = datetime.datetime.strptime(
-                self.timestamp_utcoffset[1:len(self.timestamp_utcoffset)],
-                '%H:%M:%S').time()
-        if self.timestamp_time is not None:
-            time = self.timestamp_time
-            dt = datetime.datetime.combine(date, time)
-        else:
-            dt = datetime.datetime.combine(
-                    date, time=datetime.time(0, 0, 0))
-        if self.timestamp_utcoffset[0] == '+':
-            timestamp_utc = dt + datetime.timedelta(hours=offset.hour,
-                                                    minutes=offset.minute,
-                                                    seconds=offset.second)
-        else:
-            timestamp_utc = dt - datetime.timedelta(hours=offset.hour,
-                                                    minutes=offset.minute,
-                                                    seconds=offset.second)
-        return timestamp_utc
+        try:
+            date = self.timestamp_date
+            offset = datetime.datetime.strptime(
+                    self.timestamp_utcoffset[1:len(self.timestamp_utcoffset)],
+                    '%H:%M:%S').time()
+            if self.timestamp_time is not None:
+                time = self.timestamp_time
+                dt = datetime.datetime.combine(date, time)
+            else:
+                dt = datetime.datetime.combine(
+                        date, time=datetime.time(0, 0, 0))
+            if self.timestamp_utcoffset[0] == '+':
+                timestamp_utc = dt + datetime.timedelta(hours=offset.hour,
+                                                        minutes=offset.minute,
+                                                        seconds=offset.second)
+            else:
+                timestamp_utc = dt - datetime.timedelta(hours=offset.hour,
+                                                        minutes=offset.minute,
+                                                        seconds=offset.second)
+            return timestamp_utc
+        except Exception as err:
+            LOGGER.error(err)
+            return self.timestamp_date
 
     @property
     def platform_type(self):
@@ -1345,21 +1349,27 @@ class UVIndex(base):
 
     @property
     def timestamp_utc(self):
-        date = self.observation_date
-        offset = datetime.datetime.strptime(
-                self.observation_utcoffset[1:len(self.timestamp_utcoffset)],
-                '%H:%M:%S').time()
-        time = self.observation_time
-        dt = datetime.datetime.combine(date, time)
-        if self.observation_utcoffset[0] == '+':
-            timestamp_utc = dt + datetime.timedelta(hours=offset.hour,
-                                                    minutes=offset.minute,
-                                                    seconds=offset.second)
-        else:
-            timestamp_utc = dt - datetime.timedelta(hours=offset.hour,
-                                                    minutes=offset.minute,
-                                                    seconds=offset.second)
-        return timestamp_utc
+        try:
+            date = self.observation_date
+            offset = datetime.datetime.strptime(
+                    self.observation_utcoffset[
+                        1:len(self.timestamp_utcoffset)
+                    ],
+                    '%H:%M:%S').time()
+            time = self.observation_time
+            dt = datetime.datetime.combine(date, time)
+            if self.observation_utcoffset[0] == '+':
+                timestamp_utc = dt + datetime.timedelta(hours=offset.hour,
+                                                        minutes=offset.minute,
+                                                        seconds=offset.second)
+            else:
+                timestamp_utc = dt - datetime.timedelta(hours=offset.hour,
+                                                        minutes=offset.minute,
+                                                        seconds=offset.second)
+            return timestamp_utc
+        except Exception as err:
+            LOGGER.error(err)
+            return self.observation_date
 
     def get_waf_path(self, dict_):
         """generate WAF url"""
