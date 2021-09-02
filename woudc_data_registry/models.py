@@ -1353,7 +1353,7 @@ class UVIndex(base):
             date = self.observation_date
             offset = datetime.datetime.strptime(
                     self.observation_utcoffset[
-                        1:len(self.timestamp_utcoffset)
+                        1:len(self.observation_utcoffset)
                     ],
                     '%H:%M:%S').time()
             time = self.observation_time
