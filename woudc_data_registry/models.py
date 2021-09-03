@@ -1257,7 +1257,7 @@ class PeerDataRecord(base):
                 'source': self.source,
                 'measurement': self.measurement,
                 'station_id': self.station_id,
-                'name': self.station_name_id,
+                'station_name': self.name,
                 'station_type': self.station_type,
                 'gaw_id': self.gaw_id,
                 'agency': self.agency,
