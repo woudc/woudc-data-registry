@@ -1257,7 +1257,7 @@ class PeerDataRecord(base):
                 'source': self.source,
                 'measurement': self.measurement,
                 'station_id': self.station_id,
-                'name': self.station_name_id,
+                'station_name': self.name,
                 'station_type': self.station_type,
                 'gaw_id': self.gaw_id,
                 'agency': self.agency,
@@ -1353,7 +1353,7 @@ class UVIndex(base):
             date = self.observation_date
             offset = datetime.datetime.strptime(
                     self.observation_utcoffset[
-                        1:len(self.timestamp_utcoffset)
+                        1:len(self.observation_utcoffset)
                     ],
                     '%H:%M:%S').time()
             time = self.observation_time

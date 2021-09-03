@@ -411,6 +411,11 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'timestamp_utc': {
+                'type': 'date',
+                'format': DATE_FORMAT,
+                'fields': {'raw': typedefs['keyword']}
+            },
             'published': {
                 'type': 'boolean'
             },
@@ -548,6 +553,14 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'country_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'agency': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'gaw_id': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
@@ -662,6 +675,11 @@ MAPPINGS = {
             },
             'observation_time': {
                 'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'timestamp_utc': {
+                'type': 'date',
+                'format': DATE_FORMAT,
                 'fields': {'raw': typedefs['keyword']}
             },
             'instrument_name': {
