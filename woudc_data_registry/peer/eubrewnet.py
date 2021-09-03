@@ -82,7 +82,7 @@ def parse_index(csv_dict_reader):
             properties = dict(
                 source='eubrewnet',
                 measurement=row['Measurement'],
-                agency=row['Agency'],
+                data_generation_agency=row['Agency'],
                 station_id=row['WOUDC_ID'],
                 station_name=row['Station_name'],
                 gaw_id=row['GAW_ID'],
@@ -134,8 +134,9 @@ def index(ctx, file_index):
     with open(file_index, encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for dict_row in parse_index(reader):
-            peer_data_record = PeerDataRecord(dict_row)
-            registry_.save(peer_data_record)
+            if dict_row != {}:
+                peer_data_record = PeerDataRecord(dict_row)
+                registry_.save(peer_data_record)
 
 
 eubrewnet.add_command(index)
