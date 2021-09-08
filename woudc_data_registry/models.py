@@ -1167,8 +1167,8 @@ class PeerDataRecord(base):
     stn_type_enum = Enum('land', 'landFixed', 'landOnIce', name='stn_type')
 
     station_type = Column(stn_type_enum, nullable=False, default='land')
-    data_generation_agency = Column(String, ForeignKey('contributors.acronym'),
-                                    nullable=True)
+    contributor_acronym = Column(String, ForeignKey('contributors.acronym'),
+                                 nullable=True)
     gaw_id = Column(String, nullable=True)
     country_id = Column(String, ForeignKey('countries.country_id'),
                         nullable=False)
@@ -1216,7 +1216,7 @@ class PeerDataRecord(base):
         self.source = dict_['source']
         self.measurement = dict_['measurement']
 
-        self.data_generation_agency = dict_['data_generation_agency']
+        self.contributor_acronym = dict_['contributor_acronym']
         self.station_id = dict_['station_id']
         self.station_name_id = '{}:{}' \
             .format(self.station_id, dict_['station_name'])
@@ -1266,9 +1266,9 @@ class PeerDataRecord(base):
                 'station_id': self.station_id,
                 'station_name': self.name,
                 'station_type': self.station_type,
-                'station_gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename),
+                'gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename),
                 'gaw_id': self.gaw_id,
-                'data_generation_agency': self.data_generation_agency,
+                'contributor_acronym': self.contributor_acronym,
                 'contributor_url':
                 self.contributor.url,
                 'country_id': self.country_id,

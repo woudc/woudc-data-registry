@@ -82,7 +82,7 @@ def parse_index(csv_dict_reader):
             properties = dict(
                 source='eubrewnet',
                 measurement=row['Measurement'],
-                data_generation_agency=row['Agency'],
+                contributor_acronym=row['Agency'],
                 station_id=row['WOUDC_ID'],
                 station_name=row['Station_name'],
                 gaw_id=row['GAW_ID'],

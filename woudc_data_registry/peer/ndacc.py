@@ -82,7 +82,7 @@ def parse_index(csv_dict_reader):
                 properties = dict(
                     source='ndacc',
                     measurement=row['dataset'],
-                    data_generation_agency=station_metadata[0],
+                    contributor_acronym=station_metadata[0],
                     station_id=station_metadata[2],
                     station_name=row['oscar_site_name'],
                     gaw_id=row['gaw_id'],
