@@ -138,7 +138,7 @@ class Contributor(base):
 
     __tablename__ = 'contributors'
     __table_args__ = (UniqueConstraint('contributor_id'),
-                      UniqueConstraint('acronym', 'project_id'))
+                      UniqueConstraint('acronym', 'project_id'),)
 
     id_field = 'contributor_id'
     id_dependencies = ['acronym', 'project_id']
@@ -146,7 +146,7 @@ class Contributor(base):
     contributor_id = Column(String, primary_key=True)
 
     name = Column(String, nullable=False)
-    acronym = Column(String, nullable=False)
+    acronym = Column(String, nullable=False, unique=True)
     country_id = Column(String, ForeignKey('countries.country_id'),
                         nullable=False)
     project_id = Column(String, ForeignKey('projects.project_id'),
@@ -1167,9 +1167,11 @@ class PeerDataRecord(base):
     stn_type_enum = Enum('land', 'landFixed', 'landOnIce', name='stn_type')
 
     station_type = Column(stn_type_enum, nullable=False, default='land')
-    agency = Column(String, nullable=True)
+    contributor_acronym = Column(String, ForeignKey('contributors.acronym'),
+                                 nullable=True)
     gaw_id = Column(String, nullable=True)
-    country_id = Column(String, nullable=False)
+    country_id = Column(String, ForeignKey('countries.country_id'),
+                        nullable=False)
     instrument_type = Column(String, nullable=False)
     level = Column(String, nullable=False)
     pi = Column(String)
@@ -1187,6 +1189,7 @@ class PeerDataRecord(base):
 
     # relationships
     station_name = relationship('StationName', backref=__tablename__)
+    contributor = relationship('Contributor', backref=__tablename__)
 
     # data management fields
 
@@ -1213,7 +1216,7 @@ class PeerDataRecord(base):
         self.source = dict_['source']
         self.measurement = dict_['measurement']
 
-        self.agency = dict_['agency']
+        self.contributor_acronym = dict_['contributor_acronym']
         self.station_id = dict_['station_id']
         self.station_name_id = '{}:{}' \
             .format(self.station_id, dict_['station_name'])
@@ -1248,6 +1251,10 @@ class PeerDataRecord(base):
 
     @property
     def __geo_interface__(self):
+        gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
+            '/search/station/stationReportDetails'
+        gaw_pagename = '0-20008-0-{}'.format(self.gaw_id)
+
         return {
             'id': ''.join(self.url.split('%')[5:10]),
             'type': 'Feature',
@@ -1259,8 +1266,11 @@ class PeerDataRecord(base):
                 'station_id': self.station_id,
                 'station_name': self.name,
                 'station_type': self.station_type,
+                'gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename),
                 'gaw_id': self.gaw_id,
-                'agency': self.agency,
+                'contributor_acronym': self.contributor_acronym,
+                'contributor_url':
+                self.contributor.url,
                 'country_id': self.country_id,
                 'instrument_type': self.instrument_type,
                 'level': self.level,

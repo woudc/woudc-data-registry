@@ -557,7 +557,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'agency': {
+            'contributor_acronym': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
