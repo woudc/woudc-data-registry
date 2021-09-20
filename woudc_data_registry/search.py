@@ -421,15 +421,18 @@ MAPPINGS = {
             },
             'received_datetime': {
                 'type': 'date',
-                'format': DATE_FORMAT
+                'format': DATE_FORMAT,
+                'fields': {'raw': typedefs['keyword']}
             },
             'inserted_datetime': {
                 'type': 'date',
-                'format': DATE_FORMAT
+                'format': DATE_FORMAT,
+                'fields': {'raw': typedefs['keyword']}
             },
             'processed_datetime': {
                 'type': 'date',
-                'format': DATE_FORMAT
+                'format': DATE_FORMAT,
+                'fields': {'raw': typedefs['keyword']}
             },
             'published_datetime': {
                 'type': 'date',
