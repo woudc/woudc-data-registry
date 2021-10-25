@@ -342,7 +342,7 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'content_category': {
-                'type': 'text',
+                'type': 'keyword',
                 'fields': {'raw': typedefs['keyword']}
             },
             'content_form': {
