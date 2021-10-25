@@ -342,7 +342,7 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'content_category': {
-                'type': 'text',
+                'type': 'keyword',
                 'fields': {'raw': typedefs['keyword']}
             },
             'content_form': {
@@ -561,6 +561,10 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'contributor_acronym': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'contributor_url': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },

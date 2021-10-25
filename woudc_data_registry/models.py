@@ -1257,6 +1257,11 @@ class PeerDataRecord(base):
             return '.'.join(self.url.split('/')[9:11])
 
     @property
+    def contributor_url(self):
+        if self.contributor is not None:
+            return self.contributor.url
+
+    @property
     def __geo_interface__(self):
         gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
             '/search/station/stationReportDetails'
@@ -1277,7 +1282,7 @@ class PeerDataRecord(base):
                 'gaw_id': self.gaw_id,
                 'contributor_acronym': self.contributor_acronym,
                 'contributor_url':
-                self.contributor.url,
+                self.contributor_url,
                 'country_id': self.country_id,
                 'instrument_type': self.instrument_type,
                 'level': self.level,
