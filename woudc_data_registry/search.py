@@ -564,6 +564,10 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'contributor_url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'gaw_id': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
