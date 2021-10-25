@@ -1250,6 +1250,13 @@ class PeerDataRecord(base):
             return self.station_name.name
 
     @property
+    def es_id(self):
+        if self.source == 'eubrewnet':
+            return ''.join(self.url.split('%')[5:10])
+        else:
+            return '.'.join(self.url.split('/')[9:11])
+
+    @property
     def contributor_url(self):
         if self.contributor is not None:
             return self.contributor.url
@@ -1261,11 +1268,11 @@ class PeerDataRecord(base):
         gaw_pagename = '0-20008-0-{}'.format(self.gaw_id)
 
         return {
-            'id': ''.join(self.url.split('%')[5:10]),
+            'id': self.es_id,
             'type': 'Feature',
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
-                'identifier': ''.join(self.url.split('%')[5:10]),
+                'identifier': self.es_id,
                 'source': self.source,
                 'measurement': self.measurement,
                 'station_id': self.station_id,
