@@ -2296,10 +2296,10 @@ def product_sync(ctx):
 
             registry_contents.append(obj)
 
-            if product == 'OzoneSonde':
-                capacity = 50
+            if plural_caps == 'Ozonesonde':
+                capacity = 45
             else:
-                capacity = 500000
+                capacity = 100000
 
             if len(registry_contents) > capacity:
                 registry_docs = [item.__geo_interface__
