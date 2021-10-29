@@ -67,6 +67,21 @@ class Registry(object):
         Session = sessionmaker(bind=engine, expire_on_commit=False)
         self.session = Session()
 
+    def query_index_by_category(self, domain, category):
+        """
+        Queries for the entire contents of the index of model class <domain>.
+
+        :param domain: A model class.
+        :param categories: String content_category.
+        :returns: List of all objects of that class in the registry.
+        """
+
+        LOGGER.debug('Querying records for {} by category'.format(domain))
+        values = self.session.query(domain).filter_by(
+                                                content_category=category)
+
+        return values
+
     def query_full_index(self, domain):
         """
         Queries for the entire contents of the index of model class <domain>.
