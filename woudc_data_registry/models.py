@@ -2224,6 +2224,7 @@ def sync(ctx):
     search_index = SearchIndex()
 
     search_index_config = config.EXTRAS.get('search_index', {})
+    categories = []
 
     click.echo('Begin data registry backend sync on ', nl=False)
     for clazz in model_classes:
@@ -2236,12 +2237,26 @@ def sync(ctx):
             continue
 
         click.echo('{}...'.format(plural_caps))
+        if plural_caps == 'DataRecords':
+            for category in categories:
+                registry_contents = registry_.query_index_by_category(clazz,
+                                                                      category)
+                registry_docs = \
+                    [obj.__geo_interface__ for obj in registry_contents]
 
-        registry_contents = registry_.query_full_index(clazz)
-        registry_docs = [obj.__geo_interface__ for obj in registry_contents]
+                click.echo('Sending models to search index...')
+                search_index.index(clazz, registry_docs)
+        else:
+            registry_contents = registry_.query_full_index(clazz)
+            if plural_caps == 'Datasets':
+                categories = []
+                for r in registry_contents:
+                    categories += [r.dataset_id]
+            registry_docs = \
+                [obj.__geo_interface__ for obj in registry_contents]
 
-        click.echo('Sending models to search index...')
-        search_index.index(clazz, registry_docs)
+            click.echo('Sending models to search index...')
+            search_index.index(clazz, registry_docs)
         # click.echo('Purging excess models...')
         # search_index.unindex_except(clazz, registry_docs)
 
