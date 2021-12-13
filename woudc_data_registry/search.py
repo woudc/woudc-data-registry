@@ -466,7 +466,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'station_name': {
+            'name': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },

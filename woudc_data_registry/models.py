@@ -1043,7 +1043,7 @@ class Contribution(base):
                 'project_id': self.project_id,
                 'dataset_id': self.dataset_id,
                 'station_id': self.station_id,
-                'station_name': self.station.station_name.name,
+                'name': self.station.station_name.name,
                 'country_id': self.station.country_id,
                 'country_name_en': self.station.country.name_en,
                 'country_name_fr': self.station.country.name_fr,
