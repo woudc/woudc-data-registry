@@ -296,11 +296,11 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'station_country_en': {
+            'country_name_en': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'station_country_fr': {
+            'country_name_fr': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
