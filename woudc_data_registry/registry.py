@@ -108,6 +108,63 @@ class Registry(object):
 
         return values
 
+    def query_distinct_by_fields(
+        self, domain, obj, values, case_insensitive=False
+    ):
+        """
+        queries for distinct values by field(s)
+
+        :param domain: domain to be queried
+        :param obj: Object instance of the table to query in
+        :param by: Field name to be queried
+        :param value: Dictionary with query value(s)
+        :param case_insensitive: `bool` of whether to query strings
+                                 case-insensitively
+
+        :returns: list of distinct values
+        """
+
+        LOGGER.debug('Querying distinct values for {}'.format(domain))
+
+        conditions = []
+        target_fields = values.keys()
+
+        for field in target_fields:
+            table_field = getattr(obj, field)
+            if case_insensitive:
+                condition = func.lower(table_field) == values[field].lower()
+                conditions.append(condition)
+            else:
+                conditions.append(table_field == values[field])
+
+        results = [v[0] for v in self.session.query(domain).filter(
+                      *conditions).distinct()]
+
+        return results
+
+    def query_distinct_in(
+        self, domain, field, subquery, case_insensitive=False
+    ):
+        """
+        queries for distinct values by field(s) from a subquery
+
+        :param domain: domain to be queried
+        :param field: field being filtered by subquery results
+        :param subquery: results of subquery
+        :param case_insensitive: `bool` of whether to query strings
+                                 case-insensitively
+
+        :returns: list of distinct values
+        """
+
+        LOGGER.debug(
+            'Querying distinct values for {} from subquery'.format(domain)
+        )
+        results = [v[0] for v in self.session.query(domain).filter(
+                      field.in_(subquery)).distinct()]
+
+        return results
+
     def query_by_field(self, obj, by, value, case_insensitive=False):
         """
         query data by field
@@ -131,6 +188,48 @@ class Registry(object):
             condition = field == value
 
         return self.session.query(obj).filter(condition).first()
+
+    def query_extents(
+        self, obj, date_domain, by=None, value=None, case_insensitive=False
+    ):
+        """
+        Query spatiotemporal extents of dataset
+
+        :param obj: Object instance of the table to query in
+        :date_domain: Domain for dataset timestamp
+        :param by: Field name to be queried (ie, content_category)
+        :param value: Value of the field in any query results
+        :param case_insensitive: `bool` of whether to query strings
+                                 case-insensitively
+        :returns: Minimum and maximum datetime, longitude, and latitude
+        """
+        if by is not None:
+            field = getattr(obj, by)
+            if case_insensitive:
+                LOGGER.debug('Querying for LOWER({}) = LOWER({})'
+                             .format(field, value))
+                condition = func.lower(field) == value.lower()
+            else:
+                LOGGER.debug('Querying for {} = {}'.format(field, value))
+                condition = field == value
+
+            results = self.session.query(
+                          func.min(date_domain),
+                          func.max(date_domain),
+                          func.min(obj.x),
+                          func.min(obj.y),
+                          func.max(obj.x),
+                          func.max(obj.y)).filter(condition).all()
+        else:
+            results = self.session.query(
+                          func.min(date_domain),
+                          func.max(date_domain),
+                          func.min(obj.x),
+                          func.min(obj.y),
+                          func.max(obj.x),
+                          func.max(obj.y)).all()
+
+        return results
 
     def query_by_pattern(self, obj, by, pattern, case_insensitive=False):
         """
@@ -169,7 +268,7 @@ class Registry(object):
         query a table by multiple fields
 
         :param table: table to be queried
-        :param instance: dictionary with query values
+        :param values: dictionary with query values
         :param fields: fields to be filtered by
         :param case_insensitive: Collection of string fields that should be
                                  queried case-insensitively
@@ -191,11 +290,41 @@ class Registry(object):
 
         return results
 
+    def update_by_field(
+      self, new_value, obj, by, value, case_insensitive=False
+    ):
+        """
+        update table by field
+
+        :param new_value: Dict with value(s) domain will be updated to
+        :param obj: Object instance of the table to query in
+        :param by: Field name to be queried
+        :param value: Value of the field in any query results
+        :param case_insensitive: `bool` of whether to query strings
+                                 case-insensitively
+        :returns: void
+        """
+
+        field = getattr(obj, by)
+
+        if case_insensitive:
+            LOGGER.debug('Querying for LOWER({}) = LOWER({})'
+                         .format(field, value))
+            condition = func.lower(field) == value.lower()
+        else:
+            LOGGER.debug('Querying for {} = {}'.format(field, value))
+            condition = field == value
+
+        self.session.query(obj).filter(condition).update(new_value)
+        self.session.commit()
+
+        return
+
     def save(self, obj=None):
         """
         helper function to save object to registry
 
-        :param obj: object to save (defualt None)
+        :param obj: object to save (default None)
         :returns: void
         """
 

@@ -62,6 +62,40 @@ typedefs = {
     }
 }
 
+dataset_links = {
+    'type': 'nested',
+    'properties': {
+        'label_en': {
+            'type': 'text',
+            'fields': {'raw': typedefs['keyword']}
+        },
+        'label_fr': {
+            'type': 'text',
+            'fields': {'raw': typedefs['keyword']}
+        },
+        'description_en': {
+            'type': 'text',
+            'fields': {'raw': typedefs['keyword']}
+        },
+        'description_fr': {
+            'type': 'text',
+            'fields': {'raw': typedefs['keyword']}
+        },
+        'function': {
+            'type': 'text',
+            'fields': {'raw': typedefs['keyword']}
+        },
+        'linktype': {
+            'type': 'text',
+            'fields': {'raw': typedefs['keyword']}
+        },
+        'url': {
+            'type': 'text',
+            'fields': {'raw': typedefs['keyword']}
+        }
+    }
+}
+
 DATE_FORMAT = 'date_time_no_millis'
 
 MAPPINGS = {
@@ -170,6 +204,89 @@ MAPPINGS = {
                 'type': 'date',
                 'format': DATE_FORMAT
             }
+        }
+    },
+    'discovery_metadata': {
+        'index': 'discovery_metadata',
+        'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'abstract_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'abstract_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'dataset_snapshots': dataset_links,
+            'doi': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'keywords_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'keywords_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'levels': {
+                'type': 'nested',
+                'properties': {
+                    'label_en': {
+                        'type': 'text',
+                        'fields': {'raw': typedefs['keyword']}
+                    },
+                    'networks': {
+                        'type': 'nested',
+                        'properties': {
+                            'instruments': {
+                                'type': 'text',
+                                'fields': {'raw': typedefs['keyword']}
+                            },
+                            'label_en': {
+                                'type': 'text',
+                                'fields': {'raw': typedefs['keyword']}
+                            }
+                        }
+                    }
+                }
+            },
+            'search': dataset_links,
+            'spatial_extent': {
+                'type': 'long',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'temporal_begin': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'temporal_end': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'title_en': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'title_fr': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'topic_category': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'url': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'waf': dataset_links,
+            'wms': dataset_links
         }
     },
     'stations': {

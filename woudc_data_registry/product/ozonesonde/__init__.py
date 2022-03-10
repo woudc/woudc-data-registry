@@ -46,6 +46,7 @@
 import click
 from woudc_data_registry.product.ozonesonde.ozonesonde_generator \
     import generate_ozonesonde
+from woudc_data_registry.generate_metadata import update_extents
 
 
 @click.group()
@@ -74,6 +75,8 @@ def generate(ctx, srcdir, bypass=False):
 
     if bypass_:
         generate_ozonesonde(srcdir, bypass)
+
+    update_extents()
 
 
 ozonesonde.add_command(generate)

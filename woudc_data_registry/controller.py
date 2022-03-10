@@ -56,6 +56,7 @@ from woudc_data_registry.parser import (ExtendedCSV, NonStandardDataError,
                                         MetadataValidationError)
 from woudc_data_registry.processing import Process
 
+from woudc_data_registry.generate_metadata import update_extents
 from woudc_data_registry.models import Contributor
 from woudc_data_registry.registry import Registry
 from woudc_data_registry.report import OperatorReport, RunReport, EmailSummary
@@ -232,6 +233,7 @@ def ingest(ctx, source, reports_dir, lax, bypass):
     """ingest a single data submission or directory of files"""
 
     orchestrate(source, reports_dir, metadata_only=lax, bypass=bypass)
+    update_extents()
 
 
 @click.command()

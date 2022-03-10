@@ -44,6 +44,7 @@
 # =================================================================
 
 import click
+from woudc_data_registry.generate_metadata import update_extents
 from woudc_data_registry.product.uv_index.uv_index_generator \
     import generate_uv_index
 
@@ -73,6 +74,8 @@ def generate(ctx, srcdir, bypass=False):
 
     if bypass_:
         generate_uv_index(srcdir, False, None, None, bypass)
+
+    update_extents()
 
 
 @click.command()
