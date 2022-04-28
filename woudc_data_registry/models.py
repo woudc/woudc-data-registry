@@ -50,6 +50,7 @@ import click
 import csv
 import json
 import codecs
+import yaml
 from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
                         Float, Enum, ForeignKey, Integer, String, Time,
                         UniqueConstraint, ForeignKeyConstraint, ARRAY)
@@ -61,6 +62,7 @@ from woudc_data_registry import config, registry
 from woudc_data_registry.search import SearchIndex, search
 from woudc_data_registry.util import (get_date, point2geojsongeometry,
                                       strftime_rfc3339)
+import woudc_data_registry.generate_metadata as generate_metadata
 
 base = declarative_base()
 
@@ -397,6 +399,36 @@ class Instrument(base):
             components = [getattr(self, field)
                           for field in self.id_dependencies]
             self.instrument_id = ':'.join(map(str, components))
+
+
+class DiscoveryMetadata(base):
+    """Data Registry Discovery Metadata"""
+
+    __tablename__ = 'discovery_metadata'
+
+    id_field = 'discovery_metadata_id'
+    id_dependencies = []  # No ID dependencies
+
+    discovery_metadata_id = Column(String, primary_key=True)
+    _metadata = Column(String, nullable=False)
+
+    def __init__(self, dict_):
+        self.discovery_metadata_id = dict_['discovery_metadata_id']
+        self._metadata = dict_['metadata']
+
+    @property
+    def __geo_interface__(self):
+        metadata = json.loads(self._metadata.replace('\\"', '"'))
+        metadata['properties']['identifier'] = self.discovery_metadata_id
+        return {
+            'id': self.discovery_metadata_id,
+            'type': 'Feature',
+            'geometry': None,
+            'properties':  metadata['properties']
+        }
+
+    def __repr__(self):
+        return 'Project ({})'.format(self.discovery_metadata_id)
 
 
 class Project(base):
@@ -2021,6 +2053,7 @@ def init(ctx, datadir, init_search_index):
     instruments = os.path.join(datadir, 'instruments.csv')
     deployments = os.path.join(datadir, 'deployments.csv')
     notifications = os.path.join(datadir, 'notifications.csv')
+    discovery_metadata = os.path.join(datadir, 'woudc.skos.yaml')
 
     registry_ = registry.Registry()
 
@@ -2034,6 +2067,7 @@ def init(ctx, datadir, init_search_index):
     deployment_models = []
     contribution_models = []
     notification_models = []
+    discovery_metadata_models = []
 
     click.echo('Loading WMO countries metadata')
     with open(wmo_countries) as jsonfile:
@@ -2126,6 +2160,14 @@ def init(ctx, datadir, init_search_index):
             notification = Notification(row)
             notification_models.append(notification)
 
+    click.echo('Loading discovery metadata items')
+    with open(discovery_metadata) as yamlfile:
+        yamldict = yaml.load(yamlfile, Loader=yaml.FullLoader)
+        reader = generate_metadata.generate_metadata(yamldict)
+        for row in reader:
+            discovery_metadata_ = DiscoveryMetadata(row)
+            discovery_metadata_models.append(discovery_metadata_)
+
     click.echo('Storing projects in data registry')
     for model in project_models:
         registry_.save(model)
@@ -2152,6 +2194,9 @@ def init(ctx, datadir, init_search_index):
         registry_.save(model)
     click.echo('Storing news items in data registry')
     for model in notification_models:
+        registry_.save(model)
+    click.echo('Storing discovery metadata items in data registry')
+    for model in discovery_metadata_models:
         registry_.save(model)
 
     instrument_from_registry = registry_.query_full_index(Instrument)
@@ -2180,6 +2225,8 @@ def init(ctx, datadir, init_search_index):
             [model.__geo_interface__ for model in contribution_models]
         notification_docs = \
             [model.__geo_interface__ for model in notification_models]
+        discovery_metadata_docs = \
+            [model.__geo_interface__ for model in discovery_metadata_models]
 
         click.echo('Storing projects in search index')
         search_index.index(Project, project_docs)
@@ -2199,6 +2246,8 @@ def init(ctx, datadir, init_search_index):
         search_index.index(Contribution, contribution_docs)
         click.echo('Storing news items in search index')
         search_index.index(Notification, notification_docs)
+        click.echo('Storing discovery metadata items in search index')
+        search_index.index(DiscoveryMetadata, discovery_metadata_docs)
 
 
 @click.command('sync')
@@ -2218,6 +2267,7 @@ def sync(ctx):
         Contribution,
         Notification,
         PeerDataRecord,
+        DiscoveryMetadata
     ]
 
     registry_ = registry.Registry()
@@ -2237,7 +2287,7 @@ def sync(ctx):
             continue
 
         click.echo('{}...'.format(plural_caps))
-        if plural_caps == 'DataRecords':
+        if plural_caps == 'DataRecord':
             for category in categories:
                 registry_contents = registry_.query_index_by_category(clazz,
                                                                       category)
@@ -2248,7 +2298,7 @@ def sync(ctx):
                 search_index.index(clazz, registry_docs)
         else:
             registry_contents = registry_.query_full_index(clazz)
-            if plural_caps == 'Datasets':
+            if plural_caps == 'Dataset':
                 categories = []
                 for r in registry_contents:
                     categories += [r.dataset_id]

@@ -46,6 +46,7 @@
 import click
 from woudc_data_registry.product.totalozone.totalozone_generator \
     import generate_totalozone
+from woudc_data_registry.generate_metadata import update_extents
 
 
 @click.group()
@@ -74,6 +75,8 @@ def generate(ctx, srcdir, bypass=False):
 
     if bypass_:
         generate_totalozone(srcdir, bypass)
+
+    update_extents()
 
 
 totalozone.add_command(generate)
