@@ -53,6 +53,8 @@ import woudc_data_registry.models
 LOGGER = logging.getLogger(__name__)
 
 WOUDC_OWS = 'https://geo.woudc.org/ows'
+WOUDC_ARCHIVE = 'https://beta.woudc.org/archive/'
+WOUDC_DATA = 'https://beta.woudc.org/en/data/data-search-and-download'
 
 
 def generate_metadata(woudc_yaml):
@@ -105,8 +107,15 @@ def generate_metadata(woudc_yaml):
                                           "geometry": None
                                           }
 
+                            if key2 == 'UmkehrN14_1.0':
+                                search_id = 'umkehrn14/1.0'
+                            elif key2 == 'UmkehrN14_2.0':
+                                search_id = 'umkehrn14/2.0'
+                            else:
+                                search_id = key2.lower().replace('-', '')
+                                snapshot_id = search_id
                             uri = '{}/{}/{}/{}'.format(
-                                      uri_pre, key, key1, key2
+                                      uri_pre, key, key1, search_id
                                   )
                             time_begin, time_end = \
                                 value1['extent']['time'].split('/')
@@ -132,7 +141,7 @@ def generate_metadata(woudc_yaml):
                                 value2['label_fr']
                             dataset_md['properties']['topic_category'] = \
                                 topiccategory
-                            dataset_md['properties']['url'] = uri
+                            dataset_md['properties']['uri'] = uri
 
                             names = []
                             if 'levels' in value2:
@@ -180,10 +189,14 @@ def generate_metadata(woudc_yaml):
                                 dataset_md['properties']['levels'] = levels
                             else:  # umkehr
                                 levels = []
-                                if key2 == 'UmkehrN14 (Level 1.0)':
+                                if key2 == 'UmkehrN14_1.0':
                                     label_en = 'Level 1.0'
+                                    search_id = 'umkehrn14-1'
+                                    snapshot_id = 'umkehr1'
                                 else:
                                     label_en = 'Level 2.0'
+                                    search_id = 'umkehrn14-2'
+                                    snapshot_id = 'umkehr2'
                                 curr_level = {
                                             'label_en': label_en,
                                             'networks': []
@@ -218,17 +231,17 @@ def generate_metadata(woudc_yaml):
                                 levels.append(curr_level)
                                 dataset_md['properties']['levels'] = levels
 
-                            if value2['waf_dir'] != 'None':
+                            if value2['waf_dir'] != 'none':
                                 dataset_md['properties']['waf'] = {
                                     'url':
-                                        'https://woudc.org/archive/'
-                                        'Archive-NewFormat/{}'.format(
+                                        '{}/Archive-NewFormat/{}'.format(
+                                            WOUDC_ARCHIVE,
                                             value2['waf_dir']
                                         ),
                                     'linktype': 'WWW:LINK',
                                     'function': 'download',
-                                    'label_en': value2['label_en'],
-                                    'label_fr': value2['label_fr'],
+                                    'label_en': value2['waf_dir'],
+                                    'label_fr': value2['waf_dir'],
                                     'description_en':
                                         'Web Accessible Folder (WAF)',
                                     'description_fr':
@@ -238,9 +251,12 @@ def generate_metadata(woudc_yaml):
 
                             dataset_md['properties']['dataset_snapshots'] = {
                                 'url':
-                                    'https://woudc.org/archive/Summaries'
+                                    '{}/Summaries'
                                     '/dataset-snapshots/'
-                                    '{}.zip'.format(key2),
+                                    '{}.zip'.format(
+                                        WOUDC_ARCHIVE,
+                                        snapshot_id
+                                    ),
                                 'linktype': 'WWW:LINK',
                                 'function': 'download',
                                 'label_en': value2['label_en'],
@@ -281,8 +297,7 @@ def generate_metadata(woudc_yaml):
 
                             dataset_md['properties']['search'] = {
                                 'url':
-                                    'https://woudc.org/data/explore.php'
-                                    '?dataset={}'.format(key2),
+                                    '{}?dataset={}'.format(WOUDC_DATA, key2),
                                 'linktype': 'WWW:LINK',
                                 'function': 'search',
                                 'label_en': value2['label_en'],
