@@ -566,7 +566,6 @@ def update_extents():
                                 level['networks'].remove(network)
 
             md_updated = json.dumps(md_loads)
-            md_updated = md_updated.replace('"', '\\"').replace("'", "''")
             # Update metadata in corresponding row
             new_value = {'_metadata': md_updated}
             registry.update_by_field(
