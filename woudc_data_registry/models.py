@@ -2274,7 +2274,7 @@ def sync(ctx):
     search_index = SearchIndex()
 
     search_index_config = config.EXTRAS.get('search_index', {})
-    categories = []
+    registry_contents = []
 
     click.echo('Begin data registry backend sync on ', nl=False)
     for clazz in model_classes:
@@ -2287,28 +2287,32 @@ def sync(ctx):
             continue
 
         click.echo('{}...'.format(plural_caps))
-        if plural_caps == 'DataRecord':
-            for category in categories:
-                registry_contents = registry_.query_index_by_category(clazz,
-                                                                      category)
-                registry_docs = \
-                    [obj.__geo_interface__ for obj in registry_contents]
+        if plural_caps == 'DataRecords':
+            capacity = 10000
+            for obj in registry_.session.query(clazz).yield_per(1):
+                LOGGER.debug('Querying chunk of  {}'.format(clazz))
 
-                click.echo('Sending models to search index...')
-                search_index.index(clazz, registry_docs)
+                registry_contents.append(obj)
+                if len(registry_contents) > capacity:
+                    registry_docs = [item.__geo_interface__
+                                     for item in registry_contents]
+                    click.echo('Sending models to search index...')
+                    search_index.index(clazz, registry_docs)
+                    registry_contents.clear()
+
+            registry_docs = [obj.__geo_interface__
+                             for obj in registry_contents]
+            click.echo('Sending models to search index...')
+            search_index.index(clazz, registry_docs)
         else:
             registry_contents = registry_.query_full_index(clazz)
-            if plural_caps == 'Dataset':
-                categories = []
-                for r in registry_contents:
-                    categories += [r.dataset_id]
             registry_docs = \
                 [obj.__geo_interface__ for obj in registry_contents]
 
             click.echo('Sending models to search index...')
             search_index.index(clazz, registry_docs)
         # click.echo('Purging excess models...')
-        # search_index.unindex_except(clazz, registry_docs)
+        # search_index.unindex_except(product, registry_docs)
 
     click.echo('Done')
 
@@ -2349,7 +2353,7 @@ def product_sync(ctx):
             if plural_caps == 'Ozonesonde':
                 capacity = 45
             else:
-                capacity = 100000
+                capacity = 10000
 
             if len(registry_contents) > capacity:
                 registry_docs = [item.__geo_interface__
