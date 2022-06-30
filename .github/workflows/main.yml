@@ -20,8 +20,6 @@ jobs:
       WDR_SEARCH_URL: http://localhost:9200/
       WDR_WAF_BASEURL: https://woudc.org/archive/
       WDR_WAF_BASEDIR: /tmp
-      WDR_TABLE_SCHEMA: data/tables-schema.json
-      WDR_TABLE_CONFIG: data/migrate/tables-backfilling.yml
       WDR_ERROR_CONFIG: data/migrate/errors-backfilling.csv
       WDR_ALIAS_CONFIG: data/aliases.yml
       WDR_EXTRA_CONFIG: data/extra-options.yml
@@ -37,6 +35,13 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install system dependencies 📦
       run: sudo apt-get install -y dh-python devscripts fakeroot debhelper python3-all python3-setuptools
+    - name: Install woudc-extcsv requirement 📦
+      run: |
+        git clone https://github.com/woudc/woudc-extcsv.git
+        cd woudc-extcsv
+        pip install -r requirements.txt
+        python setup.py install
+        cd ..
     - name: Install requirements 📦
       run: |
         pip install -r requirements-dev.txt

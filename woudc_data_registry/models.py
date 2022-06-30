@@ -1970,8 +1970,6 @@ def show_config(ctx):
         'WDR_SEARCH_PASSWORD',
         'WDR_WAF_BASEDIR',
         'WDR_WAF_BASEURL',
-        'WDR_TABLE_SCHEMA',
-        'WDR_TABLE_CONFIG',
         'WDR_ERROR_CONFIG',
         'WDR_ALIAS_CONFIG',
         'WDR_EXTRA_CONFIG',

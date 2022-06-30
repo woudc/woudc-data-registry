@@ -43,17 +43,17 @@
 #
 # =================================================================
 
-import os
-from pathlib import Path
-
 import click
 import logging
+import os
+
+from pathlib import Path
+from woudc_extcsv import (ExtendedCSV, NonStandardDataError,
+                          MetadataValidationError)
 
 from woudc_data_registry import config
 from woudc_data_registry.util import is_text_file, read_file
 
-from woudc_data_registry.parser import (ExtendedCSV, NonStandardDataError,
-                                        MetadataValidationError)
 from woudc_data_registry.processing import Process
 
 from woudc_data_registry.generate_metadata import update_extents

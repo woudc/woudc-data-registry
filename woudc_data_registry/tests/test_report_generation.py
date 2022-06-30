@@ -5,8 +5,10 @@ import os
 import unittest
 
 from datetime import datetime
+from woudc_extcsv import (ExtendedCSV, MetadataValidationError,
+                          NonStandardDataError)
 
-from woudc_data_registry import models, parser, report, util
+from woudc_data_registry import models, report, util
 
 
 SANDBOX_DIR = '/tmp/woudc-data-registry'
@@ -14,12 +16,12 @@ SANDBOX_DIR = '/tmp/woudc-data-registry'
 
 def dummy_extCSV(source):
     """
-    Returns a parser.ExtendedCSV instace built from the filepath <source>
+    Returns a woudc-extcsv ExtendedCSV instace built from the filepath <source>
     with dummy output settings (no logs or reports).
     """
 
     with report.OperatorReport() as error_bank:
-        return parser.ExtendedCSV(source, error_bank)
+        return ExtendedCSV(source, error_bank)
 
 
 def resolve_test_data_path(test_data_file):
@@ -101,7 +103,7 @@ class OperatorReportTest(SandboxTestSuite):
         contents = util.read_file(infile)
 
         with report.OperatorReport(SANDBOX_DIR) as op_report:
-            ecsv = parser.ExtendedCSV(contents, op_report)
+            ecsv = ExtendedCSV(contents, op_report)
 
             ecsv.validate_metadata_tables()
             ecsv.validate_dataset_tables()
@@ -138,7 +140,7 @@ class OperatorReportTest(SandboxTestSuite):
         contents = util.read_file(infile)
 
         with report.OperatorReport(SANDBOX_DIR) as op_report:
-            ecsv = parser.ExtendedCSV(contents, op_report)
+            ecsv = ExtendedCSV(contents, op_report)
 
             # Some warnings are encountered during parsing.
             ecsv.validate_metadata_tables()
@@ -190,15 +192,15 @@ class OperatorReportTest(SandboxTestSuite):
 
         with report.OperatorReport(SANDBOX_DIR) as op_report:
             try:
-                ecsv = parser.ExtendedCSV(contents, op_report)
+                ecsv = ExtendedCSV(contents, op_report)
                 ecsv.validate_metadata_tables()
                 agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
                 ecsv.validate_dataset_tables()
                 raise AssertionError('Parsing of {} did not fail'
                                      .format(infile))
-            except (parser.MetadataValidationError,
-                    parser.NonStandardDataError):
+            except (MetadataValidationError,
+                    NonStandardDataError):
                 output_path = os.path.join(SANDBOX_DIR, 'run1')
 
                 op_report.add_message(209)
@@ -264,9 +266,9 @@ class OperatorReportTest(SandboxTestSuite):
 
                 try:
                     contents = util.read_file(fullpath)
-                    ecsv = parser.ExtendedCSV(contents, op_report)
-                except (parser.MetadataValidationError,
-                        parser.NonStandardDataError) as err:
+                    ecsv = ExtendedCSV(contents, op_report)
+                except (MetadataValidationError,
+                        NonStandardDataError) as err:
                     expected_errors[fullpath] = len(err.errors)
 
                     op_report.add_message(209)
@@ -284,8 +286,8 @@ class OperatorReportTest(SandboxTestSuite):
                     expected_warnings[fullpath] = len(ecsv.warnings)
                     expected_errors[fullpath] = 0
                     op_report.write_passing_file(fullpath, ecsv, data_record)
-                except (parser.MetadataValidationError,
-                        parser.NonStandardDataError):
+                except (MetadataValidationError,
+                        NonStandardDataError):
                     expected_warnings[fullpath] = len(ecsv.warnings)
                     expected_errors[fullpath] = len(ecsv.errors)
 
@@ -340,7 +342,7 @@ class RunReportTest(SandboxTestSuite):
 
         run_report = report.RunReport(SANDBOX_DIR)
         with report.OperatorReport() as error_bank:
-            ecsv = parser.ExtendedCSV(contents, error_bank)
+            ecsv = ExtendedCSV(contents, error_bank)
 
             ecsv.validate_metadata_tables()
             ecsv.validate_dataset_tables()
@@ -375,15 +377,15 @@ class RunReportTest(SandboxTestSuite):
             run_report = report.RunReport(SANDBOX_DIR)
 
             try:
-                ecsv = parser.ExtendedCSV(contents, error_bank)
+                ecsv = ExtendedCSV(contents, error_bank)
                 ecsv.validate_metadata_tables()
                 agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
                 ecsv.validate_dataset_tables()
                 raise AssertionError('Parsing of {} did not fail'
                                      .format(infile))
-            except (parser.MetadataValidationError,
-                    parser.NonStandardDataError):
+            except (MetadataValidationError,
+                    NonStandardDataError):
                 output_path = os.path.join(SANDBOX_DIR, 'run_report')
 
                 run_report.write_failing_file(infile, agency)
@@ -409,11 +411,11 @@ class RunReportTest(SandboxTestSuite):
             run_report = report.RunReport(SANDBOX_DIR)
 
             try:
-                _ = parser.ExtendedCSV(contents, error_bank)
+                _ = ExtendedCSV(contents, error_bank)
                 raise AssertionError('Parsing of {} did not fail'
                                      .format(infile))
-            except (parser.MetadataValidationError,
-                    parser.NonStandardDataError):
+            except (MetadataValidationError,
+                    NonStandardDataError):
                 output_path = os.path.join(SANDBOX_DIR, 'run_report')
 
                 run_report.write_failing_file(infile, agency)
@@ -447,9 +449,9 @@ class RunReportTest(SandboxTestSuite):
 
                 try:
                     contents = util.read_file(fullpath)
-                    ecsv = parser.ExtendedCSV(contents, error_bank)
-                except (parser.MetadataValidationError,
-                        parser.NonStandardDataError):
+                    ecsv = ExtendedCSV(contents, error_bank)
+                except (MetadataValidationError,
+                        NonStandardDataError):
                     expected_fails.add(fullpath)
                     run_report.write_failing_file(fullpath, agency)
                     continue
@@ -462,8 +464,8 @@ class RunReportTest(SandboxTestSuite):
 
                     expected_passes.add(fullpath)
                     run_report.write_passing_file(fullpath, agency)
-                except (parser.MetadataValidationError,
-                        parser.NonStandardDataError):
+                except (MetadataValidationError,
+                        NonStandardDataError):
                     expected_fails.add(fullpath)
                     run_report.write_failing_file(fullpath, agency)
 
@@ -512,9 +514,9 @@ class RunReportTest(SandboxTestSuite):
 
                     try:
                         contents = util.read_file(fullpath)
-                        ecsv = parser.ExtendedCSV(contents, error_bank)
-                    except (parser.MetadataValidationError,
-                            parser.NonStandardDataError):
+                        ecsv = ExtendedCSV(contents, error_bank)
+                    except (MetadataValidationError,
+                            NonStandardDataError):
                         if agency not in expected_passes:
                             expected_passes[agency] = set()
                         if agency not in expected_fails:
@@ -538,8 +540,8 @@ class RunReportTest(SandboxTestSuite):
 
                         expected_passes[agency].add(fullpath)
                         run_report.write_passing_file(fullpath, agency)
-                    except (parser.MetadataValidationError,
-                            parser.NonStandardDataError):
+                    except (MetadataValidationError,
+                            NonStandardDataError):
                         agency = agency_aliases[agency]
                         if agency not in expected_passes:
                             expected_passes[agency] = set()
