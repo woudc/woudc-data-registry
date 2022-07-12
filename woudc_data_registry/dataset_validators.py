@@ -179,6 +179,7 @@ class TotalOzoneValidator(DatasetValidator):
         dates_encountered = {}
         rows_to_remove = []
 
+        extcsv.extcsv['DAILY'].pop('comments', None)
         daily_columns = zip(*extcsv.extcsv['DAILY'].values())
 
         is_string = False
@@ -428,6 +429,7 @@ class TotalOzoneObsValidator(DatasetValidator):
         LOGGER.debug('Assessing order of #OBSERVATIONS.Time column')
         success = True
 
+        extcsv.extcsv['OBSERVATIONS'].pop('comments', None)
         observations = zip(*extcsv.extcsv['OBSERVATIONS'].values())
         observations_valueline = extcsv.line_num('OBSERVATIONS') + 2
 
@@ -633,6 +635,7 @@ class UmkehrValidator(DatasetValidator):
         dates_encountered = {}
         rows_to_remove = []
 
+        extcsv.extcsv[data_table].pop('comments', None)
         columns = zip(*extcsv.extcsv[data_table].values())
 
         in_order = True

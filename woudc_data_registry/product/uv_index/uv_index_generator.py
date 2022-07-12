@@ -46,13 +46,14 @@
 # Compute and persist UV Index from WOUDC archive
 
 import csv
-from datetime import datetime
 import logging
 import os
 
+from datetime import datetime
+from woudc_extcsv import ExtendedCSV
+
 from woudc_data_registry.models import UVIndex, Instrument
 from woudc_data_registry import config, registry
-from woudc_data_registry.parser import ExtendedCSV
 from woudc_data_registry.util import read_file
 from woudc_data_registry.epicentre.metadata import add_metadata
 

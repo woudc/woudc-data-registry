@@ -12,12 +12,6 @@ tables are required for each dataset. The specifications for table formatting
 are defined in table definition files, two of which are provided with the
 WOUDC Data Registry codebase.
 
-**data/tables.yml** is a table definition file for production use when processing
-incoming files. **data/migrate/tables-backfilling.yml** is an alternative table
-definition file for backfilling the registry with historical files. The second
-file is looser on required tables and fields to allow flexibility with older
-WOUDC formats.
-
 ~~~~~~~~~~~~~~~~~~~~~~~
 Table Definition Format
 ~~~~~~~~~~~~~~~~~~~~~~~

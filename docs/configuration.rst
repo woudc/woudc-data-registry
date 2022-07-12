@@ -55,21 +55,6 @@ WDR_WAF_BASEDIR
 WDR_WAF_BASEURL
     HTTP URL to WAF location on the web.
 
-WDR_TABLE_SCHEMA
-    Path to JSON schema for table definition file, on the host machine.
-
-WDR_TABLE_CONFIG
-    Path to table definition file on the host machine.
-
-    The file defines the structure of tables expected in Extended CSV input
-    to the Data Registry, including those that must appear in every Extended
-    CSV file as well as those that appear only with specific datasets.
-
-    All tables have a list of required and optional fields, a range of
-    allowable numbers of rows, and a range of allowable number of appearances
-    in the file. File metadata must be sufficient to identify which table
-    definitions must or may show up in the file.
-
 WDR_ERROR_CONFIG
     Path to error definition file on the host machine.
 

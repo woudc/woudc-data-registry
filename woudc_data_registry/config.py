@@ -69,8 +69,6 @@ WDR_SEARCH_USERNAME = os.getenv('WDR_SEARCH_USERNAME', None)
 WDR_SEARCH_PASSWORD = os.getenv('WDR_SEARCH_PASSWORD', None)
 WDR_WAF_BASEDIR = os.getenv('WDR_WAF_BASEDIR', None)
 WDR_WAF_BASEURL = os.getenv('WDR_WAF_BASEURL', 'https://woudc.org/archive')
-WDR_TABLE_SCHEMA = os.getenv('WDR_TABLE_SCHEMA', None)
-WDR_TABLE_CONFIG = os.getenv('WDR_TABLE_CONFIG', None)
 WDR_ERROR_CONFIG = os.getenv('WDR_ERROR_CONFIG', None)
 WDR_ALIAS_CONFIG = os.getenv('WDR_ALIAS_CONFIG', None)
 WDR_EXTRA_CONFIG = os.getenv('WDR_EXTRA_CONFIG', None)
@@ -107,8 +105,7 @@ else:
                                                     WDR_DB_PORT,
                                                     WDR_DB_NAME)
 
-if None in [WDR_TABLE_SCHEMA, WDR_TABLE_CONFIG, WDR_ERROR_CONFIG,
-            WDR_EXTRA_CONFIG]:
+if None in [WDR_ERROR_CONFIG, WDR_EXTRA_CONFIG]:
     msg = 'Central configuration environment variables are not set!'
     LOGGER.error(msg)
     raise EnvironmentError(msg)

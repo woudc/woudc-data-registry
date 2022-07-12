@@ -46,12 +46,12 @@
 # Compute and persist UV Index from WOUDC archive
 
 from datetime import datetime
+from woudc_extcsv import ExtendedCSV
 import logging
 import os
 
 from woudc_data_registry.models import TotalOzone, Instrument
 from woudc_data_registry import registry
-from woudc_data_registry.parser import ExtendedCSV
 from woudc_data_registry.util import read_file
 from woudc_data_registry.epicentre.metadata import add_metadata
 

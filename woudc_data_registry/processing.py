@@ -51,12 +51,12 @@ import shutil
 import logging
 
 from datetime import datetime
+from woudc_extcsv import DOMAINS
 
 from woudc_data_registry import config
 from woudc_data_registry.models import (Contributor, DataRecord, Dataset,
                                         Deployment, Instrument, Project,
                                         Station, StationName, Contribution)
-from woudc_data_registry.parser import DOMAINS
 from woudc_data_registry.dataset_validators import get_validator
 
 from woudc_data_registry.epicentre.station import build_station_name

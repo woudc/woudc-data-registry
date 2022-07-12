@@ -18,6 +18,7 @@ the [Global Atmosphere Watch](https://community.wmo.int/activity-areas/gaw) prog
 - [Python](https://python.org) 3 and above
 - [virtualenv](https://virtualenv.pypa.io/)
 - [Elasticsearch](https://www.elastic.co/products/elasticsearch) (5.5.0 and above)
+- [woudc-extcsv](https://github.com/woudc/woudc-extcsv)
 
 ### Dependencies
 Dependencies are listed in [requirements.txt](requirements.txt). Dependencies
@@ -30,6 +31,13 @@ are automatically installed during installation.
 python3 -m venv --system-site-packages woudc-data-registry
 cd woudc-data-registry
 source bin/activate
+
+# clone woudc-extcsv and install
+git clone https://github.com/woudc/woudc-extcsv.git
+cd woudc-extcsv
+pip install -r requirements.txt
+python setup.py install
+cd ..
 
 # clone codebase and install
 git clone https://github.com/woudc/woudc-data-registry.git
