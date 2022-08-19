@@ -85,8 +85,6 @@ DEPLOYMENTS_QUERY="SELECT platform.woudc_platform_identifier AS station_id, CONC
 
 NOTIFICATIONS_QUERY="SELECT title_en, title_fr, description_en, description_fr, tags_en, tags_fr, published, banner, visible, ST_X(the_geom) AS x, ST_Y(the_geom) AS y FROM notifications"
 
-WMO_COUNTRIES_URL="https://community.wmo.int/membersdata/membersandterritories.json"
-
 echo "Extracting metadata"
 
 echo " Projects..."
@@ -112,6 +110,3 @@ psql -h $WOUDC_ARCHIVE_HOSTNAME -p $WOUDC_ARCHIVE_HOSTPORT -d $WOUDC_ARCHIVE_DBN
 
 echo " Notifications..."
 psql -h $WOUDC_DATAMART_HOSTNAME -p $WOUDC_DATAMART_HOSTPORT -d $WOUDC_DATAMART_DBNAME -U $WOUDC_DATAMART_USERNAME -c "\\COPY ($NOTIFICATIONS_QUERY) TO $OUTPUT_DIR/notifications.csv WITH CSV HEADER;"
-
-echo "Fetching WMO countries list..."
-curl -k -o "$OUTPUT_DIR/wmo-countries.json" $WMO_COUNTRIES_URL

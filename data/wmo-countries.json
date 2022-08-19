@@ -1,0 +1,1750 @@
+{
+    "countries": {
+        "AFG": {
+            "id": "AFG",
+            "country_name": "Afghanistan",
+            "french_name": "Afghanistan",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1956-09-11",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/afghanistan"
+        },
+        "ALB": {
+            "id": "ALB",
+            "country_name": "Albania",
+            "french_name": "Albanie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1957-07-29",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/albania"
+        },
+        "DZA": {
+            "id": "DZA",
+            "country_name": "Algeria",
+            "french_name": "Alg\u00e9rie",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1963-04-04",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/algeria"
+        },
+        "AND": {
+            "id": "AND",
+            "country_name": "Andorra",
+            "french_name": "Andorre ",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "-0001-11-30",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/andorra"
+        },
+        "AGO": {
+            "id": "AGO",
+            "country_name": "Angola",
+            "french_name": "Angola",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1977-03-16",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/angola"
+        },
+        "ATG": {
+            "id": "ATG",
+            "country_name": "Antigua and Barbuda",
+            "french_name": "Antigua-et-Barbuda",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1988-11-16",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/antigua-and-barbuda"
+        },
+        "ARG": {
+            "id": "ARG",
+            "country_name": "Argentina",
+            "french_name": "Argentine",
+            "wmo_region_id": "III",
+            "regional_involvement": "III",
+            "wmo_membership": "1951-01-02",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/argentina"
+        },
+        "ARM": {
+            "id": "ARM",
+            "country_name": "Armenia",
+            "french_name": "Arm\u00e9nie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1992-09-16",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/armenia"
+        },
+        "AUS": {
+            "id": "AUS",
+            "country_name": "Australia",
+            "french_name": "Australie",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1949-03-14",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/australia"
+        },
+        "AUT": {
+            "id": "AUT",
+            "country_name": "Austria",
+            "french_name": "Autriche",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1955-02-23",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/austria"
+        },
+        "AZE": {
+            "id": "AZE",
+            "country_name": "Azerbaijan",
+            "french_name": "Azerba\u00efdjan",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1993-12-27",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/azerbaijan"
+        },
+        "BHS": {
+            "id": "BHS",
+            "country_name": "Bahamas",
+            "french_name": "Bahamas",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1973-11-29",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/bahamas"
+        },
+        "BHR": {
+            "id": "BHR",
+            "country_name": "Bahrain",
+            "french_name": "Bahre\u00efn",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1980-04-21",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/bahrain"
+        },
+        "BGD": {
+            "id": "BGD",
+            "country_name": "Bangladesh",
+            "french_name": "Bangladesh",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1973-08-24",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/bangladesh"
+        },
+        "BRB": {
+            "id": "BRB",
+            "country_name": "Barbados",
+            "french_name": "Barbade",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1967-03-22",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/barbados"
+        },
+        "BLR": {
+            "id": "BLR",
+            "country_name": "Belarus",
+            "french_name": "B\u00e9larus",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1948-04-12",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/belarus"
+        },
+        "BEL": {
+            "id": "BEL",
+            "country_name": "Belgium",
+            "french_name": "Belgique",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1951-02-02",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/belgium"
+        },
+        "BLZ": {
+            "id": "BLZ",
+            "country_name": "Belize",
+            "french_name": "Belize",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1982-05-25",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/belize"
+        },
+        "BEN": {
+            "id": "BEN",
+            "country_name": "Benin",
+            "french_name": "B\u00e9nin",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1963-04-14",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/benin"
+        },
+        "BTN": {
+            "id": "BTN",
+            "country_name": "Bhutan",
+            "french_name": "Bhoutan",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "2003-02-11",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/bhutan"
+        },
+        "BOL": {
+            "id": "BOL",
+            "country_name": "Bolivia, Plurinational State of",
+            "french_name": "Bolivie, \u00c9tat plurinational de",
+            "wmo_region_id": "III",
+            "regional_involvement": "III",
+            "wmo_membership": "1954-05-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/bolivia-plurinational-state-of"
+        },
+        "BIH": {
+            "id": "BIH",
+            "country_name": "Bosnia and Herzegovina",
+            "french_name": "Bosnie-Herz\u00e9govine",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1994-06-01",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/bosnia-and-herzegovina"
+        },
+        "BWA": {
+            "id": "BWA",
+            "country_name": "Botswana",
+            "french_name": "Botswana",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1967-10-16",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/botswana"
+        },
+        "BRA": {
+            "id": "BRA",
+            "country_name": "Brazil",
+            "french_name": "Br\u00e9sil",
+            "wmo_region_id": "III",
+            "regional_involvement": "III",
+            "wmo_membership": "1950-03-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/brazil"
+        },
+        "BCT": {
+            "id": "BCT",
+            "country_name": "British Caribbean Territories",
+            "french_name": "Territoires britanniques des Cara\u00efbes",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1953-09-24",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/british-caribbean-territories"
+        },
+        "BRN": {
+            "id": "BRN",
+            "country_name": "Brunei Darussalam",
+            "french_name": "Brun\u00e9i Darussalam",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1984-11-26",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/brunei-darussalam"
+        },
+        "BGR": {
+            "id": "BGR",
+            "country_name": "Bulgaria",
+            "french_name": "Bulgarie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1952-03-12",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/bulgaria"
+        },
+        "BFA": {
+            "id": "BFA",
+            "country_name": "Burkina Faso",
+            "french_name": "Burkina Faso",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1960-10-31",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/burkina-faso"
+        },
+        "BDI": {
+            "id": "BDI",
+            "country_name": "Burundi",
+            "french_name": "Burundi",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1962-10-30",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/burundi"
+        },
+        "CPV": {
+            "id": "CPV",
+            "country_name": "Cabo Verde",
+            "french_name": "Cabo Verde",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1975-10-21",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/cabo-verde"
+        },
+        "KHM": {
+            "id": "KHM",
+            "country_name": "Cambodia",
+            "french_name": "Cambodge",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1955-11-08",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/cambodia"
+        },
+        "CMR": {
+            "id": "CMR",
+            "country_name": "Cameroon",
+            "french_name": "Cameroun",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1960-12-17",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/cameroon"
+        },
+        "CAN": {
+            "id": "CAN",
+            "country_name": "Canada",
+            "french_name": "Canada",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1950-07-28",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/canada"
+        },
+        "CAF": {
+            "id": "CAF",
+            "country_name": "Central African Republic",
+            "french_name": "R\u00e9publique centrafricaine",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1961-06-28",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/central-african-republic"
+        },
+        "TCD": {
+            "id": "TCD",
+            "country_name": "Chad",
+            "french_name": "Tchad",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1961-02-02",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/chad"
+        },
+        "CHL": {
+            "id": "CHL",
+            "country_name": "Chile",
+            "french_name": "Chili",
+            "wmo_region_id": "III",
+            "regional_involvement": "III",
+            "wmo_membership": "1957-05-09",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/chile"
+        },
+        "CHN": {
+            "id": "CHN",
+            "country_name": "China",
+            "french_name": "Chine",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1951-04-01",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/china"
+        },
+        "COL": {
+            "id": "COL",
+            "country_name": "Colombia",
+            "french_name": "Colombie",
+            "wmo_region_id": "III",
+            "regional_involvement": "III,IV",
+            "wmo_membership": "1962-01-05",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/colombia"
+        },
+        "COM": {
+            "id": "COM",
+            "country_name": "Comoros",
+            "french_name": "Comores",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1976-03-19",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/comoros"
+        },
+        "COG": {
+            "id": "COG",
+            "country_name": "Congo",
+            "french_name": "Congo",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1960-11-21",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/congo"
+        },
+        "COK": {
+            "id": "COK",
+            "country_name": "Cook Islands",
+            "french_name": "\u00celes Cook",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1995-10-18",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/cook-islands"
+        },
+        "CRI": {
+            "id": "CRI",
+            "country_name": "Costa Rica",
+            "french_name": "Costa Rica",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1960-12-16",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/costa-rica"
+        },
+        "CIV": {
+            "id": "CIV",
+            "country_name": "C\u00f4te d'Ivoire",
+            "french_name": "C\u00f4te d'Ivoire",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1960-10-31",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/cote-d-ivoire"
+        },
+        "HRV": {
+            "id": "HRV",
+            "country_name": "Croatia",
+            "french_name": "Croatie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1992-10-09",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/croatia"
+        },
+        "CUB": {
+            "id": "CUB",
+            "country_name": "Cuba",
+            "french_name": "Cuba",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1952-03-04",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/cuba"
+        },
+        "CSM": {
+            "id": "CSM",
+            "country_name": "Cura\u00e7ao and Sint Maarten",
+            "french_name": "Cura\u00e7ao et Saint-Martin",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1951-09-12",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/curacao-and-sint-maarten"
+        },
+        "CYP": {
+            "id": "CYP",
+            "country_name": "Cyprus",
+            "french_name": "Chypre",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1963-04-11",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/cyprus"
+        },
+        "CZE": {
+            "id": "CZE",
+            "country_name": "Czech Republic",
+            "french_name": "R\u00e9publique tch\u00e8que",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1993-01-25",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/czech-republic"
+        },
+        "PRK": {
+            "id": "PRK",
+            "country_name": "Democratic People's Republic of Korea",
+            "french_name": "R\u00e9publique populaire d\u00e9mocratique de Cor\u00e9e",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1975-05-27",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/democratic-people-s-republic-of-korea"
+        },
+        "COD": {
+            "id": "COD",
+            "country_name": "Democratic Republic of the Congo",
+            "french_name": "R\u00e9publique d\u00e9mocratique du Congo",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1960-11-05",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/democratic-republic-of-the-congo"
+        },
+        "DNK": {
+            "id": "DNK",
+            "country_name": "Denmark",
+            "french_name": "Danemark",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1951-07-10",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/denmark"
+        },
+        "NUL": {
+            "id": "NUL",
+            "country_name": "DEVNULL country",
+            "french_name": "",
+            "wmo_region_id": null,
+            "regional_involvement": null,
+            "wmo_membership": "1970-01-01",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/"
+        },
+        "DJI": {
+            "id": "DJI",
+            "country_name": "Djibouti",
+            "french_name": "Djibouti",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1978-06-30",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/djibouti"
+        },
+        "DMA": {
+            "id": "DMA",
+            "country_name": "Dominica",
+            "french_name": "Dominique",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1980-02-21",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/dominica"
+        },
+        "DOM": {
+            "id": "DOM",
+            "country_name": "Dominican Republic",
+            "french_name": "R\u00e9publique dominicaine",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1949-09-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/dominican-republic"
+        },
+        "ECU": {
+            "id": "ECU",
+            "country_name": "Ecuador",
+            "french_name": "\u00c9quateur",
+            "wmo_region_id": "III",
+            "regional_involvement": "III",
+            "wmo_membership": "1951-06-07",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/ecuador"
+        },
+        "EGY": {
+            "id": "EGY",
+            "country_name": "Egypt",
+            "french_name": "\u00c9gypte",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1950-01-10",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/egypt"
+        },
+        "SLV": {
+            "id": "SLV",
+            "country_name": "El Salvador",
+            "french_name": "El Salvador",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1955-05-27",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/el-salvador"
+        },
+        "ERI": {
+            "id": "ERI",
+            "country_name": "Eritrea",
+            "french_name": "\u00c9rythr\u00e9e",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1993-07-08",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/eritrea"
+        },
+        "EST": {
+            "id": "EST",
+            "country_name": "Estonia",
+            "french_name": "Estonie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1992-08-21",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/estonia"
+        },
+        "SWZ": {
+            "id": "SWZ",
+            "country_name": "Eswatini",
+            "french_name": "Eswatini",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1982-11-02",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/eswatini"
+        },
+        "ETH": {
+            "id": "ETH",
+            "country_name": "Ethiopia",
+            "french_name": "\u00c9thiopie",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1953-12-03",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/ethiopia"
+        },
+        "FJI": {
+            "id": "FJI",
+            "country_name": "Fiji",
+            "french_name": "Fidji",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1980-03-18",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/fiji"
+        },
+        "FIN": {
+            "id": "FIN",
+            "country_name": "Finland",
+            "french_name": "Finlande",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1949-01-07",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/finland"
+        },
+        "FRA": {
+            "id": "FRA",
+            "country_name": "France",
+            "french_name": "France",
+            "wmo_region_id": "VI",
+            "regional_involvement": "I,III,IV,VI",
+            "wmo_membership": "1949-12-05",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/france"
+        },
+        "PYF": {
+            "id": "PYF",
+            "country_name": "French Polynesia",
+            "french_name": "Polyn\u00e9sie fran\u00e7aise",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1949-12-05",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/french-polynesia"
+        },
+        "GAB": {
+            "id": "GAB",
+            "country_name": "Gabon",
+            "french_name": "Gabon",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1961-06-05",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/gabon"
+        },
+        "GMB": {
+            "id": "GMB",
+            "country_name": "Gambia ",
+            "french_name": "Gambie ",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1978-11-01",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/gambia"
+        },
+        "GEO": {
+            "id": "GEO",
+            "country_name": "Georgia",
+            "french_name": "G\u00e9orgie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1993-09-01",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/georgia"
+        },
+        "DEU": {
+            "id": "DEU",
+            "country_name": "Germany",
+            "french_name": "Allemagne",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1954-06-10",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/germany"
+        },
+        "GHA": {
+            "id": "GHA",
+            "country_name": "Ghana",
+            "french_name": "Ghana",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1957-05-06",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/ghana"
+        },
+        "GRC": {
+            "id": "GRC",
+            "country_name": "Greece",
+            "french_name": "Gr\u00e8ce",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1950-01-20",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/greece"
+        },
+        "GTM": {
+            "id": "GTM",
+            "country_name": "Guatemala",
+            "french_name": "Guatemala",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1952-03-21",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/guatemala"
+        },
+        "GIN": {
+            "id": "GIN",
+            "country_name": "Guinea",
+            "french_name": "Guin\u00e9e",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1959-03-27",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/guinea"
+        },
+        "GNB": {
+            "id": "GNB",
+            "country_name": "Guinea-Bissau",
+            "french_name": "Guin\u00e9e-Bissau",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1977-12-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/guinea-bissau"
+        },
+        "GUY": {
+            "id": "GUY",
+            "country_name": "Guyana",
+            "french_name": "Guyana",
+            "wmo_region_id": "III",
+            "regional_involvement": "III",
+            "wmo_membership": "1966-11-22",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/guyana"
+        },
+        "HTI": {
+            "id": "HTI",
+            "country_name": "Haiti",
+            "french_name": "Ha\u00efti",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1951-08-14",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/haiti"
+        },
+        "HND": {
+            "id": "HND",
+            "country_name": "Honduras",
+            "french_name": "Honduras",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1960-10-10",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/honduras"
+        },
+        "HKG": {
+            "id": "HKG",
+            "country_name": "Hong Kong, China",
+            "french_name": "Hong Kong, Chine",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1948-12-14",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/hong-kong-china"
+        },
+        "HUN": {
+            "id": "HUN",
+            "country_name": "Hungary",
+            "french_name": "Hongrie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1951-02-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/hungary"
+        },
+        "ISL": {
+            "id": "ISL",
+            "country_name": "Iceland",
+            "french_name": "Islande",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1948-01-16",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/iceland"
+        },
+        "IND": {
+            "id": "IND",
+            "country_name": "India",
+            "french_name": "Inde",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1949-04-27",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/india"
+        },
+        "IDN": {
+            "id": "IDN",
+            "country_name": "Indonesia",
+            "french_name": "Indon\u00e9sie",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1950-11-16",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/indonesia"
+        },
+        "IRN": {
+            "id": "IRN",
+            "country_name": "Iran, Islamic Republic of",
+            "french_name": "Iran, R\u00e9publique islamique d'",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1959-09-30",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/iran-islamic-republic-of"
+        },
+        "IRQ": {
+            "id": "IRQ",
+            "country_name": "Iraq",
+            "french_name": "Iraq",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1950-02-21",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/iraq"
+        },
+        "IRL": {
+            "id": "IRL",
+            "country_name": "Ireland",
+            "french_name": "Irlande",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1950-03-14",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/ireland"
+        },
+        "ISR": {
+            "id": "ISR",
+            "country_name": "Israel",
+            "french_name": "Isra\u00ebl",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1949-09-30",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/israel"
+        },
+        "ITA": {
+            "id": "ITA",
+            "country_name": "Italy",
+            "french_name": "Italie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1951-01-09",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/italy"
+        },
+        "JAM": {
+            "id": "JAM",
+            "country_name": "Jamaica",
+            "french_name": "Jama\u00efque",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1963-05-29",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/jamaica"
+        },
+        "JPN": {
+            "id": "JPN",
+            "country_name": "Japan",
+            "french_name": "Japon",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1953-08-11",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/japan"
+        },
+        "JOR": {
+            "id": "JOR",
+            "country_name": "Jordan",
+            "french_name": "Jordanie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1955-07-11",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/jordan"
+        },
+        "KAZ": {
+            "id": "KAZ",
+            "country_name": "Kazakhstan",
+            "french_name": "Kazakhstan",
+            "wmo_region_id": "II",
+            "regional_involvement": "II,VI",
+            "wmo_membership": "1993-05-05",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/kazakhstan"
+        },
+        "KEN": {
+            "id": "KEN",
+            "country_name": "Kenya",
+            "french_name": "Kenya",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1964-06-02",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/kenya"
+        },
+        "KIR": {
+            "id": "KIR",
+            "country_name": "Kiribati",
+            "french_name": "Kiribati",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "2003-03-26",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/kiribati"
+        },
+        "KWT": {
+            "id": "KWT",
+            "country_name": "Kuwait",
+            "french_name": "Kowe\u00eft",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1962-12-01",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/kuwait"
+        },
+        "KGZ": {
+            "id": "KGZ",
+            "country_name": "Kyrgyzstan",
+            "french_name": "Kirghizistan",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1994-07-20",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/kyrgyzstan"
+        },
+        "LAO": {
+            "id": "LAO",
+            "country_name": "Lao People's Democratic Republic",
+            "french_name": "R\u00e9publique d\u00e9mocratique populaire lao",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1955-06-01",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/lao-people-s-democratic-republic"
+        },
+        "LVA": {
+            "id": "LVA",
+            "country_name": "Latvia",
+            "french_name": "Lettonie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1992-05-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/latvia"
+        },
+        "LBN": {
+            "id": "LBN",
+            "country_name": "Lebanon",
+            "french_name": "Liban",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1948-12-22",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/lebanon"
+        },
+        "LSO": {
+            "id": "LSO",
+            "country_name": "Lesotho",
+            "french_name": "Lesotho",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1979-08-03",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/lesotho"
+        },
+        "LBR": {
+            "id": "LBR",
+            "country_name": "Liberia",
+            "french_name": "Lib\u00e9ria",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1974-02-07",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/liberia"
+        },
+        "LBY": {
+            "id": "LBY",
+            "country_name": "Libya (State of)",
+            "french_name": "Libye (L'Etat de)",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1955-12-29",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/libya-state-of"
+        },
+        "LTU": {
+            "id": "LTU",
+            "country_name": "Lithuania",
+            "french_name": "Lituanie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1992-06-03",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/lithuania"
+        },
+        "LUX": {
+            "id": "LUX",
+            "country_name": "Luxembourg",
+            "french_name": "Luxembourg",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1952-10-29",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/luxembourg"
+        },
+        "MAC": {
+            "id": "MAC",
+            "country_name": "Macao, China",
+            "french_name": "Macao, Chine",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1996-01-24",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/macao-china"
+        },
+        "MDG": {
+            "id": "MDG",
+            "country_name": "Madagascar",
+            "french_name": "Madagascar",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1960-12-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/madagascar"
+        },
+        "MWI": {
+            "id": "MWI",
+            "country_name": "Malawi",
+            "french_name": "Malawi",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1965-02-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/malawi"
+        },
+        "MYS": {
+            "id": "MYS",
+            "country_name": "Malaysia",
+            "french_name": "Malaisie",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1958-05-19",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/malaysia"
+        },
+        "MDV": {
+            "id": "MDV",
+            "country_name": "Maldives",
+            "french_name": "Maldives",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1978-06-01",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/maldives"
+        },
+        "MLI": {
+            "id": "MLI",
+            "country_name": "Mali",
+            "french_name": "Mali",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1960-11-11",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/mali"
+        },
+        "MLT": {
+            "id": "MLT",
+            "country_name": "Malta",
+            "french_name": "Malte",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1976-12-28",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/malta"
+        },
+        "MRT": {
+            "id": "MRT",
+            "country_name": "Mauritania",
+            "french_name": "Mauritanie",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1962-01-23",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/mauritania"
+        },
+        "MUS": {
+            "id": "MUS",
+            "country_name": "Mauritius",
+            "french_name": "Maurice",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1969-07-17",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/mauritius"
+        },
+        "MEX": {
+            "id": "MEX",
+            "country_name": "Mexico",
+            "french_name": "Mexique",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1949-05-27",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/mexico"
+        },
+        "FSM": {
+            "id": "FSM",
+            "country_name": "Micronesia, Federated States of",
+            "french_name": "Micron\u00e9sie, \u00c9tats f\u00e9d\u00e9r\u00e9s de",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1995-09-20",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/micronesia-federated-states-of"
+        },
+        "MCO": {
+            "id": "MCO",
+            "country_name": "Monaco",
+            "french_name": "Monaco",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1996-04-09",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/monaco"
+        },
+        "MNG": {
+            "id": "MNG",
+            "country_name": "Mongolia",
+            "french_name": "Mongolie",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1963-04-04",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/mongolia"
+        },
+        "MNE": {
+            "id": "MNE",
+            "country_name": "Montenegro",
+            "french_name": "Mont\u00e9n\u00e9gro",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "2007-01-05",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/montenegro"
+        },
+        "MAR": {
+            "id": "MAR",
+            "country_name": "Morocco",
+            "french_name": "Maroc",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1957-01-03",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/morocco"
+        },
+        "MOZ": {
+            "id": "MOZ",
+            "country_name": "Mozambique",
+            "french_name": "Mozambique",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1976-06-21",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/mozambique"
+        },
+        "MMR": {
+            "id": "MMR",
+            "country_name": "Myanmar",
+            "french_name": "Myanmar",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1949-08-19",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/myanmar"
+        },
+        "NAM": {
+            "id": "NAM",
+            "country_name": "Namibia",
+            "french_name": "Namibie",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1991-02-06",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/namibia"
+        },
+        "NRU": {
+            "id": "NRU",
+            "country_name": "Nauru",
+            "french_name": "Nauru",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "-0001-11-30",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/nauru"
+        },
+        "NPL": {
+            "id": "NPL",
+            "country_name": "Nepal",
+            "french_name": "N\u00e9pal",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1966-08-12",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/nepal"
+        },
+        "NLD": {
+            "id": "NLD",
+            "country_name": "Netherlands",
+            "french_name": "Pays-Bas",
+            "wmo_region_id": "VI",
+            "regional_involvement": "IV,VI",
+            "wmo_membership": "1951-09-12",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/netherlands"
+        },
+        "NCL": {
+            "id": "NCL",
+            "country_name": "New Caledonia",
+            "french_name": "Nouvelle-Cal\u00e9donie",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1949-12-05",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/new-caledonia"
+        },
+        "NZL": {
+            "id": "NZL",
+            "country_name": "New Zealand",
+            "french_name": "Nouvelle-Z\u00e9lande",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1948-04-02",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/new-zealand"
+        },
+        "NIC": {
+            "id": "NIC",
+            "country_name": "Nicaragua",
+            "french_name": "Nicaragua",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1959-02-27",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/nicaragua"
+        },
+        "NER": {
+            "id": "NER",
+            "country_name": "Niger",
+            "french_name": "Niger",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1960-10-28",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/niger"
+        },
+        "NGA": {
+            "id": "NGA",
+            "country_name": "Nigeria",
+            "french_name": "Nig\u00e9ria",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1960-11-30",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/nigeria"
+        },
+        "NIU": {
+            "id": "NIU",
+            "country_name": "Niue",
+            "french_name": "Niou\u00e9",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1996-05-31",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/niue"
+        },
+        "NOR": {
+            "id": "NOR",
+            "country_name": "Norway",
+            "french_name": "Norv\u00e8ge",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1948-12-09",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/norway"
+        },
+        "OMN": {
+            "id": "OMN",
+            "country_name": "Oman",
+            "french_name": "Oman",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1975-01-03",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/oman"
+        },
+        "PAK": {
+            "id": "PAK",
+            "country_name": "Pakistan",
+            "french_name": "Pakistan",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1950-04-11",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/pakistan"
+        },
+        "PAN": {
+            "id": "PAN",
+            "country_name": "Panama",
+            "french_name": "Panama",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1967-09-12",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/panama"
+        },
+        "PNG": {
+            "id": "PNG",
+            "country_name": "Papua New Guinea",
+            "french_name": "Papouasie-Nouvelle-Guin\u00e9e",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1975-12-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/papua-new-guinea"
+        },
+        "PRY": {
+            "id": "PRY",
+            "country_name": "Paraguay",
+            "french_name": "Paraguay",
+            "wmo_region_id": "III",
+            "regional_involvement": "III",
+            "wmo_membership": "1950-09-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/paraguay"
+        },
+        "PER": {
+            "id": "PER",
+            "country_name": "Peru",
+            "french_name": "P\u00e9rou",
+            "wmo_region_id": "III",
+            "regional_involvement": "III",
+            "wmo_membership": "1949-12-30",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/peru"
+        },
+        "PHL": {
+            "id": "PHL",
+            "country_name": "Philippines",
+            "french_name": "Philippines",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1949-04-05",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/philippines"
+        },
+        "POL": {
+            "id": "POL",
+            "country_name": "Poland",
+            "french_name": "Pologne",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1950-05-16",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/poland"
+        },
+        "PRT": {
+            "id": "PRT",
+            "country_name": "Portugal",
+            "french_name": "Portugal",
+            "wmo_region_id": "VI",
+            "regional_involvement": "I,VI",
+            "wmo_membership": "1951-01-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/portugal"
+        },
+        "QAT": {
+            "id": "QAT",
+            "country_name": "Qatar",
+            "french_name": "Qatar",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1975-04-04",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/qatar"
+        },
+        "KOR": {
+            "id": "KOR",
+            "country_name": "Republic of Korea",
+            "french_name": "R\u00e9publique de Cor\u00e9e",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1956-02-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/republic-of-korea"
+        },
+        "MDA": {
+            "id": "MDA",
+            "country_name": "Republic of Moldova",
+            "french_name": "R\u00e9publique de Moldova",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1994-11-21",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/republic-of-moldova"
+        },
+        "MKD": {
+            "id": "MKD",
+            "country_name": "Republic of North Macedonia",
+            "french_name": "R\u00e9publique de Mac\u00e9doine du Nord",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1993-06-01",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/republic-of-north-macedonia"
+        },
+        "ROU": {
+            "id": "ROU",
+            "country_name": "Romania",
+            "french_name": "Roumanie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1948-08-18",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/romania"
+        },
+        "RUS": {
+            "id": "RUS",
+            "country_name": "Russian Federation",
+            "french_name": "F\u00e9d\u00e9ration de Russie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "II,VI",
+            "wmo_membership": "1948-04-02",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/russian-federation"
+        },
+        "RWA": {
+            "id": "RWA",
+            "country_name": "Rwanda",
+            "french_name": "Rwanda",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1963-02-04",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/rwanda"
+        },
+        "LCA": {
+            "id": "LCA",
+            "country_name": "Saint Lucia",
+            "french_name": "Sainte-Lucie",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1981-03-02",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/saint-lucia"
+        },
+        "WSM": {
+            "id": "WSM",
+            "country_name": "Samoa",
+            "french_name": "Samoa",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1995-07-11",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/samoa"
+        },
+        "STP": {
+            "id": "STP",
+            "country_name": "Sao Tome and Principe",
+            "french_name": "Sao Tom\u00e9-et-Principe",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1976-11-23",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/sao-tome-and-principe"
+        },
+        "SAU": {
+            "id": "SAU",
+            "country_name": "Saudi Arabia",
+            "french_name": "Arabie saoudite",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1959-02-26",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/saudi-arabia"
+        },
+        "SEN": {
+            "id": "SEN",
+            "country_name": "Senegal",
+            "french_name": "S\u00e9n\u00e9gal",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1960-12-11",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/senegal"
+        },
+        "SRB": {
+            "id": "SRB",
+            "country_name": "Serbia",
+            "french_name": "Serbie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "2001-03-23",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/serbia"
+        },
+        "SYC": {
+            "id": "SYC",
+            "country_name": "Seychelles",
+            "french_name": "Seychelles",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1977-02-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/seychelles"
+        },
+        "SLE": {
+            "id": "SLE",
+            "country_name": "Sierra Leone",
+            "french_name": "Sierra Leone",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1962-03-30",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/sierra-leone"
+        },
+        "SGP": {
+            "id": "SGP",
+            "country_name": "Singapore",
+            "french_name": "Singapour",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1966-01-24",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/singapore"
+        },
+        "SVK": {
+            "id": "SVK",
+            "country_name": "Slovakia",
+            "french_name": "Slovaquie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1993-02-11",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/slovakia"
+        },
+        "SVN": {
+            "id": "SVN",
+            "country_name": "Slovenia",
+            "french_name": "Slov\u00e9nie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1992-08-20",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/slovenia"
+        },
+        "SLB": {
+            "id": "SLB",
+            "country_name": "Solomon Islands",
+            "french_name": "\u00celes Salomon",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1985-05-06",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/solomon-islands"
+        },
+        "SOM": {
+            "id": "SOM",
+            "country_name": "Somalia",
+            "french_name": "Somalie",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1964-04-01",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/somalia"
+        },
+        "ZAF": {
+            "id": "ZAF",
+            "country_name": "South Africa",
+            "french_name": "Afrique du Sud",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1950-01-17",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/south-africa"
+        },
+        "SSD": {
+            "id": "SSD",
+            "country_name": "South Sudan",
+            "french_name": "Soudan du Sud",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "2012-12-14",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/south-sudan"
+        },
+        "ESP": {
+            "id": "ESP",
+            "country_name": "Spain",
+            "french_name": "Espagne",
+            "wmo_region_id": "VI",
+            "regional_involvement": "I,VI",
+            "wmo_membership": "1951-02-27",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/spain"
+        },
+        "LKA": {
+            "id": "LKA",
+            "country_name": "Sri Lanka",
+            "french_name": "Sri Lanka",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1951-05-23",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/sri-lanka"
+        },
+        "SDN": {
+            "id": "SDN",
+            "country_name": "Sudan",
+            "french_name": "Soudan",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1956-12-03",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/sudan"
+        },
+        "SUR": {
+            "id": "SUR",
+            "country_name": "Suriname",
+            "french_name": "Suriname",
+            "wmo_region_id": "III",
+            "regional_involvement": "III",
+            "wmo_membership": "1976-07-26",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/suriname"
+        },
+        "SWE": {
+            "id": "SWE",
+            "country_name": "Sweden",
+            "french_name": "Su\u00e8de",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1948-11-10",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/sweden"
+        },
+        "CHE": {
+            "id": "CHE",
+            "country_name": "Switzerland",
+            "french_name": "Suisse",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1949-02-23",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/switzerland"
+        },
+        "SYR": {
+            "id": "SYR",
+            "country_name": "Syrian Arab Republic",
+            "french_name": "R\u00e9publique arabe syrienne",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1952-07-16",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/syrian-arab-republic"
+        },
+        "TJK": {
+            "id": "TJK",
+            "country_name": "Tajikistan",
+            "french_name": "Tadjikistan",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1993-08-10",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/tajikistan"
+        },
+        "THA": {
+            "id": "THA",
+            "country_name": "Thailand",
+            "french_name": "Tha\u00eflande",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1949-07-11",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/thailand"
+        },
+        "TLS": {
+            "id": "TLS",
+            "country_name": "Timor-Leste",
+            "french_name": "Timor-Leste",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "2009-12-04",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/timor-leste"
+        },
+        "TGO": {
+            "id": "TGO",
+            "country_name": "Togo",
+            "french_name": "Togo",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1960-10-28",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/togo"
+        },
+        "TON": {
+            "id": "TON",
+            "country_name": "Tonga",
+            "french_name": "Tonga",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1996-02-25",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/tonga"
+        },
+        "TTO": {
+            "id": "TTO",
+            "country_name": "Trinidad and Tobago",
+            "french_name": "Trinit\u00e9-et-Tobago",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV",
+            "wmo_membership": "1963-02-01",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/trinidad-and-tobago"
+        },
+        "TUN": {
+            "id": "TUN",
+            "country_name": "Tunisia",
+            "french_name": "Tunisie",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1957-01-22",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/tunisia"
+        },
+        "TUR": {
+            "id": "TUR",
+            "country_name": "Turkey",
+            "french_name": "Turquie",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1949-08-05",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/turkey"
+        },
+        "TKM": {
+            "id": "TKM",
+            "country_name": "Turkmenistan",
+            "french_name": "Turkm\u00e9nistan",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1992-12-04",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/turkmenistan"
+        },
+        "TUV": {
+            "id": "TUV",
+            "country_name": "Tuvalu",
+            "french_name": "Tuvalu",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "2012-09-22",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/tuvalu"
+        },
+        "UGA": {
+            "id": "UGA",
+            "country_name": "Uganda",
+            "french_name": "Ouganda",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1963-03-15",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/uganda"
+        },
+        "UKR": {
+            "id": "UKR",
+            "country_name": "Ukraine",
+            "french_name": "Ukraine",
+            "wmo_region_id": "VI",
+            "regional_involvement": "VI",
+            "wmo_membership": "1948-04-12",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/ukraine"
+        },
+        "ARE": {
+            "id": "ARE",
+            "country_name": "United Arab Emirates",
+            "french_name": "\u00c9mirats arabes unis",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1986-12-17",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/united-arab-emirates"
+        },
+        "GBR": {
+            "id": "GBR",
+            "country_name": "United Kingdom of Great Britain and Northern Ireland",
+            "french_name": "Royaume-Uni de Grande-Bretagne et d'Irlande du Nord",
+            "wmo_region_id": "VI",
+            "regional_involvement": "I,IV,V,VI",
+            "wmo_membership": "1948-12-14",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/united-kingdom-of-great-britain-and-northern-ireland"
+        },
+        "TZA": {
+            "id": "TZA",
+            "country_name": "United Republic of Tanzania",
+            "french_name": "R\u00e9publique-Unie de Tanzanie",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1962-09-14",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/united-republic-of-tanzania"
+        },
+        "USA": {
+            "id": "USA",
+            "country_name": "United States of America",
+            "french_name": "\u00c9tats-Unis d'Am\u00e9rique",
+            "wmo_region_id": "IV",
+            "regional_involvement": "IV,V",
+            "wmo_membership": "1949-05-04",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/united-states-of-america"
+        },
+        "URY": {
+            "id": "URY",
+            "country_name": "Uruguay",
+            "french_name": "Uruguay",
+            "wmo_region_id": "III",
+            "regional_involvement": "III",
+            "wmo_membership": "1951-01-11",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/uruguay"
+        },
+        "UZB": {
+            "id": "UZB",
+            "country_name": "Uzbekistan",
+            "french_name": "Ouzb\u00e9kistan",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1992-12-23",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/uzbekistan"
+        },
+        "VUT": {
+            "id": "VUT",
+            "country_name": "Vanuatu",
+            "french_name": "Vanuatu",
+            "wmo_region_id": "V",
+            "regional_involvement": "V",
+            "wmo_membership": "1982-06-24",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/vanuatu"
+        },
+        "VEN": {
+            "id": "VEN",
+            "country_name": "Venezuela, Bolivarian Republic of",
+            "french_name": "Venezuela, R\u00e9publique bolivarienne du",
+            "wmo_region_id": "III",
+            "regional_involvement": "III,IV",
+            "wmo_membership": "1950-06-16",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/venezuela-bolivarian-republic-of"
+        },
+        "VNM": {
+            "id": "VNM",
+            "country_name": "Viet Nam",
+            "french_name": "Viet Nam",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1975-07-08",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/viet-nam"
+        },
+        "YEM": {
+            "id": "YEM",
+            "country_name": "Yemen",
+            "french_name": "Y\u00e9men",
+            "wmo_region_id": "II",
+            "regional_involvement": "II",
+            "wmo_membership": "1971-07-08",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/yemen"
+        },
+        "ZMB": {
+            "id": "ZMB",
+            "country_name": "Zambia",
+            "french_name": "Zambie",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1964-12-28",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/zambia"
+        },
+        "ZWE": {
+            "id": "ZWE",
+            "country_name": "Zimbabwe",
+            "french_name": "Zimbabwe",
+            "wmo_region_id": "I",
+            "regional_involvement": "I",
+            "wmo_membership": "1981-01-12",
+            "link": "https:\/\/cpdb.wmo.int\/dashboard\/zimbabwe"
+        }
+    }
+}
