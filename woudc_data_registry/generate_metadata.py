@@ -264,7 +264,7 @@ def generate_metadata(woudc_yaml):
                                 'description_en':
                                     'Static dataset archive file',
                                 'description_fr':
-                                    'La donnée d\'archive statique'
+                                    "La donnée d'archive statique"
                             }
 
                             dataset_md['properties']['wms'] = {
@@ -491,9 +491,7 @@ def update_extents():
                                         level['networks'].remove(network)
 
                     md_updated = json.dumps(md_loads)
-                    md_updated = md_updated.replace('"', '\\"').replace(
-                        "'", "''"
-                    )
+                    md_updated = md_updated.replace('"', '\\"')
                     # Update metadata in corresponding row
                     new_value = {'_metadata': md_updated}
                     registry.update_by_field(
