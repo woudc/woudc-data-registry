@@ -103,3 +103,6 @@ ENV/
 
 # SQLite databases
 *.db
+
+# migration env file
+migration.env
