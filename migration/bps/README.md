@@ -68,7 +68,7 @@ woudc-data-registry admin registry setup
 # Initialize the Elasticsearch component
 woudc-data-registry admin search setup
 ```
-# Data Migration from Woudc Archive
+# Data Migration from WOUDC Archive
 The migration/bps directory provides migration scripts that are used to extract
 metadata from the WOUDC Backend Processing System (BPS) in support of
 WOUDC Data Registry initialization and metadata ingest.

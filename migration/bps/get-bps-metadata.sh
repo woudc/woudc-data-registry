@@ -19,7 +19,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2020 Government of Canada
+# Copyright (c) 2022 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -56,12 +56,13 @@ if [[
   || -z $WOUDC_ARCHIVE_HOSTPORT
   || -z $WOUDC_ARCHIVE_DBNAME
   || -z $WOUDC_ARCHIVE_USERNAME
+  || -z $WOUDC_ARCHIVE_PASSWORD
   || -z $WOUDC_DATAMART_HOSTNAME
   || -z $WOUDC_DATAMART_HOSTPORT
   || -z $WOUDC_DATAMART_DBNAME
   || -z $WOUDC_DATAMART_USERNAME
+  || -z $WOUDC_DATAMART_PASSWORD
   || -z $OUTPUT_DIR
-  || -z $PGPASSWORD
   ]]; then
     echo "USAGE:"
     echo "  . migration.env"
@@ -85,7 +86,8 @@ DEPLOYMENTS_QUERY="SELECT platform.woudc_platform_identifier AS station_id, CONC
 
 NOTIFICATIONS_QUERY="SELECT title_en, title_fr, description_en, description_fr, tags_en, tags_fr, published, banner, visible, ST_X(the_geom) AS x, ST_Y(the_geom) AS y FROM notifications"
 
-echo "Extracting metadata"
+echo "Extracting metadata from woudc-archive"
+export PGPASSWORD=$WOUDC_ARCHIVE_PASSWORD
 
 echo " Projects..."
 psql -h $WOUDC_ARCHIVE_HOSTNAME -p $WOUDC_ARCHIVE_HOSTPORT -d $WOUDC_ARCHIVE_DBNAME -U $WOUDC_ARCHIVE_USERNAME -c "\\COPY ($PROJECTS_QUERY) TO $OUTPUT_DIR/projects.csv WITH CSV HEADER;"
@@ -107,6 +109,9 @@ psql -h $WOUDC_ARCHIVE_HOSTNAME -p $WOUDC_ARCHIVE_HOSTPORT -d $WOUDC_ARCHIVE_DBN
 
 echo " Deployments..."
 psql -h $WOUDC_ARCHIVE_HOSTNAME -p $WOUDC_ARCHIVE_HOSTPORT -d $WOUDC_ARCHIVE_DBNAME -U $WOUDC_ARCHIVE_USERNAME -c "\\COPY ($DEPLOYMENTS_QUERY) TO $OUTPUT_DIR/deployments.csv WITH CSV HEADER;"
+
+echo "Extracting metadata from woudc-web-db"
+export PGPASSWORD=$WOUDC_DATAMART_PASSWORD
 
 echo " Notifications..."
 psql -h $WOUDC_DATAMART_HOSTNAME -p $WOUDC_DATAMART_HOSTPORT -d $WOUDC_DATAMART_DBNAME -U $WOUDC_DATAMART_USERNAME -c "\\COPY ($NOTIFICATIONS_QUERY) TO $OUTPUT_DIR/notifications.csv WITH CSV HEADER;"
