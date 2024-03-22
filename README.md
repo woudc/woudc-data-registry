@@ -31,19 +31,20 @@ are automatically installed during installation.
 python3 -m venv --system-site-packages woudc-data-registry
 cd woudc-data-registry
 source bin/activate
+cd ..
 
 # clone woudc-extcsv and install
 git clone https://github.com/woudc/woudc-extcsv.git
 cd woudc-extcsv
 pip install -r requirements.txt
-python setup.py install
+python3 setup.py install
 cd ..
 
 # clone codebase and install
 git clone https://github.com/woudc/woudc-data-registry.git
 cd woudc-data-registry
-python setup.py build
-python setup.py install
+python3 setup.py build
+python3 setup.py install
 # for PostgreSQL backends
 pip install -r requirements-pg.txt
 
@@ -223,7 +224,7 @@ pip install -r requirements-dev.txt
 # build local copy of https://woudc.github.io/woudc-data-registry
 cd docs
 make html
-python -m http.server  # view on http://localhost:8000/
+python3 -m http.server  # view on http://localhost:8000/
 ```
 
 #### Running Tests
@@ -231,10 +232,10 @@ python -m http.server  # view on http://localhost:8000/
 ```bash
 # run tests like this:
 cd woudc_data_registry/tests
-python test_data_registry.py
+python3 test_data_registry.py
 
 # or this:
-python setup.py test
+python3 setup.py test
 
 # measure code coverage
 coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_data_registry
