@@ -1966,8 +1966,6 @@ def show_config(ctx):
         'WDR_SEARCH_TYPE',
         'WDR_SEARCH_INDEX_BASENAME',
         'WDR_SEARCH_URL',
-        'WDR_SEARCH_USERNAME',
-        'WDR_SEARCH_PASSWORD',
         'WDR_WAF_BASEDIR',
         'WDR_WAF_BASEURL',
         'WDR_ERROR_CONFIG',
@@ -2041,10 +2039,10 @@ def init(ctx, datadir, init_search_index):
         raise click.ClickException('Missing required data directory')
 
     wmo_countries = os.path.join(datadir, 'wmo-countries.json')
-    countries = os.path.join(datadir, 'countries.json')
+    countries = os.path.join(datadir, 'init', 'countries.json')
     contributors = os.path.join(datadir, 'contributors.csv')
     stations = os.path.join(datadir, 'stations.csv')
-    ships = os.path.join(datadir, 'ships.csv')
+    ships = os.path.join(datadir, 'init', 'ships.csv')
     station_names = os.path.join(datadir, 'station-names.csv')
     datasets = os.path.join(datadir, 'datasets.csv')
     projects = os.path.join(datadir, 'projects.csv')

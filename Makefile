@@ -54,7 +54,7 @@ help:
 	@echo " createdb: create PostgreSQL database"
 	@echo " dropdb: drop PostgreSQL database"
 	@echo " setup: create models and search index"
-	@echo " setup_data: download core metadata
+	@echo " setup_data: download core metadata"
 	@echo " teardown: delete models and search index"
 	@echo " test: run tests"
 	@echo " coverage: run code coverage"

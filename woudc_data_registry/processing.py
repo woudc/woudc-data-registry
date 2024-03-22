@@ -687,7 +687,7 @@ class Process(object):
         pl_type = self.extcsv.extcsv['PLATFORM']['Type']
         name = self.extcsv.extcsv['PLATFORM']['Name']
         country = self.extcsv.extcsv['PLATFORM']['Country']
-        # gaw_id = self.extcsv.extcsv['PLATFORM'].get('GAW_ID', None)
+        # gaw_id = self.extcsv.extcsv['PLATFORM'].get('GAW_ID')
 
         # TODO: consider adding and checking #PLATFORM_Type
         LOGGER.debug('Validating station {}:{}'.format(identifier, name))
@@ -919,7 +919,7 @@ class Process(object):
 
         lat = self.extcsv.extcsv['LOCATION']['Latitude']
         lon = self.extcsv.extcsv['LOCATION']['Longitude']
-        height = self.extcsv.extcsv['LOCATION'].get('Height', None)
+        height = self.extcsv.extcsv['LOCATION'].get('Height')
         valueline = self.extcsv.line_num('LOCATION') + 2
 
         try:
@@ -1082,8 +1082,8 @@ class Process(object):
 
         success = True
 
-        dg_date = self.extcsv.extcsv['DATA_GENERATION'].get('Date', None)
-        version = self.extcsv.extcsv['DATA_GENERATION'].get('Version', None)
+        dg_date = self.extcsv.extcsv['DATA_GENERATION'].get('Date')
+        version = self.extcsv.extcsv['DATA_GENERATION'].get('Version')
 
         valueline = self.extcsv.line_num('DATA_GENERATION')
 
@@ -1142,7 +1142,7 @@ class Process(object):
         success = True
 
         dg_date = self.extcsv.extcsv['DATA_GENERATION']['Date']
-        ts_time = self.extcsv.extcsv['TIMESTAMP'].get('Time', None)
+        ts_time = self.extcsv.extcsv['TIMESTAMP'].get('Time')
 
         for table, body in self.extcsv.extcsv.items():
             if table == 'DATA_GENERATION':

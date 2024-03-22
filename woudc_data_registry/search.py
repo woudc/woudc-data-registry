@@ -44,7 +44,6 @@
 # =================================================================
 
 import logging
-from urllib.parse import urlparse
 
 import click
 from elasticsearch import Elasticsearch, helpers
@@ -1066,32 +1065,8 @@ class SearchIndex(object):
         self.index_basename = config.WDR_SEARCH_INDEX_BASENAME
 
         LOGGER.debug('Connecting to Elasticsearch')
-        url_parsed = urlparse(self.url)
-        url_settings = {
-            'host': url_parsed.hostname
-        }
 
-        if url_parsed.port is None:  # proxy to default HTTP(S) port
-            if url_parsed.scheme == 'https':
-                url_settings['port'] = 443
-                url_settings['scheme'] = url_parsed.scheme
-            else:
-                url_settings['port'] = 80
-        else:  # was set explictly
-            url_settings['port'] = url_parsed.port
-
-        if url_parsed.path is not None:
-            url_settings['url_prefix'] = url_parsed.path
-
-        LOGGER.debug('URL settings: {}'.format(url_settings))
-
-        AUTH = (config.WDR_SEARCH_USERNAME, config.WDR_SEARCH_PASSWORD)
-        if None in AUTH:
-            self.connection = Elasticsearch([url_settings])
-        else:
-            LOGGER.debug('Connecting using username {}'.format(AUTH[0]))
-            self.connection = Elasticsearch([url_settings], http_auth=AUTH,
-                                            verify_certs=False)
+        self.connection = Elasticsearch(self.url)
 
         self.headers = {'Content-Type': 'application/json'}
 
