@@ -1975,7 +1975,7 @@ def show_config(ctx):
     ]
 
     for env_var in env_vars:
-        if env_var in ['WDR_DB_PASSWORD', 'WDR_SEARCH_PASSWORD']:
+        if env_var in ['WDR_DB_PASSWORD']:
             s = '{}: {}'.format(env_var, '*'*len(getattr(config, env_var)))
         elif env_var == 'WDR_DATABASE_URL' and config.WDR_DB_TYPE == 'postgresql':  # noqa
             value1 = getattr(config, env_var)
