@@ -1137,7 +1137,7 @@ class SearchIndex(object):
             index_name = self.generate_index_name(definition['index'])
 
             try:
-                self.connection.indices.delete(index_name)
+                self.connection.indices.delete(index=index_name)
             except NotFoundError as err:
                 LOGGER.error(err)
                 raise SearchIndexError(err)
@@ -1294,7 +1294,7 @@ class SearchIndex(object):
             }
         }
 
-        self.connection.delete_by_query(index_name, query)
+        self.connection.delete_by_query(index=index_name, body=query)
         return True
 
 
