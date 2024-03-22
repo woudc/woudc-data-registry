@@ -70,10 +70,6 @@ woudc-data-registry admin registry setup
 woudc-data-registry admin search setup
 
 # load core metadata
-
-# fetch WMO country list
-mkdir data
-curl -o data/wmo-countries.json https://www.wmo.int/cpdb/data/membersandterritories.json
 woudc-data-registry admin init -d data/
 
 # cleanups
