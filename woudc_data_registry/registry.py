@@ -333,7 +333,7 @@ class Registry(object):
                     self.session.add(obj)
                     # self.session.merge(obj)
                 else:
-                    LOGGER.info(f'Registry persistence for model {obj.__tablename__}} disabled, skipping')  # noqa
+                    LOGGER.info(f'Registry persistence for model {obj.__tablename__} disabled, skipping')  # noqa
                     return
 
             try:
@@ -342,7 +342,7 @@ class Registry(object):
                 LOGGER.error(f'Failed to persist {obj} due to: {err}')
                 self.session.rollback()
 
-            LOGGER.debug(f'Saving {obj')
+            LOGGER.debug(f'Saving {obj}')
         except DataError as err:
             LOGGER.error(f'Failed to save to registry: {err}')
             self.session.rollback()

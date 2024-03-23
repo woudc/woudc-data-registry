@@ -375,7 +375,7 @@ class Process(object):
             LOGGER.info('Bypass mode. Skipping permission check.')
             allow_add_deployment = True
         else:
-            response = input(f'Deployment {deployment.deployment_id} not found. Add? (y/n) [n]: '  # noqa
+            response = input(f'Deployment {deployment.deployment_id} not found. Add? (y/n) [n]: ')  # noqa
             allow_add_deployment = response.lower() in ['y', 'yes']
 
         if not allow_add_deployment:
@@ -507,7 +507,7 @@ class Process(object):
             LOGGER.info('Bypass mode. Skipping permission check')
             allow_add_contribution = True
         else:
-            response = input(f'Contribution {contribution.contribution_id} not found. Add? (y/n) [n]: ')
+            response = input(f'Contribution {contribution.contribution_id} not found. Add? (y/n) [n]: ')  # noqa
             allow_add_contribution = response.lower() in ['y', 'yes']
 
         if allow_add_contribution:
@@ -881,7 +881,7 @@ class Process(object):
             LOGGER.warning(f'No instrument {instrument.instrument_id} found in registry')  # noqa
             return False
         else:
-            LOGGER.debug(f'Found instrument match for {instrument.instrument_id}'  # noqa
+            LOGGER.debug(f'Found instrument match for {instrument.instrument_id}')  # noqa
 
             self.extcsv.extcsv['INSTRUMENT']['Number'] = response.serial
             return True

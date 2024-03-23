@@ -349,7 +349,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                     try:
                         uv = float(uv)
                     except ValueError as err:
-                        msg = (f'Unable to make UVIndex: {uv} value into a float.'
+                        msg = (f'Unable to make UVIndex: {uv} value into a float.'  # noqa
                                f' Time: {time}, file: {ipath}: {err}')
                         LOGGER.error(msg)
                         pass
@@ -362,7 +362,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                 try:
                     zen_angle = extcsv.extcsv[global_summary_nsf_t]['SZA'][0]
                 except Exception as err:
-                    msg = (f'Unable to get {global_summary_nsf_t}.SZA from file {ipath}: {err}'  # noqa
+                    msg = f'Unable to get {global_summary_nsf_t}.SZA from file {ipath}: {err}'  # noqa
                     LOGGER.error(msg)
                     pass
 
@@ -374,7 +374,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                         intcie_f = float(intcie)
                     except Exception as err:
                         msg = ('Unable to convert to float intcie:'
-                               f' {intcie}. File: {ipath}. Time: {time}: {err}'
+                               f' {intcie}. File: {ipath}. Time: {time}: {err}')  # noqa
                         LOGGER.error(msg)
                         continue
                     # compute
@@ -392,12 +392,12 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                             extcsv.extcsv[global_summary_t]['ZenAngle'][0]
                     except Exception as err:
                         msg = (f'Unable to get {global_summary_t}.ZenAngle from file: {ipath}'  # noqa
-                               'Time: {time}: {err}')
+                               f'Time: {time}: {err}')
                         LOGGER.error(msg)
                         pass
 
                 except Exception as err:
-                    msg = (f'Unable to get {global_summary_t}.IntCIE from file: {ipath}. Time: {time}: {err}'  # noqa
+                    msg = f'Unable to get {global_summary_t}.IntCIE from file: {ipath}. Time: {time}: {err}'  # noqa
                     LOGGER.error(msg)
                     continue
 
@@ -462,7 +462,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
             irradiances = extcsv.extcsv['GLOBAL']['Irradiance']
         except Exception as err:
             msg = (f'Unable to get GLOBAL.Irradiance values from file {ipath}:'
-                   '{err}. Trying DIFFUSE.Irradiance')
+                   f'{err}. Trying DIFFUSE.Irradiance')
             LOGGER.error(msg)
         # try DIFFUSE
         if irradiances is None:
