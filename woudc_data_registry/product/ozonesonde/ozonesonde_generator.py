@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2021 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -80,12 +80,12 @@ def execute(path, bypass):
             for filename in filenames:
                 ipath = os.path.join(dirname, filename)
                 contents = read_file(ipath)
-                LOGGER.debug('Parsing extcsv {}'.format(ipath))
+                LOGGER.debug(f'Parsing extcsv {ipath}')
 
                 try:
                     extcsv = ExtendedCSV(contents)
                 except Exception as err:
-                    msg = 'Unable to parse extcsv {}: {}'.format(ipath, err)
+                    msg = f'Unable to parse extcsv {ipath}: {err}'
                     LOGGER.error(msg)
                     continue
 
@@ -110,8 +110,7 @@ def execute(path, bypass):
                     instrument_height = extcsv.extcsv['LOCATION']['Height'][0]
                     timestamp_date = extcsv.extcsv['TIMESTAMP']['Date'][0]
                 except Exception as err:
-                    msg = 'Unable to get metadata from extcsv {}: {}'.format(
-                        ipath, err)
+                    msg = f'Unable to get metadata from extcsv {ipath}: {err}'
                     LOGGER.error(msg)
                     continue
 
@@ -197,9 +196,8 @@ def execute(path, bypass):
                         allow_add_instrument = True
                     else:
                         response = \
-                            input('Instrument {} not found. '
-                                  'Add? (y/n) [n]: '
-                                  .format(instrument_id))
+                            input(f'Instrument {instrument_id} not found. '
+                                  'Add? (y/n) [n]: ')
                         allow_add_instrument = \
                             response.lower() in ['y', 'yes']
 

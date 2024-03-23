@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2021 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -88,7 +88,7 @@ if WDR_DB_TYPE == 'sqlite':
         msg = 'WDR_DB_NAME e is not set!'
         LOGGER.error(msg)
         raise EnvironmentError(msg)
-    WDR_DATABASE_URL = '{}:///{}'.format(WDR_DB_TYPE, WDR_DB_NAME)
+    WDR_DATABASE_URL = f'{WDR_DB_TYPE}:///{WDR_DB_NAME}'
 else:
     if None in [WDR_DB_USERNAME, WDR_DB_PASSWORD, WDR_SEARCH_TYPE,
                 WDR_SEARCH_URL, WDR_WAF_BASEDIR, WDR_WAF_BASEURL]:
@@ -96,12 +96,10 @@ else:
         LOGGER.error(msg)
         raise EnvironmentError(msg)
 
-    WDR_DATABASE_URL = '{}://{}:{}@{}:{}/{}'.format(WDR_DB_TYPE,
-                                                    WDR_DB_USERNAME,
-                                                    WDR_DB_PASSWORD,
-                                                    WDR_DB_HOST,
-                                                    WDR_DB_PORT,
-                                                    WDR_DB_NAME)
+    auth = f'{WDR_DB_USERNAME}:{WDR_DB_PASSWORD}'
+    host_port_name = f'{WDR_DB_HOST}:{WDR_DB_PORT}/{WDR_DB_NAME}'
+
+    WDR_DATABASE_URL = f'{WDR_DB_TYPE}://{auth}@{host_port_name}'
 
 if None in [WDR_ERROR_CONFIG, WDR_EXTRA_CONFIG]:
     msg = 'Central configuration environment variables are not set!'
@@ -113,6 +111,6 @@ try:
     with open(WDR_EXTRA_CONFIG) as extra_config_file:
         EXTRAS = yaml.safe_load(extra_config_file)
 except Exception as err:
-    msg = 'Failed to read extra configurations file due to: {}'.format(err)
+    msg = f'Failed to read extra configurations file: {err}'
     LOGGER.error(msg)
     raise EnvironmentError(msg)

@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -113,7 +113,7 @@ def orchestrate(source, working_dir, metadata_only=False,
         run_report = RunReport(working_dir)
 
         for file_to_process, contributor in run_:
-            click.echo('Processing filename: {}'.format(file_to_process))
+            click.echo(f'Processing filename: {file_to_process}')
 
             LOGGER.info('Detecting file')
             if not is_text_file(file_to_process):
@@ -171,7 +171,7 @@ def orchestrate(source, working_dir, metadata_only=False,
                     passed.append(file_to_process)
 
             except UnicodeDecodeError as err:
-                LOGGER.error('Unknown file format: {}'.format(err))
+                LOGGER.error(f'Unknown file format: {err}')
 
                 click.echo('Not ingested')
                 failed.append(file_to_process)
@@ -179,7 +179,7 @@ def orchestrate(source, working_dir, metadata_only=False,
                 op_report.write_failing_file(file_to_process, contributor)
                 run_report.write_failing_file(file_to_process, contributor)
             except NonStandardDataError as err:
-                LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
+                LOGGER.error(f'Invalid Extended CSV: {err.errors}')
 
                 click.echo('Not ingested')
                 failed.append(file_to_process)
@@ -187,7 +187,7 @@ def orchestrate(source, working_dir, metadata_only=False,
                 op_report.write_failing_file(file_to_process, contributor)
                 run_report.write_failing_file(file_to_process, contributor)
             except MetadataValidationError as err:
-                LOGGER.error('Invalid Extended CSV: {}'.format(err.errors))
+                LOGGER.error(f'Invalid Extended CSV: {err.errors}')
 
                 click.echo('Not ingested')
                 failed.append(file_to_process)
@@ -195,7 +195,7 @@ def orchestrate(source, working_dir, metadata_only=False,
                 op_report.write_failing_file(file_to_process, contributor)
                 run_report.write_failing_file(file_to_process, contributor)
             except Exception as err:
-                click.echo('Processing failed: {}'.format(err))
+                click.echo(f'Processing failed: {err}')
                 failed.append(file_to_process)
 
                 op_report.write_failing_file(file_to_process, contributor)
@@ -205,12 +205,11 @@ def orchestrate(source, working_dir, metadata_only=False,
 
     for name in files_to_process:
         if name in passed:
-            click.echo('Pass: {}'.format(name))
+            click.echo(f'Pass: {name}')
         elif name in failed:
-            click.echo('Fail: {}'.format(name))
+            click.echo(f'Fail: {name}')
 
-    click.echo('({}/{} files passed)'
-               .format(len(passed), len(files_to_process)))
+    click.echo(f'({len(passed)}/{len(files_to_process)} files passed)')
 
 
 @click.group()

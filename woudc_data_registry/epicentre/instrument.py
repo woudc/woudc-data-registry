@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -110,9 +110,8 @@ def list_(ctx):
 
     for c in get_metadata(Instrument):
         descriptor = ' '.join([c.name, c.model, c.serial])
-        station = '{}{}'.format(c.station.station_type, c.station_id)
-        click.echo('{} - {}, {}'.format(descriptor.ljust(30), station,
-                                        c.dataset_id))
+        station = f'{c.station.station_type}{c.station_id}'
+        click.echo(f'{descriptor.ljust(30)} - {station}, {c.dataset_id}')
 
 
 @click.command('show')
@@ -167,7 +166,7 @@ def add(ctx, station, dataset, contributor, name, model, serial, geometry):
 
     result = add_metadata(Instrument, instrument_,
                           save_to_registry, save_to_index)
-    click.echo('Instrument {} added'.format(result.instrument_id))
+    click.echo(f'Instrument {result.instrument_id} added')
 
 
 @click.command('update')
@@ -226,7 +225,7 @@ def update(ctx, identifier, station, dataset,
 
     update_metadata(Instrument, identifier, instrument_,
                     save_to_registry, save_to_index)
-    click.echo('Instrument {} updated'.format(identifier))
+    click.echo(f'Instrument {identifier} updated')
 
 
 @click.command('delete')
@@ -239,12 +238,12 @@ def delete(ctx, identifier):
         click.echo('Instrument not found')
         return
 
-    q = 'Are you sure you want to delete instrument {}?'.format(identifier)
+    q = f'Are you sure you want to delete instrument {identifier}?'
 
     if click.confirm(q):  # noqa
         delete_metadata(Instrument, identifier,
                         save_to_registry, save_to_index)
-        click.echo('Instrument {} deleted'.format(identifier))
+        click.echo(f'Instrument {identifier} deleted')
 
 
 instrument.add_command(list_)

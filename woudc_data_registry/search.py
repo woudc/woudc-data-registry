@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -1079,7 +1079,7 @@ class SearchIndex(object):
         """
 
         if self.index_basename is not None:
-            return '{}.{}'.format(self.index_basename, index_name)
+            return 'f{self.index_basename}.{index_name}'
 
         return index_name
 
@@ -1090,7 +1090,7 @@ class SearchIndex(object):
 
         for key, definition in MAPPINGS.items():
             # Skip indexes that have been manually disabled.
-            enabled_flag = '{}_enabled'.format(key)
+            enabled_flag = f'{key}_enabled'
             if not search_index_config.get(enabled_flag, True):
                 continue
 
@@ -1130,7 +1130,7 @@ class SearchIndex(object):
 
         for key, definition in MAPPINGS.items():
             # Skip indexes that have been manually disabled.
-            enabled_flag = '{}_enabled'.format(key)
+            enabled_flag = f'{key}_enabled'
             if not search_index_config.get(enabled_flag, True):
                 continue
 
@@ -1171,10 +1171,10 @@ class SearchIndex(object):
         """
 
         search_index_config = config.EXTRAS.get('search_index', {})
-        enabled_flag = '{}_enabled'.format(domain.__tablename__)
+        enabled_flag = f'{domain.__tablename__}_enabled'
 
         if not search_index_config.get(enabled_flag, True):
-            msg = '{} index is currently frozen'.format(domain.__tablename__)
+            msg = f'{domain.__tablename__} index is currently frozen'
             LOGGER.warning(msg)
             return False
 
@@ -1188,7 +1188,7 @@ class SearchIndex(object):
                 'doc_as_upsert': True
             }
 
-            LOGGER.debug('Indexing 1 document into {}'.format(index_name))
+            LOGGER.debug(f'Indexing 1 document into {index_name}')
             self.connection.update(index=index_name, id=target['id'],
                                    body=wrapper)
         else:
@@ -1202,7 +1202,7 @@ class SearchIndex(object):
                 'doc_as_upsert': True
             } for document in target)
 
-            LOGGER.debug('Indexing documents into {}'.format(index_name))
+            LOGGER.debug(f'Indexing documents into {index_name}')
             helpers.bulk(self.connection, wrapper,
                          raise_on_error=False, raise_on_exception=False)
 
@@ -1219,10 +1219,10 @@ class SearchIndex(object):
         """
 
         search_index_config = config.EXTRAS.get('search_index', {})
-        enabled_flag = '{}_enabled'.format(domain.__tablename__)
+        enabled_flag = f'{domain.__tablename__}_enabled'
 
         if not search_index_config.get(enabled_flag, True):
-            msg = '{} index is currently frozen'.format(domain.__tablename__)
+            msg = f'{domain.__tablename__} index is currently frozen'
             LOGGER.warning(msg)
             return False
 
@@ -1234,7 +1234,7 @@ class SearchIndex(object):
             result = self.connection.delete(index=index_name, id=target)
 
             if result['result'] != 'deleted':
-                msg = 'Data record {} does not exist'.format(target)
+                msg = f'Data record {target} does not exist'
                 LOGGER.error(msg)
                 raise SearchIndexError(msg)
         elif isinstance(target, dict):
@@ -1242,7 +1242,7 @@ class SearchIndex(object):
             result = self.connection.delete(index=index_name, id=target['id'])
 
             if result['result'] != 'deleted':
-                msg = 'Data record {} does not exist'.format(target['id'])
+                msg = f"Data record {target['id']} does not exist"
                 LOGGER.error(msg)
                 raise SearchIndexError(msg)
         else:
@@ -1270,10 +1270,10 @@ class SearchIndex(object):
         """
 
         search_index_config = config.EXTRAS.get('search_index', {})
-        enabled_flag = '{}_enabled'.format(domain.__tablename__)
+        enabled_flag = f'{domain.__tablename__}_enabled'
 
         if not search_index_config.get(enabled_flag, True):
-            msg = '{} index is currently frozen'.format(domain.__tablename__)
+            msg = f'{domain.__tablename__} index is currently frozen'
             LOGGER.warning(msg)
             return False
 

@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -75,7 +75,7 @@ def list_(ctx):
     """List all news notifications"""
 
     for c in get_metadata(Notification):
-        click.echo('{} {}'.format(c.published_date, c.title_en))
+        click.echo(f'{c.published_date} {c.title_en}')
 
 
 @click.command('show')
@@ -112,7 +112,7 @@ def add(ctx, identifier, path):
 
         added = add_metadata(Notification, notification,
                              save_to_registry, save_to_index)
-        click.echo('Notification {} added'.format(added.notification_id))
+        click.echo(f'Notification {added.notification_id} added')
 
 
 @click.command('update')
@@ -133,7 +133,7 @@ def update(ctx, identifier, path):
 
         update_metadata(Notification, identifier, notification,
                         save_to_registry, save_to_index)
-        click.echo('Notification {} updated'.format(identifier))
+        click.echo(f'Notification {identifier} updated')
 
 
 @click.command('delete')
@@ -146,14 +146,13 @@ def delete(ctx, identifier):
         click.echo('Station not found')
         return
 
-    q = 'Are you sure you want to delete news notification {}?' \
-        .format(identifier)
+    q = f'Are you sure you want to delete news notification {identifier}?'
 
     if click.confirm(q):  # noqa
         delete_metadata(Notification, identifier,
                         save_to_registry, save_to_index)
 
-    click.echo('News notification {} deleted'.format(identifier))
+    click.echo(f'News notification {identifier} deleted')
 
 
 notification.add_command(list_)

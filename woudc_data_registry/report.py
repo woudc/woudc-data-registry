@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -443,7 +443,7 @@ class OperatorReport(Report):
             error_class, message_template = self._error_definitions[error_code]
             message = message_template.format(**kwargs)
         except KeyError:
-            msg = 'Unrecognized error code {}'.format(error_code)
+            msg = f'Unrecognized error code {error_code}'
             LOGGER.error(msg)
             raise ValueError(msg)
 
@@ -628,7 +628,7 @@ class RunReport(Report):
             process_results = self._contributor_status[contributor]
 
             for status, filepath in process_results:
-                package += '{}: {}\n'.format(status, filepath)
+                package += f'{status}: {filepath}\n'
 
             blocks.append(package)
 
@@ -685,7 +685,7 @@ class EmailSummary:
         """
 
         today = date.today().strftime('%Y-%m-%d')
-        filename = 'failed-files-{}'.format(today)
+        filename = f'failed-files-{today}'
 
         return os.path.join(self._output_directory, filename)
 
@@ -698,7 +698,7 @@ class EmailSummary:
         """
 
         run_number = 1
-        parent_dir = '{}/run{}'.format(self._working_directory, run_number)
+        parent_dir = f'{self._working_directory}/run{run_number}'
 
         operator_report_pattern = r'operator-report-\d{4}-\d{2}-\d{2}.csv'
         operator_report_paths = []
@@ -710,7 +710,7 @@ class EmailSummary:
                     operator_report_paths.append(fullpath)
 
             run_number += 1
-            parent_dir = '{}/run{}'.format(self._working_directory, run_number)
+            parent_dir = f'{self._working_directory}/run{run_number}'
 
         return operator_report_paths
 
@@ -886,16 +886,15 @@ class EmailSummary:
 
             if contributor in addresses:
                 email = addresses[contributor]
-                header = '{} ({})'.format(contributor, email)
+                header = f'{contributor} ({email})'
             else:
                 header = contributor
 
-            feedback_block = '{}\n' \
-                'Total files received: {}\n' \
-                'Number of passed files: {}\n' \
-                'Number of manually repaired files: {}\n' \
-                'Number of failed files: {}\n' \
-                .format(header, total_count, pass_count, fix_count, fail_count)
+            feedback_block = f'{header}\n' \
+                f'Total files received: {total_count}\n' \
+                f'Number of passed files: {pass_count}\n' \
+                f'Number of manually repaired files: {fix_count}\n' \
+                f'Number of failed files: {fail_count}\n' \
 
             if fail_count > 0:
                 fail_summary = 'Summary of Failures:\n'

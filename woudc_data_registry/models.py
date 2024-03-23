@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2021 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -132,7 +132,7 @@ class Country(base):
         }
 
     def __repr__(self):
-        return 'Country ({}, {})'.format(self.country_id, self.name_en)
+        return f'Country ({self.country_id}, {self.name_en})'
 
 
 class Contributor(base):
@@ -231,7 +231,7 @@ class Contributor(base):
         }
 
     def __repr__(self):
-        return 'Contributor ({}, {})'.format(self.contributor_id, self.name)
+        return f'Contributor ({self.contributor_id}, {self.name})'
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
@@ -277,7 +277,7 @@ class Dataset(base):
         }
 
     def __repr__(self):
-        return 'Dataset ({})'.format(self.dataset_id)
+        return f'Dataset ({self.dataset_id})'
 
 
 class Instrument(base):
@@ -357,10 +357,9 @@ class Instrument(base):
             else:
                 dataset_folder = 'UmkehrN14_2.0_1'
         else:
-            dataset_folder = '{}_1.0_1'.format(self.dataset_id)
+            dataset_folder = f'{self.dataset_id}_1.0_1'
 
-        station_folder = '{}{}'.format(self.station.station_type.lower(),
-                                       self.station_id)
+        station_folder = f'{self.station.station_type.lower()}{self.station_id}'  # noqa
         instrument_folder = self.name.lower()
 
         return {
@@ -386,7 +385,7 @@ class Instrument(base):
         }
 
     def __repr__(self):
-        return 'Instrument ({})'.format(self.instrument_id)
+        return f'Instrument ({self.instrument_id})'
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
@@ -428,7 +427,7 @@ class DiscoveryMetadata(base):
         }
 
     def __repr__(self):
-        return 'Project ({})'.format(self.discovery_metadata_id)
+        return f'Project ({self.discovery_metadata_id})'
 
 
 class Project(base):
@@ -456,7 +455,7 @@ class Project(base):
         }
 
     def __repr__(self):
-        return 'Project ({})'.format(self.project_id)
+        return f'Project ({self.project_id})'
 
 
 class Station(base):
@@ -498,8 +497,7 @@ class Station(base):
         """serializer"""
 
         self.station_id = dict_['station_id']
-        self.station_name_id = '{}:{}' \
-            .format(self.station_id, dict_['station_name'])
+        self.station_name_id = f"{self.station_id}:{dict_['station_name']}"
         self.station_type = dict_['station_type']
 
         self._name = dict_['station_name']
@@ -542,7 +540,7 @@ class Station(base):
     def __geo_interface__(self):
         gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
                       '/search/station/stationReportDetails'
-        gaw_pagename = '0-20008-0-{}'.format(self.gaw_id)
+        gaw_pagename = f'0-20008-0-{self.gaw_id}'
 
         return {
             'id': self.station_id,
@@ -561,13 +559,12 @@ class Station(base):
                 'end_date': strftime_rfc3339(self.end_date),
                 'last_validated_datetime':
                     strftime_rfc3339(self.last_validated_datetime),
-                'gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename)
+                'gaw_url': f'{gaw_baseurl}/{gaw_pagename}'
             }
         }
 
     def __repr__(self):
-        return 'Station ({}, {})'.format(self.station_id,
-                                         self.station_name.name)
+        return f'Station ({self.station_id}, {self.station_name.name})'
 
 
 class StationName(base):
@@ -590,7 +587,7 @@ class StationName(base):
         self.generate_ids()
 
     def __repr__(self):
-        return 'Station name ({}, {})'.format(self.station_id, self.name)
+        return f'Station name ({self.station_id}, {self.name})'
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
@@ -674,7 +671,7 @@ class Deployment(base):
         }
 
     def __repr__(self):
-        return 'Deployment ({})'.format(self.deployment_id)
+        return f'Deployment ({self.deployment_id})'
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
@@ -934,15 +931,12 @@ class DataRecord(base):
         else:
             dataset_only = self.content_category
 
-        datasetdirname = '{}_{}_{}'.format(dataset_only,
-                                           self.content_level,
-                                           self.content_form)
+        datasetdirname = f'{dataset_only}_{self.content_level}_{self.content_form}'  # noqa'
 
         url_tokens = [
             basepath.rstrip('/'),
             'Archive-NewFormat',
-            datasetdirname,
-            '{}{}'.format(self.platform_type.lower(), self.station_id),
+            datasetdirname, f'{self.platform_type.lower()}{self.station_id}',
             self.instrument_name.lower(),
             self.timestamp_date.strftime('%Y'),
             self.filename
@@ -1004,7 +998,7 @@ class DataRecord(base):
         }
 
     def __repr__(self):
-        return 'DataRecord({}, {})'.format(self.data_record_id, self.url)
+        return f'DataRecord({self.data_record_id}, {self.url})'
 
 
 class Contribution(base):
@@ -1087,7 +1081,7 @@ class Contribution(base):
         }
 
     def __repr__(self):
-        return 'Contribution ({})'.format(self.contribution_id)
+        return f'Contribution ({self.contribution_id})'
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
@@ -1179,7 +1173,7 @@ class Notification(base):
         }
 
     def __repr__(self):
-        return 'Notification ({})'.format(self.notification_id)
+        return f'Notification ({self.notification_id})'
 
 
 class PeerDataRecord(base):
@@ -1250,8 +1244,7 @@ class PeerDataRecord(base):
 
         self.contributor_acronym = dict_['contributor_acronym']
         self.station_id = dict_['station_id']
-        self.station_name_id = '{}:{}' \
-            .format(self.station_id, dict_['station_name'])
+        self.station_name_id = f"{self.station_id}:{dict_['station_name']}"
         self.station_type = dict_['station_type']
         self.country_id = dict_['country_id']
         self.gaw_id = dict_.get('gaw_id')
@@ -1297,7 +1290,7 @@ class PeerDataRecord(base):
     def __geo_interface__(self):
         gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
             '/search/station/stationReportDetails'
-        gaw_pagename = '0-20008-0-{}'.format(self.gaw_id)
+        gaw_pagename = f'0-20008-0-{self.gaw_id}'
 
         return {
             'id': self.es_id,
@@ -1310,7 +1303,7 @@ class PeerDataRecord(base):
                 'station_id': self.station_id,
                 'station_name': self.name,
                 'station_type': self.station_type,
-                'gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename),
+                'gaw_url': f'{gaw_baseurl}/{gaw_pagename}',
                 'gaw_id': self.gaw_id,
                 'contributor_acronym': self.contributor_acronym,
                 'contributor_url':
@@ -1327,7 +1320,7 @@ class PeerDataRecord(base):
         }
 
     def __repr__(self):
-        return 'PeerDataRecord({})'.format(self.url)
+        return f'PeerDataRecord({self.url})'
 
 
 class UVIndex(base):
@@ -1428,16 +1421,13 @@ class UVIndex(base):
     def get_waf_path(self, dict_):
         """generate WAF url"""
 
-        datasetdirname = '{}_{}_{}'.format(self.dataset_id,
-                                           dict_['dataset_level'],
-                                           dict_['dataset_form'])
+        datasetdirname = f"{self.dataset_id}_{dict_['dataset_level']}_{dict_['dataset_form']}",  # noqa
         timestamp_date = datetime.datetime.strptime(
             dict_['timestamp_date'], '%Y-%m-%d').date()
         url_tokens = [
             config.WDR_WAF_BASEURL.rstrip('/'),
             'Archive-NewFormat',
-            datasetdirname,
-            '{}{}'.format(dict_['station_type'].lower(), self.station_id),
+            datasetdirname, f"{dict_['station_type'].lower()}{self.station_id}",  # noqa
             dict_['instrument_name'].lower(),
             timestamp_date.strftime('%Y'),
             dict_['filename']
@@ -1449,7 +1439,7 @@ class UVIndex(base):
     def __geo_interface__(self):
         gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
             '/search/station/stationReportDetails'
-        gaw_pagename = '0-20008-0-{}'.format(self.station.gaw_id)
+        gaw_pagename = f'0-20008-0-{self.station_gaw_id}'
 
         return {
             'id': self.uv_id,
@@ -1462,7 +1452,7 @@ class UVIndex(base):
                 'station_id': self.station_id,
                 'station_name': self.station.station_name.name,
                 'station_gaw_id': self.station.gaw_id,
-                'station_gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename),
+                'station_gaw_url': f'{gaw_baseurl}/{gaw_pagename}',
                 'contributor_name':
                 self.instrument.deployment.contributor.name,
                 'contributor_acronym':
@@ -1489,7 +1479,7 @@ class UVIndex(base):
         }
 
     def __repr__(self):
-        return 'UV_Index ({})'.format(self.uv_id)
+        return f'UV_Index ({self.uv_id})'
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
@@ -1590,16 +1580,14 @@ class TotalOzone(base):
     def get_waf_path(self, dict_):
         """generate WAF url"""
 
-        datasetdirname = '{}_{}_{}'.format(self.dataset_id,
-                                           dict_['dataset_level'],
-                                           dict_['dataset_form'])
+        datasetdirname = f"{self.dataset_id}_{dict_['dataset_level']}_{dict_['dataset_form']}"  # noqa
         timestamp_date = datetime.datetime.strptime(
             dict_['timestamp_date'], '%Y-%m-%d').date()
         url_tokens = [
             config.WDR_WAF_BASEURL.rstrip('/'),
             'Archive-NewFormat',
             datasetdirname,
-            '{}{}'.format(dict_['station_type'].lower(), self.station_id),
+            f"{dict_['station_type'].lower()}{self.station_id}",
             dict_['instrument_name'].lower(),
             timestamp_date.strftime('%Y'),
             self.file_name
@@ -1611,7 +1599,7 @@ class TotalOzone(base):
     def __geo_interface__(self):
         gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
             '/search/station/stationReportDetails'
-        gaw_pagename = '0-20008-0-{}'.format(self.station.gaw_id)
+        gaw_pagename = f'0-20008-0-{self.station.gaw_id}'
 
         return {
             'id': self.ozone_id,
@@ -1624,7 +1612,7 @@ class TotalOzone(base):
                 'station_id': self.station_id,
                 'station_name': self.station.station_name.name,
                 'station_gaw_id': self.station.gaw_id,
-                'station_gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename),
+                'station_gaw_url': f'{gaw_baseurl}/{gaw_pagename}',
                 'contributor_name':
                 self.instrument.deployment.contributor.name,
                 'contributor_acronym':
@@ -1659,7 +1647,7 @@ class TotalOzone(base):
         }
 
     def __repr__(self):
-        return 'TotalOzone ({})'.format(self.ozone_id)
+        return f'TotalOzone ({self.ozone_id})'
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
@@ -1763,16 +1751,14 @@ class OzoneSonde(base):
     def get_waf_path(self, dict_):
         """generate WAF url"""
 
-        datasetdirname = '{}_{}_{}'.format(self.dataset_id,
-                                           dict_['dataset_level'],
-                                           dict_['dataset_form'])
+        datasetdirname = f"{self.dataset_id}_{dict_['dataset_level']}_{ dict_['dataset_form']}"  # noqa
         timestamp_date = datetime.datetime.strptime(
             dict_['timestamp_date'], '%Y-%m-%d').date()
         url_tokens = [
             config.WDR_WAF_BASEURL.rstrip('/'),
             'Archive-NewFormat',
             datasetdirname,
-            '{}{}'.format(dict_['station_type'].lower(), self.station_id),
+            f"{dict_['station_type'].lower()}{self.station_id}",
             dict_['instrument_name'].lower(),
             timestamp_date.strftime('%Y'),
             self.file_name
@@ -1784,7 +1770,7 @@ class OzoneSonde(base):
     def __geo_interface__(self):
         gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
             '/search/station/stationReportDetails'
-        gaw_pagename = '0-20008-0-{}'.format(self.station.gaw_id)
+        gaw_pagename = f'0-20008-0-{self.station.gaw_id}'
 
         return {
             'id': self.ozone_id,
@@ -1797,7 +1783,7 @@ class OzoneSonde(base):
                 'station_id': self.station_id,
                 'station_name': self.station.station_name.name,
                 'station_gaw_id': self.station.gaw_id,
-                'station_gaw_url': '{}/{}'.format(gaw_baseurl, gaw_pagename),
+                'station_gaw_url': f'{gaw_baseurl}/{gaw_pagename}',
                 'contributor_name':
                 self.instrument.deployment.contributor.name,
                 'contributor_acronym':
@@ -1819,7 +1805,7 @@ class OzoneSonde(base):
         }
 
     def __repr__(self):
-        return 'OzoneSonde ({})'.format(self.ozone_id)
+        return f'OzoneSonde ({self.ozone_id})'
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
@@ -1953,6 +1939,8 @@ def admin():
 @click.pass_context
 def show_config(ctx):
 
+    masked = None
+
     env_vars = [
         'WDR_LOGGING_LOGLEVEL',
         'WDR_LOGGING_LOGFILE',
@@ -1975,17 +1963,14 @@ def show_config(ctx):
     ]
 
     for env_var in env_vars:
-        if env_var in ['WDR_DB_PASSWORD']:
-            s = '{}: {}'.format(env_var, '*'*len(getattr(config, env_var)))
+        if env_var == 'WDR_DB_PASSWORD':
+            masked = '*' * len(getattr(config, env_var))
+            s = '{env_var}: {masked}'
         elif env_var == 'WDR_DATABASE_URL' and config.WDR_DB_TYPE == 'postgresql':  # noqa
-            value1 = getattr(config, env_var)
-            value_to_find = ':{}@'.format(config.WDR_DB_PASSWORD)
-            value_to_replace = ':{}@'.format('*'*len(config.WDR_DB_PASSWORD))
-            value = value1.replace(value_to_find, value_to_replace)
-
-            s = '{}: {}'.format(env_var, value)
+            value = config.WDR_DATABASE_URL.replace(config.WDR_DB_PASSWORD, masked)  # noqa
+            s = f'{env_var}: {value}'
         else:
-            s = '{}: {}'.format(env_var, getattr(config, env_var))
+            s = f'{env_var}: {getattr(config, env_var)}'
 
         click.echo(s)
 
@@ -2004,7 +1989,7 @@ def setup(ctx):
         base.metadata.create_all(engine, checkfirst=True)
         click.echo('Done')
     except (OperationalError, ProgrammingError) as err:
-        click.echo('ERROR: {}'.format(err))
+        click.echo(f'ERROR: {err}')
 
 
 @click.command()
@@ -2021,7 +2006,7 @@ def teardown(ctx):
         base.metadata.drop_all(engine, checkfirst=True)
         click.echo('Done')
     except (OperationalError, ProgrammingError) as err:
-        click.echo('ERROR: {}'.format(err))
+        click.echo(f'ERROR: {err}')
 
 
 @click.command()
@@ -2277,16 +2262,16 @@ def sync(ctx):
         plural_name = clazz.__tablename__
         plural_caps = ''.join(map(str.capitalize, plural_name.split('_')))
 
-        enabled_flag = '{}_enabled'.format(plural_name)
+        enabled_flag = f'{plural_name}_enabled'
         if not search_index_config.get(enabled_flag, True):
-            click.echo('{} index frozen (skipping)'.format(plural_caps))
+            click.echo(f'{plural_caps} index frozen (skipping)')
             continue
 
-        click.echo('{}...'.format(plural_caps))
+        click.echo(f'{plural_caps}...')
         if plural_caps == 'DataRecords':
             capacity = 10000
             for obj in registry_.session.query(clazz).yield_per(1):
-                LOGGER.debug('Querying chunk of  {}'.format(clazz))
+                LOGGER.debug(f'Querying chunk of {clazz}')
 
                 registry_contents.append(obj)
                 if len(registry_contents) > capacity:
@@ -2333,16 +2318,16 @@ def product_sync(ctx):
         plural_name = product.__tablename__
         plural_caps = ''.join(map(str.capitalize, plural_name.split('_')))
 
-        enabled_flag = '{}_enabled'.format(plural_name)
+        enabled_flag = f'{plural_name}_enabled'
         if not search_index_config.get(enabled_flag, True):
-            click.echo('{} index frozen (skipping)'.format(plural_caps))
+            click.echo(f'{plural_caps} index frozen (skipping)')
 
-        click.echo('{}...'.format(plural_caps))
+        click.echo(f'{plural_caps}...')
 
         registry_contents = []
         # Sync product to elasticsearch
         for obj in registry_.session.query(product).yield_per(1):
-            LOGGER.debug('Querying chunk of  {}'.format(product))
+            LOGGER.debug(f'Querying chunk of {product}')
 
             registry_contents.append(obj)
 

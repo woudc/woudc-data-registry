@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -80,7 +80,7 @@ def get_validator(dataset, reporter):
     elif dataset in DATASETS:
         return DatasetValidator(reporter)
     else:
-        raise ValueError('Invalid dataset {}'.format(dataset))
+        raise ValueError(f'Invalid dataset {dataset}')
 
 
 class DatasetValidator(object):
@@ -628,7 +628,7 @@ class UmkehrValidator(DatasetValidator):
         level = extcsv.extcsv['CONTENT']['Level']
         data_table = 'N14_VALUES' if level == 1.0 else 'C_PROFILE'
 
-        LOGGER.debug('Assessing order of #{}.Date column'.format(data_table))
+        LOGGER.debug(f'Assessing order of #{data_table}.Date column')
         success = True
 
         data_table_valueline = extcsv.line_num(data_table) + 2

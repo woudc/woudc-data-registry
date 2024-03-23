@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -873,7 +873,8 @@ class DatasetValidationTest(unittest.TestCase):
 
         for dataset in datasets:
             with report.OperatorReport() as null_reporter:
-                validator_name = '{}Validator'.format(dataset.replace('-', ''))
+                dataset2 = dataset.replace('-', '')
+                validator_name = f'{dataset2}Validator'
                 validator = dv.get_validator(dataset, null_reporter)
 
             if hasattr(dv, validator_name):
@@ -1209,7 +1210,7 @@ class DatasetValidationTest(unittest.TestCase):
 
         # Test a file with unique, out-of-order dates
         contents = util.read_file(resolve_test_data_path(
-            'data/umkehr/{}-disordered.csv'.format(prefix)))
+            f'data/umkehr/{prefix}-disordered.csv'))
 
         ecsv = dummy_extCSV(contents)
         ecsv.validate_metadata_tables()
@@ -1227,7 +1228,7 @@ class DatasetValidationTest(unittest.TestCase):
 
         # Test a file with non-unique (and out-of-order) dates
         contents = util.read_file(resolve_test_data_path(
-            'data/umkehr/{}-duplicated.csv'.format(prefix)))
+            f'data/umkehr/{prefix}-duplicated.csv'))
 
         ecsv = dummy_extCSV(contents)
         ecsv.validate_metadata_tables()
@@ -1246,7 +1247,7 @@ class DatasetValidationTest(unittest.TestCase):
 
         # Test file where each TIMESTAMP.Date disagrees with the data table
         contents = util.read_file(resolve_test_data_path(
-            'data/umkehr/{}-mismatch-timestamp-date.csv'.format(prefix)))
+            f'data/umkehr/{prefix}-mismatch-timestamp-date.csv'))
 
         ecsv = dummy_extCSV(contents)
         ecsv.validate_metadata_tables()
@@ -1265,7 +1266,7 @@ class DatasetValidationTest(unittest.TestCase):
 
         # Test file where TIMESTAMP.Times do not match between tables
         contents = util.read_file(resolve_test_data_path(
-            'data/umkehr/{}-mismatch-timestamp-time.csv'.format(prefix)))
+            f'data/umkehr/{prefix}-mismatch-timestamp-time.csv'))
 
         ecsv = dummy_extCSV(contents)
         ecsv.validate_metadata_tables()
@@ -1280,7 +1281,7 @@ class DatasetValidationTest(unittest.TestCase):
 
         # Test that missing second TIMESTAMP table is detected/filled in
         contents = util.read_file(resolve_test_data_path(
-            'data/umkehr/{}-missing-timestamp.csv'.format(prefix)))
+            f'data/umkehr/{prefix}-missing-timestamp.csv'))
 
         ecsv = dummy_extCSV(contents)
         ecsv.validate_metadata_tables()
@@ -1302,7 +1303,7 @@ class DatasetValidationTest(unittest.TestCase):
 
         # Test a file with no issues
         contents = util.read_file(resolve_test_data_path(
-            'data/umkehr/{}-correct.csv'.format(prefix)))
+            f'data/umkehr/{prefix}-correct.csv'))
 
         ecsv = dummy_extCSV(contents)
         ecsv.validate_metadata_tables()

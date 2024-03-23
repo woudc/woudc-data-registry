@@ -19,7 +19,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2022 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -114,9 +114,7 @@ def generate_metadata(woudc_yaml):
                             else:
                                 search_id = key2.lower().replace('-', '')
                                 snapshot_id = search_id
-                            uri = '{}/{}/{}/{}'.format(
-                                      uri_pre, key, key1, search_id
-                                  )
+                            uri = f'{uri_pre}/{key}/{key1}/{search_id}'
                             time_begin, time_end = \
                                 value1['extent']['time'].split('/')
                             dataset_md["id"] = key2
@@ -233,11 +231,7 @@ def generate_metadata(woudc_yaml):
 
                             if value2['waf_dir'] != 'none':
                                 dataset_md['properties']['waf'] = {
-                                    'url':
-                                        '{}/Archive-NewFormat/{}'.format(
-                                            WOUDC_ARCHIVE,
-                                            value2['waf_dir']
-                                        ),
+                                    'url': f"{WOUDC_ARCHIVE}/Archive-NewFormat/{value2['waf_dir']}",  # noqa
                                     'linktype': 'WWW:LINK',
                                     'function': 'download',
                                     'label_en': value2['waf_dir'],
@@ -250,13 +244,7 @@ def generate_metadata(woudc_yaml):
                                 }
 
                             dataset_md['properties']['dataset_snapshots'] = {
-                                'url':
-                                    '{}/Summaries'
-                                    '/dataset-snapshots/'
-                                    '{}.zip'.format(
-                                        WOUDC_ARCHIVE,
-                                        snapshot_id
-                                    ),
+                                'url': f'{WOUDC_ARCHIVE}/Summaries/dataset-snapshots/{snapshot_id}.zip',  # noqa
                                 'linktype': 'WWW:LINK',
                                 'function': 'download',
                                 'label_en': value2['label_en'],
@@ -268,10 +256,7 @@ def generate_metadata(woudc_yaml):
                             }
 
                             dataset_md['properties']['wms'] = {
-                                'url': '{}?service={}'
-                                       '&version={}&'
-                                       'request=GetCapabilities'
-                                       .format(WOUDC_OWS, 'WMS', '1.3.0'),
+                                'url': f'{WOUDC_OWS}?service=WMS&version=1.3.0&request=GetCapabilities',  # noqa
                                 'linktype': 'OGC:WMS',
                                 'function': 'download',
                                 'label_en': key2,
@@ -281,10 +266,7 @@ def generate_metadata(woudc_yaml):
                             }
 
                             dataset_md['properties']['wfs'] = {
-                                'url': '{}?service={}'
-                                       '&version={}&'
-                                       'request=GetCapabilities'
-                                       .format(WOUDC_OWS, 'WFS', '1.3.0'),
+                                'url': f'{WOUDC_OWS}?service=WFS&version=1.1.0&request=GetCapabilities',  # noqa
                                 'linktype': 'OGC:WFS',
                                 'function': 'download',
                                 'label_en': key2,
@@ -296,8 +278,7 @@ def generate_metadata(woudc_yaml):
                              }
 
                             dataset_md['properties']['search'] = {
-                                'url':
-                                    '{}?dataset={}'.format(WOUDC_DATA, key2),
+                                'url': f'{WOUDC_DATA}?dataset={key2}',
                                 'linktype': 'WWW:LINK',
                                 'function': 'search',
                                 'label_en': value2['label_en'],
@@ -409,9 +390,7 @@ def update_extents():
                     for curr_level in levels:
                         is_included = False
                         for level in md_loads['properties']['levels']:
-                            if level['label_en'] == 'Level {}'.format(
-                              curr_level
-                            ):
+                            if level['label_en'] == f'Level {curr_level}':
                                 is_included = True
                         if not is_included:
                             if dataset.startswith(('TotalOzone', 'UmkehrN14')):
@@ -420,7 +399,7 @@ def update_extents():
                                 label_en = dataset
                             # Add level item if it does not already exist
                             md_loads['properties']['levels'].append(
-                                {'label_en': 'Level {}'.format(curr_level),
+                                {'label_en': f'Level {curr_level}',
                                  'networks': [{
                                      'label_en': label_en,
                                      'instruments': []
@@ -442,9 +421,7 @@ def update_extents():
                                        subquery
                         )
                         for level in md_loads['properties']['levels']:
-                            if level['label_en'] == 'Level {}'.format(
-                              curr_level
-                            ):
+                            if level['label_en'] == f'Level {curr_level}':
                                 for ins in instruments:
                                     is_included = False
                                     otherIndex = [False, -1]
@@ -524,13 +501,13 @@ def update_extents():
             for curr_level in levels:
                 is_included = False
                 for level in md_loads['properties']['levels']:
-                    if level['label_en'] == 'Level {}'.format(curr_level):
+                    if level['label_en'] == f'Level {curr_level}':
                         is_included = True
                 if not is_included:
                     # Add level item if it does not already exist
                     md_loads['properties']['levels'].append(
                         {
-                          'label_en': 'Level {}'.format(curr_level),
+                          'label_en': f'Level {curr_level}',
                           'networks': [{
                               'label_en': inputs[input_table]['label_en'],
                               'instruments': []
@@ -548,7 +525,7 @@ def update_extents():
                                subquery
                 )
                 for level in md_loads['properties']['levels']:
-                    if level['label_en'] == 'Level {}'.format(curr_level):
+                    if level['label_en'] == f'Level {curr_level}':
                         for ins in instruments:
                             is_included = False
                             for n in level['networks']:
