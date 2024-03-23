@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -65,12 +65,12 @@ def get_metadata(entity, identifier=None):
     :returns: `list` of all matching objects
     """
 
-    LOGGER.debug('Querying metadata objects {}'.format(entity))
+    LOGGER.debug(f'Querying metadata objects {entity}')
     prop = getattr(entity, entity.id_field)
     if identifier is None:
         res = REGISTRY.session.query(entity).order_by(prop)
     else:
-        LOGGER.debug('Quering identifier {}'.format(identifier))
+        LOGGER.debug(f'Quering identifier {identifier}')
         res = REGISTRY.session.query(entity).filter(
             prop == identifier).all()
 
@@ -83,7 +83,7 @@ def get_metadata(entity, identifier=None):
         term = 'results'
     else:
         term = 'result'
-    LOGGER.debug('Found {} {}'.format(count, term))
+    LOGGER.debug(f'Found {count} {term}')
 
     return res
 
@@ -106,7 +106,7 @@ def add_metadata(entity, dict_, save_to_registry=True, save_to_index=True):
             Country.name_en == dict_['country_id'])
 
         if results.count() == 0:
-            msg = 'Invalid country: {}'.format(dict_['country_id'])
+            msg = f"Invalid country: {dict_['country']}"
             LOGGER.error(msg)
             raise ValueError(msg)
 
@@ -118,7 +118,7 @@ def add_metadata(entity, dict_, save_to_registry=True, save_to_index=True):
             Contributor.contributor_id == dict_['contributor_id'])
 
         if results.count() == 0:
-            msg = 'Invalid contributor: {}'.format(dict_['contributor_id'])
+            msg = f"Invalid contributor: {dict_['contributor_id']}"
             LOGGER.error(msg)
             raise ValueError(msg)
 
@@ -160,12 +160,11 @@ def update_metadata(entity, identifier, dict_,
     records = get_metadata(entity, identifier)
 
     if len(records) == 0:
-        msg = 'identifier {} not found'.format(identifier)
+        msg = f'identifier {identifier} not found'
         LOGGER.warning(msg)
         raise ValueError(msg)
     else:
-        LOGGER.debug('Updating metadata entity {}, identifier {}'
-                     .format(entity, identifier))
+        LOGGER.debug(f'Updating metadata entity {entity}, identifier {identifier}')  # noqa
         obj = records[0]
 
         if 'station_name' in dict_ and 'station_id' in dict_:
@@ -188,8 +187,7 @@ def update_metadata(entity, identifier, dict_,
         try:
             obj.generate_ids()
         except Exception as err:
-            LOGGER.warning('Unable to generate IDS due to: {}'
-                           .format(str(err)))
+            LOGGER.warning(f'Unable to generate IDS: {err}')
 
         if save_to_index and getattr(obj, entity.id_field) != identifier:
             SEARCH_INDEX.unindex(entity, identifier)
@@ -215,8 +213,7 @@ def delete_metadata(entity, identifier,
     :returns: `bool` of whether the operation was successful.
     """
 
-    LOGGER.debug('Updating metadata entity {}, identifier {}'.format(
-        entity, identifier))
+    LOGGER.debug(f'Updating metadata entity {entity}, identifier {identifier}')  # noqa
 
     prop = getattr(entity, entity.id_field)
     REGISTRY.session.query(entity).filter(prop == identifier).delete()

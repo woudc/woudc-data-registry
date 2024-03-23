@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -74,7 +74,7 @@ def list_(ctx):
     """List all contributors"""
 
     for c in get_metadata(Contributor):
-        click.echo('{} {}'.format(c.contributor_id.ljust(24), c.name))
+        click.echo(f'{c.contributor_id.ljust(24)} {c.name}')
 
 
 @click.command('show')
@@ -128,7 +128,7 @@ def add(ctx, name, acronym, country, project, wmo_region,
 
     result = add_metadata(Contributor, contributor_,
                           save_to_registry, save_to_index)
-    click.echo('Contributor {} added'.format(result.contributor_id))
+    click.echo(f'Contributor {result.contributor_id} added')
 
 
 @click.command('update')
@@ -179,7 +179,7 @@ def update(ctx, identifier, name, acronym, country, project,
 
     update_metadata(Contributor, identifier, contributor_,
                     save_to_registry, save_to_index)
-    click.echo('Contributor {} updated'.format(identifier))
+    click.echo(f'Contributor {identifier} updated')
 
 
 @click.command('delete')
@@ -192,13 +192,13 @@ def delete(ctx, identifier):
         click.echo('Contributor not found')
         return
 
-    q = 'Are you sure you want to delete contributor {}?'.format(identifier)
+    q = f'Are you sure you want to delete contributor {identifier}?'
 
     if click.confirm(q):  # noqa
         delete_metadata(Contributor, identifier,
                         save_to_registry, save_to_index)
 
-    click.echo('Contributor {} deleted'.format(identifier))
+    click.echo(f'Contributor {identifier} deleted')
 
 
 contributor.add_command(list_)

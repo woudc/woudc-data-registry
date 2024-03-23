@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -169,8 +169,8 @@ class Process(object):
 
             if not deployment_ok:
                 deployment_id = ':'.join([platform_id, agency, project])
-                deployment_name = '{}@{}'.format(agency, platform_id)
-                LOGGER.warning('Deployment {} not found'.format(deployment_id))
+                deployment_name = f'{agency}@{platform_id}'
+                LOGGER.warning(f'Deployment {deployment_id} not found')
 
                 if verify_only:
                     LOGGER.info('Verify mode. Skipping deployment addition.')
@@ -180,8 +180,7 @@ class Process(object):
 
                     self._add_to_report(202)
                 else:
-                    msg = 'Deployment {} not added. Skipping file.' \
-                          .format(deployment_name)
+                    msg = f'Deployment {deployment_name} not added. Skipping file.'  # noqa
                     LOGGER.warning(msg)
 
                     line = self.extcsv.line_num('PLATFORM') + 2
@@ -211,7 +210,7 @@ class Process(object):
 
                     if old_serial != new_serial:
                         LOGGER.debug('Attempting to search instrument serial'
-                                     ' number {}'.format(new_serial))
+                                     f' number {new_serial}')
 
                         self.extcsv.extcsv['INSTRUMENT']['Number'] = new_serial
                         instrument_ok = self.check_instrument()
@@ -219,8 +218,8 @@ class Process(object):
                 if not instrument_ok:
                     # Attempt to add a new record with the new serial number
                     # using name and model from the registry
-                    LOGGER.warning('No instrument with serial {} found'
-                                   ' in registry'.format(old_serial))
+                    LOGGER.warning(f'No instrument with serial {old_serial} '
+                                   'found in registry')
                     self.extcsv.extcsv['INSTRUMENT']['Number'] = old_serial
 
                     if verify_only:
@@ -315,7 +314,7 @@ class Process(object):
         else:
             LOGGER.info('Beginning persistence to data registry')
             for model in self._registry_updates:
-                LOGGER.debug('Saving {} to registry'.format(str(model)))
+                LOGGER.debug(f'Saving {model} to registry')
                 self.registry.save(model)
 
                 if isinstance(model, DataRecord):
@@ -341,7 +340,7 @@ class Process(object):
                         allow_update_model = False
 
                 if allow_update_model:
-                    LOGGER.debug('Saving {} to search index'.format(model))
+                    LOGGER.debug(f'Saving {model} to search index')
                     self.search_index.index(type(model),
                                             model.__geo_interface__)
 
@@ -376,8 +375,7 @@ class Process(object):
             LOGGER.info('Bypass mode. Skipping permission check.')
             allow_add_deployment = True
         else:
-            response = input('Deployment {} not found. Add? (y/n) [n]: '
-                             .format(deployment.deployment_id))
+            response = input(f'Deployment {deployment.deployment_id} not found. Add? (y/n) [n]: ')  # noqa
             allow_add_deployment = response.lower() in ['y', 'yes']
 
         if not allow_add_deployment:
@@ -410,8 +408,7 @@ class Process(object):
             LOGGER.info('Bypass mode. Skipping permission check')
             allow_add_station_name = True
         else:
-            response = input('Station name {} not found. Add? (y/n) [n]: '
-                             .format(station_name_object.station_name_id))
+            response = input(f'Station name {station_name_object.station_name_id} not found. Add? (y/n) [n]: ')  # noqa
             allow_add_station_name = response.lower() in ['y', 'yes']
 
         if not allow_add_station_name:
@@ -443,8 +440,7 @@ class Process(object):
             LOGGER.info('Bypass mode. Skipping permission check')
             allow_add_instrument = True
         else:
-            response = input('Instrument {} not found. Add? (y/n) [n]: '
-                             .format(instrument.instrument_id))
+            response = input(f'Instrument {instrument.instrument_id} not found. Add? (y/n) [n]: ')  # noqa
             allow_add_instrument = response.lower() in ['y', 'yes']
 
         if allow_add_instrument:
@@ -511,8 +507,7 @@ class Process(object):
             LOGGER.info('Bypass mode. Skipping permission check')
             allow_add_contribution = True
         else:
-            response = input('Contribution {} not found. Add? (y/n) [n]: '
-                             .format(contribution.contribution_id))
+            response = input(f'Contribution {contribution.contribution_id} not found. Add? (y/n) [n]: ')  # noqa
             allow_add_contribution = response.lower() in ['y', 'yes']
 
         if allow_add_contribution:
@@ -545,11 +540,10 @@ class Process(object):
                                                     'contribution_id',
                                                     contribution_id)
         if not contribution:
-            LOGGER.warning('Contribution {} not found'.format(contribution_id))
+            LOGGER.warning(f'Contribution {contribution_id} not found')
             return False
         else:
-            LOGGER.warning('Found contribution match for {}'
-                           .format(contribution_id))
+            LOGGER.warning(f'Found contribution match for {contribution_id}')
             if not isinstance(timestamp_date, (str, int)):
                 if contribution.start_date > timestamp_date:
                     contribution.start_date = timestamp_date
@@ -573,11 +567,11 @@ class Process(object):
 
         project = self.extcsv.extcsv['CONTENT']['Class']
 
-        LOGGER.debug('Validating project {}'.format(project))
+        LOGGER.debug(f'Validating project {project}')
         self.projects = self.registry.query_distinct(Project.project_id)
 
         if project in self.projects:
-            LOGGER.debug('Match found for project {}'.format(project))
+            LOGGER.debug(f'Match found for project {project}')
             return True
         else:
             line = self.extcsv.line_num('CONTENT') + 2
@@ -600,14 +594,14 @@ class Process(object):
         if dataset == 'UmkehrN14':
             dataset = '_'.join([dataset, str(level)])
 
-        LOGGER.debug('Validating dataset {}'.format(dataset))
+        LOGGER.debug(f'Validating dataset {dataset}')
         dataset_model = {'dataset_id': dataset}
 
         fields = ['dataset_id']
         response = self.registry.query_multiple_fields(Dataset, dataset_model,
                                                        fields, fields)
         if response:
-            LOGGER.debug('Match found for dataset {}'.format(dataset))
+            LOGGER.debug(f'Match found for dataset {dataset}')
             self.extcsv.extcsv['CONTENT']['Category'] = response.dataset_id
             return True
         else:
@@ -643,10 +637,9 @@ class Process(object):
             agency = replacement
             self.extcsv.extcsv['DATA_GENERATION']['Agency'] = agency
 
-        LOGGER.debug('Validating contributor {} under project {}'
-                     .format(agency, project))
+        LOGGER.debug(f'Validating contributor {agency} under project {project}')  # noqa
         contributor = {
-            'contributor_id': '{}:{}'.format(agency, project),
+            'contributor_id': f'{agency}:{project}',
             'project_id': project
         }
 
@@ -657,8 +650,7 @@ class Process(object):
             contributor_name = result.acronym
             self.extcsv.extcsv['DATA_GENERATION']['Agency'] = contributor_name
 
-            LOGGER.debug('Match found for contributor ID {}'
-                         .format(result.contributor_id))
+            LOGGER.debug(f'Match found for contributor ID {result.contributor_id}')  # noqa
         else:
             line = self.extcsv.line_num('DATA_GENERATION') + 2
             if not self._add_to_report(67, line):
@@ -687,10 +679,10 @@ class Process(object):
         pl_type = self.extcsv.extcsv['PLATFORM']['Type']
         name = self.extcsv.extcsv['PLATFORM']['Name']
         country = self.extcsv.extcsv['PLATFORM']['Country']
-        # gaw_id = self.extcsv.extcsv['PLATFORM'].get('GAW_ID', None)
+        # gaw_id = self.extcsv.extcsv['PLATFORM'].get('GAW_ID')
 
         # TODO: consider adding and checking #PLATFORM_Type
-        LOGGER.debug('Validating station {}:{}'.format(identifier, name))
+        LOGGER.debug(f'Validating station {identifier}:{name}')
         valueline = self.extcsv.line_num('PLATFORM') + 2
 
         water_codes = ['*IW', 'IW', 'XZ']
@@ -718,7 +710,7 @@ class Process(object):
         response = self.registry.query_by_field(Station, 'station_id',
                                                 identifier)
         if response:
-            LOGGER.debug('Validated station with id: {}'.format(identifier))
+            LOGGER.debug(f'Validated station with id: {identifier}')
         else:
             self._add_to_report(71, valueline)
             return False
@@ -728,7 +720,7 @@ class Process(object):
         type_ok = pl_type in platform_types
 
         if type_ok:
-            LOGGER.debug('Validated station type {}'.format(type_ok))
+            LOGGER.debug(f'Validated station type {type_ok}')
         elif not self._add_to_report(72, valueline):
             success = False
 
@@ -739,13 +731,11 @@ class Process(object):
         name_ok = bool(response)
         if name_ok:
             self.extcsv.extcsv['PLATFORM']['Name'] = name = response.name
-            LOGGER.debug('Validated with name {} for id {}'.format(
-                name, identifier))
+            LOGGER.debug(f'Validated with name {name} for id {identifier}')
         elif verify:
             LOGGER.info('Verify mode. Skipping station name addition.')
         elif self.add_station_name(bypass=bypass):
-            LOGGER.info('Added new station name {}'
-                        .format(station['current_name']))
+            LOGGER.info(f"Added new station name {station['current_name']}")
         elif not self._add_to_report(73, valueline, name=name):
             success = False
 
@@ -757,9 +747,7 @@ class Process(object):
         if country_ok:
             country = response.country
             self.extcsv.extcsv['PLATFORM']['Country'] = country.country_id
-            LOGGER.debug('Validated with country: {} ({}) for id: {}'
-                         .format(country.name_en, country.country_id,
-                                 identifier))
+            LOGGER.debug(f'Validated with country: {country.name_en} ({country.country_id}) for id: {identifier}')  # noqa
         elif not self._add_to_report(74, valueline):
             success = False
 
@@ -790,11 +778,10 @@ class Process(object):
         deployment = self.registry.query_by_field(Deployment, 'deployment_id',
                                                   deployment_id)
         if not deployment:
-            LOGGER.warning('Deployment {} not found'.format(deployment_id))
+            LOGGER.warning(f'Deployment {deployment_id} not found')
             return False
         else:
-            LOGGER.debug('Found deployment match for {}'
-                         .format(deployment_id))
+            LOGGER.debug(f'Found deployment match for {deployment_id}')
             if not isinstance(timestamp_date, (str, int)):
                 if deployment.start_date > timestamp_date:
                     deployment.start_date = timestamp_date
@@ -891,12 +878,10 @@ class Process(object):
             Instrument, model, fields, case_insensitive)
 
         if not response:
-            LOGGER.warning('No instrument {} found in registry'
-                           .format(instrument.instrument_id))
+            LOGGER.warning(f'No instrument {instrument.instrument_id} found in registry')  # noqa
             return False
         else:
-            LOGGER.debug('Found instrument match for {}'
-                         .format(instrument.instrument_id))
+            LOGGER.debug(f'Found instrument match for {instrument.instrument_id}')  # noqa
 
             self.extcsv.extcsv['INSTRUMENT']['Number'] = response.serial
             return True
@@ -919,7 +904,7 @@ class Process(object):
 
         lat = self.extcsv.extcsv['LOCATION']['Latitude']
         lon = self.extcsv.extcsv['LOCATION']['Longitude']
-        height = self.extcsv.extcsv['LOCATION'].get('Height', None)
+        height = self.extcsv.extcsv['LOCATION'].get('Height')
         valueline = self.extcsv.line_num('LOCATION') + 2
 
         try:
@@ -1082,8 +1067,8 @@ class Process(object):
 
         success = True
 
-        dg_date = self.extcsv.extcsv['DATA_GENERATION'].get('Date', None)
-        version = self.extcsv.extcsv['DATA_GENERATION'].get('Version', None)
+        dg_date = self.extcsv.extcsv['DATA_GENERATION'].get('Date')
+        version = self.extcsv.extcsv['DATA_GENERATION'].get('Version')
 
         valueline = self.extcsv.line_num('DATA_GENERATION')
 
@@ -1142,7 +1127,7 @@ class Process(object):
         success = True
 
         dg_date = self.extcsv.extcsv['DATA_GENERATION']['Date']
-        ts_time = self.extcsv.extcsv['TIMESTAMP'].get('Time', None)
+        ts_time = self.extcsv.extcsv['TIMESTAMP'].get('Time')
 
         for table, body in self.extcsv.extcsv.items():
             if table == 'DATA_GENERATION':

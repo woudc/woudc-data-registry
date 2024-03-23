@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -80,7 +80,7 @@ def get_validator(dataset, reporter):
     elif dataset in DATASETS:
         return DatasetValidator(reporter)
     else:
-        raise ValueError('Invalid dataset {}'.format(dataset))
+        raise ValueError(f'Invalid dataset {dataset}')
 
 
 class DatasetValidator(object):
@@ -179,7 +179,7 @@ class TotalOzoneValidator(DatasetValidator):
         dates_encountered = {}
         rows_to_remove = []
 
-        extcsv.extcsv['DAILY'].pop('comments', None)
+        extcsv.extcsv['DAILY'].pop('comments')
         daily_columns = zip(*extcsv.extcsv['DAILY'].values())
 
         is_string = False
@@ -250,7 +250,7 @@ class TotalOzoneValidator(DatasetValidator):
         success = True
 
         timestamp1_date = extcsv.extcsv['TIMESTAMP']['Date']
-        timestamp1_time = extcsv.extcsv['TIMESTAMP'].get('Time', None)
+        timestamp1_time = extcsv.extcsv['TIMESTAMP'].get('Time')
         daily_dates = extcsv.extcsv['DAILY']['Date']
 
         timestamp1_startline = extcsv.line_num('TIMESTAMP')
@@ -357,7 +357,7 @@ class TotalOzoneValidator(DatasetValidator):
         LOGGER.debug('Regenerating #MONTHLY table from data')
 
         dates_column = extcsv.extcsv['DAILY']['Date']
-        ozone_column = extcsv.extcsv['DAILY'].get('ColumnO3', None)
+        ozone_column = extcsv.extcsv['DAILY'].get('ColumnO3')
 
         daily_fieldline = extcsv.line_num('DAILY') + 1
         daily_valueline = daily_fieldline + 1
@@ -429,7 +429,7 @@ class TotalOzoneObsValidator(DatasetValidator):
         LOGGER.debug('Assessing order of #OBSERVATIONS.Time column')
         success = True
 
-        extcsv.extcsv['OBSERVATIONS'].pop('comments', None)
+        extcsv.extcsv['OBSERVATIONS'].pop('comments')
         observations = zip(*extcsv.extcsv['OBSERVATIONS'].values())
         observations_valueline = extcsv.line_num('OBSERVATIONS') + 2
 
@@ -628,14 +628,14 @@ class UmkehrValidator(DatasetValidator):
         level = extcsv.extcsv['CONTENT']['Level']
         data_table = 'N14_VALUES' if level == 1.0 else 'C_PROFILE'
 
-        LOGGER.debug('Assessing order of #{}.Date column'.format(data_table))
+        LOGGER.debug(f'Assessing order of #{data_table}.Date column')
         success = True
 
         data_table_valueline = extcsv.line_num(data_table) + 2
         dates_encountered = {}
         rows_to_remove = []
 
-        extcsv.extcsv[data_table].pop('comments', None)
+        extcsv.extcsv[data_table].pop('comments')
         columns = zip(*extcsv.extcsv[data_table].values())
 
         in_order = True
@@ -694,7 +694,7 @@ class UmkehrValidator(DatasetValidator):
         data_table = 'N14_VALUES' if level == 1.0 else 'C_PROFILE'
 
         timestamp1_date = extcsv.extcsv['TIMESTAMP']['Date']
-        timestamp1_time = extcsv.extcsv['TIMESTAMP'].get('Time', None)
+        timestamp1_time = extcsv.extcsv['TIMESTAMP'].get('Time')
         observation_dates = extcsv.extcsv[data_table]['Date']
 
         timestamp1_startline = extcsv.line_num('TIMESTAMP')

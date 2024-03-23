@@ -26,7 +26,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: [3.8]
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2

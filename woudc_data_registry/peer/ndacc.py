@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2021 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -102,7 +102,7 @@ def parse_index(csv_dict_reader):
                 yield properties
             else:
                 LOGGER.debug('No station metadata found.')
-                msg = 'Failed to persist PeerDataRecord({})'.format(row['url'])
+                msg = f"Failed to persist PeerDataRecord {row['url']}"
                 LOGGER.error(msg)
                 yield {}
 
@@ -132,7 +132,7 @@ def index(ctx, file_index):
         PeerDataRecord.source == 'ndacc').delete()
     registry_.session.commit()
 
-    click.echo('Indexing NDACC records from {}'.format(file_index))
+    click.echo(f'Indexing NDACC records from {file_index}')
     with open(file_index, encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
 

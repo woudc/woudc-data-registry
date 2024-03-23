@@ -33,8 +33,8 @@ Instructions
      | pip install -r requirements.txt     # Core dependencies
      | pip install -r requirements-pg.txt  # For PostgreSQL backends
      |
-     | python setup.py build
-     | python setup.py install
+     | python3 setup.py build
+     | python3 setup.py install
 
 * Set up the project::
      | . /path/to/environment/config.env  # Set environment variables

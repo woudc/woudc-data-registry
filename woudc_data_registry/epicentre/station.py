@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -69,7 +69,7 @@ def build_station_name(ecsv):
 
     station_id = str(ecsv.extcsv['PLATFORM']['ID'])
     station_name = ecsv.extcsv['PLATFORM']['Name']
-    name_id = '{}:{}'.format(station_id, station_name)
+    name_id = f'{station_id}:{station_name}'
 
     observation_time = ecsv.extcsv['TIMESTAMP']['Date']
     model = {
@@ -95,7 +95,7 @@ def list_(ctx):
     """List all stations"""
 
     for c in get_metadata(Station):
-        click.echo('{} {}'.format(c.station_id.ljust(3), c.station_name.name))
+        click.echo(f'{c.station_id.ljust(3)} {c.station_name.name}')
 
 
 @click.command('show')
@@ -152,7 +152,7 @@ def add(ctx, identifier, name, type_, gaw_id, country,
     }
 
     add_metadata(Station, station_, save_to_registry, save_to_index)
-    click.echo('Station {} added'.format(identifier))
+    click.echo(f'Station {identifier} added')
 
 
 @click.command('update')
@@ -204,7 +204,7 @@ def update(ctx, identifier, name, type_, gaw_id, country,
 
     update_metadata(Station, identifier, station_,
                     save_to_registry, save_to_index)
-    click.echo('Station {} updated'.format(identifier))
+    click.echo(f'Station {identifier} updated')
 
 
 @click.command('delete')
@@ -217,12 +217,12 @@ def delete(ctx, identifier):
         click.echo('Station not found')
         return
 
-    q = 'Are you sure you want to delete station {}?'.format(identifier)
+    q = f'Are you sure you want to delete station {identifier}?'
 
     if click.confirm(q):  # noqa
         delete_metadata(Station, identifier, save_to_registry, save_to_index)
 
-    click.echo('Station {} deleted'.format(identifier))
+    click.echo(f'Station {identifier} deleted')
 
 
 station.add_command(list_)
