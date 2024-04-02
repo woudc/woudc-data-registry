@@ -1079,7 +1079,7 @@ class SearchIndex(object):
         """
 
         if self.index_basename is not None:
-            return 'f{self.index_basename}.{index_name}'
+            return f'{self.index_basename}.{index_name}'
 
         return index_name
 
