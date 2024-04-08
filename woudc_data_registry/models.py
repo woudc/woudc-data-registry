@@ -1952,7 +1952,6 @@ def show_config(ctx):
         'WDR_DB_PASSWORD',
         'WDR_DB_NAME',
         'WDR_SEARCH_TYPE',
-        'WDR_SEARCH_INDEX_BASENAME',
         'WDR_SEARCH_URL',
         'WDR_WAF_BASEDIR',
         'WDR_WAF_BASEURL',

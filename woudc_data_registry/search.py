@@ -1062,7 +1062,7 @@ class SearchIndex(object):
 
         self.type = config.WDR_SEARCH_TYPE
         self.url = config.WDR_SEARCH_URL
-        self.index_basename = config.WDR_SEARCH_INDEX_BASENAME
+        self.index_basename = 'woudc-data-registry'
 
         LOGGER.debug('Connecting to Elasticsearch')
 
@@ -1078,10 +1078,7 @@ class SearchIndex(object):
         :returns: fully qualified index name
         """
 
-        if self.index_basename is not None:
-            return f'{self.index_basename}.{index_name}'
-
-        return index_name
+        return f'{self.index_basename}.{index_name}'
 
     def create(self):
         """create search indexes"""
