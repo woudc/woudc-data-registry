@@ -1187,13 +1187,12 @@ class SearchIndex(object):
 
             LOGGER.debug(f'Indexing 1 document into {index_name}')
             self.connection.update(index=index_name, id=target['id'],
-                                   body=wrapper)
+                                body=wrapper)
         else:
             # Index/update multiple documents using bulk API.
             wrapper = ({
                 '_op_type': 'update',
                 '_index': index_name,
-                '_type': '_doc',
                 '_id': document['id'],
                 'doc': document,
                 'doc_as_upsert': True
@@ -1201,7 +1200,7 @@ class SearchIndex(object):
 
             LOGGER.debug(f'Indexing documents into {index_name}')
             helpers.bulk(self.connection, wrapper,
-                         raise_on_error=False, raise_on_exception=False)
+                        raise_on_error=False, raise_on_exception=False)
 
         return True
 
@@ -1247,7 +1246,6 @@ class SearchIndex(object):
             wrapper = ({
                 '_op_type': 'delete',
                 '_index': index_name,
-                '_type': '_doc',
                 '_id': document['id']
             } for document in target)
 
