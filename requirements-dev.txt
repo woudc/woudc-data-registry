@@ -1,3 +1,4 @@
+pypandoc
 alembic
 coverage
 flake8
