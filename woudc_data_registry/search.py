@@ -1062,7 +1062,7 @@ class SearchIndex(object):
 
         self.type = config.WDR_SEARCH_TYPE
         self.url = config.WDR_SEARCH_URL
-        self.index_basename = 'woudc-data-registry'
+        self.index_basename = config.WDR_SEARCH_INDEX_BASENAME
 
         LOGGER.debug('Connecting to Elasticsearch')
 
