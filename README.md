@@ -101,35 +101,35 @@ eval "$(_WOUDC_DATA_REGISTRY_COMPLETE=source woudc-data-registry)"
 # list all instances of foo (where foo is one of:
 #  project|dataset|contributor|country|station|instrument|deployment)
 woudc-data-registry <foo> list
- e.g.
+# e.g.
 woudc-data-registry contributor list
 
 # show a specific instance of foo with a given registry identifier
 woudc-data-registry <foo> show <identifier>
- e.g.
+# e.g.
 woudc-data-registry station show 023
 woudc-data-registry instrument show ECC:2Z:4052:002:OzoneSonde
 
 # add a new instance of foo (contributor|country|station|instrument|deployment)
 woudc-data-registry <foo> add <options>
- e.g.
+# e.g.
 woudc-data-registry deployment add -s 001 -c MSC:WOUDC
 woudc-data-registry contributor add -id foo -n "Contributor name" -c Canada -w IV -u https://example.org -e you@example.org -f foouser -g -75,45
 
 # update an existing instance of foo with a given registry identifier
 woudc-data-registry <foo> update -id <identifier> <options>
- e.g.
+# e.g.
 woudc-data-registry station update -n "New station name"
 woudc-data-registry deployment update --end-date 'Deployment end date'
 
 # delete an instance of foo with a given registry identifier
 woudc-data-registry <foo> delete <identifier>
- e.g.
+# e.g.
 woudc-data-registry deployment delete 018:MSC:WOUDC
 
 # for more information about options on operation (add|update):
 woudc-data-registry <foo> <operation> --help
- e.g.
+# e.g.
 woudc-data-registry instrument update --help
 ```
 
