@@ -258,7 +258,6 @@ def execute(path, bypass):
 
     LOGGER.debug('Done get_data().')
     print(count)
-    print(count)
 
 
 def conv(i):
