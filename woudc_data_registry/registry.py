@@ -124,10 +124,10 @@ class Registry(object):
         :returns: list of distinct values
         """
 
-        LOGGER.debug(f'Querying distinct values for {domain}')
-
         conditions = []
         target_fields = values.keys()
+
+        LOGGER.debug(f'Querying distinct values by fields {target_fields} for {domain}')
 
         for field in target_fields:
             table_field = getattr(obj, field)
@@ -318,32 +318,29 @@ class Registry(object):
 
     def save(self, obj=None):
         """
-        helper function to save object to registry
+        Helper function to save object to registry.
 
         :param obj: object to save (default None)
         :returns: void
         """
+        if obj is None:
+            LOGGER.warning('obj is none while trying to save, skipping')
+            return
 
         registry_config = config.EXTRAS.get('registry', {})
 
         try:
-            if obj is not None:
-                flag_name = '_'.join([obj.__tablename__, 'enabled'])
-                if registry_config.get(flag_name, True):
-                    self.session.add(obj)
-                    # self.session.merge(obj)
-                else:
-                    LOGGER.info(f'Registry persistence for model {obj.__tablename__} disabled, skipping')  # noqa
-                    return
+            flag_name = '_'.join([obj.__tablename__, 'enabled'])
+            if registry_config.get(flag_name, True):
+                self.session.add(obj)  # Use merge if needed: self.session.merge(obj)
+            else:
+                LOGGER.info(f'Registry persistence for model {obj.__tablename__} disabled, skipping')
+                return
 
-            try:
-                self.session.commit()
-            except SQLAlchemyError as err:
-                LOGGER.error(f'Failed to persist {obj} due to: {err}')
-                self.session.rollback()
+            LOGGER.debug(f'Committing save of {obj}')
+            self.session.commit()
 
-            LOGGER.debug(f'Saving {obj}')
-        except DataError as err:
+        except (SQLAlchemyError, DataError) as err:
             LOGGER.error(f'Failed to save to registry: {err}')
             self.session.rollback()
 
