@@ -1421,13 +1421,14 @@ class UVIndex(base):
     def get_waf_path(self, dict_):
         """generate WAF url"""
 
-        datasetdirname = f"{self.dataset_id}_{dict_['dataset_level']}_{dict_['dataset_form']}",  # noqa
+        datasetdirname = f"{self.dataset_id}_{dict_['dataset_level']}_{dict_['dataset_form']}"  # noqa
         timestamp_date = datetime.datetime.strptime(
             dict_['timestamp_date'], '%Y-%m-%d').date()
         url_tokens = [
             config.WDR_WAF_BASEURL.rstrip('/'),
             'Archive-NewFormat',
-            datasetdirname, f"{dict_['station_type'].lower()}{self.station_id}",  # noqa
+            datasetdirname,
+            f"{dict_['station_type'].lower()}{self.station_id}",  # noqa
             dict_['instrument_name'].lower(),
             timestamp_date.strftime('%Y'),
             dict_['filename']
