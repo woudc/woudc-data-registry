@@ -1440,7 +1440,7 @@ class UVIndex(base):
     def __geo_interface__(self):
         gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
             '/search/station/stationReportDetails'
-        gaw_pagename = f'0-20008-0-{self.station_gaw_id}'
+        gaw_pagename = f'0-20008-0-{self.station.gaw_id}'
 
         return {
             'id': self.uv_id,
