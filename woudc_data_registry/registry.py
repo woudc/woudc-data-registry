@@ -127,7 +127,8 @@ class Registry(object):
         conditions = []
         target_fields = values.keys()
 
-        LOGGER.debug(f'Querying distinct values by fields {target_fields} for {domain}')
+        LOGGER.debug(f'Querying distinct values \
+            by fields {target_fields} for {domain}')
 
         for field in target_fields:
             table_field = getattr(obj, field)
@@ -332,9 +333,11 @@ class Registry(object):
         try:
             flag_name = '_'.join([obj.__tablename__, 'enabled'])
             if registry_config.get(flag_name, True):
-                self.session.add(obj)  # Use merge if needed: self.session.merge(obj)
+                # Use merge if needed: self.session.merge(obj)
+                self.session.add(obj)
             else:
-                LOGGER.info(f'Registry persistence for model {obj.__tablename__} disabled, skipping')
+                LOGGER.info(f'Registry persistence for \
+                    model {obj.__tablename__} disabled, skipping')
                 return
 
             LOGGER.debug(f'Committing save of {obj}')

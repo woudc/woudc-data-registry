@@ -64,7 +64,7 @@ WDR_DB_PASSWORD = os.getenv('WDR_DB_PASSWORD')
 WDR_DB_NAME = os.getenv('WDR_DB_NAME')
 WDR_SEARCH_TYPE = os.getenv('WDR_SEARCH_TYPE', 'elasticsearch')
 WDR_SEARCH_URL = os.getenv('WDR_SEARCH_URL')
-WDR_SEARCH_INDEX_BASENAME=os.getenv('WDR_SEARCH_INDEX_BASENAME')
+WDR_SEARCH_INDEX_BASENAME = os.getenv('WDR_SEARCH_INDEX_BASENAME')
 WDR_WAF_BASEDIR = os.getenv('WDR_WAF_BASEDIR')
 WDR_WAF_BASEURL = os.getenv('WDR_WAF_BASEURL', 'https://woudc.org/archive')
 WDR_ERROR_CONFIG = os.getenv('WDR_ERROR_CONFIG')
@@ -73,7 +73,8 @@ WDR_EXTRA_CONFIG = os.getenv('WDR_EXTRA_CONFIG')
 WDR_UV_INDEX_FORMULA_LOOKUP = os.getenv('WDR_UV_INDEX_FORMULA_LOOKUP')
 
 if not WDR_SEARCH_INDEX_BASENAME:
-    msg = 'WDR_SEARCH_INDEX_BASENAME was not set. Defaulting to: woudc_data_registry'
+    msg = 'WDR_SEARCH_INDEX_BASENAME was not set. \
+        Defaulting to: woudc_data_registry'
     LOGGER.warning(msg)
     WDR_SEARCH_INDEX_BASENAME = 'woudc_data_registry'
 

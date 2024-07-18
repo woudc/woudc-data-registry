@@ -1186,8 +1186,11 @@ class SearchIndex(object):
             }
 
             LOGGER.debug(f'Indexing 1 document into {index_name}')
-            self.connection.update(index=index_name, id=target['id'],
-                                body=wrapper)
+            self.connection.update(
+                index=index_name,
+                id=target['id'],
+                body=wrapper
+            )
         else:
             # Index/update multiple documents using bulk API.
             wrapper = ({
@@ -1199,8 +1202,12 @@ class SearchIndex(object):
             } for document in target)
 
             LOGGER.debug(f'Indexing documents into {index_name}')
-            helpers.bulk(self.connection, wrapper,
-                        raise_on_error=False, raise_on_exception=False)
+            helpers.bulk(
+                self.connection,
+                wrapper,
+                raise_on_error=False,
+                raise_on_exception=False
+            )
 
         return True
 
