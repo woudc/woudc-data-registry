@@ -975,8 +975,8 @@ class DataRecord(base):
 
                 'timestamp_utcoffset': self.timestamp_utcoffset,
                 'timestamp_date': strftime_rfc3339(self.timestamp_date),
-                'timestamp_time': None if self.timestamp_time is None \
-                    else self.timestamp_time.isoformat(),
+                'timestamp_time': (None if self.timestamp_time is None
+                                   else self.timestamp_time.isoformat()),
                 'timestamp_utc': strftime_rfc3339(self.timestamp_utc),
 
                 'published': self.published,
