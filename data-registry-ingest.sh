@@ -6,13 +6,13 @@ woudc-data-registry data ingest /apps/data/web/woudc-archive/Archive-NewFormat/T
 mv /apps/data/wdr-ingest/YYYY-MM-DD/operator-report.csv /apps/data/wdr-ingest/YYYY-MM-DD/TotalOzone_1.0_1.csv
 mv /apps/data/wdr-ingest/YYYY-MM-DD/run_report /apps/data/wdr-ingest/YYYY-MM-DD/TotalOzone_1.0_1_run_report
 
-# woudc-data-registry data ingest /apps/data/web/woudc-archive/Archive-NewFormat/TotalOzone_2.0_1 -y -r /apps/data/wdr-ingest/YYYY-MM-DD
-# mv /apps/data/wdr-ingest/YYYY-MM-DD/operator-report.csv /apps/data/wdr-ingest/YYYY-MM-DD/TotalOzone_2.0_1.csv
-# mv /apps/data/wdr-ingest/YYYY-MM-DD/run_report /apps/data/wdr-ingest/YYYY-MM-DD/TotalOzone_2.0_1_run_report
+woudc-data-registry data ingest /apps/data/web/woudc-archive/Archive-NewFormat/TotalOzone_2.0_1 -y -r /apps/data/wdr-ingest/YYYY-MM-DD
+mv /apps/data/wdr-ingest/YYYY-MM-DD/operator-report.csv /apps/data/wdr-ingest/YYYY-MM-DD/TotalOzone_2.0_1.csv
+mv /apps/data/wdr-ingest/YYYY-MM-DD/run_report /apps/data/wdr-ingest/YYYY-MM-DD/TotalOzone_2.0_1_run_report
 
-# woudc-data-registry data ingest /apps/data/web/woudc-archive/Archive-NewFormat/Broad-band_1.0_1 -y -r /apps/data/wdr-ingest/YYYY-MM-DD
-# mv /apps/data/wdr-ingest/YYYY-MM-DD/operator-report.csv /apps/data/wdr-ingest/YYYY-MM-DD/Broad-band_1.0_1.csv
-# mv /apps/data/wdr-ingest/YYYY-MM-DD/run_report /apps/data/wdr-ingest/YYYY-MM-DD/Broad-band_1.0_1_run_report
+woudc-data-registry data ingest /apps/data/web/woudc-archive/Archive-NewFormat/Broad-band_1.0_1 -y -r /apps/data/wdr-ingest/YYYY-MM-DD
+mv /apps/data/wdr-ingest/YYYY-MM-DD/operator-report.csv /apps/data/wdr-ingest/YYYY-MM-DD/Broad-band_1.0_1.csv
+mv /apps/data/wdr-ingest/YYYY-MM-DD/run_report /apps/data/wdr-ingest/YYYY-MM-DD/Broad-band_1.0_1_run_report
 
 woudc-data-registry data ingest /apps/data/web/woudc-archive/Archive-NewFormat/Broad-band_2.0_1 -y -r /apps/data/wdr-ingest/YYYY-MM-DD
 mv /apps/data/wdr-ingest/YYYY-MM-DD/operator-report.csv /apps/data/wdr-ingest/YYYY-MM-DD/Broad-band_2.0_1.csv
@@ -22,17 +22,17 @@ woudc-data-registry data ingest /apps/data/web/woudc-archive/Archive-NewFormat/L
 mv /apps/data/wdr-ingest/YYYY-MM-DD/operator-report.csv /apps/data/wdr-ingest/YYYY-MM-DD/Lidar_1.0_1.csv
 mv /apps/data/wdr-ingest/YYYY-MM-DD/run_report /apps/data/wdr-ingest/YYYY-MM-DD/Lidar_1.0_1_run_report
 
-# woudc-data-registry data ingest /apps/data/web/woudc-archive/Archive-NewFormat/Multi-band_1.0_1 -y -r /apps/data/wdr-ingest/YYYY-MM-DD
-# mv /apps/data/wdr-ingest/YYYY-MM-DD/operator-report.csv /apps/data/wdr-ingest/YYYY-MM-DD/Multi-band_1.0_1.csv
-# mv /apps/data/wdr-ingest/YYYY-MM-DD/run_report /apps/data/wdr-ingest/YYYY-MM-DD/Multi-band_1.0_1_run_report
+woudc-data-registry data ingest /apps/data/web/woudc-archive/Archive-NewFormat/Multi-band_1.0_1 -y -r /apps/data/wdr-ingest/YYYY-MM-DD
+mv /apps/data/wdr-ingest/YYYY-MM-DD/operator-report.csv /apps/data/wdr-ingest/YYYY-MM-DD/Multi-band_1.0_1.csv
+mv /apps/data/wdr-ingest/YYYY-MM-DD/run_report /apps/data/wdr-ingest/YYYY-MM-DD/Multi-band_1.0_1_run_report
 
 woudc-data-registry data ingest /apps/data/web/woudc-archive/Archive-NewFormat/RocketSonde_1.0_1 -y -r /apps/data/wdr-ingest/YYYY-MM-DD
 mv /apps/data/wdr-ingest/YYYY-MM-DD/operator-report.csv /apps/data/wdr-ingest/YYYY-MM-DD/RocketSonde_1.0_1.csv
 mv /apps/data/wdr-ingest/YYYY-MM-DD/run_report /apps/data/wdr-ingest/YYYY-MM-DD/RocketSonde_1.0_1_run_report
 
-# woudc-data-registry data ingest /apps/data/web/woudc-archive/Archive-NewFormat/OzoneSonde_1.0_1 -y -r /apps/data/wdr-ingest/YYYY-MM-DD
-# mv /apps/data/wdr-ingest/YYYY-MM-DD/operator-report.csv /apps/data/wdr-ingest/YYYY-MM-DD/OzoneSonde_1.0_1.csv
-# mv /apps/data/wdr-ingest/YYYY-MM-DD/run_report /apps/data/wdr-ingest/YYYY-MM-DD/OzoneSonde_1.0_1_run_report
+woudc-data-registry data ingest /apps/data/web/woudc-archive/Archive-NewFormat/OzoneSonde_1.0_1 -y -r /apps/data/wdr-ingest/YYYY-MM-DD
+mv /apps/data/wdr-ingest/YYYY-MM-DD/operator-report.csv /apps/data/wdr-ingest/YYYY-MM-DD/OzoneSonde_1.0_1.csv
+mv /apps/data/wdr-ingest/YYYY-MM-DD/run_report /apps/data/wdr-ingest/YYYY-MM-DD/OzoneSonde_1.0_1_run_report
 
 woudc-data-registry data ingest /apps/data/web/woudc-archive/Archive-NewFormat/TotalOzoneObs_1.0_1 -y -r /apps/data/wdr-ingest/YYYY-MM-DD
 mv /apps/data/wdr-ingest/YYYY-MM-DD/operator-report.csv /apps/data/wdr-ingest/YYYY-MM-DD/TotalOzoneObs_1.0_1.csv
