@@ -1,6 +1,6 @@
-pypandoc
 alembic
 coverage
 flake8
+pypandoc
 sphinx
 wheel
