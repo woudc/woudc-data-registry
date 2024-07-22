@@ -31,19 +31,20 @@ are automatically installed during installation.
 python3 -m venv --system-site-packages woudc-data-registry
 cd woudc-data-registry
 source bin/activate
+cd ..
 
 # clone woudc-extcsv and install
 git clone https://github.com/woudc/woudc-extcsv.git
 cd woudc-extcsv
 pip install -r requirements.txt
-python setup.py install
+python3 setup.py install
 cd ..
 
 # clone codebase and install
 git clone https://github.com/woudc/woudc-data-registry.git
 cd woudc-data-registry
-python setup.py build
-python setup.py install
+python3 setup.py build
+python3 setup.py install
 # for PostgreSQL backends
 pip install -r requirements-pg.txt
 
@@ -69,10 +70,6 @@ woudc-data-registry admin registry setup
 woudc-data-registry admin search setup
 
 # load core metadata
-
-# fetch WMO country list
-mkdir data
-curl -o data/wmo-countries.json https://www.wmo.int/cpdb/data/membersandterritories.json
 woudc-data-registry admin init -d data/
 
 # cleanups
@@ -104,35 +101,35 @@ eval "$(_WOUDC_DATA_REGISTRY_COMPLETE=source woudc-data-registry)"
 # list all instances of foo (where foo is one of:
 #  project|dataset|contributor|country|station|instrument|deployment)
 woudc-data-registry <foo> list
- e.g.
+# e.g.
 woudc-data-registry contributor list
 
 # show a specific instance of foo with a given registry identifier
 woudc-data-registry <foo> show <identifier>
- e.g.
+# e.g.
 woudc-data-registry station show 023
 woudc-data-registry instrument show ECC:2Z:4052:002:OzoneSonde
 
 # add a new instance of foo (contributor|country|station|instrument|deployment)
 woudc-data-registry <foo> add <options>
- e.g.
+# e.g.
 woudc-data-registry deployment add -s 001 -c MSC:WOUDC
 woudc-data-registry contributor add -id foo -n "Contributor name" -c Canada -w IV -u https://example.org -e you@example.org -f foouser -g -75,45
 
 # update an existing instance of foo with a given registry identifier
 woudc-data-registry <foo> update -id <identifier> <options>
- e.g.
+# e.g.
 woudc-data-registry station update -n "New station name"
 woudc-data-registry deployment update --end-date 'Deployment end date'
 
 # delete an instance of foo with a given registry identifier
 woudc-data-registry <foo> delete <identifier>
- e.g.
+# e.g.
 woudc-data-registry deployment delete 018:MSC:WOUDC
 
 # for more information about options on operation (add|update):
 woudc-data-registry <foo> <operation> --help
- e.g.
+# e.g.
 woudc-data-registry instrument update --help
 ```
 
@@ -223,7 +220,7 @@ pip install -r requirements-dev.txt
 # build local copy of https://woudc.github.io/woudc-data-registry
 cd docs
 make html
-python -m http.server  # view on http://localhost:8000/
+python3 -m http.server  # view on http://localhost:8000/
 ```
 
 #### Running Tests
@@ -231,10 +228,10 @@ python -m http.server  # view on http://localhost:8000/
 ```bash
 # run tests like this:
 cd woudc_data_registry/tests
-python test_data_registry.py
+python3 test_data_registry.py
 
 # or this:
-python setup.py test
+python3 setup.py test
 
 # measure code coverage
 coverage run --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_data_registry

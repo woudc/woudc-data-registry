@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -92,7 +92,7 @@ def list_(ctx):
     """List all deployments"""
 
     for c in get_metadata(Deployment):
-        click.echo('{} @ {}'.format(c.contributor_id.ljust(20), c.station_id))
+        click.echo(f'{c.contributor_id.ljust(20)} @ {c.station_id}')
 
 
 @click.command('show')
@@ -137,7 +137,7 @@ def add(ctx, station, contributor, start_date, end_date):
 
     result = add_metadata(Deployment, deployment_,
                           save_to_registry, save_to_index)
-    click.echo('Deployment {} added'.format(result.deployment_id))
+    click.echo(f'Deployment {result.deployment_id} added')
 
 
 @click.command('update')
@@ -170,7 +170,7 @@ def update(ctx, identifier, station, contributor, start_date, end_date):
 
     update_metadata(Deployment, identifier, deployment_,
                     save_to_registry, save_to_index)
-    click.echo('Deployment {} updated'.format(identifier))
+    click.echo(f'Deployment {identifier} updated')
 
 
 @click.command('delete')
@@ -183,13 +183,13 @@ def delete(ctx, identifier):
         click.echo('Contributor not found')
         return
 
-    q = 'Are you sure you want to delete deployment {}?'.format(identifier)
+    q = f'Are you sure you want to delete deployment {identifier}?'
 
     if click.confirm(q):  # noqa
         delete_metadata(Deployment, identifier,
                         save_to_registry, save_to_index)
 
-    click.echo('Deployment {} deleted'.format(identifier))
+    click.echo(f'Deployment {identifier} deleted')
 
 
 deployment.add_command(list_)

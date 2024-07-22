@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -44,7 +44,6 @@
 # =================================================================
 
 import logging
-from urllib.parse import urlparse
 
 import click
 from elasticsearch import Elasticsearch, helpers
@@ -1066,32 +1065,8 @@ class SearchIndex(object):
         self.index_basename = config.WDR_SEARCH_INDEX_BASENAME
 
         LOGGER.debug('Connecting to Elasticsearch')
-        url_parsed = urlparse(self.url)
-        url_settings = {
-            'host': url_parsed.hostname
-        }
 
-        if url_parsed.port is None:  # proxy to default HTTP(S) port
-            if url_parsed.scheme == 'https':
-                url_settings['port'] = 443
-                url_settings['scheme'] = url_parsed.scheme
-            else:
-                url_settings['port'] = 80
-        else:  # was set explictly
-            url_settings['port'] = url_parsed.port
-
-        if url_parsed.path is not None:
-            url_settings['url_prefix'] = url_parsed.path
-
-        LOGGER.debug('URL settings: {}'.format(url_settings))
-
-        AUTH = (config.WDR_SEARCH_USERNAME, config.WDR_SEARCH_PASSWORD)
-        if None in AUTH:
-            self.connection = Elasticsearch([url_settings])
-        else:
-            LOGGER.debug('Connecting using username {}'.format(AUTH[0]))
-            self.connection = Elasticsearch([url_settings], http_auth=AUTH,
-                                            verify_certs=False)
+        self.connection = Elasticsearch(self.url)
 
         self.headers = {'Content-Type': 'application/json'}
 
@@ -1103,10 +1078,7 @@ class SearchIndex(object):
         :returns: fully qualified index name
         """
 
-        if self.index_basename is not None:
-            return '{}.{}'.format(self.index_basename, index_name)
-
-        return index_name
+        return f'{self.index_basename}.{index_name}'
 
     def create(self):
         """create search indexes"""
@@ -1115,7 +1087,7 @@ class SearchIndex(object):
 
         for key, definition in MAPPINGS.items():
             # Skip indexes that have been manually disabled.
-            enabled_flag = '{}_enabled'.format(key)
+            enabled_flag = f'{key}_enabled'
             if not search_index_config.get(enabled_flag, True):
                 continue
 
@@ -1155,14 +1127,14 @@ class SearchIndex(object):
 
         for key, definition in MAPPINGS.items():
             # Skip indexes that have been manually disabled.
-            enabled_flag = '{}_enabled'.format(key)
+            enabled_flag = f'{key}_enabled'
             if not search_index_config.get(enabled_flag, True):
                 continue
 
             index_name = self.generate_index_name(definition['index'])
 
             try:
-                self.connection.indices.delete(index_name)
+                self.connection.indices.delete(index=index_name)
             except NotFoundError as err:
                 LOGGER.error(err)
                 raise SearchIndexError(err)
@@ -1196,10 +1168,10 @@ class SearchIndex(object):
         """
 
         search_index_config = config.EXTRAS.get('search_index', {})
-        enabled_flag = '{}_enabled'.format(domain.__tablename__)
+        enabled_flag = f'{domain.__tablename__}_enabled'
 
         if not search_index_config.get(enabled_flag, True):
-            msg = '{} index is currently frozen'.format(domain.__tablename__)
+            msg = f'{domain.__tablename__} index is currently frozen'
             LOGGER.warning(msg)
             return False
 
@@ -1213,23 +1185,29 @@ class SearchIndex(object):
                 'doc_as_upsert': True
             }
 
-            LOGGER.debug('Indexing 1 document into {}'.format(index_name))
-            self.connection.update(index=index_name, id=target['id'],
-                                   body=wrapper)
+            LOGGER.debug(f'Indexing 1 document into {index_name}')
+            self.connection.update(
+                index=index_name,
+                id=target['id'],
+                body=wrapper
+            )
         else:
             # Index/update multiple documents using bulk API.
             wrapper = ({
                 '_op_type': 'update',
                 '_index': index_name,
-                '_type': '_doc',
                 '_id': document['id'],
                 'doc': document,
                 'doc_as_upsert': True
             } for document in target)
 
-            LOGGER.debug('Indexing documents into {}'.format(index_name))
-            helpers.bulk(self.connection, wrapper,
-                         raise_on_error=False, raise_on_exception=False)
+            LOGGER.debug(f'Indexing documents into {index_name}')
+            helpers.bulk(
+                self.connection,
+                wrapper,
+                raise_on_error=False,
+                raise_on_exception=False
+            )
 
         return True
 
@@ -1244,10 +1222,10 @@ class SearchIndex(object):
         """
 
         search_index_config = config.EXTRAS.get('search_index', {})
-        enabled_flag = '{}_enabled'.format(domain.__tablename__)
+        enabled_flag = f'{domain.__tablename__}_enabled'
 
         if not search_index_config.get(enabled_flag, True):
-            msg = '{} index is currently frozen'.format(domain.__tablename__)
+            msg = f'{domain.__tablename__} index is currently frozen'
             LOGGER.warning(msg)
             return False
 
@@ -1259,7 +1237,7 @@ class SearchIndex(object):
             result = self.connection.delete(index=index_name, id=target)
 
             if result['result'] != 'deleted':
-                msg = 'Data record {} does not exist'.format(target)
+                msg = f'Data record {target} does not exist'
                 LOGGER.error(msg)
                 raise SearchIndexError(msg)
         elif isinstance(target, dict):
@@ -1267,7 +1245,7 @@ class SearchIndex(object):
             result = self.connection.delete(index=index_name, id=target['id'])
 
             if result['result'] != 'deleted':
-                msg = 'Data record {} does not exist'.format(target['id'])
+                msg = f"Data record {target['id']} does not exist"
                 LOGGER.error(msg)
                 raise SearchIndexError(msg)
         else:
@@ -1275,7 +1253,6 @@ class SearchIndex(object):
             wrapper = ({
                 '_op_type': 'delete',
                 '_index': index_name,
-                '_type': '_doc',
                 '_id': document['id']
             } for document in target)
 
@@ -1295,10 +1272,10 @@ class SearchIndex(object):
         """
 
         search_index_config = config.EXTRAS.get('search_index', {})
-        enabled_flag = '{}_enabled'.format(domain.__tablename__)
+        enabled_flag = f'{domain.__tablename__}_enabled'
 
         if not search_index_config.get(enabled_flag, True):
-            msg = '{} index is currently frozen'.format(domain.__tablename__)
+            msg = f'{domain.__tablename__} index is currently frozen'
             LOGGER.warning(msg)
             return False
 
@@ -1319,7 +1296,7 @@ class SearchIndex(object):
             }
         }
 
-        self.connection.delete_by_query(index_name, query)
+        self.connection.delete_by_query(index=index_name, body=query)
         return True
 
 

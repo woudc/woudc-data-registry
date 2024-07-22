@@ -1,3 +1,47 @@
+# =================================================================
+#
+# Terms and Conditions of Use
+#
+# Unless otherwise noted, computer program source code of this
+# distribution # is covered under Crown Copyright, Government of
+# Canada, and is distributed under the MIT License.
+#
+# The Canada wordmark and related graphics associated with this
+# distribution are protected under trademark law and copyright law.
+# No permission is granted to use them outside the parameters of
+# the Government of Canada's corporate identity program. For
+# more information, see
+# http://www.tbs-sct.gc.ca/fip-pcim/index-eng.asp
+#
+# Copyright title to all 3rd party software distributed with this
+# software is held by the respective copyright holders as noted in
+# those files. Users are asked to read the 3rd Party Licenses
+# referenced with those assets.
+#
+# Copyright (c) 2024 Government of Canada
+#
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this software and associated documentation
+# files (the "Software"), to deal in the Software without
+# restriction, including without limitation the rights to use,
+# copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following
+# conditions:
+#
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+#
+# =================================================================
 
 import csv
 import pathlib
@@ -99,7 +143,7 @@ class OperatorReportTest(SandboxTestSuite):
         """Test that a passing file is written in the operator report"""
 
         filename = '20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'
-        infile = resolve_test_data_path('data/general/{}'.format(filename))
+        infile = resolve_test_data_path(f'data/general/{filename}')
         contents = util.read_file(infile)
 
         with report.OperatorReport(SANDBOX_DIR) as op_report:
@@ -136,7 +180,7 @@ class OperatorReportTest(SandboxTestSuite):
         """Test that file warnings are written in the operator report"""
 
         filename = 'ecsv-trailing-commas.csv'
-        infile = resolve_test_data_path('data/general/{}'.format(filename))
+        infile = resolve_test_data_path(f'data/general/{filename}')
         contents = util.read_file(infile)
 
         with report.OperatorReport(SANDBOX_DIR) as op_report:
@@ -184,7 +228,7 @@ class OperatorReportTest(SandboxTestSuite):
         """Test that a failing file is written in the operator report"""
 
         filename = 'ecsv-missing-instrument-name.csv'
-        infile = resolve_test_data_path('data/general/{}'.format(filename))
+        infile = resolve_test_data_path(f'data/general/{filename}')
         contents = util.read_file(infile)
 
         ecsv = None
@@ -197,8 +241,7 @@ class OperatorReportTest(SandboxTestSuite):
                 agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
                 ecsv.validate_dataset_tables()
-                raise AssertionError('Parsing of {} did not fail'
-                                     .format(infile))
+                raise AssertionError(f'Parsing of {infile} did not fail')
             except (MetadataValidationError,
                     NonStandardDataError):
                 output_path = os.path.join(SANDBOX_DIR, 'run1')
@@ -337,7 +380,7 @@ class RunReportTest(SandboxTestSuite):
         """Test that a passing file is written to the run report"""
 
         filename = '20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'
-        infile = resolve_test_data_path('data/general/{}'.format(filename))
+        infile = resolve_test_data_path(f'data/general/{filename}')
         contents = util.read_file(infile)
 
         run_report = report.RunReport(SANDBOX_DIR)
@@ -360,13 +403,13 @@ class RunReportTest(SandboxTestSuite):
             self.assertEqual(len(lines), 2)
 
             self.assertEqual(lines[0], agency)
-            self.assertEqual(lines[1], 'Pass: {}'.format(infile))
+            self.assertEqual(lines[1], f'Pass: {infile}')
 
     def test_failing_run_report(self):
         """Test that a failing file is written to the run report"""
 
         filename = 'ecsv-missing-instrument-name.csv'
-        infile = resolve_test_data_path('data/general/{}'.format(filename))
+        infile = resolve_test_data_path(f'data/general/{filename}')
         contents = util.read_file(infile)
 
         ecsv = None
@@ -382,8 +425,7 @@ class RunReportTest(SandboxTestSuite):
                 agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
                 ecsv.validate_dataset_tables()
-                raise AssertionError('Parsing of {} did not fail'
-                                     .format(infile))
+                raise AssertionError(f'Parsing of {infile} did not fail')
             except (MetadataValidationError,
                     NonStandardDataError):
                 output_path = os.path.join(SANDBOX_DIR, 'run_report')
@@ -396,13 +438,13 @@ class RunReportTest(SandboxTestSuite):
             self.assertEqual(len(lines), 2)
 
             self.assertEqual(lines[0], agency)
-            self.assertEqual(lines[1], 'Fail: {}'.format(infile))
+            self.assertEqual(lines[1], f'Fail: {infile}')
 
     def test_non_extcsv_run_report(self):
         """Test that an unparseable file is written to the run report"""
 
         filename = 'not-an-ecsv.dat'
-        infile = resolve_test_data_path('data/general/{}'.format(filename))
+        infile = resolve_test_data_path(f'data/general/{filename}')
         contents = util.read_file(infile)
 
         agency = 'UNKNOWN'
@@ -412,8 +454,7 @@ class RunReportTest(SandboxTestSuite):
 
             try:
                 _ = ExtendedCSV(contents, error_bank)
-                raise AssertionError('Parsing of {} did not fail'
-                                     .format(infile))
+                raise AssertionError(f'Parsing of {infile} did not fail')
             except (MetadataValidationError,
                     NonStandardDataError):
                 output_path = os.path.join(SANDBOX_DIR, 'run_report')
@@ -426,7 +467,7 @@ class RunReportTest(SandboxTestSuite):
                     self.assertEqual(len(lines), 2)
 
                     self.assertEqual(lines[0], agency)
-                    self.assertEqual(lines[1], 'Fail: {}'.format(infile))
+                    self.assertEqual(lines[1], f'Fail: {infile}')
 
     def test_mixed_run_report(self):
         """
@@ -626,14 +667,12 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report = report.EmailSummary(project_root)
 
         operator_reports = email_report.find_operator_reports()
-        expected_path_pattern = \
-            'data/reports/six_reports/run{}/operator-report-9999-12-31.csv'
 
         self.assertEqual(6, len(operator_reports))
 
         for run_number in range(1, 6 + 1):
             expected_path = resolve_test_data_path(
-                expected_path_pattern.format(run_number))
+                f'data/reports/six_reports/run{run_number}/operator-report-9999-12-31.csv')  # noqa
             self.assertIn(expected_path, set(operator_reports))
 
     def test_email_summary_single_pass(self):
@@ -647,7 +686,7 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_filename = 'failed-files-{}'.format(today)
+        output_filename = f'failed-files-{today}'
         output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
@@ -672,7 +711,7 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_filename = 'failed-files-{}'.format(today)
+        output_filename = f'failed-files-{today}'
         output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
@@ -704,7 +743,7 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_filename = 'failed-files-{}'.format(today)
+        output_filename = f'failed-files-{today}'
         output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
@@ -739,7 +778,7 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_filename = 'failed-files-{}'.format(today)
+        output_filename = f'failed-files-{today}'
         output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
@@ -779,7 +818,7 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_filename = 'failed-files-{}'.format(today)
+        output_filename = f'failed-files-{today}'
         output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
@@ -837,7 +876,7 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_filename = 'failed-files-{}'.format(today)
+        output_filename = f'failed-files-{today}'
         output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
@@ -893,7 +932,7 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_filename = 'failed-files-{}'.format(today)
+        output_filename = f'failed-files-{today}'
         output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
@@ -925,7 +964,7 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_filename = 'failed-files-{}'.format(today)
+        output_filename = f'failed-files-{today}'
         output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
@@ -960,7 +999,7 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_filename = 'failed-files-{}'.format(today)
+        output_filename = f'failed-files-{today}'
         output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
@@ -1002,7 +1041,7 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_filename = 'failed-files-{}'.format(today)
+        output_filename = f'failed-files-{today}'
         output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
@@ -1034,7 +1073,7 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_filename = 'failed-files-{}'.format(today)
+        output_filename = f'failed-files-{today}'
         output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))
@@ -1085,7 +1124,7 @@ class EmailSummaryTest(SandboxTestSuite):
         email_report.write(emails)
 
         today = datetime.now().strftime('%Y-%m-%d')
-        output_filename = 'failed-files-{}'.format(today)
+        output_filename = f'failed-files-{today}'
         output_path = os.path.join(SANDBOX_DIR, output_filename)
 
         self.assertTrue(os.path.exists(output_path))

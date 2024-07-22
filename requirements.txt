@@ -1,7 +1,7 @@
 click
-elasticsearch<8
-jsonschema<4.4.0
+elasticsearch
+jsonschema
 pyyaml
 requests
 sqlalchemy
-woudc-extcsv>=0.5.0
+woudc-extcsv

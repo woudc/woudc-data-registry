@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2019 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -76,7 +76,7 @@ class Registry(object):
         :returns: List of all objects of that class in the registry.
         """
 
-        LOGGER.debug('Querying records for {} by category'.format(domain))
+        LOGGER.debug(f'Querying records for {domain} by category')
         values = self.session.query(domain).filter_by(
                                                 content_category=category)
 
@@ -90,7 +90,7 @@ class Registry(object):
         :returns: List of all objects of that class in the registry.
         """
 
-        LOGGER.debug('Querying all records for {}'.format(domain))
+        LOGGER.debug(f'Querying all records for {domain}')
         values = self.session.query(domain).all()
 
         return values
@@ -103,7 +103,7 @@ class Registry(object):
         :returns: list of distinct values
         """
 
-        LOGGER.debug('Querying distinct values for {}'.format(domain))
+        LOGGER.debug(f'Querying distinct values for {domain}')
         values = [v[0] for v in self.session.query(domain).distinct()]
 
         return values
@@ -124,10 +124,11 @@ class Registry(object):
         :returns: list of distinct values
         """
 
-        LOGGER.debug('Querying distinct values for {}'.format(domain))
-
         conditions = []
         target_fields = values.keys()
+
+        LOGGER.debug(f'Querying distinct values \
+            by fields {target_fields} for {domain}')
 
         for field in target_fields:
             table_field = getattr(obj, field)
@@ -158,7 +159,7 @@ class Registry(object):
         """
 
         LOGGER.debug(
-            'Querying distinct values for {} from subquery'.format(domain)
+            f'Querying distinct values for {domain} from subquery'
         )
         results = [v[0] for v in self.session.query(domain).filter(
                       field.in_(subquery)).distinct()]
@@ -180,11 +181,10 @@ class Registry(object):
         field = getattr(obj, by)
 
         if case_insensitive:
-            LOGGER.debug('Querying for LOWER({}) = LOWER({})'
-                         .format(field, value))
+            LOGGER.debug(f'Querying for LOWER({field}) = LOWER({value})')
             condition = func.lower(field) == value.lower()
         else:
-            LOGGER.debug('Querying for {} = {}'.format(field, value))
+            LOGGER.debug(f'Querying for {field} = {value}')
             condition = field == value
 
         return self.session.query(obj).filter(condition).first()
@@ -206,11 +206,10 @@ class Registry(object):
         if by is not None:
             field = getattr(obj, by)
             if case_insensitive:
-                LOGGER.debug('Querying for LOWER({}) = LOWER({})'
-                             .format(field, value))
+                LOGGER.debug(f'Querying for LOWER({field}) = LOWER({value})')
                 condition = func.lower(field) == value.lower()
             else:
-                LOGGER.debug('Querying for {} = {}'.format(field, value))
+                LOGGER.debug(f'Querying for {field} = {value}')
                 condition = field == value
 
             results = self.session.query(
@@ -253,11 +252,10 @@ class Registry(object):
         field = getattr(obj, by)
 
         if case_insensitive:
-            LOGGER.debug('Querying for LOWER({}) LIKE {}'
-                         .format(field, pattern.lower()))
+            LOGGER.debug(f'Querying for LOWER({field}) LIKE {pattern.lower()}')  # noqa
             condition = func.lower(field).like(pattern.lower())
         else:
-            LOGGER.debug('Querying for {} LIKE {}'.format(field, pattern))
+            LOGGER.debug(f'Querying for {field} LIKE {pattern}')
             condition = field.like(pattern)
 
         return self.session.query(obj).filter(condition).first()
@@ -308,11 +306,10 @@ class Registry(object):
         field = getattr(obj, by)
 
         if case_insensitive:
-            LOGGER.debug('Querying for LOWER({}) = LOWER({})'
-                         .format(field, value))
+            LOGGER.debug(f'Querying for LOWER({field}) = LOWER({value})')
             condition = func.lower(field) == value.lower()
         else:
-            LOGGER.debug('Querying for {} = {}'.format(field, value))
+            LOGGER.debug(f'Querying for {field} = {value}')
             condition = field == value
 
         self.session.query(obj).filter(condition).update(new_value)
@@ -322,35 +319,32 @@ class Registry(object):
 
     def save(self, obj=None):
         """
-        helper function to save object to registry
+        Helper function to save object to registry.
 
         :param obj: object to save (default None)
         :returns: void
         """
+        if obj is None:
+            LOGGER.warning('obj is none while trying to save, skipping')
+            return
 
         registry_config = config.EXTRAS.get('registry', {})
 
         try:
-            if obj is not None:
-                flag_name = '_'.join([obj.__tablename__, 'enabled'])
-                if registry_config.get(flag_name, True):
-                    self.session.add(obj)
-                    # self.session.merge(obj)
-                else:
-                    LOGGER.info('Registry persistence for model {} disabled,'
-                                ' skipping'.format(obj.__tablename__))
-                    return
+            flag_name = '_'.join([obj.__tablename__, 'enabled'])
+            if registry_config.get(flag_name, True):
+                # Use merge if needed: self.session.merge(obj)
+                self.session.add(obj)
+            else:
+                LOGGER.info(f'Registry persistence for \
+                    model {obj.__tablename__} disabled, skipping')
+                return
 
-            try:
-                self.session.commit()
-            except SQLAlchemyError as err:
-                LOGGER.error('Failed to persist {} due to: {}'
-                             .format(obj, err))
-                self.session.rollback()
+            LOGGER.debug(f'Committing save of {obj}')
+            self.session.commit()
 
-            LOGGER.debug('Saving {}'.format(obj))
-        except DataError as err:
-            LOGGER.error('Failed to save to registry: {}'.format(err))
+        except (SQLAlchemyError, DataError) as err:
+            LOGGER.error(f'Failed to save to registry: {err}')
             self.session.rollback()
 
     def close_session(self):

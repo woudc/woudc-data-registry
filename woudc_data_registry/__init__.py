@@ -57,7 +57,7 @@ from woudc_data_registry.log import setup_logger
 from woudc_data_registry.models import admin
 from woudc_data_registry.product import product
 
-__version__ = '0.1.dev0'
+__version__ = '0.2.dev0'
 
 setup_logger(config.WDR_LOGGING_LOGLEVEL, config.WDR_LOGGING_LOGFILE)
 

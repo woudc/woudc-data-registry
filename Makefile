@@ -54,7 +54,7 @@ help:
 	@echo " createdb: create PostgreSQL database"
 	@echo " dropdb: drop PostgreSQL database"
 	@echo " setup: create models and search index"
-	@echo " setup_data: download core metadata
+	@echo " setup_data: download core metadata"
 	@echo " teardown: delete models and search index"
 	@echo " test: run tests"
 	@echo " coverage: run code coverage"
@@ -92,7 +92,7 @@ init:
 	woudc-data-registry admin init -d $(DATA)
 
 package:
-	python setup.py sdist bdist_wheel
+	python3 setup.py sdist bdist_wheel
 
 setup:
 	woudc-data-registry admin registry setup
@@ -107,6 +107,6 @@ teardown:
 	woudc-data-registry admin search teardown
 
 test:
-	python setup.py test
+	python3 setup.py test
 
 .PHONY: clean coverage createdb dropdb flake8 help init package setup setup_data teardown test

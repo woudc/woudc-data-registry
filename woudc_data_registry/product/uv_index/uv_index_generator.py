@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2021 Government of Canada
+# Copyright (c) 2024 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -105,12 +105,12 @@ def execute(path, formula_lookup, update, start_year, end_year, bypass):
 
                 ipath = os.path.join(dirname, filename)
                 contents = read_file(ipath)
-                LOGGER.debug('Parsing extcsv {}'.format(ipath))
+                LOGGER.debug(f'Parsing extcsv {ipath}')
 
                 try:
                     extcsv = ExtendedCSV(contents)
                 except Exception as err:
-                    msg = 'Unable to parse extcsv {}: {}'.format(ipath, err)
+                    msg = f'Unable to parse extcsv {ipath}: {err}'
                     LOGGER.error(msg)
                     continue
 
@@ -136,15 +136,14 @@ def execute(path, formula_lookup, update, start_year, end_year, bypass):
                     instrument_height = extcsv.extcsv['LOCATION']['Height'][0]
                     timestamp_date = extcsv.extcsv['TIMESTAMP']['Date'][0]
                 except Exception as err:
-                    msg = 'Unable to get data from extcsv {}: {}'.format(
-                        ipath, err)
+                    msg = f'Unable to get data from extcsv {ipath}: {err}'
                     LOGGER.error(msg)
                     continue
 
                 if len(station_id) == 2:
                     station_id = station_id.zfill(3)
 
-                station = '{}{}'.format(station_type.upper(), station_id)
+                station = f'{station_type.upper()}{station_id}'
 
                 if station in formula_lookup.keys():
                     if dataset.lower() == 'spectral':
@@ -170,8 +169,7 @@ def execute(path, formula_lookup, update, start_year, end_year, bypass):
                                                            formula_lookup,
                                                            max_index)
                         except Exception as err:
-                            msg = 'Unable to compute UV for file {}: {}'.format(  # noqa
-                                ipath, err)
+                            msg = f'Unable to compute UV for file {ipath}: {err}'  # noqa
                             LOGGER.error(msg)
                             continue
                     elif dataset.lower() == 'broad-band':
@@ -182,13 +180,11 @@ def execute(path, formula_lookup, update, start_year, end_year, bypass):
                                                            country,
                                                            formula_lookup)
                         except Exception as err:
-                            msg = 'Unable to compute UV for file {}: {}'.format(  # noqa
-                                ipath, err)
+                            msg = f'Unable to compute UV for file {ipath}: {err}'  # noqa
                             LOGGER.error(msg)
                             continue
                     else:
-                        msg = 'Unsupported dataset {}. Skipping.'.format(
-                            dataset)
+                        msg = f'Unsupported dataset {dataset}. Skipping.'
                         LOGGER.error(msg)
 
                     # form ids for data insert
@@ -209,9 +205,8 @@ def execute(path, formula_lookup, update, start_year, end_year, bypass):
                             allow_add_instrument = True
                         else:
                             response = \
-                                input('Instrument {} not found. '
-                                      'Add? (y/n) [n]: '
-                                      .format(instrument_id))
+                                input(f'Instrument {instrument_id} not found. '
+                                      'Add? (y/n) [n]: ')
                             allow_add_instrument = \
                                 response.lower() in ['y', 'yes']
 
@@ -344,8 +339,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                     time = extcsv.extcsv[global_summary_t]['Time'][0]
                 utcoffset = extcsv.extcsv[timestamp_t]['UTCOffset'][0]
             except Exception as err:
-                msg = 'Unable to get value from file {}: {}'.format(
-                    ipath, err)
+                msg = f'Unable to get value from file {ipath}: {err}'
                 LOGGER.error(msg)
                 pass
 
@@ -355,23 +349,20 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                     try:
                         uv = float(uv)
                     except ValueError as err:
-                        msg = ('Unable to make UVIndex: {} value into a float.'
-                               ' Time: {}, file: {}: {}'.format(uv, time,
-                                                                ipath, err))
+                        msg = (f'Unable to make UVIndex: {uv} value into a float.'  # noqa
+                               f' Time: {time}, file: {ipath}: {err}')
                         LOGGER.error(msg)
                         pass
                 except Exception as err:
-                    msg = ('Unable to get {}.UVIndex'
-                           ' from file: {}. Time: {}: {}'.format(
-                               global_summary_nsf_t, ipath, time, err))
+                    msg = (f'Unable to get {global_summary_nsf_t}.UVIndex'
+                           f' from file: {ipath}. Time: {time}: {err}')
                     LOGGER.error(msg)
                     pass
 
                 try:
                     zen_angle = extcsv.extcsv[global_summary_nsf_t]['SZA'][0]
                 except Exception as err:
-                    msg = ('Unable to get {}.SZA from file {}: {}'.format(
-                           global_summary_nsf_t, ipath, err))
+                    msg = f'Unable to get {global_summary_nsf_t}.SZA from file {ipath}: {err}'  # noqa
                     LOGGER.error(msg)
                     pass
 
@@ -383,8 +374,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                         intcie_f = float(intcie)
                     except Exception as err:
                         msg = ('Unable to convert to float intcie:'
-                               ' {}. File: {}. Time: {}: {}'.format(
-                                   intcie, ipath, time, err))
+                               f' {intcie}. File: {ipath}. Time: {time}: {err}')  # noqa
                         LOGGER.error(msg)
                         continue
                     # compute
@@ -393,7 +383,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                     elif '/' in formula:
                         uv = intcie_f / 40
                     else:
-                        msg = 'Unknown formula: {}'.format(formula)
+                        msg = f'Unknown formula: {formula}'
                         LOGGER.error(msg)
                         continue
 
@@ -401,15 +391,13 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                         zen_angle = \
                             extcsv.extcsv[global_summary_t]['ZenAngle'][0]
                     except Exception as err:
-                        msg = ('Unable to get {}.ZenAngle from file: {}'
-                               'Time: {}: {}'.format(
-                                  global_summary_t, ipath, time, err))
+                        msg = (f'Unable to get {global_summary_t}.ZenAngle from file: {ipath}'  # noqa
+                               f'Time: {time}: {err}')
                         LOGGER.error(msg)
                         pass
 
                 except Exception as err:
-                    msg = ('Unable to get  {}.IntCIE from file: {}. Time: {}.'
-                           ': {}'.format(global_summary_t, ipath, time, err))
+                    msg = f'Unable to get {global_summary_t}.IntCIE from file: {ipath}. Time: {time}: {err}'  # noqa
                     LOGGER.error(msg)
                     continue
 
@@ -438,8 +426,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
             if instrument_name.lower() == 'kipp_zonen':
                 formula = formula_lookup[station]['kipp_zonen']['GLOBAL']
         except KeyError as err:
-            msg = ('Unable to get broad-band formula for file {}: {}'.format(
-                       ipath, err))
+            msg = f'Unable to get broad-band formula for file {ipath}: {err}'
             LOGGER.error(msg)
             raise err
 
@@ -448,7 +435,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
             date = extcsv.extcsv['TIMESTAMP']['Date'][0]
             utcoffset = extcsv.extcsv['TIMESTAMP']['UTCOffset'][0]
         except Exception as err:
-            msg = 'Unable to get value from file {}: {}'.format(ipath, err)
+            msg = f'Unable to get value from file {ipath}: {err}'
             LOGGER.error(msg)
             raise err
 
@@ -456,15 +443,15 @@ def compute_uv_index(ipath, extcsv, dataset, station,
         try:
             times = extcsv.extcsv['GLOBAL']['Time']
         except Exception as err:
-            msg = ('Unable to get GLOBAL.Time values from file {}: {}'
-                   'Trying DIFFUSE.Time'.format(ipath, err))
+            msg = (f'Unable to get GLOBAL.Time values from file {ipath}: {err}'
+                   'Trying DIFFUSE.Time')
             LOGGER.error(msg)
         # try DIFFUSE
         if times is None:
             try:
                 times = extcsv.extcsv['DIFFUSE']['Time']
             except Exception as err:
-                msg = 'Unable to get DIFFUSE.Time {}: {}'.format(ipath, err)
+                msg = f'Unable to get DIFFUSE.Time {ipath}: {err}'
                 LOGGER.error(msg)
                 raise err
 
@@ -474,8 +461,8 @@ def compute_uv_index(ipath, extcsv, dataset, station,
         try:
             irradiances = extcsv.extcsv['GLOBAL']['Irradiance']
         except Exception as err:
-            msg = ('Unable to get GLOBAL.Irradiance values from file {}:'
-                   '{}. Trying DIFFUSE.Irradiance'.format(ipath, err))
+            msg = (f'Unable to get GLOBAL.Irradiance values from file {ipath}:'
+                   f'{err}. Trying DIFFUSE.Irradiance')
             LOGGER.error(msg)
         # try DIFFUSE
         if irradiances is None:
@@ -483,7 +470,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                 irradiances = extcsv.extcsv['DIFFUSE']['Irradiance']
             except Exception as err:
                 msg = ('Unable to get DIFFUSE.Irradiance values from file'
-                       '{}: {}'.format(ipath, err))
+                       f'{ipath}: {err}')
                 LOGGER.error(msg)
                 raise err
 
@@ -503,7 +490,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                     irradiance_f = float(irradiance)
                 except Exception:
                     msg = ('Unable to make float for irradiance:'
-                           ' {}. Time: {}'.format(irradiance, time))
+                           f' {irradiance}. Time: {time}')
                     LOGGER.error(msg)
                     continue
 
