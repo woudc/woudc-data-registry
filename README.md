@@ -158,6 +158,17 @@ woudc-data-registry data verify foo.dat -l
 woudc-data-registry data ingest /path/to/dir -l
 ```
 
+#### Search Index Generation
+
+```bash
+# sync data registry to elasticsearch
+# sync the data and metadata tables
+woudc-data-registry admin search sync
+
+# sync the data product tables
+woudc-data-registry admin search product-sync
+```
+
 #### UV Index Generation
 
 ```bash
@@ -206,6 +217,14 @@ Where `<status>` is either `Pass` or `Fail`, depending on how the file reported 
 The operator report is a more in-depth error log in CSV format, with a filename like `operator-report-<date>.csv`.
 Operator reports contain one line per error or warning that happened during the processing run. The operator report
 is meant to be a human-readable log which makes specific errors easy to find and diagnose.
+
+#### Sending Emails to Contributors
+
+To generate emails for contributors:
+
+```bash
+woudc-data-registry data generate-emails /path/to/dir
+```
 
 ### Development
 
