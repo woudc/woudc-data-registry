@@ -53,7 +53,12 @@ pip install -r requirements-pg.txt
 cp default.env foo.env
 vi foo.env  # edit database connection parameters, etc.
 . foo.env
+```
 
+
+### Initializing the Database
+
+```bash
 # create database
 make ENV=foo.env createdb
 
@@ -81,10 +86,6 @@ woudc-data-registry admin registry setup
 # re-initialize search engine
 woudc-data-registry admin search teardown
 woudc-data-registry admin search setup
-
-# drop database
-make ENV=foo.env dropdb
-
 ```
 
 ### Running woudc-data-registry
