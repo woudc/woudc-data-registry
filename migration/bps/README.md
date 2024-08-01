@@ -17,14 +17,14 @@ allows the user to run commands specific to WOUDC Data Registry.
 * Disk space is required for storing the codebase
 ```bash
 # Activate Python virtualenv without conda:
-python3 -m venv --system-site-packages woudc-data-registry
-cd /woudc-data-registry
+python3 -m venv --system-site-packages woudc-data-registry_env
+cd /woudc-data-registry_env
 source bin/activate
 git clone https://github.com/woudc/woudc-data-registry.git
 
 # Activate Python virtualenv using conda
 git clone https://github.com/woudc/woudc-data-registry.git
-cd to the conda install location
+cd /to/the/conda/install/location
 source bin/activate woudc-data-registry
 ```
 
@@ -42,7 +42,7 @@ are required for Registry operations.
 cd /woudc-data-registry
 
 # Without conda setup
-cd /woudc-data-registry/woudc-data-registry
+cd /woudc-data-registry_env/woudc-data-registry
 
 # Install WOUDC Data Registry codebase
 python3 setup.py install
@@ -93,7 +93,7 @@ is also required to store the generated extcsv files.
 cd /woudc-data-registry/migration/bps
 
 # Without conda setup
-cd /woudc-data-registry/woudc-data-registry/migration/bps
+cd /woudc-data-registry_env/woudc-data-registry/migration/bps
 
 # Setup/edit migration config file
 cp migration.env.in migration.env
@@ -106,13 +106,13 @@ vim migration.env
 get-bps-metadata.sh -o /woudc-data-registry/data
 
 # Generate WOUDC Data Registry extCSV files without conda setup
-get-bps-metadata.sh -o /woudc-data-registry/woudc-data-registry/data
+get-bps-metadata.sh -o /woudc-data-registry_env/woudc-data-registry/data
 
 # Initalize WOUDC Data Registry with conda setup
 woudc-data-registry admin init -d /woudc-data-registry/data
 
 # Initalize WOUDC Data Registry without conda setup
-woudc-data-registry admin init -d /woudc-data-registry/woudc-data-registry/data
+woudc-data-registry admin init -d /woudc-data-registry_env/woudc-data-registry/data
 ```
 
 # WOUDC data file ingest and sync to Elasticsearch
@@ -132,7 +132,7 @@ queryable through Elasticsearch queries and accessible from the WOUDC API compon
 # Ingest files into WOUDC Data Registry
 woudc-data-registry data ingest /path/to/dir
 
-# Sync all tables of the WOUDC Data Registry database except uv_index_hourly and totalozone to Elasticsearch
+# Sync all tables of the WOUDC Data Registry database except uv_index_hourly, totalozone and ozonesonde to Elasticsearch
 woudc-data-registry admin search sync
 
 # Sync the uv_index_hourly, totalozone, and ozonesonde tables to Elasticsearch
