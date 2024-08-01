@@ -28,8 +28,8 @@ are automatically installed during installation.
 
 ```bash
 # setup virtualenv
-python3 -m venv --system-site-packages woudc-data-registry
-cd woudc-data-registry
+python3 -m venv --system-site-packages woudc-data-registry_env
+cd woudc-data-registry_env
 source bin/activate
 cd ..
 
