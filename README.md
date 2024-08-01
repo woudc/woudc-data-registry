@@ -31,7 +31,6 @@ are automatically installed during installation.
 python3 -m venv --system-site-packages woudc-data-registry_env
 cd woudc-data-registry_env
 source bin/activate
-cd ..
 
 # clone woudc-extcsv and install
 git clone https://github.com/woudc/woudc-extcsv.git
