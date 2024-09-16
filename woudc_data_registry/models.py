@@ -1421,14 +1421,16 @@ class UVIndex(base):
     def get_waf_path(self, dict_):
         """generate WAF url"""
 
-        datasetdirname = f"{self.dataset_id}_{dict_['dataset_level']}_{dict_['dataset_form']}"  # noqa
+        datasetdirname = '{}_{}_{}'.format(self.dataset_id,
+                                           dict_['dataset_level'],
+                                           dict_['dataset_form'])
         timestamp_date = datetime.datetime.strptime(
             dict_['timestamp_date'], '%Y-%m-%d').date()
         url_tokens = [
             config.WDR_WAF_BASEURL.rstrip('/'),
             'Archive-NewFormat',
             datasetdirname,
-            f"{dict_['station_type'].lower()}{self.station_id}",  # noqa
+            '{}{}'.format(dict_['station_type'].lower(), self.station_id),
             dict_['instrument_name'].lower(),
             timestamp_date.strftime('%Y'),
             dict_['filename']
@@ -1440,7 +1442,7 @@ class UVIndex(base):
     def __geo_interface__(self):
         gaw_baseurl = 'https://gawsis.meteoswiss.ch/GAWSIS/index.html#' \
             '/search/station/stationReportDetails'
-        gaw_pagename = f'0-20008-0-{self.station.gaw_id}'
+        gaw_pagename = '0-20008-0-{}'.format(self.station.gaw_id)
 
         return {
             'id': self.uv_id,

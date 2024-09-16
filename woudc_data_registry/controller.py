@@ -117,7 +117,7 @@ def orchestrate(source, working_dir, metadata_only=False,
 
             LOGGER.info('Detecting file')
             if not is_text_file(file_to_process):
-                _, is_error = op_report.add_message(1)
+                _, is_error = op_report.add_message(101)
                 if is_error:
                     op_report.write_failing_file(file_to_process, contributor)
                     run_report.write_failing_file(file_to_process, contributor)

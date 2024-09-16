@@ -20,7 +20,7 @@ jobs:
       WDR_SEARCH_URL: http://localhost:9200/
       WDR_WAF_BASEURL: https://woudc.org/archive/
       WDR_WAF_BASEDIR: /tmp
-      WDR_ERROR_CONFIG: data/migrate/errors-backfilling.csv
+      WDR_ERROR_CONFIG: woudc_data_registry/tests/config/Updated_Errors.csv
       WDR_ALIAS_CONFIG: data/aliases.yml
       WDR_EXTRA_CONFIG: data/extra-options.yml
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
