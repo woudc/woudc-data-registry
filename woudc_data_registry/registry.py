@@ -331,14 +331,15 @@ class Registry(object):
         registry_config = config.EXTRAS.get('registry', {})
 
         try:
-            flag_name = '_'.join([obj.__tablename__, 'enabled'])
-            if registry_config.get(flag_name, True):
-                # Use merge if needed: self.session.merge(obj)
-                self.session.add(obj)
-            else:
-                LOGGER.info(f'Registry persistence for \
-                    model {obj.__tablename__} disabled, skipping')
-                return
+            if obj is not None:
+                flag_name = '_'.join([obj.__tablename__, 'enabled'])
+                if registry_config.get(flag_name, True):
+                    self.session.add(obj)
+                    # self.session.merge(obj)
+                else:
+                    LOGGER.info('Registry persistence for model {} disabled,'
+                                ' skipping'.format(obj.__tablename__))
+                    return
 
             LOGGER.debug(f'Committing save of {obj}')
             self.session.commit()

@@ -123,21 +123,18 @@ class OperatorReportTest(SandboxTestSuite):
         """Test that error/warning feedback responds to input files"""
 
         # The two error files below have different error types for error 1.
-        all_warnings = resolve_test_data_path('config/all_warnings.csv')
-        all_errors = resolve_test_data_path('config/all_errors.csv')
+        all_errors = resolve_test_data_path('config/errors.csv')
 
         with report.OperatorReport(SANDBOX_DIR) as op_report:
-            op_report.read_error_definitions(all_warnings)
-
-            self.assertIn(1, op_report._error_definitions)
-            _, success = op_report.add_message(1)
-            self.assertFalse(success)
-
             op_report.read_error_definitions(all_errors)
 
-            self.assertIn(1, op_report._error_definitions)
-            _, success = op_report.add_message(1)
-            self.assertTrue(success)
+            self.assertIn(245, op_report._error_definitions)
+            _, success = op_report.add_message(245, table="flight_summary")
+            self.assertFalse(success)
+
+            self.assertIn(101, op_report._error_definitions)
+            _, success = op_report.add_message(101)
+            self.assertFalse(success)
 
     def test_passing_operator_report(self):
         """Test that a passing file is written in the operator report"""
@@ -159,7 +156,7 @@ class OperatorReportTest(SandboxTestSuite):
             output_path = os.path.join(SANDBOX_DIR,
                                        'operator-report.csv')
 
-            op_report.add_message(200)  # File passes validation
+            op_report.add_message(405)  # File passes validation
             op_report.write_passing_file(infile, ecsv, data_record)
 
         self.assertTrue(os.path.exists(output_path))
@@ -169,7 +166,7 @@ class OperatorReportTest(SandboxTestSuite):
 
             report_line = next(reader)
             self.assertEqual(report_line[0], 'P')
-            self.assertEqual(report_line[2], '200')
+            self.assertEqual(report_line[2], '405')
             self.assertIn(agency, report_line)
             self.assertIn(os.path.basename(infile), report_line)
 
@@ -197,7 +194,7 @@ class OperatorReportTest(SandboxTestSuite):
             output_path = os.path.join(SANDBOX_DIR,
                                        'operator-report.csv')
 
-            op_report.add_message(200)  # File passes validation
+            op_report.add_message(405)  # File passes validation
             op_report.write_passing_file(infile, ecsv, data_record)
 
         self.assertTrue(os.path.exists(output_path))
@@ -217,7 +214,7 @@ class OperatorReportTest(SandboxTestSuite):
             report_line = next(reader)
             self.assertEqual(report_line[0], 'P')
             self.assertEqual(report_line[1], 'Warning')
-            self.assertEqual(report_line[2], '200')
+            self.assertEqual(report_line[2], '405')
             self.assertIn(agency, report_line)
             self.assertIn(os.path.basename(infile), report_line)
 
@@ -246,7 +243,7 @@ class OperatorReportTest(SandboxTestSuite):
                     NonStandardDataError):
                 output_path = os.path.join(SANDBOX_DIR, 'run1')
 
-                op_report.add_message(209)
+                op_report.add_message(410)
                 op_report.write_failing_file(infile, agency, ecsv)
 
         output_path = os.path.join(SANDBOX_DIR,
@@ -277,7 +274,7 @@ class OperatorReportTest(SandboxTestSuite):
             report_line = next(reader)
             self.assertEqual(report_line[0], 'F')
             self.assertEqual(report_line[1], 'Error')
-            self.assertEqual(report_line[2], '209')
+            self.assertEqual(report_line[2], '410')
             self.assertIn(agency, report_line)
             self.assertIn(os.path.basename(infile), report_line)
 
@@ -314,7 +311,7 @@ class OperatorReportTest(SandboxTestSuite):
                         NonStandardDataError) as err:
                     expected_errors[fullpath] = len(err.errors)
 
-                    op_report.add_message(209)
+                    op_report.add_message(410)
                     op_report.write_failing_file(fullpath, agency)
                     continue
 
@@ -334,7 +331,7 @@ class OperatorReportTest(SandboxTestSuite):
                     expected_warnings[fullpath] = len(ecsv.warnings)
                     expected_errors[fullpath] = len(ecsv.errors)
 
-                    op_report.add_message(209)
+                    op_report.add_message(410)
                     op_report.write_failing_file(fullpath, agency, ecsv)
 
         output_path = os.path.join(SANDBOX_DIR,
@@ -352,9 +349,9 @@ class OperatorReportTest(SandboxTestSuite):
                 else:
                     self.assertEqual(line[0], 'F')
 
-                if line[2] == '200':
+                if line[2] == '405':
                     self.assertEqual(expected_errors[line[12]], 0)
-                elif line[2] == '209':
+                elif line[2] == '410':
                     self.assertGreater(expected_errors[line[12]], 0)
                 elif line[1] == 'Warning':
                     warnings[line[12]] += 1
@@ -940,7 +937,6 @@ class EmailSummaryTest(SandboxTestSuite):
         with open(output_path) as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 8)
-
             self.assertEqual(lines[0], 'MSC (placeholder@mail.com)')
             self.assertEqual(lines[1], 'Total files received: 1')
             self.assertEqual(lines[2], 'Number of passed files: 0')
@@ -1149,7 +1145,6 @@ class EmailSummaryTest(SandboxTestSuite):
             self.assertIn(lines[9], fail_group)
             self.assertNotIn('.csv', lines[10])
             self.assertIn(lines[11], fail_group)
-
             self.assertEqual(lines[12], 'Summary of Fixes:')
             self.assertNotIn('.csv', lines[13])
             self.assertIn(lines[14], fix_group)

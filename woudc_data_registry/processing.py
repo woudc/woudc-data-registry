@@ -178,13 +178,13 @@ class Process(object):
                 elif self.add_deployment(bypass=bypass):
                     deployment_ok = True
 
-                    self._add_to_report(202)
+                    self._add_to_report(407)
                 else:
                     msg = f'Deployment {deployment_name} not added. Skipping file.'  # noqa
                     LOGGER.warning(msg)
 
                     line = self.extcsv.line_num('PLATFORM') + 2
-                    deployment_ok = self._add_to_report(88, line,
+                    deployment_ok = self._add_to_report(334, line,
                                                         ident=deployment_id)
 
         LOGGER.debug('Validating instrument')
@@ -230,11 +230,11 @@ class Process(object):
                         instrument_ok = self.add_instrument(bypass=bypass)
 
                     if instrument_ok:
-                        self._add_to_report(201)
+                        self._add_to_report(406)
 
         if not instrument_ok:
             line = self.extcsv.line_num('INSTRUMENT') + 2
-            instrument_ok = self._add_to_report(87, line)
+            instrument_ok = self._add_to_report(333, line)
 
             location_ok = False
         else:
@@ -257,7 +257,7 @@ class Process(object):
                 contribution_ok = self.add_contribution(bypass=bypass)
 
             if contribution_ok and (not contribution_exists):
-                self._add_to_report(204)
+                self._add_to_report(409)
 
         content_ok = self.check_content()
         data_generation_ok = self.check_data_generation()
@@ -266,7 +266,7 @@ class Process(object):
                     platform_ok, deployment_ok, instrument_ok,
                     location_ok, content_ok, data_generation_ok,
                     contribution_ok]):
-            self._add_to_report(209)
+            self._add_to_report(410)
             return None
 
         if metadata_only:
@@ -280,7 +280,7 @@ class Process(object):
             dataset_validated = dataset_validator.check_all(self.extcsv)
 
             if not all([time_series_ok, dataset_validated]):
-                self._add_to_report(209)
+                self._add_to_report(410)
                 return None
 
         LOGGER.info('Validating data record')
@@ -288,14 +288,14 @@ class Process(object):
         data_record_ok = self.check_data_record(data_record)
 
         if not data_record_ok:
-            self._add_to_report(209)
+            self._add_to_report(410)
             return None
         else:
             LOGGER.info('Data record is valid and verified')
             self._registry_updates.append(data_record)
             self._search_index_updates.append(data_record)
 
-            self._add_to_report(200)
+            self._add_to_report(405)
             return data_record
 
     def persist(self):
@@ -575,7 +575,7 @@ class Process(object):
             return True
         else:
             line = self.extcsv.line_num('CONTENT') + 2
-            return self._add_to_report(51, line, value=project)
+            return self._add_to_report(307, line, value=project)
 
     def check_dataset(self):
         """
@@ -606,7 +606,7 @@ class Process(object):
             return True
         else:
             line = self.extcsv.line_num('CONTENT') + 2
-            return self._add_to_report(52, line, value=dataset)
+            return self._add_to_report(308, line, value=dataset)
 
     def check_contributor(self):
         """
@@ -631,7 +631,7 @@ class Process(object):
             replacement = ALIASES['Agency'][agency]
 
             if not isinstance(replacement, str):
-                if not self._add_to_report(23, line, replacement):
+                if not self._add_to_report(108, line, replacement):
                     success = False
 
             agency = replacement
@@ -653,7 +653,7 @@ class Process(object):
             LOGGER.debug(f'Match found for contributor ID {result.contributor_id}')  # noqa
         else:
             line = self.extcsv.line_num('DATA_GENERATION') + 2
-            if not self._add_to_report(67, line):
+            if not self._add_to_report(317, line):
                 success = False
 
         return success
@@ -687,13 +687,13 @@ class Process(object):
 
         water_codes = ['*IW', 'IW', 'XZ']
         if pl_type == 'SHP' and any([not country, country in water_codes]):
-            if not self._add_to_report(75, valueline):
+            if not self._add_to_report(323, valueline):
                 success = False
 
             self.extcsv.extcsv['PLATFORM']['Country'] = country = 'XY'
 
         if len(identifier) < 3:
-            if not self._add_to_report(70, valueline):
+            if not self._add_to_report(318, valueline):
                 success = False
 
             identifier = identifier.rjust(3, '0')
@@ -712,7 +712,7 @@ class Process(object):
         if response:
             LOGGER.debug(f'Validated station with id: {identifier}')
         else:
-            self._add_to_report(71, valueline)
+            self._add_to_report(319, valueline)
             return False
 
         LOGGER.debug('Validating station type...')
@@ -721,7 +721,7 @@ class Process(object):
 
         if type_ok:
             LOGGER.debug(f'Validated station type {type_ok}')
-        elif not self._add_to_report(72, valueline):
+        elif not self._add_to_report(320, valueline):
             success = False
 
         LOGGER.debug('Validating station name...')
@@ -736,7 +736,7 @@ class Process(object):
             LOGGER.info('Verify mode. Skipping station name addition.')
         elif self.add_station_name(bypass=bypass):
             LOGGER.info(f"Added new station name {station['current_name']}")
-        elif not self._add_to_report(73, valueline, name=name):
+        elif not self._add_to_report(321, valueline, name=name):
             success = False
 
         LOGGER.debug('Validating station country...')
@@ -748,7 +748,7 @@ class Process(object):
             country = response.country
             self.extcsv.extcsv['PLATFORM']['Country'] = country.country_id
             LOGGER.debug(f'Validated with country: {country.name_en} ({country.country_id}) for id: {identifier}')  # noqa
-        elif not self._add_to_report(74, valueline):
+        elif not self._add_to_report(322, valueline):
             success = False
 
         return success
@@ -813,11 +813,11 @@ class Process(object):
         valueline = self.extcsv.line_num('INSTRUMENT') + 2
 
         if not name or name.lower() in ['na', 'n/a']:
-            if not self._add_to_report(82, valueline):
+            if not self._add_to_report(223, valueline):
                 success = False
             self.extcsv.extcsv['INSTRUMENT']['Name'] = name = 'UNKNOWN'
         if not model or str(model).lower() in ['na', 'n/a']:
-            if not self._add_to_report(83, valueline):
+            if not self._add_to_report(224, valueline):
                 success = False
             self.extcsv.extcsv['INSTRUMENT']['Model'] = model = 'UNKNOWN'
 
@@ -834,7 +834,7 @@ class Process(object):
         if instrument:
             name = instrument.name
             self.extcsv.extcsv['INSTRUMENT']['Name'] = instrument.name
-        elif not self._add_to_report(85, valueline, name=name):
+        elif not self._add_to_report(331, valueline, name=name):
             success = False
 
         # Check data registry for matching instrument model
@@ -843,7 +843,7 @@ class Process(object):
         if instrument:
             model = instrument.model
             self.extcsv.extcsv['INSTRUMENT']['Model'] = instrument.model
-        elif not self._add_to_report(86, valueline):
+        elif not self._add_to_report(332, valueline):
             success = False
 
         return success
@@ -911,11 +911,11 @@ class Process(object):
             lat_numeric = float(lat)
             if -90 <= lat_numeric <= 90:
                 LOGGER.debug('Validated instrument latitude')
-            elif not self._add_to_report(78, valueline, field='Latitude',
+            elif not self._add_to_report(325, valueline, field='Latitude',
                                          lower=-90, upper=90):
                 success = False
         except ValueError:
-            if not self._add_to_report(76, valueline, field='Longitude'):
+            if not self._add_to_report(339, valueline, field='Longitude'):
                 success = False
 
             self.extcsv.extcsv['LOCATION']['Latitude'] = lat = None
@@ -925,11 +925,11 @@ class Process(object):
             lon_numeric = float(lon)
             if -180 <= lon_numeric <= 180:
                 LOGGER.debug('Validated instrument longitude')
-            elif not self._add_to_report(78, valueline, field='Longitude',
+            elif not self._add_to_report(325, valueline, field='Longitude',
                                          lower=-180, upper=180):
                 success = False
         except ValueError:
-            if not self._add_to_report(76, valueline, field='Longitude'):
+            if not self._add_to_report(339, valueline, field='Longitude'):
                 success = False
 
             self.extcsv.extcsv['LOCATION']['Longitude'] = lon = None
@@ -939,10 +939,11 @@ class Process(object):
             height_numeric = float(height) if height else None
             if not height or -50 <= height_numeric <= 5100:
                 LOGGER.debug('Validated instrument height')
-            elif not self._add_to_report(79, valueline, lower=-50, upper=5100):
+            elif not self._add_to_report(
+                    326, valueline, lower=-50, upper=5100):
                 success = False
         except ValueError:
-            if not self._add_to_report(77, valueline):
+            if not self._add_to_report(324, valueline):
                 success = False
 
             self.extcsv.extcsv['LOCATION']['Height'] = height = None
@@ -975,18 +976,18 @@ class Process(object):
 
             if lat_numeric is not None and instrument.y is not None \
                and abs(lat_numeric - instrument.y) >= lat_interval:
-                if not self._add_to_report(80, valueline, field='Latitude'):
+                if not self._add_to_report(327, valueline, field='Latitude'):
                     success = False
             if lon_numeric is not None and instrument.x is not None:
                 if in_polar_region and ignore_polar_lon:
                     LOGGER.info('Skipping longitude check in polar region')
                 elif abs(lon_numeric - instrument.x) >= lon_interval:
-                    if not self._add_to_report(80, valueline,
+                    if not self._add_to_report(327, valueline,
                                                field='Longitude'):
                         success = False
             if height_numeric is not None and instrument.z is not None \
                and abs(height_numeric - instrument.z) >= height_interval:
-                if not self._add_to_report(81, valueline):
+                if not self._add_to_report(328, valueline):
                     success = False
 
         return success
@@ -1015,21 +1016,21 @@ class Process(object):
 
         if not level:
             if dataset == 'UmkehrN14' and 'C_PROFILE' in self.extcsv.extcsv:
-                if not self._add_to_report(53, valueline, value=2.0):
+                if not self._add_to_report(217, valueline, value=2.0):
                     success = False
                 self.extcsv.extcsv['CONTENT']['Level'] = level = 2.0
             else:
-                if not self._add_to_report(53, valueline, value=1.0):
+                if not self._add_to_report(217, valueline, value=1.0):
                     success = False
                 self.extcsv.extcsv['CONTENT']['Level'] = level = 1.0
         elif not isinstance(level, float):
             try:
-                if not self._add_to_report(54, valueline, oldvalue=level,
+                if not self._add_to_report(218, valueline, oldvalue=level,
                                            newvalue=float(level)):
                     success = False
                 self.extcsv.extcsv['CONTENT']['Level'] = level = float(level)
             except ValueError:
-                if not self._add_to_report(55, valueline):
+                if not self._add_to_report(310, valueline):
                     success = False
 
         if dataset in ['UmkehrN14_1.0', 'UmkehrN14_2.0']:
@@ -1038,17 +1039,17 @@ class Process(object):
             table_index = dataset
 
         if str(level) not in DOMAINS['Datasets'][table_index]:
-            if not self._add_to_report(56, valueline, dataset=dataset):
+            if not self._add_to_report(309, valueline, dataset=dataset):
                 success = False
 
         if not isinstance(form, int):
             try:
-                if not self._add_to_report(57, valueline, oldvalue=form,
+                if not self._add_to_report(219, valueline, oldvalue=form,
                                            newvalue=int(form)):
                     success = False
                 self.extcsv.extcsv['CONTENT']['Form'] = form = int(form)
             except ValueError:
-                if not self._add_to_report(58, valueline):
+                if not self._add_to_report(311, valueline):
                     success = False
 
         return success
@@ -1073,7 +1074,7 @@ class Process(object):
         valueline = self.extcsv.line_num('DATA_GENERATION')
 
         if not dg_date:
-            if not self._add_to_report(62, valueline):
+            if not self._add_to_report(221, valueline):
                 success = False
 
             kwargs = {key: getattr(self.process_start, key)
@@ -1086,7 +1087,7 @@ class Process(object):
         try:
             numeric_version = float(version)
         except TypeError:
-            if not self._add_to_report(63, valueline, default=1.0):
+            if not self._add_to_report(314, valueline, default=1.0):
                 success = False
 
             self.extcsv.extcsv['DATA_GENERATION']['Version'] = version = '1.0'
@@ -1097,17 +1098,17 @@ class Process(object):
                     version = version[:-2]
                 numeric_version = float(version)
             except ValueError:
-                if not self._add_to_report(66, valueline):
+                if not self._add_to_report(316, valueline):
                     success = False
 
         if not success:
             return False
 
         if not 0 <= numeric_version <= 20:
-            if not self._add_to_report(64, valueline, lower=0.0, upper=20.0):
+            if not self._add_to_report(315, valueline, lower=0.0, upper=20.0):
                 success = False
         if str(version) == str(int(numeric_version)):
-            if not self._add_to_report(65, valueline):
+            if not self._add_to_report(222, valueline):
                 success = False
 
             self.extcsv.extcsv['DATA_GENERATION']['Version'] = \
@@ -1142,12 +1143,15 @@ class Process(object):
             for line, other_date in enumerate(date_column, valueline):
                 if (isinstance(other_date, (str, int, type(None)))
                    or isinstance(dg_date, (str, int, type(None)))):
-                    err_code = 91 if table.startswith('TIMESTAMP') else 92
+                    err_code = 336 if table.startswith('TIMESTAMP') else 337
                     if not self._add_to_report(err_code, line, table=table):
                         success = False
                 else:
                     if other_date > dg_date:
-                        err_code = 91 if table.startswith('TIMESTAMP') else 92
+                        err_code = (
+                            336 if table.startswith('TIMESTAMP')
+                            else 337
+                        )
                         if not self._add_to_report(err_code,
                                                    line, table=table):
                             success = False
@@ -1162,7 +1166,7 @@ class Process(object):
                             or isinstance(ts_time, (str, int, type(None)))):
                         pass
                     elif other_time and other_time < ts_time:
-                        if not self._add_to_report(93, line):
+                        if not self._add_to_report(228, line):
                             success = False
 
         return success
@@ -1215,16 +1219,16 @@ class Process(object):
         version_equal = version == old_version
 
         if dg_date_before:
-            if not self._add_to_report(95, dg_valueline):
+            if not self._add_to_report(229, dg_valueline):
                 success = False
         elif dg_date_equal and version_equal:
-            if not self._add_to_report(96, dg_valueline):
+            if not self._add_to_report(401, dg_valueline):
                 success = False
         elif dg_date_equal:
-            if not self._add_to_report(97, dg_valueline):
+            if not self._add_to_report(402, dg_valueline):
                 success = False
         elif version_equal:
-            if not self._add_to_report(98, dg_valueline):
+            if not self._add_to_report(403, dg_valueline):
                 success = False
 
         instrument_name = self.extcsv.extcsv['INSTRUMENT']['Name']
@@ -1233,7 +1237,7 @@ class Process(object):
 
         if instrument_name == 'ECC' and instrument_serial != old_serial:
             instrument_valueline = self.extcsv.line_num('INSTRUMENT') + 2
-            if not self._add_to_report(99, instrument_valueline):
+            if not self._add_to_report(404, instrument_valueline):
                 success = False
 
         return success

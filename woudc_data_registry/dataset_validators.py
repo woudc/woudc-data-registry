@@ -191,7 +191,7 @@ class TotalOzoneValidator(DatasetValidator):
             daily_date = row[0]
 
             if daily_date.year != timestamp1_date.year:
-                if not self._add_to_report(103, line_num):
+                if not self._add_to_report(232, line_num):
                     success = False
 
             if prev_date and daily_date < prev_date:
@@ -201,10 +201,10 @@ class TotalOzoneValidator(DatasetValidator):
             if daily_date not in dates_encountered:
                 dates_encountered[daily_date] = row
             elif row == dates_encountered[daily_date]:
-                if not self._add_to_report(104, line_num, date=daily_date):
+                if not self._add_to_report(233, line_num, date=daily_date):
                     success = False
                 rows_to_remove.append(index)
-            elif not self._add_to_report(105, line_num, date=daily_date):
+            elif not self._add_to_report(234, line_num, date=daily_date):
                 success = False
 
         rows_to_remove.reverse()
@@ -212,7 +212,7 @@ class TotalOzoneValidator(DatasetValidator):
         for date in dateList:
             if isinstance(date, (str, int)):
                 is_string = True
-                if not self._add_to_report(102, daily_startline):
+                if not self._add_to_report(231, daily_startline):
                     success = False
                 break
 
@@ -222,7 +222,7 @@ class TotalOzoneValidator(DatasetValidator):
                     column.pop(index)
 
             if not in_order:
-                if not self._add_to_report(102, daily_startline):
+                if not self._add_to_report(231, daily_startline):
                     success = False
 
                 sorted_dates = sorted(extcsv.extcsv['DAILY']['Date'])
@@ -257,13 +257,13 @@ class TotalOzoneValidator(DatasetValidator):
         timestamp1_valueline = timestamp1_startline + 2
 
         if timestamp1_date != daily_dates[0]:
-            if not self._add_to_report(106, timestamp1_valueline):
+            if not self._add_to_report(235, timestamp1_valueline):
                 success = False
             extcsv.extcsv['TIMESTAMP']['Date'] = daily_dates[0]
 
         timestamp_count = extcsv.table_count('TIMESTAMP')
         if timestamp_count == 1:
-            if not self._add_to_report(109):
+            if not self._add_to_report(238):
                 success = False
 
             utcoffset = extcsv.extcsv['TIMESTAMP']['UTCOffset']
@@ -284,17 +284,17 @@ class TotalOzoneValidator(DatasetValidator):
             else timestamp2_startline + 2
 
         if timestamp2_date != daily_dates[-1]:
-            if not self._add_to_report(107, timestamp2_valueline):
+            if not self._add_to_report(236, timestamp2_valueline):
                 success = False
             extcsv.extcsv['TIMESTAMP_2']['Date'] = daily_dates[-1]
 
         if timestamp2_time != timestamp1_time:
-            if not self._add_to_report(90, timestamp2_valueline):
+            if not self._add_to_report(226, timestamp2_valueline):
                 success = False
 
         if timestamp_count > 2:
             timestamp3_startline = extcsv.line_num('TIMESTAMP_3')
-            if not self._add_to_report(108, timestamp3_startline):
+            if not self._add_to_report(237, timestamp3_startline):
                 success = False
 
             for ind in range(3, timestamp_count + 1):
@@ -322,7 +322,7 @@ class TotalOzoneValidator(DatasetValidator):
             return False
 
         if 'MONTHLY' not in extcsv.extcsv:
-            if not self._add_to_report(110):
+            if not self._add_to_report(239):
                 success = False
         else:
             present_monthly = extcsv.extcsv['MONTHLY']
@@ -331,11 +331,11 @@ class TotalOzoneValidator(DatasetValidator):
 
             for field, derived_val in template_monthly.items():
                 if field not in present_monthly:
-                    if not self._add_to_report(111, monthly_valueline,
+                    if not self._add_to_report(240, monthly_valueline,
                                                field=field):
                         success = False
                 elif present_monthly[field] != template_monthly[field]:
-                    if not self._add_to_report(112, monthly_valueline,
+                    if not self._add_to_report(241, monthly_valueline,
                                                field=field):
                         success = False
 
@@ -363,13 +363,13 @@ class TotalOzoneValidator(DatasetValidator):
         daily_valueline = daily_fieldline + 1
 
         if not ozone_column:
-            self._add_to_report(113, daily_fieldline)
+            self._add_to_report(121, daily_fieldline)
             msg = 'Cannot derive #MONTHLY table: #DAILY.ColumnO3 missing'
             raise Exception(msg)
 
         ozone_column = list(filter(bool, ozone_column))
         if len(ozone_column) == 0:
-            self._add_to_report(101, daily_valueline)
+            self._add_to_report(230, daily_valueline)
             msg = 'Cannot derive #MONTHLY table: no ozone data in #DAILY'
             raise Exception(msg)
 
@@ -455,10 +455,10 @@ class TotalOzoneObsValidator(DatasetValidator):
             if time not in times_encountered:
                 times_encountered[time] = row
             elif row == times_encountered[time]:
-                if not self._add_to_report(115, line_num, time=time):
+                if not self._add_to_report(243, line_num, time=time):
                     success = False
                 rows_to_remove.append(index)
-            elif not self._add_to_report(116, line_num, time=time):
+            elif not self._add_to_report(244, line_num, time=time):
                 success = False
 
         rows_to_remove.reverse()
@@ -467,7 +467,7 @@ class TotalOzoneObsValidator(DatasetValidator):
                 column.pop(index)
 
         if not in_order:
-            if not self._add_to_report(114, observations_valueline):
+            if not self._add_to_report(242, observations_valueline):
                 success = False
 
             sorted_times = sorted(extcsv.extcsv['OBSERVATIONS']['Time'])
@@ -530,7 +530,7 @@ class SpectralValidator(DatasetValidator):
         summary_count = extcsv.table_count(summary_table)
 
         if not timestamp_count == global_count == summary_count:
-            if not self._add_to_report(126, summary_table=summary_table):
+            if not self._add_to_report(123, summary_table=summary_table):
                 success = False
 
         return success
@@ -580,7 +580,7 @@ class LidarValidator(DatasetValidator):
         summary_count = extcsv.table_count('OZONE_SUMMARY')
 
         if profile_count != summary_count:
-            if not self._add_to_report(125):
+            if not self._add_to_report(122):
                 success = False
 
         return success
@@ -651,11 +651,11 @@ class UmkehrValidator(DatasetValidator):
             if observation_date not in dates_encountered:
                 dates_encountered[observation_date] = row
             elif row == dates_encountered[observation_date]:
-                if not self._add_to_report(119, line_num, table=data_table,
+                if not self._add_to_report(251, line_num, table=data_table,
                                            date=observation_date):
                     success = False
                 rows_to_remove.append(index)
-            elif not self._add_to_report(120, line_num, table=data_table,
+            elif not self._add_to_report(246, line_num, table=data_table,
                                          date=observation_date):
                 success = False
 
@@ -665,7 +665,7 @@ class UmkehrValidator(DatasetValidator):
                 column.pop(index)
 
         if not in_order:
-            if not self._add_to_report(118, data_table_valueline,
+            if not self._add_to_report(245, data_table_valueline,
                                        table=data_table):
                 success = False
 
@@ -701,14 +701,14 @@ class UmkehrValidator(DatasetValidator):
         timestamp1_valueline = timestamp1_startline + 2
 
         if timestamp1_date != observation_dates[0]:
-            if not self._add_to_report(121, timestamp1_valueline,
+            if not self._add_to_report(247, timestamp1_valueline,
                                        table=data_table):
                 success = False
             extcsv.extcsv['TIMESTAMP']['Date'] = observation_dates[0]
 
         timestamp_count = extcsv.table_count('TIMESTAMP')
         if timestamp_count == 1:
-            if not self._add_to_report(123, table=data_table):
+            if not self._add_to_report(249, table=data_table):
                 success = False
 
             utcoffset = extcsv.extcsv['TIMESTAMP']['UTCOffset']
@@ -729,19 +729,19 @@ class UmkehrValidator(DatasetValidator):
             else timestamp2_startline + 2
 
         if timestamp2_date != observation_dates[-1]:
-            if not self._add_to_report(122, timestamp2_valueline,
+            if not self._add_to_report(248, timestamp2_valueline,
                                        table=data_table):
                 success = False
 
             extcsv.extcsv['TIMESTAMP_2']['Date'] = observation_dates[-1]
 
         if timestamp2_time != timestamp1_time:
-            if not self._add_to_report(90, timestamp2_valueline):
+            if not self._add_to_report(226, timestamp2_valueline):
                 success = False
 
         if timestamp_count > 2:
             timestamp3_startline = extcsv.line_num('TIMESTAMP_3')
-            if not self._add_to_report(108, timestamp3_startline):
+            if not self._add_to_report(237, timestamp3_startline):
                 success = False
 
             for ind in range(3, timestamp_count + 1):
