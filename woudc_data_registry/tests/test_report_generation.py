@@ -128,20 +128,14 @@ class OperatorReportTest(SandboxTestSuite):
         with report.OperatorReport(SANDBOX_DIR) as op_report:
             op_report.read_error_definitions(all_errors)
 
-            print("Checking Error 245")
             self.assertIn(245, op_report._error_definitions)
-            _, success = op_report.add_message(245)
+            _, success = op_report.add_message(245, table="flight_summary")
             self.assertFalse(success)
 
             self.assertIn(101, op_report._error_definitions)
             _, success = op_report.add_message(101)
             self.assertFalse(success)
 
-            # op_report.read_error_definitions(all_errors)
-
-            # self.assertIn(101, op_report._error_definitions)
-            # _, success = op_report.add_message(101)
-            # self.assertTrue(success)
 
     def test_passing_operator_report(self):
         """Test that a passing file is written in the operator report"""
