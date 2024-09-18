@@ -28,7 +28,7 @@ are automatically installed during installation.
 
 ```bash
 # setup virtualenv
-python3 -m venv --system-site-packages woudc-data-registry_env
+python3 -m venv woudc-data-registry_env
 cd woudc-data-registry_env
 source bin/activate
 
