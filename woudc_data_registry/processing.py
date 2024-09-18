@@ -939,7 +939,8 @@ class Process(object):
             height_numeric = float(height) if height else None
             if not height or -50 <= height_numeric <= 5100:
                 LOGGER.debug('Validated instrument height')
-            elif not self._add_to_report(326, valueline, lower=-50, upper=5100):
+            elif not self._add_to_report(
+                    326, valueline, lower=-50, upper=5100):
                 success = False
         except ValueError:
             if not self._add_to_report(324, valueline):
@@ -1147,7 +1148,10 @@ class Process(object):
                         success = False
                 else:
                     if other_date > dg_date:
-                        err_code = 336 if table.startswith('TIMESTAMP') else 337
+                        err_code = (
+                            336 if table.startswith('TIMESTAMP')
+                            else 337
+                        )
                         if not self._add_to_report(err_code,
                                                    line, table=table):
                             success = False

@@ -136,7 +136,6 @@ class OperatorReportTest(SandboxTestSuite):
             _, success = op_report.add_message(101)
             self.assertFalse(success)
 
-
     def test_passing_operator_report(self):
         """Test that a passing file is written in the operator report"""
 
@@ -938,7 +937,6 @@ class EmailSummaryTest(SandboxTestSuite):
         with open(output_path) as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 8)
-
             self.assertEqual(lines[0], 'MSC (placeholder@mail.com)')
             self.assertEqual(lines[1], 'Total files received: 1')
             self.assertEqual(lines[2], 'Number of passed files: 0')
@@ -1147,7 +1145,6 @@ class EmailSummaryTest(SandboxTestSuite):
             self.assertIn(lines[9], fail_group)
             self.assertNotIn('.csv', lines[10])
             self.assertIn(lines[11], fail_group)
-
             self.assertEqual(lines[12], 'Summary of Fixes:')
             self.assertNotIn('.csv', lines[13])
             self.assertIn(lines[14], fix_group)
