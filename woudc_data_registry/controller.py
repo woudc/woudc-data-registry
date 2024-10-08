@@ -271,8 +271,9 @@ def generate_emails(ctx, working_dir):
 @click.command()
 @click.pass_context
 @click.option('--test', is_flag=True, help="Enable the test flag.")
+@click.option('--ops', is_flag=True, help="Enable the ops flag.")
 @click.argument('failed_files', type=click.File('r'))
-def send_feedback(ctx, failed_files, test):
+def send_feedback(ctx, failed_files, test, ops):
     """Send operating reports to contributors. """
     with open(config.WDR_TEMPLATE_PATH, 'r') as file:
         message = file.read()
@@ -296,12 +297,21 @@ def send_feedback(ctx, failed_files, test):
             to_email_addresses = [config.WDR_EMAIL_TO]
             subject = (
                 'TEST: WOUDC data processing report (contributor_acronym)')
-        else:
+            send_email(
+                    message,
+                    specific_subject,
+                    from_email_address,
+                    to_email_addresses,
+                    host,
+                    port,
+                    cc_addresses,
+                    bcc_addresses
+                    )
+        elif ops:
             to_email_addresses = [
                 email.strip() for email in contributor[0].split(' ')[1]
                 .translate(str.maketrans("", "", "()")).split(";")]
-
-        send_email(
+            send_email(
                     message,
                     specific_subject,
                     from_email_address,
