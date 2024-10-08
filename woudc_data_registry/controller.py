@@ -52,7 +52,9 @@ from woudc_extcsv import (ExtendedCSV, NonStandardDataError,
                           MetadataValidationError)
 
 from woudc_data_registry import config
-from woudc_data_registry.util import is_text_file, read_file
+from woudc_data_registry.util import (is_text_file, read_file,
+                                      send_email)
+
 
 from woudc_data_registry.processing import Process
 
@@ -261,11 +263,57 @@ def generate_emails(ctx, working_dir):
     email_summary = EmailSummary(working_dir)
 
     contributors = registry.query_full_index(Contributor)
-    addresses = {model.acronym: model.email for model in contributors}
+    ctx.addresses = {model.acronym: model.email for model in contributors}
 
-    email_summary.write(addresses)
+    email_summary.write(ctx.addresses)
+
+
+@click.command()
+@click.pass_context
+@click.option('--test', is_flag=True, help="Enable the test flag.")
+@click.argument('failed_files', type=click.File('r'))
+def send_feedback(ctx, failed_files, test):
+    """Send operating reports to contributors. """
+    with open(config.WDR_TEMPLATE_PATH, 'r') as file:
+        message = file.read()
+
+    templates = failed_files.read().split('\n\n')
+    template_collection = [template.split('\n') for template in templates]
+
+    subject = 'WOUDC data processing report (contributor_acronym)'
+    host = config.WDR_EMAIL_HOST
+    port = config.WDR_EMAIL_PORT
+    from_email_address = config.WDR_EMAIL_FROM_USERNAME
+    cc_addresses = [config.WDR_EMAIL_CC]
+    bcc_addresses = [config.WDR_EMAIL_BCC]
+
+    for contributor in template_collection:
+        acronym = contributor[0].split(' ')[0].lower()
+        message = message.replace(
+            'email_summary', "\n".join(contributor[1:]))
+        specific_subject = subject.replace('contributor_acronym', acronym)
+        if test:
+            to_email_addresses = [config.WDR_EMAIL_TO]
+            subject = (
+                'TEST: WOUDC data processing report (contributor_acronym)')
+        else:
+            to_email_addresses = [
+                email.strip() for email in contributor[0].split(' ')[1]
+                .translate(str.maketrans("", "", "()")).split(";")]
+
+        send_email(
+                    message,
+                    specific_subject,
+                    from_email_address,
+                    to_email_addresses,
+                    host,
+                    port,
+                    cc_addresses,
+                    bcc_addresses
+                    )
 
 
 data.add_command(ingest)
 data.add_command(verify)
 data.add_command(generate_emails, name='generate-emails')
+data.add_command(send_feedback, name='send-feedback')

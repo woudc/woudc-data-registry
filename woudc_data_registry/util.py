@@ -46,10 +46,99 @@
 from datetime import date, datetime, time
 import logging
 import io
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 LOGGER = logging.getLogger(__name__)
 
 RFC3339_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+
+
+def send_email(
+                message,
+                subject,
+                from_email_address,
+                to_email_addresses,
+                host,
+                port,
+                cc_addresses=None,
+                bcc_addresses=None,
+                secure=False,
+                from_email_password=None
+                ):
+    """
+    Send email
+
+    :param message: body of the email
+    :param subject: subject of the email
+    :param from_email_address: email of the sender
+    :param to_email_addresses: list of emails of the receipients
+    :param host: host of SMTP server
+    :param cc_addresses: list of cc email addresses
+    :paramm port: port on SMTP server
+    :param secure: Turn on/off TLS
+    :param from_email_password: password of sender, if TLS is turned on
+    :returns: list of emailing statuses
+    """
+    try:
+        server = smtplib.SMTP(host, port)
+    except Exception as err:
+        msg = 'Unable to establish connection to {}:{}'.format(host, port)
+        LOGGER.critical(msg)
+        raise err
+
+    if all([secure, from_email_password is not None]):
+        try:
+            server.starttls()
+        except Exception as err:
+            msg = 'Unable to start TLS: {}'.format(err)
+        try:
+            server.login(from_email_address, from_email_password)
+        except Exception as err:
+            msg = 'Unable to login using username {}: {}'.format(
+                from_email_address, err)
+
+    send_statuses = []
+    cc = False
+    # cc
+    if all([
+            cc_addresses is not None,
+            cc_addresses != ['']
+            ]):
+        to_email_addresses += cc_addresses
+        cc = True
+    # bcc
+    if all([
+            bcc_addresses is not None,
+            bcc_addresses != ['']
+            ]):
+        to_email_addresses += bcc_addresses
+
+    if isinstance(to_email_addresses, str):
+        to_email_addresses = to_email_addresses.split(';')
+
+    for to in to_email_addresses:
+        # set up the message
+        msg = MIMEMultipart()
+        msg['From'] = from_email_address
+        msg['To'] = to
+        if cc:
+            msg['cc'] = ','.join(cc_addresses)
+        msg['Subject'] = subject
+        msg.attach(MIMEText(message, 'plain'))
+        text = msg.as_string()
+        # send message
+        try:
+            send_status = server.sendmail(msg['From'], msg['To'], text)
+            send_statuses.append(send_status)
+        except Exception as err:
+            msg = 'Unable to send mail from: {} to {}: {}'.format(
+                msg['From'], msg['To'], err)
+            LOGGER.error(msg)
+            raise err
+
+    server.quit()
 
 
 def point2geojsongeometry(x, y, z=None):
