@@ -297,22 +297,37 @@ def send_feedback(ctx, failed_files, test, ops):
         message = message.replace(
             "$EMAIL_SUMMARY", "\n".join(contributor[1:]))
         specific_subject = subject.replace('contributor_acronym', acronym)
-        
+
         if test:
             to_email_addresses = config.WDR_EMAIL_TO.split(",")
             subject = (
                 'TEST: WOUDC data processing report ({})'.format(acronym))
-            LOGGER.info('Sending Test data report to agency: {} with emails to: {}'.format(acronym, to_email_addresses))
-            send_email(message, subject, from_email_address, to_email_addresses,
-                    host, port, cc_addresses, bcc_addresses)
+            LOGGER.info(
+                'Sending Test data report to agency: %s with emails to: %s',
+                acronym, to_email_addresses
+            )
+            send_email(
+                message, subject, from_email_address,
+                to_email_addresses, host, port, cc_addresses,
+                bcc_addresses
+            )
         elif ops:
             to_email_addresses = [
                 email.strip() for email in contributor[0].split(' ')[1]
                 .translate(str.maketrans("", "", "()")).split(";")]
-            LOGGER.info('Sending data report to agency: {} with emails to: {}'.format(acronym, to_email_addresses))
-            send_email(message, specific_subject, from_email_address, to_email_addresses,
-                    host, port, cc_addresses, bcc_addresses)
-        LOGGER.debug('Sent email to {} with emails to ()'.format(acronym, to_email_addresses))
+            LOGGER.info(
+                'Sending data report to agency: %s with emails to: %s',
+                acronym, to_email_addresses
+            )
+            send_email(
+                message, specific_subject, from_email_address,
+                to_email_addresses, host, port, cc_addresses,
+                bcc_addresses
+            )
+        LOGGER.debug(
+            'Sent email to %s with emails to %s',
+            acronym, to_email_addresses
+        )
     LOGGER.info('Processing Reports have been sent')
 
 

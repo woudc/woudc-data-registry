@@ -56,8 +56,9 @@ RFC3339_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 
 def send_email(message, subject, from_email_address, to_email_addresses,
-                host, port, cc_addresses=None, bcc_addresses=None, secure=False,
-                from_email_password=None):
+               host, port, cc_addresses=None, bcc_addresses=None, secure=False,
+               from_email_password=None):
+
     """
     Send email
 
@@ -100,7 +101,6 @@ def send_email(message, subject, from_email_address, to_email_addresses,
             ]):
         to_email_addresses += cc_addresses
         cc = True
-    
     LOGGER.debug('bcc: {}' .format(bcc_addresses))
     # bcc
     if all([
@@ -116,7 +116,7 @@ def send_email(message, subject, from_email_address, to_email_addresses,
     # set up the message
     msg = MIMEMultipart()
     msg['From'] = from_email_address
-    msg['To'] = ', '.join(to_email_addresses)  # Join all emails into one string separated by commas
+    msg['To'] = ', '.join(to_email_addresses)
     if cc:
         msg['Cc'] = ', '.join(cc_addresses)  # Add CC addresses if they exist
     msg['Subject'] = subject
@@ -128,11 +128,19 @@ def send_email(message, subject, from_email_address, to_email_addresses,
 
     # send message
     try:
-        LOGGER.debug('Sending a data report to the groups of emails: {}'.format(to_email_addresses))
-        send_status = server.sendmail(msg['From'], to_email_addresses + cc_addresses, text)
+        LOGGER.debug(
+            'Sending report to {}'.format(to_email_addresses)
+            )
+        send_status = server.sendmail(
+            msg['From'], to_email_addresses + cc_addresses, text)
         send_statuses.append(send_status)
     except Exception as err:
-        error_msg = 'Unable to send mail from: {} to {}: {}'.format(msg['From'], msg['To'], err)
+        error_msg = (
+            'Unable to send mail from: {} to {}: {}'.format(
+                msg['From'], msg['To'], err
+            )
+        )
+
         LOGGER.error(error_msg)
         raise err
 
