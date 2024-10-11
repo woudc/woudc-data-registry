@@ -1,0 +1,28 @@
+Dear WOUDC Data Contributor,
+
+This message is from WOUDC (World Ozone and Ultraviolet Radiation Data Centre) to inform you of the status of your recent data submission.
+Data submissions now require the content, data generation, platform, instrument and location metadata to exactly match our metadata information for the data to be properly identified and processed into the database.  
+
+Where possible, your submitted files have been manually repaired to contain the correct metadata information and resubmitted on your behalf.  You do not need to resubmit the files, but please update your procedures to use the correct metadata for all future submissions.  (Detailed data submission requirements are here: https://guide.woudc.org/en/#chapter-3-standard-data-format).
+
+If your station, platform, agency or contact information have been updated then please reply to this message with the updated information.
+Thank you for your support of WOUDC.
+
+$EMAIL_SUMMARY
+
+World Ozone and Ultraviolet Radiation Data Centre
+
+Meteorological Service of Canada
+Environment and Climate Change Canada
+4905 Dufferin Street
+Toronto, ON M3H 5T4
+Canada
+Email: woudc@ec.gc.ca
+Website: https://woudc.org
+Data policy: https://woudc.org/about/data-policy.php
+Data submissions: ftp://ftp.woudc.org
+Data access: https://woudc.org/about/data-access.php
+Contributor guidebook: https://guide.woudc.org
+
+Dobson and Brewer software: http://www.o3soft.eu
+
