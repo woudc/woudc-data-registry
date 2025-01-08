@@ -132,7 +132,10 @@ class Country(base):
         }
 
     def __repr__(self):
-        return f'Country ({self.country_id}, {self.name_en})'
+        try:
+            return f'Country ({self.country_id}, {self.name_en})'
+        except AttributeError as e:
+            return f'Error: Missing attributes - {e}'
 
 
 class Contributor(base):
@@ -564,7 +567,10 @@ class Station(base):
         }
 
     def __repr__(self):
-        return f'Station ({self.station_id}, {self.station_name.name})'
+        try:
+            return f'Station ({self.station_id}, {self.station_name.name})'
+        except AttributeError as e:
+            return f'Error: Missing attributes - {e}'
 
 
 class StationName(base):
