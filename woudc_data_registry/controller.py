@@ -144,7 +144,6 @@ def orchestrate(source, working_dir, metadata_only=False,
                 p = Process(registry, search_engine, op_report)
                 data_record = p.validate(extcsv, bypass=bypass,
                                          metadata_only=metadata_only)
-
                 if data_record is None:
                     click.echo('Not ingesting')
                     failed.append(file_to_process)
@@ -159,7 +158,6 @@ def orchestrate(source, working_dir, metadata_only=False,
                         data_record.get_waf_path(config.WDR_WAF_BASEURL)
                     data_record.output_filepath = \
                         data_record.get_waf_path(config.WDR_WAF_BASEDIR)
-
                     if verify_only:
                         click.echo('Verified but not ingested')
                     else:
