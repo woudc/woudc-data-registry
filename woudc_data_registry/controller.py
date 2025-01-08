@@ -271,9 +271,12 @@ def generate_emails(ctx, working_dir):
 @click.command()
 @click.pass_context
 @click.option('--test', is_flag=True, help="Enable the test flag.")
+@click.option('--ops', is_flag=True, help="Enable the ops flag.")
 @click.argument('failed_files', type=click.File('r'))
-def send_feedback(ctx, failed_files, test):
+def send_feedback(ctx, failed_files, test, ops):
     """Send operating reports to contributors. """
+
+    LOGGER.debug("test: {} ops: {}".format(test, ops))
     with open(config.WDR_TEMPLATE_PATH, 'r') as file:
         message = file.read()
 
@@ -286,31 +289,47 @@ def send_feedback(ctx, failed_files, test):
     from_email_address = config.WDR_EMAIL_FROM_USERNAME
     cc_addresses = [config.WDR_EMAIL_CC]
     bcc_addresses = [config.WDR_EMAIL_BCC]
-
+    
+    LOGGER.info('Configs all set to send feedback to contributors')
+    
     for contributor in template_collection:
         acronym = contributor[0].split(' ')[0].lower()
-        message = message.replace(
-            'email_summary', "\n".join(contributor[1:]))
+        specific_message = message.replace(
+            "$EMAIL_SUMMARY", "\n".join(contributor[1:]))
         specific_subject = subject.replace('contributor_acronym', acronym)
+
         if test:
-            to_email_addresses = [config.WDR_EMAIL_TO]
+            to_email_addresses = config.WDR_EMAIL_TO.split(",")
             subject = (
-                'TEST: WOUDC data processing report (contributor_acronym)')
-        else:
+                'TEST: WOUDC data processing report ({})'.format(acronym))
+            LOGGER.info(
+                'Sending Test data report to agency: %s with emails to: %s',
+                acronym, to_email_addresses
+            )
+            send_email(
+                specific_message, subject, from_email_address,
+                to_email_addresses, host, port, cc_addresses,
+                bcc_addresses
+            )
+        elif ops:
             to_email_addresses = [
                 email.strip() for email in contributor[0].split(' ')[1]
                 .translate(str.maketrans("", "", "()")).split(";")]
+            LOGGER.info(
+                'Sending data report to agency: %s with emails to: %s',
+                acronym, to_email_addresses
+            )
+            send_email(
+                specific_message, specific_subject, from_email_address,
+                to_email_addresses, host, port, cc_addresses,
+                bcc_addresses
+            )
+        LOGGER.debug(
+            'Sent email to %s with emails to %s',
+            acronym, to_email_addresses
+        )
+    LOGGER.info('Processing Reports have been sent')
 
-        send_email(
-                    message,
-                    specific_subject,
-                    from_email_address,
-                    to_email_addresses,
-                    host,
-                    port,
-                    cc_addresses,
-                    bcc_addresses
-                    )
 
 
 data.add_command(ingest)

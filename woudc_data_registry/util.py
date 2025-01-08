@@ -55,18 +55,10 @@ LOGGER = logging.getLogger(__name__)
 RFC3339_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 
-def send_email(
-                message,
-                subject,
-                from_email_address,
-                to_email_addresses,
-                host,
-                port,
-                cc_addresses=None,
-                bcc_addresses=None,
-                secure=False,
-                from_email_password=None
-                ):
+def send_email(message, subject, from_email_address, to_email_addresses,
+               host, port, cc_addresses=None, bcc_addresses=None, secure=False,
+               from_email_password=None):
+
     """
     Send email
 
@@ -76,7 +68,7 @@ def send_email(
     :param to_email_addresses: list of emails of the receipients
     :param host: host of SMTP server
     :param cc_addresses: list of cc email addresses
-    :paramm port: port on SMTP server
+    :param port: port on SMTP server
     :param secure: Turn on/off TLS
     :param from_email_password: password of sender, if TLS is turned on
     :returns: list of emailing statuses
@@ -101,6 +93,8 @@ def send_email(
 
     send_statuses = []
     cc = False
+
+    LOGGER.debug('cc: {}' .format(cc_addresses))
     # cc
     if all([
             cc_addresses is not None,
@@ -108,6 +102,8 @@ def send_email(
             ]):
         to_email_addresses += cc_addresses
         cc = True
+
+    LOGGER.debug('bcc: {}' .format(bcc_addresses))
     # bcc
     if all([
             bcc_addresses is not None,
@@ -115,28 +111,40 @@ def send_email(
             ]):
         to_email_addresses += bcc_addresses
 
+    LOGGER.debug('to_email: {}' .format(to_email_addresses))
     if isinstance(to_email_addresses, str):
         to_email_addresses = to_email_addresses.split(';')
 
-    for to in to_email_addresses:
-        # set up the message
-        msg = MIMEMultipart()
-        msg['From'] = from_email_address
-        msg['To'] = to
-        if cc:
-            msg['cc'] = ','.join(cc_addresses)
-        msg['Subject'] = subject
-        msg.attach(MIMEText(message, 'plain'))
-        text = msg.as_string()
-        # send message
-        try:
-            send_status = server.sendmail(msg['From'], msg['To'], text)
-            send_statuses.append(send_status)
-        except Exception as err:
-            msg = 'Unable to send mail from: {} to {}: {}'.format(
-                msg['From'], msg['To'], err)
-            LOGGER.error(msg)
-            raise err
+    # set up the message
+    msg = MIMEMultipart()
+    msg['From'] = from_email_address
+    msg['To'] = ', '.join(to_email_addresses)
+    if cc:
+        msg['Cc'] = ', '.join(cc_addresses)  # Add CC addresses if they exist
+    msg['Subject'] = subject
+    msg.attach(MIMEText(message, 'plain'))
+
+    # Convert the message to a string
+    text = msg.as_string()
+    LOGGER.debug('Message: {}' .format(text))
+
+    # send message
+    try:
+        LOGGER.debug(
+            'Sending report to {}'.format(to_email_addresses)
+            )
+        send_status = server.sendmail(
+            msg['From'], to_email_addresses + cc_addresses, text)
+        send_statuses.append(send_status)
+    except Exception as err:
+        error_msg = (
+            'Unable to send mail from: {} to {}: {}'.format(
+                msg['From'], msg['To'], err
+            )
+        )
+
+        LOGGER.error(error_msg)
+        raise err
 
     server.quit()
 

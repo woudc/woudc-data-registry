@@ -8,7 +8,8 @@ Where possible, your submitted files have been manually repaired to contain the 
 If your station, platform, agency or contact information have been updated then please reply to this message with the updated information.
 Thank you for your support of WOUDC.
 
-email_summary
+$EMAIL_SUMMARY
+
 
 World Ozone and Ultraviolet Radiation Data Centre
 
@@ -17,7 +18,8 @@ Environment and Climate Change Canada
 4905 Dufferin Street
 Toronto, ON M3H 5T4
 Canada
-Email: ec.woudc.ec@canada.ca
+
+Email: woudc@ec.gc.ca
 Website: https://woudc.org
 Data policy: https://woudc.org/about/data-policy.php
 Data submissions: ftp://ftp.woudc.org
