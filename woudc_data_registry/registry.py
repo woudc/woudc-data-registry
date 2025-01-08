@@ -317,6 +317,57 @@ class Registry(object):
 
         return
 
+    def delete_by_field(self, obj, by, value, case_insensitive=False):
+        """
+        Delete a row from a table by field
+
+        :param obj: Object instance of the table
+        :param by: Field name to be queried
+        :param value: Value of the field in any query results
+        :param case_insensitive: `bool` of whether to query strings
+                                 case-insensitively
+        """
+        field = getattr(obj, by)
+
+        if case_insensitive:
+            LOGGER.debug(f'Deleting for LOWER({field}) = LOWER({value})')
+            condition = func.lower(field) == value.lower()
+        else:
+            LOGGER.debug(f'Deleting for {field} = {value}')
+            condition = field == value
+
+        print(self.session.query(obj).filter(condition))
+        self.session.query(obj).filter(condition).delete()
+        self.session.commit()
+        # self.session.rollback()
+
+    def delete_by_multiple_fields(
+        self, table, values, fields=None, case_insensitive=()
+    ):
+        """
+        query a table by multiple fields
+
+        :param table: table to be queried
+        :param values: dictionary with query values
+        :param fields: fields to be filtered by
+        :param case_insensitive: Collection of string fields that should be
+                                 queried case-insensitively
+        :returns: query results
+        """
+
+        conditions = []
+        target_fields = fields or values.keys()
+
+        for field in target_fields:
+            table_field = getattr(table, field)
+            if field in case_insensitive:
+                condition = func.lower(table_field) == values[field].lower()
+                conditions.append(condition)
+            else:
+                conditions.append(table_field == values[field])
+        results = self.session.query(table).filter(*conditions).delete()
+        return results
+
     def save(self, obj=None):
         """
         Helper function to save object to registry.

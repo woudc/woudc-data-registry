@@ -81,6 +81,7 @@ WDR_EMAIL_TO = os.getenv('WDR_EMAIL_TO')
 WDR_EMAIL_CC = os.getenv('WDR_EMAIL_CC')
 WDR_EMAIL_BCC = os.getenv('WDR_EMAIL_BCC')
 WDR_TEMPLATE_PATH = os.getenv('WDR_TEMPLATE_PATH')
+WDR_FILE_TRASH = os.getenv('WDR_FILE_TRASH')
 
 if not WDR_SEARCH_INDEX_BASENAME:
     msg = 'WDR_SEARCH_INDEX_BASENAME was not set. \
