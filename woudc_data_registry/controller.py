@@ -289,12 +289,12 @@ def send_feedback(ctx, failed_files, test, ops):
     from_email_address = config.WDR_EMAIL_FROM_USERNAME
     cc_addresses = [config.WDR_EMAIL_CC]
     bcc_addresses = [config.WDR_EMAIL_BCC]
-
+    
     LOGGER.info('Configs all set to send feedback to contributors')
-
+    
     for contributor in template_collection:
         acronym = contributor[0].split(' ')[0].lower()
-        message = message.replace(
+        specific_message = message.replace(
             "$EMAIL_SUMMARY", "\n".join(contributor[1:]))
         specific_subject = subject.replace('contributor_acronym', acronym)
 
@@ -307,7 +307,7 @@ def send_feedback(ctx, failed_files, test, ops):
                 acronym, to_email_addresses
             )
             send_email(
-                message, subject, from_email_address,
+                specific_message, subject, from_email_address,
                 to_email_addresses, host, port, cc_addresses,
                 bcc_addresses
             )
@@ -320,7 +320,7 @@ def send_feedback(ctx, failed_files, test, ops):
                 acronym, to_email_addresses
             )
             send_email(
-                message, specific_subject, from_email_address,
+                specific_message, specific_subject, from_email_address,
                 to_email_addresses, host, port, cc_addresses,
                 bcc_addresses
             )
@@ -329,6 +329,7 @@ def send_feedback(ctx, failed_files, test, ops):
             acronym, to_email_addresses
         )
     LOGGER.info('Processing Reports have been sent')
+
 
 
 data.add_command(ingest)
