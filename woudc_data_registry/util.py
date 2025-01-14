@@ -93,6 +93,7 @@ def send_email(message, subject, from_email_address, to_email_addresses,
 
     send_statuses = []
     cc = False
+
     LOGGER.debug('cc: {}' .format(cc_addresses))
     # cc
     if all([
@@ -101,6 +102,7 @@ def send_email(message, subject, from_email_address, to_email_addresses,
             ]):
         to_email_addresses += cc_addresses
         cc = True
+
     LOGGER.debug('bcc: {}' .format(bcc_addresses))
     # bcc
     if all([
