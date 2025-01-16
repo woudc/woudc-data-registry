@@ -81,6 +81,7 @@ WDR_EMAIL_TO = os.getenv('WDR_EMAIL_TO')
 WDR_EMAIL_CC = os.getenv('WDR_EMAIL_CC')
 WDR_EMAIL_BCC = os.getenv('WDR_EMAIL_BCC')
 WDR_TEMPLATE_PATH = os.getenv('WDR_TEMPLATE_PATH')
+WDR_FILE_TRASH = os.getenv('WDR_FILE_TRASH')
 
 if not WDR_SEARCH_INDEX_BASENAME:
     msg = 'WDR_SEARCH_INDEX_BASENAME was not set. \
@@ -107,7 +108,8 @@ if WDR_DB_TYPE == 'sqlite':
     WDR_DATABASE_URL = f'{WDR_DB_TYPE}:///{WDR_DB_NAME}'
 else:
     if None in [WDR_DB_USERNAME, WDR_DB_PASSWORD, WDR_SEARCH_TYPE,
-                WDR_SEARCH_URL, WDR_WAF_BASEDIR, WDR_WAF_BASEURL]:
+                WDR_SEARCH_URL, WDR_WAF_BASEDIR, WDR_WAF_BASEURL,
+                WDR_FILE_TRASH]:
         msg = 'System environment variables are not set!'
         LOGGER.error(msg)
         raise EnvironmentError(msg)

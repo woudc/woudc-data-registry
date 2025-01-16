@@ -53,14 +53,15 @@ from woudc_extcsv import (ExtendedCSV, NonStandardDataError,
 
 from woudc_data_registry import config
 from woudc_data_registry.util import (is_text_file, read_file,
-                                      send_email)
+                                      send_email, delete_file_from_record)
 
 
 from woudc_data_registry.processing import Process
 
-from woudc_data_registry.generate_metadata import update_extents
-from woudc_data_registry.models import Contributor
 from woudc_data_registry.registry import Registry
+
+from woudc_data_registry.generate_metadata import update_extents
+from woudc_data_registry.models import Contributor, DataRecord
 from woudc_data_registry.report import OperatorReport, RunReport, EmailSummary
 from woudc_data_registry.search import SearchIndex
 
@@ -287,9 +288,9 @@ def send_feedback(ctx, failed_files, test, ops):
     from_email_address = config.WDR_EMAIL_FROM_USERNAME
     cc_addresses = [config.WDR_EMAIL_CC]
     bcc_addresses = [config.WDR_EMAIL_BCC]
-    
+
     LOGGER.info('Configs all set to send feedback to contributors')
-    
+
     for contributor in template_collection:
         acronym = contributor[0].split(' ')[0].lower()
         specific_message = message.replace(
@@ -329,8 +330,19 @@ def send_feedback(ctx, failed_files, test, ops):
     LOGGER.info('Processing Reports have been sent')
 
 
+@click.command()
+@click.pass_context
+@click.argument('file_path', type=click.Path(
+    exists=True, dir_okay=False, readable=True))
+def delete_record(ctx, file_path):
+    LOGGER.info(f"Deleting record for file: {file_path}")
+    delete_file_from_record(file_path, DataRecord)
+    update_extents()
+    LOGGER.info("Done deleting record")
+
 
 data.add_command(ingest)
 data.add_command(verify)
 data.add_command(generate_emails, name='generate-emails')
 data.add_command(send_feedback, name='send-feedback')
+data.add_command(delete_record, name='delete-record')

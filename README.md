@@ -226,6 +226,14 @@ To generate emails for contributors:
 woudc-data-registry data generate-emails /path/to/dir
 ```
 
+#### Delete Record
+
+```bash
+woudc-data-registry data delete-record /path/to/bad/file/
+```
+
+If a bad file was previously ingested, it can be removed using this command. This removes the file from the registry and the WAF.
+
 ### Development
 
 ```bash
@@ -248,6 +256,7 @@ python3 -m http.server  # view on http://localhost:8000/
 # run tests like this:
 cd woudc_data_registry/tests
 python3 test_data_registry.py
+python3 test_delete_record.py
 
 # or this:
 python3 setup.py test

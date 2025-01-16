@@ -35,7 +35,7 @@ Error Code,Error Type,Message Template,Notes
 211,Error,Unrecognized data {row}
 212,Warning,#{table} row has more values than #{table} has columns
 213,Error,Fewer than minimum {bound} occurrences of table #{table} found
-214,Error,More than maximum {bound} occurrences of table #{table} found
+214,Warning,More than maximum {bound} occurrences of table #{table} found
 215,Error,Fewer than minimum {bound} number of rows in table #{table}
 216,Error,More than maximum {bound} number of rows in table #{table}
 217,Warning,#CONTENT.Level should be {value} according to present tables
