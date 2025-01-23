@@ -1,3 +1,11 @@
+woudc-data-registry (0.2.0) focal; urgency=medium
+
+  * Updates for Ubuntu:focal
+  * Updates for ElasticSearch 8
+  * Updated rules
+
+ -- Kevin Ngai <kevin.ngai@ec.gc.ca>  Tue, 04 Feb 2025 19:12:00 +0000
+
 woudc-data-registry (0.1.0) trusty; urgency=medium
 
   * Initial release.

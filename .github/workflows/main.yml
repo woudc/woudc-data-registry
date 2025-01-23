@@ -1,10 +1,10 @@
 name: build ⚙️
 
-on: [ push, pull_request ]
+on: [push, pull_request]
 
 jobs:
   main:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       WDR_LOGGING_LOGLEVEL: ERROR
       WDR_LOGGING_LOGFILE: /tmp/woudc-data-registry.log
@@ -23,24 +23,28 @@ jobs:
       WDR_ERROR_CONFIG: woudc_data_registry/tests/config/errors.csv
       WDR_ALIAS_CONFIG: data/aliases.yml
       WDR_EXTRA_CONFIG: data/extra-options.yml
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: ["3.8"]
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v5
       name: Setup Python ${{ matrix.python-version }}
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install system dependencies 📦
       run: sudo apt-get install -y dh-python devscripts fakeroot debhelper python3-all python3-setuptools
+    - name: Ensure Python 3.8 is Installed
+      run: sudo apt-get install -y python3.8 python3.8-dev python3.8-venv
+    - name: Install Debian Build Dependencies
+      run: sudo apt-get update && sudo apt-get build-dep -y .
     - name: Install woudc-extcsv requirement 📦
       run: |
         git clone https://github.com/woudc/woudc-extcsv.git
         cd woudc-extcsv
         pip install -r requirements.txt
-        python setup.py install
+        python3 setup.py install
         cd ..
     - name: Install requirements 📦
       run: |
@@ -50,21 +54,20 @@ jobs:
         pip install coveralls
     - name: Install package 📦
       run: python3 setup.py install
-    - name: run tests ⚙️
+    - name: Run tests ⚙️
       run: python3 setup.py test
-    - name: run flake8
+    - name: Run flake8
       run: find . -type f -name "*.py" | xargs flake8
-    - name: build docs
+    - name: Build docs
       run: cd docs && make html && cd ..
-    - name: test coverage ⚙️
+    - name: Test coverage ⚙️
       continue-on-error: true
       run: |
         coverage run -a --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_data_registry
         coverage run -a --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_report_generation
         coverage report -m
         coveralls --service=github
-    - name: build Python package 🏗️
+    - name: Build Python package 🏗️
       run: python3 setup.py bdist_wheel --universal
-    - name: build Debian package 🏗️
+    - name: Build Debian package 🏗️
       run: sudo debuild -b -uc -us
-
