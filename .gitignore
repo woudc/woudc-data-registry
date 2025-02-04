@@ -106,3 +106,13 @@ ENV/
 
 # migration env file
 migration.env
+
+# generated data files
+data/contributors.csv
+data/datasets.csv
+data/deployments.csv
+data/instruments.csv
+data/notifications.csv
+data/projects.csv
+data/station-names.csv
+data/stations.csv
