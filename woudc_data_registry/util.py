@@ -46,9 +46,13 @@
 from datetime import date, datetime, time
 import logging
 import io
+import os
+import shutil
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from woudc_data_registry.registry import Registry
+import woudc_data_registry.config as config
 
 LOGGER = logging.getLogger(__name__)
 
@@ -58,7 +62,6 @@ RFC3339_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 def send_email(message, subject, from_email_address, to_email_addresses,
                host, port, cc_addresses=None, bcc_addresses=None, secure=False,
                from_email_password=None):
-
     """
     Send email
 
@@ -145,6 +148,43 @@ def send_email(message, subject, from_email_address, to_email_addresses,
         raise err
 
     server.quit()
+
+
+def delete_file_from_record(file_path, table):
+    registry = Registry()
+
+    filename = file_path.split('/')[-1]
+    condition = {'filename': filename, 'output_filepath': file_path}
+
+    result = registry.query_multiple_fields(table, condition)
+    if not result:
+        LOGGER.error(f'File {filename} or out_filepath {file_path} not \
+                    found in {table} table')
+        return
+
+    try:
+        # Remove the file from data_records
+        registry.delete_by_multiple_fields(table, condition)
+
+        LOGGER.info(f"Deleted file from {table} table")
+
+        # Remove the file from WAF
+        shutil.move(file_path, config.WDR_FILE_TRASH)
+
+        # Check if the file now exists in the trash directory
+        if filename in os.listdir(config.WDR_FILE_TRASH):
+            LOGGER.info(f"File {filename} successfully moved to trash.")
+        else:
+            LOGGER.error(f"Failed to move {filename} to trash. \
+                The file is not in {config.WDR_FILE_TRASH}.")
+            raise Exception
+
+        registry.session.commit()
+    except Exception as err:
+        LOGGER.error('Failed to delete file: {}'.format(err))
+        registry.session.rollback()
+    finally:
+        registry.close_session()
 
 
 def point2geojsongeometry(x, y, z=None):
