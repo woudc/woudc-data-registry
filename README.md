@@ -84,6 +84,9 @@ woudc-data-registry admin registry setup
 # re-initialize search engine
 woudc-data-registry admin search teardown
 woudc-data-registry admin search setup
+
+# If required reinitialized StationDobsonCorrections table and index
+woudc-data-registry admin setup-dobson-correction -d data/
 ```
 
 ### Running woudc-data-registry
