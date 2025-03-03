@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   main:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       WDR_LOGGING_LOGLEVEL: ERROR
       WDR_LOGGING_LOGFILE: /tmp/woudc-data-registry.log
@@ -26,7 +26,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       matrix:
-        python-version: ["3.8"]
+        python-version: ["3.10"]
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v5
@@ -35,8 +35,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install system dependencies 📦
       run: sudo apt-get install -y dh-python devscripts fakeroot debhelper python3-all python3-setuptools
-    - name: Ensure Python 3.8 is Installed
-      run: sudo apt-get install -y python3.8 python3.8-dev python3.8-venv
+    - name: Ensure Python 3.10 is Installed
+      run: sudo apt-get install -y python3.10 python3.10-dev python3.10-venv
     - name: Install Debian Build Dependencies
       run: sudo apt-get update && sudo apt-get build-dep -y .
     - name: Install woudc-extcsv requirement 📦
