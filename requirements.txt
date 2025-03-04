@@ -5,3 +5,4 @@ pyyaml
 requests
 sqlalchemy
 woudc-extcsv
+psycopg2-binary
