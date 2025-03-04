@@ -116,3 +116,6 @@ data/notifications.csv
 data/projects.csv
 data/station-names.csv
 data/stations.csv
+
+# VSCode settings
+.vscode/
