@@ -36,15 +36,14 @@ source bin/activate
 git clone https://github.com/woudc/woudc-extcsv.git
 cd woudc-extcsv
 pip install -r requirements.txt
-python3 setup.py install
+pip install .
 cd ..
 
 # clone codebase and install
 git clone https://github.com/woudc/woudc-data-registry.git
 cd woudc-data-registry
-python3 setup.py build
-python3 setup.py install
-# for PostgreSQL backends
+pip install .
+# optional: for PostgreSQL backends
 pip install -r requirements-pg.txt
 
 
