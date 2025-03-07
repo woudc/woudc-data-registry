@@ -112,10 +112,10 @@ def add_metadata(entity, dict_, save_to_registry=True, save_to_index=True):
 
         dict_['country_id'] = getattr(results[0], Country.id_field)
 
-    if 'contributor_id' in dict_:
+    if 'contributor' in dict_:
         LOGGER.debug('Querying for matching contributor')
         results = REGISTRY.session.query(Contributor).filter(
-            Contributor.contributor_id == dict_['contributor_id'])
+            Contributor.contributor_id == f"{dict_['contributor']}:{dict_['project']}") # noqa
 
         if results.count() == 0:
             msg = f"Invalid contributor: {dict_['contributor_id']}"

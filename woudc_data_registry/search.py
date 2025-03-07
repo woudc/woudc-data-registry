@@ -1050,6 +1050,40 @@ MAPPINGS = {
                 'fields': {'raw': typedefs['keyword']}
             }
         }
+    },
+    'station_dobson_corrections': {
+        'index': 'station_dobson_corrections',
+        'properties': {
+            'identifier': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'station_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'AD_corrected': {
+                'type': 'boolean'
+            },
+            'CD_correction': {
+                'type': 'boolean'
+            },
+            'AD_correcting_source': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'CD_correcting_source': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'CD_correcting_factor': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'correction_comments': {
+                'type': 'text'
+            }
+        }
     }
 }
 

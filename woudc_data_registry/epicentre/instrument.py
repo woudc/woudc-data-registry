@@ -154,7 +154,8 @@ def add(ctx, station, dataset, contributor, name, model, serial, geometry):
     instrument_ = {
         'station_id': station,
         'dataset_id': dataset,
-        'contributor_id': contributor,
+        'contributor': contributor.split(':')[0],
+        'project': contributor.split(':')[1],
         'name': name,
         'model': model,
         'serial': serial,
