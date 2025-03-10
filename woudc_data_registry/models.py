@@ -53,10 +53,13 @@ import codecs
 import yaml
 from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
                         Float, Enum, ForeignKey, Integer, String, Time,
-                        UniqueConstraint, ForeignKeyConstraint, ARRAY)
+                        UniqueConstraint, ForeignKeyConstraint, ARRAY, Text,
+                        inspect)
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+
+from elasticsearch.exceptions import (ConnectionError, RequestError)
 
 from woudc_data_registry import config, registry
 from woudc_data_registry.search import SearchIndex, search
@@ -1826,6 +1829,73 @@ class OzoneSonde(base):
             self.ozone_id = ':'.join(map(str, components))
 
 
+class StationDobsonCorrections(base):
+    """"""
+    __tablename__ = 'station_dobson_corrections'
+
+    id_field = "dobson_correction_id"
+    id_dependencies = ['station_id', 'AD_correcting_source',
+                       'CD_correcting_factor']
+
+    # columns
+    dobson_correction_id = Column(String, primary_key=True)
+    station_id = Column(String(255), ForeignKey('stations.station_id'),
+                        nullable=False)
+    AD_corrected = Column(Boolean, nullable=False, default=False)
+    CD_corrected = Column(Boolean, nullable=False, default=False)
+    AD_correcting_source = Column(String(255), nullable=False)
+    CD_correcting_source = Column(String(255), nullable=False)
+    CD_correcting_factor = Column(String(255), nullable=False, default='cd')
+    correction_comments = Column(Text, nullable=False)
+
+    # relationshipts
+    station = relationship('Station', backref=__tablename__)
+
+    def __init__(self, dict_):
+        self.station_id = dict_['station']
+        self.AD_corrected = bool(dict_['AD_corrected'])
+        self.CD_corrected = bool(dict_['CD_corrected'])
+        self.AD_correcting_source = dict_['AD_correcting_source']
+        self.CD_correcting_source = dict_['CD_correcting_source']
+        self.CD_correcting_factor = dict_['CD_correcting_factor']
+        self.correction_comments = dict_['correction_comments']
+
+        self.generate_ids()
+
+    @property
+    def __geo_interface__(self):
+        return {
+            'id': self.dobson_correction_id,
+            'type': 'Feature',
+            'geometry': point2geojsongeometry(self.station.x, self.station.y,
+                                              self.station.z),
+            'properties': {
+                'identifier': self.dobson_correction_id,
+                'station_id': self.station_id,
+                'AD_corrected': self.AD_corrected,
+                'CD_corrected': self.CD_corrected,
+                'AD_correcting_source': self.AD_correcting_source,
+                'CD_correcting_source': self.CD_correcting_source,
+                'CD_correcting_factor': self.CD_correcting_factor,
+                'correction_comments': self.correction_comments
+            }
+        }
+
+    def __repr__(self):
+        return f'Station Dobson Correction ({self.dobson_correction_id})'
+
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.dobson_correction_id = (
+                f"{self.station_id}:AD-{components[1]}:CD-{components[2]}"
+            )
+
+
 def build_contributions(instrument_models):
     """function that forms contributions from other model lists"""
 
@@ -2002,6 +2072,111 @@ def setup(ctx):
 
 @click.command()
 @click.pass_context
+@click.option('--datadir', '-d',
+              type=click.Path(exists=True, resolve_path=True),
+              help='Path to core metadata files')
+def setup_dobson_correction(ctx, datadir):
+    """ Add the station Dobson correction table and ES index to the
+    database and ES, respectively, that does not have it. """
+    from woudc_data_registry import config
+    import os
+    from woudc_data_registry.search import MAPPINGS, SearchIndex
+
+    click.echo("Setting up dobson correction table and index")
+
+    registry_ = registry.Registry()
+
+    engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DB_DEBUG)
+
+    inspector = inspect(engine)
+    if "station_dobson_corrections" in inspector.get_table_names():
+        response = input(
+            'Table already exists. Teardown and setup this table? (y/n): ')
+        if response.lower() == 'y':
+            click.echo('Deleting current StationDobsonCorrections table')
+            registry_.session.query(StationDobsonCorrections).delete()
+            registry_.save()
+            try:
+                click.echo(
+                    f'Generating model: '
+                    f'{StationDobsonCorrections.__tablename__}'
+                )
+                StationDobsonCorrections.__table__.create(
+                    engine, checkfirst=True)
+                click.echo('Done')
+            except (OperationalError, ProgrammingError) as err:
+                click.echo(f'ERROR: {err}')
+
+            station_dobson_corrections = os.path.join(
+                datadir, 'station_dobson_corrections.csv')
+
+            station_dobson_corrections_models = []
+
+            click.echo('Loading station dobson corrections items')
+            with open(station_dobson_corrections) as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    station_dobson_corrections = StationDobsonCorrections(row)
+                    station_dobson_corrections_models.append(
+                        station_dobson_corrections)
+
+            click.echo('Storing station dobson corrections items in registry')
+            for model in station_dobson_corrections_models:
+                registry_.save(model)
+        else:
+            click.echo("Skipping teardown of the "
+                       "StationDobsonCorrections table")
+
+    click.echo('Creating ES index for station dobson corrections')
+    search_index = SearchIndex()
+
+    index_name = search_index.generate_index_name(
+        MAPPINGS['station_dobson_corrections']['index']
+    )
+    settings = {
+                'mappings': {
+                    'properties': {
+                        'geometry': {
+                            'type': 'geo_shape'
+                        }
+                    }
+                },
+                'settings': {
+                    'index': {
+                        'number_of_shards': 1,
+                        'number_of_replicas': 0
+                    }
+                }
+            }
+    if 'properties' in MAPPINGS['station_dobson_corrections']:
+        settings['mappings']['properties']['properties'] = {
+            'properties': MAPPINGS['station_dobson_corrections']['properties']
+        }
+
+    try:
+        if search_index.connection.indices.exists(index=index_name):
+            response = input(
+                'Index already exists. Teardown and setup this index? (y/n): '
+            )
+            if response.lower() == 'y':
+                search_index.connection.indices.delete(
+                    index=index_name, ignore=[400, 404]
+                )
+                search_index.connection.indices.create(
+                    index=index_name, body=settings
+                )
+                click.echo('ES index created: station_dobson_corrections')
+            else:
+                click.echo("Skipping teardown of the "
+                           "StationDobsonCorrections index")
+    except (ConnectionError, RequestError) as err:
+        click.echo(f'ERROR: {err}')
+
+    click.echo("Done")
+
+
+@click.command()
+@click.pass_context
 def teardown(ctx):
     """delete models"""
 
@@ -2043,6 +2218,8 @@ def init(ctx, datadir, init_search_index):
     deployments = os.path.join(datadir, 'deployments.csv')
     notifications = os.path.join(datadir, 'notifications.csv')
     discovery_metadata = os.path.join(datadir, 'woudc.skos.yaml')
+    station_dobson_corrections = os.path.join(
+        datadir, 'station_dobson_corrections.csv')
 
     registry_ = registry.Registry()
 
@@ -2057,6 +2234,7 @@ def init(ctx, datadir, init_search_index):
     contribution_models = []
     notification_models = []
     discovery_metadata_models = []
+    station_dobson_corrections_models = []
 
     click.echo('Loading WMO countries metadata')
     with open(wmo_countries) as jsonfile:
@@ -2157,6 +2335,14 @@ def init(ctx, datadir, init_search_index):
             discovery_metadata_ = DiscoveryMetadata(row)
             discovery_metadata_models.append(discovery_metadata_)
 
+    click.echo('Loading station dobson corrections items')
+    with open(station_dobson_corrections) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            station_dobson_corrections = StationDobsonCorrections(row)
+            station_dobson_corrections_models.append(
+                station_dobson_corrections)
+
     click.echo('Storing projects in data registry')
     for model in project_models:
         registry_.save(model)
@@ -2186,6 +2372,9 @@ def init(ctx, datadir, init_search_index):
         registry_.save(model)
     click.echo('Storing discovery metadata items in data registry')
     for model in discovery_metadata_models:
+        registry_.save(model)
+    click.echo('Storing station dobson corrections items in data registry')
+    for model in station_dobson_corrections_models:
         registry_.save(model)
 
     instrument_from_registry = registry_.query_full_index(Instrument)
@@ -2237,6 +2426,9 @@ def init(ctx, datadir, init_search_index):
         search_index.index(Notification, notification_docs)
         click.echo('Storing discovery metadata items in search index')
         search_index.index(DiscoveryMetadata, discovery_metadata_docs)
+        click.echo('Storing station dobson corrections items in search index')
+        search_index.index(
+            StationDobsonCorrections, station_dobson_corrections)
 
 
 @click.command('sync')
@@ -2256,7 +2448,8 @@ def sync(ctx):
         Contribution,
         Notification,
         PeerDataRecord,
-        DiscoveryMetadata
+        DiscoveryMetadata,
+        StationDobsonCorrections
     ]
 
     registry_ = registry.Registry()
@@ -2362,6 +2555,7 @@ admin.add_command(init)
 admin.add_command(show_config)
 admin.add_command(registry__)
 admin.add_command(search)
+admin.add_command(setup_dobson_correction)
 
 registry__.add_command(setup)
 registry__.add_command(teardown)
