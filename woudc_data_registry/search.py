@@ -49,6 +49,7 @@ import click
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch.exceptions import (ConnectionError, NotFoundError,
                                       RequestError)
+from elastic_transport import TlsError
 from woudc_data_registry import config
 
 LOGGER = logging.getLogger(__name__)
@@ -1097,10 +1098,28 @@ class SearchIndex(object):
         self.type = config.WDR_SEARCH_TYPE
         self.url = config.WDR_SEARCH_URL
         self.index_basename = config.WDR_SEARCH_INDEX_BASENAME
+        self.verify_certs = config.WDR_SEARCH_CERT_VERIFY
 
         LOGGER.debug('Connecting to Elasticsearch')
 
-        self.connection = Elasticsearch(self.url)
+        try:
+            self.connection = Elasticsearch(
+                self.url,
+                verify_certs=self.verify_certs
+            )
+        except TlsError as err:
+            if self.verify_certs:
+                msg = (
+                    f"SSL certificate verification failed: {err}.\n"
+                    "Check your SSL certificates or set "
+                    "WDR_SEARCH_CERT_VERIFY=False if "
+                    "connecting to an internal dev server."
+                )
+            else:
+                msg = f"Unexpected TLS error: {err}"
+
+            LOGGER.error(msg)
+            raise SearchIndexError(msg)
 
         self.headers = {'Content-Type': 'application/json'}
 
@@ -1150,9 +1169,40 @@ class SearchIndex(object):
 
             try:
                 self.connection.indices.create(index=index_name, body=settings)
+            except TlsError as err:
+                LOGGER.error(
+                    "TLS error occurred while creating "
+                    f"index '{index_name}': {err}"
+                )
+                raise SearchIndexError(
+                    "TLS error while creating index "
+                    f"'{index_name}': {err}.\n"
+                    "Check your SSL certificates or set "
+                    "WDR_SEARCH_CERT_VERIFY=False if "
+                    "connecting to an internal dev server."
+                )
             except (ConnectionError, RequestError) as err:
-                LOGGER.error(err)
-                raise SearchIndexError(err)
+                LOGGER.error(
+                    "Error occurred while creating "
+                    f"index '{index_name}': {err}"
+                )
+                raise SearchIndexError(
+                    "Failed to create index "
+                    f"'{index_name}': {err}.\n"
+                    "Check your Elasticsearch connection, ensure the index "
+                    "settings are correct, and verify if the index "
+                    "already exists."
+                )
+            except Exception as err:
+                LOGGER.error(
+                    "Unexpected error occurred while creating "
+                    f"index '{index_name}': {err}"
+                )
+                raise SearchIndexError(
+                    "Unexpected error while creating index "
+                    f"'{index_name}': {err}.\n"
+                    "Please check the logs for more details."
+                )
 
     def delete(self):
         """delete search indexes"""
@@ -1170,8 +1220,31 @@ class SearchIndex(object):
             try:
                 self.connection.indices.delete(index=index_name)
             except NotFoundError as err:
-                LOGGER.error(err)
-                raise SearchIndexError(err)
+                LOGGER.error(
+                    f"Index '{index_name}' not found. Skipping deletion.")
+                raise SearchIndexError(
+                    f"Index '{index_name}' not found: {err}")
+            except TlsError as err:
+                LOGGER.error(
+                    "TLS error occurred while trying to delete "
+                    f"index '{index_name}': {err}"
+                )
+                raise SearchIndexError(
+                    "TLS error while deleting "
+                    f"index '{index_name}': {err}.\n"
+                    "Check your SSL certificates or set "
+                    "WDR_SEARCH_CERT_VERIFY=False if "
+                    "connecting to an internal dev server."
+                )
+            except Exception as err:
+                LOGGER.error(
+                    "Unexpected error occurred while deleting "
+                    f"index '{index_name}': {err}"
+                )
+                raise SearchIndexError(
+                    "Unexpected error while deleting "
+                    f"index '{index_name}': {err}"
+                )
 
     def get_record_version(self, identifier):
         """
@@ -1236,12 +1309,54 @@ class SearchIndex(object):
             } for document in target)
 
             LOGGER.debug(f'Indexing documents into {index_name}')
-            helpers.bulk(
-                self.connection,
-                wrapper,
-                raise_on_error=False,
-                raise_on_exception=False
-            )
+            try:
+                # Perform the bulk operation without using 'success'
+                failed = helpers.bulk(
+                    self.connection,
+                    wrapper,
+                    raise_on_error=False,
+                    raise_on_exception=False
+                )
+
+                if failed:
+                    LOGGER.error(
+                        f"Some documents failed to index in '{index_name}'.")
+                    for fail in failed:
+                        LOGGER.error(f"Failure: {fail}")
+                    raise SearchIndexError(
+                        f"{len(failed)} documents failed to index "
+                        f"in '{index_name}'.\n"
+                        "Check error logs for details."
+                    )
+
+            except TlsError as err:
+                msg = (
+                    "TLS error occurred while bulk indexing "
+                    f"index '{index_name}': {err}.\n"
+                    "Check your SSL certificates or set "
+                    "WDR_SEARCH_CERT_VERIFY=False if "
+                    "connecting to an internal dev server."
+                )
+                LOGGER.error(msg)
+                raise SearchIndexError(msg)
+
+            except (ConnectionError, RequestError) as err:
+                msg = (
+                    "Elasticsearch connection error occurred while bulk "
+                    f"indexing index '{index_name}': {err}.\n"
+                    "Ensure that your Elasticsearch cluster is up and "
+                    "reachable."
+                )
+                LOGGER.error(msg)
+                raise SearchIndexError(msg)
+
+            except Exception as err:
+                msg = (
+                    "Unexpected error while bulk indexing "
+                    f"index '{index_name}': {err}"
+                )
+                LOGGER.exception(msg)
+                raise SearchIndexError(msg)
 
         return True
 

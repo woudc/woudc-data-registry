@@ -48,14 +48,13 @@ import os
 
 import yaml
 
-from woudc_data_registry.util import str2bool
-
 LOGGER = logging.getLogger(__name__)
 
 WDR_LOGGING_LOGLEVEL = os.getenv('WDR_LOGGING_LOGLEVEL', 'ERROR')
 WDR_LOGGING_LOGFILE = os.getenv('WDR_LOGGING_LOGFILE')
 
-WDR_DB_DEBUG = str2bool(os.getenv('WDR_DB_DEBUG', False))
+WDR_DB_DEBUG = os.getenv('WDR_DB_DEBUG',
+                         'False').lower() in ('true', '1', 'yes')
 WDR_DB_TYPE = os.getenv('WDR_DB_TYPE')
 WDR_DB_HOST = os.getenv('WDR_DB_HOST')
 WDR_DB_PORT = int(os.getenv('WDR_DB_PORT', 5432))
@@ -65,6 +64,9 @@ WDR_DB_NAME = os.getenv('WDR_DB_NAME')
 WDR_SEARCH_TYPE = os.getenv('WDR_SEARCH_TYPE', 'elasticsearch')
 WDR_SEARCH_URL = os.getenv('WDR_SEARCH_URL')
 WDR_SEARCH_INDEX_BASENAME = os.getenv('WDR_SEARCH_INDEX_BASENAME')
+WDR_SEARCH_CERT_VERIFY = os.getenv(
+                            'WDR_SEARCH_CERT_VERIFY',
+                            'True').lower() in ('true', '1', 'yes')
 WDR_WAF_BASEDIR = os.getenv('WDR_WAF_BASEDIR')
 WDR_WAF_BASEURL = os.getenv('WDR_WAF_BASEURL', 'https://woudc.org/archive')
 WDR_ERROR_CONFIG = os.getenv('WDR_ERROR_CONFIG')
