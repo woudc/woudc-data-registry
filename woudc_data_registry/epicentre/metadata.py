@@ -118,7 +118,10 @@ def add_metadata(entity, dict_, save_to_registry=True, save_to_index=True):
             Contributor.contributor_id == f"{dict_['contributor']}:{dict_['project']}") # noqa
 
         if results.count() == 0:
-            msg = f"Invalid contributor: {dict_['contributor_id']}"
+            msg = (
+                "Invalid contributor_id: "
+                f"{dict_['contributor']}:{dict_['project']}"
+            )
             LOGGER.error(msg)
             raise ValueError(msg)
 

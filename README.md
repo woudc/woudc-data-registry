@@ -163,11 +163,10 @@ woudc-data-registry data ingest /path/to/dir -l
 #### Search Index Generation
 
 ```bash
-# sync data registry to elasticsearch
-# sync the data and metadata tables
+# sync all data and metadata tables (except data product tables) to ElasticSearch
 woudc-data-registry admin search sync
 
-# sync the data product tables
+# sync the data product tables (uv_index_hourly, totalozone, and ozonesonde) to ElasticSearch
 woudc-data-registry admin search product-sync
 ```
 

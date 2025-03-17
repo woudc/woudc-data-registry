@@ -116,9 +116,9 @@ def execute(path, update, start_year, end_year, bypass):
 
                 # get common fields
                 try:
-                    dataset = extcsv.extcsv['CONTENT']['Category'][0]
-                    level = extcsv.extcsv['CONTENT']['Level'][0]
-                    form = extcsv.extcsv['CONTENT']['Form'][0]
+                    dataset_name = extcsv.extcsv['CONTENT']['Category'][0]
+                    dataset_level = extcsv.extcsv['CONTENT']['Level'][0]
+                    dataset_form = extcsv.extcsv['CONTENT']['Form'][0]
                     project_id = extcsv.extcsv['CONTENT']['Class'][0]
                     station_type = extcsv.extcsv['PLATFORM']['Type'][0]
                     station_id = extcsv.extcsv['PLATFORM']['ID'][0]
@@ -146,6 +146,7 @@ def execute(path, update, start_year, end_year, bypass):
                     station_id = station_id.zfill(3)
 
                 station = f'{station_type.upper()}{station_id}'
+                dataset_id = f"{dataset_name}_{str(dataset_level)}"
 
                 if dataset.lower() == 'spectral':
                     # find max set of table groupings
@@ -208,7 +209,9 @@ def execute(path, update, start_year, end_year, bypass):
                         if allow_add_instrument:
                             instrument_ = {
                                 'station_id': station_id,
-                                'dataset_id': dataset,
+                                'dataset_id': dataset_id,
+                                'dataset_name': dataset_name,
+                                'dataset_level': dataset_level,
                                 'contributor': agency,
                                 'project': project_id,
                                 'name': instrument_name,
@@ -235,9 +238,9 @@ def execute(path, update, start_year, end_year, bypass):
                         ins_data = {
                             'file_path': ipath,
                             'filename': filename,
-                            'dataset_id': dataset,
-                            'dataset_level': level,
-                            'dataset_form': form,
+                            'dataset_id': dataset_id,
+                            'dataset_level': dataset_level,
+                            'dataset_form': dataset_form,
                             'station_id': station_id,
                             'station_type': station_type,
                             'country_id': country,
@@ -365,9 +368,11 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                         continue
                     # compute
                     if model.upper() in ('MKII', 'MKIII'):
-                        uv = intcie_f / 25
+                        # UVI formula for older Brewer models (divide by 40)
+                        uv = intcie_f / 40  # GLOBAL_SUMMARY.IntCIE/40
                     elif model.upper() in ('MKIV', 'MKV', 'MKVI', 'MKVII'):
-                        uv = intcie_f / 40
+                        # UVI formula for newer Brewer models (divide by 25)
+                        uv = intcie_f / 25  # GLOBAL_SUMMARY.IntCIE/25
 
                     try:
                         zen_angle = \
@@ -465,6 +470,8 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                 LOGGER.error(msg)
                 continue
 
+            # GLOBAL.Irradiance*40 (biometer UVI formula)
+            # DIFFUSE.Irradiance*40 (kipp_zonen UVI formula)
             uv = irradiance_f * 40
 
             qa_result = qa(country, uv)

@@ -16,13 +16,13 @@ allows the user to run commands specific to WOUDC Data Registry.
 
 * Disk space is required for storing the codebase
 ```bash
-# Activate Python virtualenv without conda:
+# Activate Python virtualenv:
 python3 -m venv --system-site-packages woudc-data-registry_env
 cd /woudc-data-registry_env
 source bin/activate
 git clone https://github.com/woudc/woudc-data-registry.git
 
-# Activate Python virtualenv using conda
+# or activate using a conda env
 git clone https://github.com/woudc/woudc-data-registry.git
 cd /to/the/conda/install/location
 source bin/activate woudc-data-registry
@@ -38,17 +38,15 @@ tells the Registry where to find the various files/components that
 are required for Registry operations.
 
 ```bash
-# With conda setup
-cd /woudc-data-registry
-
-# Without conda setup
-cd /woudc-data-registry_env/woudc-data-registry
+# Navigate to your code base
+cd /path/to/woudc-data-registry
 
 # Install WOUDC Data Registry codebase
-python3 setup.py install
+pip install .
 
 # Setup/edit config file:
-vim foo.env
+cp default.env foo.env
+vi foo.env
 
 # Run contents of config file
 . foo.env
@@ -89,30 +87,18 @@ To complete the migration access to WOUDC Archive database is required. Disk Spa
 is also required to store the generated extcsv files.
 
 ```bash
-# With conda setup
-cd /woudc-data-registry/migration/bps
-
-# Without conda setup
-cd /woudc-data-registry_env/woudc-data-registry/migration/bps
-
 # Setup/edit migration config file
-cp migration.env.in migration.env
-vim migration.env
+cp migration/bps/migration.env.in migration/bps/migration.env
+vim migration/bps/migration.env
 
 # Run contents of migration.env
-. migration.env
+. migration/bps/migration.env
 
-# Generate WOUDC Data Registry extCSV files with conda setup
-get-bps-metadata.sh -o /woudc-data-registry/data
+# Generate WOUDC Data Registry CSV data files
+migration/bps/get-bps-metadata.sh -o data
 
-# Generate WOUDC Data Registry extCSV files without conda setup
-get-bps-metadata.sh -o /woudc-data-registry_env/woudc-data-registry/data
-
-# Initalize WOUDC Data Registry with conda setup
-woudc-data-registry admin init -d /woudc-data-registry/data
-
-# Initalize WOUDC Data Registry without conda setup
-woudc-data-registry admin init -d /woudc-data-registry_env/woudc-data-registry/data
+# Initalize WOUDC Data Registry with data inserts from CSVs
+woudc-data-registry admin init -d data/
 ```
 
 # WOUDC data file ingest and sync to Elasticsearch
