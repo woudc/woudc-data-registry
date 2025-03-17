@@ -206,7 +206,7 @@ class Process(object):
                     # Attempt to fix the serial by left-stripping zeroes
                     old_serial = \
                         str(self.extcsv.extcsv['INSTRUMENT']['Number'])
-                    new_serial = old_serial.lstrip('0') or '0'
+                    new_serial = correct_instrument_value(old_serial, 'serial')
 
                     if old_serial != new_serial:
                         LOGGER.debug('Attempting to search instrument serial'
@@ -865,8 +865,9 @@ class Process(object):
         """
 
         serial = self.extcsv.extcsv['INSTRUMENT']['Number']
-        if not serial or str(serial).lower() in ['na', 'n/a']:
-            self.extcsv.extcsv['INSTRUMENT']['Number'] = serial = 'UNKNOWN'
+
+        self.extcsv.extcsv['INSTRUMENT']['Number'] = \
+            serial = correct_instrument_value(serial, 'serial')
 
         instrument = build_instrument(self.extcsv)
         fields = ['name', 'model', 'serial',
@@ -1246,3 +1247,24 @@ class Process(object):
 class ProcessingError(Exception):
     """custom exception handler"""
     pass
+
+
+def correct_instrument_value(instrument_value, type):
+    """
+    Corrects the values for the instrument table if not already in the correct
+    format.
+
+    Prerequisite: #INSTRUMENT.Number and/or  #INSTRUMENT.model
+
+    :returns: Corrected value
+    """
+    if not instrument_value or instrument_value.lower() in ['na', 'n/a']:
+        return 'UNKNOWN'
+
+    if instrument_value.lower() == 'unknown':
+        return 'UNKNOWN'
+
+    if type == 'serial':
+        instrument_value = instrument_value.lstrip('0') or '0'
+
+    return instrument_value

@@ -1538,8 +1538,8 @@ class TotalOzone(base):
     daily_nobs = Column(Float, nullable=True)
     daily_mmu = Column(String, nullable=True)
     daily_columnso2 = Column(Float, nullable=True)
-    monthly_date = Column(Date, nullable=False)
-    monthly_columno3 = Column(Float, nullable=False)
+    monthly_date = Column(Date, nullable=True)
+    monthly_columno3 = Column(Float, nullable=True)
     monthly_stdevo3 = Column(Float, nullable=True)
     monthly_npts = Column(Float, nullable=True)
 
@@ -1711,7 +1711,7 @@ class OzoneSonde(base):
     profile_relativehumidity = Column(ARRAY(String), nullable=True)
     profile_sampletemperature = Column(ARRAY(String), nullable=True)
 
-    timestamp_date = Column(Date, nullable=False)
+    timestamp_date = Column(Date, nullable=True)
 
     x = Column(Float, nullable=True)
     y = Column(Float, nullable=True)

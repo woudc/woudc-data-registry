@@ -45,7 +45,6 @@
 
 # Compute and persist UV Index from WOUDC archive
 
-import csv
 import logging
 import os
 
@@ -53,14 +52,15 @@ from datetime import datetime
 from woudc_extcsv import ExtendedCSV
 
 from woudc_data_registry.models import UVIndex, Instrument
-from woudc_data_registry import config, registry
+from woudc_data_registry import registry
 from woudc_data_registry.util import read_file
 from woudc_data_registry.epicentre.metadata import add_metadata
+from woudc_data_registry.processing import correct_instrument_value
 
 LOGGER = logging.getLogger(__name__)
 
 
-def execute(path, formula_lookup, update, start_year, end_year, bypass):
+def execute(path, update, start_year, end_year, bypass):
     """
     Orchestrate uv-index generation process
     """
@@ -126,9 +126,11 @@ def execute(path, formula_lookup, update, start_year, end_year, bypass):
                     country = extcsv.extcsv['PLATFORM']['Country'][0]
                     agency = extcsv.extcsv['DATA_GENERATION']['Agency'][0]
                     instrument_name = extcsv.extcsv['INSTRUMENT']['Name'][0]
-                    instrument_model = extcsv.extcsv['INSTRUMENT']['Model'][0]
+                    instrument_model = correct_instrument_value(
+                        extcsv.extcsv['INSTRUMENT']['Model'][0], 'model')
                     instrument_number = \
-                        extcsv.extcsv['INSTRUMENT']['Number'][0]
+                        correct_instrument_value(
+                            extcsv.extcsv['INSTRUMENT']['Number'][0], 'serial')
                     instrument_latitude = \
                         extcsv.extcsv['LOCATION']['Latitude'][0]
                     instrument_longitude = \
@@ -145,46 +147,39 @@ def execute(path, formula_lookup, update, start_year, end_year, bypass):
 
                 station = f'{station_type.upper()}{station_id}'
 
-                if station in formula_lookup.keys():
-                    if dataset.lower() == 'spectral':
-                        # find max set of table groupings
-                        summary_table = 'GLOBAL_SUMMARY_NSF' \
-                            if 'GLOBAL_SUMMARY_NSF' in extcsv.extcsv \
-                            else 'GLOBAL_SUMMARY'
+                if dataset.lower() == 'spectral':
+                    # find max set of table groupings
+                    summary_table = 'GLOBAL_SUMMARY_NSF' \
+                        if 'GLOBAL_SUMMARY_NSF' in extcsv.extcsv \
+                        else 'GLOBAL_SUMMARY'
 
-                        timestamp_count = extcsv.table_count('TIMESTAMP')
-                        global_count = extcsv.table_count('GLOBAL')
-                        summary_count = extcsv.table_count(summary_table)
+                    timestamp_count = extcsv.table_count('TIMESTAMP')
+                    global_count = extcsv.table_count('GLOBAL')
+                    summary_count = extcsv.table_count(summary_table)
 
-                        try:
-                            max_index = max(timestamp_count, global_count,
-                                            summary_count)
-                        except ValueError:
-                            max_index = 1
-                        try:
-                            uv_packages = compute_uv_index(ipath, extcsv,
-                                                           dataset, station,
-                                                           instrument_name,
-                                                           country,
-                                                           formula_lookup,
-                                                           max_index)
-                        except Exception as err:
-                            msg = f'Unable to compute UV for file {ipath}: {err}'  # noqa
-                            LOGGER.error(msg)
-                            continue
-                    elif dataset.lower() == 'broad-band':
-                        try:
-                            uv_packages = compute_uv_index(ipath, extcsv,
-                                                           dataset, station,
-                                                           instrument_name,
-                                                           country,
-                                                           formula_lookup)
-                        except Exception as err:
-                            msg = f'Unable to compute UV for file {ipath}: {err}'  # noqa
-                            LOGGER.error(msg)
-                            continue
-                    else:
-                        msg = f'Unsupported dataset {dataset}. Skipping.'
+                    try:
+                        max_index = max(timestamp_count, global_count,
+                                        summary_count)
+                    except ValueError:
+                        max_index = 1
+                    try:
+                        uv_packages = compute_uv_index(ipath, extcsv,
+                                                       dataset, station,
+                                                       instrument_name,
+                                                       country, max_index)
+
+                    except Exception as err:
+                        msg = f'Unable to compute UV for file {ipath}: {err}'  # noqa
+                        LOGGER.error(msg)
+                        continue
+                elif dataset.lower() == 'broad-band':
+                    try:
+                        uv_packages = compute_uv_index(ipath, extcsv,
+                                                       dataset, station,
+                                                       instrument_name,
+                                                       country)
+                    except Exception as err:
+                        msg = f'Unable to compute UV for file {ipath}: {err}'  # noqa
                         LOGGER.error(msg)
 
                     # form ids for data insert
@@ -268,8 +263,7 @@ def execute(path, formula_lookup, update, start_year, end_year, bypass):
 
 
 def compute_uv_index(ipath, extcsv, dataset, station,
-                     instrument_name, country,
-                     formula_lookup, max_index=1):
+                     instrument_name, country, max_index=1):
     """
     Compute UV index
     """
@@ -285,15 +279,6 @@ def compute_uv_index(ipath, extcsv, dataset, station,
             'brewer' in instrument_name.lower()
             ])
     ]):
-        # get formula
-        try:
-            formula = (formula_lookup[station]
-                                     [instrument_name.lower()]
-                                     ['GLOBAL_SUMMARY'])
-        except KeyError:
-            formula = (formula_lookup[station]
-                                     [instrument_name.lower()]
-                                     ['GLOBAL_SUMMARY_NSF'])
 
         # Some spectral files are missing TIMESTAMP per each payload
         # Get and store first Date
@@ -369,6 +354,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
             if instrument_name.lower() == 'brewer':
                 try:
                     intcie = extcsv.extcsv[global_summary_t]['IntCIE'][0]
+                    model = extcsv.extcsv['INSTRUMENT']['Model'][0]
                     # convert sci not to float
                     try:
                         intcie_f = float(intcie)
@@ -378,14 +364,10 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                         LOGGER.error(msg)
                         continue
                     # compute
-                    if '*' in formula:
-                        uv = intcie_f * 25
-                    elif '/' in formula:
+                    if model.upper() in ('MKII', 'MKIII'):
+                        uv = intcie_f / 25
+                    elif model.upper() in ('MKIV', 'MKV', 'MKVI', 'MKVII'):
                         uv = intcie_f / 40
-                    else:
-                        msg = f'Unknown formula: {formula}'
-                        LOGGER.error(msg)
-                        continue
 
                     try:
                         zen_angle = \
@@ -419,16 +401,6 @@ def compute_uv_index(ipath, extcsv, dataset, station,
             'kipp_zonen' in instrument_name.lower(),
             ])
     ]):
-
-        try:
-            if 'biometer' in instrument_name.lower():
-                formula = formula_lookup[station]['biometer']['GLOBAL']
-            if instrument_name.lower() == 'kipp_zonen':
-                formula = formula_lookup[station]['kipp_zonen']['GLOBAL']
-        except KeyError as err:
-            msg = f'Unable to get broad-band formula for file {ipath}: {err}'
-            LOGGER.error(msg)
-            raise err
 
         # common broad-band fields
         try:
@@ -485,27 +457,26 @@ def compute_uv_index(ipath, extcsv, dataset, station,
             }
             time = times[i]
             irradiance = irradiances[i]
-            if '*' in formula:
-                try:
-                    irradiance_f = float(irradiance)
-                except Exception:
-                    msg = ('Unable to make float for irradiance:'
-                           f' {irradiance}. Time: {time}')
-                    LOGGER.error(msg)
-                    continue
+            try:
+                irradiance_f = float(irradiance)
+            except Exception:
+                msg = ('Unable to make float for irradiance:'
+                       f' {irradiance}. Time: {time}')
+                LOGGER.error(msg)
+                continue
 
-                uv = irradiance_f * 40
+            uv = irradiance_f * 40
 
-                qa_result = qa(country, uv)
+            qa_result = qa(country, uv)
 
-                package['uv'] = uv
-                package['date'] = date
-                package['time'] = time
-                package['utcoffset'] = utcoffset
-                package['zen_angle'] = None
-                package['qa'] = qa_result
+            package['uv'] = uv
+            package['date'] = date
+            package['time'] = time
+            package['utcoffset'] = utcoffset
+            package['zen_angle'] = None
+            package['qa'] = qa_result
 
-                uv_packages.append(package)
+            uv_packages.append(package)
 
     LOGGER.debug('Done compute_uv_index().')
 
@@ -537,50 +508,6 @@ def generate_uv_index(archivedir, update, start_year, end_year, bypass):
     if archivedir is None:
         raise RuntimeError('Missing required on disk archive')
 
-    # load formula-lookup
-    LOGGER.info('Loading formula lookup resource...')
-    resource_dir = config.WDR_UV_INDEX_FORMULA_LOOKUP
-    formula_lookup = {}
-    csv_rows = csv.reader(open(resource_dir))
-
-    for row in csv_rows:
-        station_id = row[0].strip()
-        brewer_formula = row[1].strip()
-        biosphere_formula = row[5].strip()
-        biometer_formula = row[9].strip()
-        kipp_formula = row[12].strip()
-
-        if station_id != '':
-            if station_id not in formula_lookup.keys():
-                formula_lookup[station_id] = {
-                    'brewer': {},
-                    'biospherical': {},
-                    'biometer': {},
-                    'kipp_zonen': {}
-                    }
-                if brewer_formula != '':
-                    form_toks = brewer_formula.split('.')
-                    table = form_toks[0]
-                    formula = form_toks[1]
-                    formula_lookup[station_id]['brewer'][table] = formula
-                if biosphere_formula != '':
-                    form_toks = biosphere_formula.split('.')
-                    table = form_toks[0]
-                    formula = form_toks[1]
-                    formula_lookup[station_id]['biospherical'][table] = formula
-                if biometer_formula != '':
-                    form_toks = biometer_formula.split('.')
-                    table = form_toks[0]
-                    formula = form_toks[1]
-                    formula_lookup[station_id]['biometer'][table] = formula
-                if kipp_formula != '':
-                    form_toks = kipp_formula.split('.')
-                    table = form_toks[0]
-                    formula = form_toks[1]
-                    formula_lookup[station_id]['kipp_zonen'][table] = formula
-
-    LOGGER.info('Loaded formula lookup resource.')
-
     LOGGER.info('Computing UV-index...')
-    execute(archivedir, formula_lookup, update, start_year, end_year, bypass)
+    execute(archivedir, update, start_year, end_year, bypass)
     LOGGER.info('Done.')

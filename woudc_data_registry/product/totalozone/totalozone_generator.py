@@ -54,6 +54,7 @@ from woudc_data_registry.models import TotalOzone, Instrument
 from woudc_data_registry import registry
 from woudc_data_registry.util import read_file
 from woudc_data_registry.epicentre.metadata import add_metadata
+from woudc_data_registry.processing import correct_instrument_value
 
 LOGGER = logging.getLogger(__name__)
 
@@ -100,9 +101,10 @@ def execute(path, bypass):
                     station_id = extcsv.extcsv['PLATFORM']['ID'][0]
                     country = extcsv.extcsv['PLATFORM']['Country'][0]
                     instrument_name = extcsv.extcsv['INSTRUMENT']['Name'][0]
-                    instrument_model = extcsv.extcsv['INSTRUMENT']['Model'][0]
-                    instrument_number = \
-                        extcsv.extcsv['INSTRUMENT']['Number'][0]
+                    instrument_model = correct_instrument_value(
+                        extcsv.extcsv['INSTRUMENT']['Model'][0], 'model')
+                    instrument_number = correct_instrument_value(
+                        extcsv.extcsv['INSTRUMENT']['Number'][0], 'serial')
                     instrument_latitude = \
                         extcsv.extcsv['LOCATION']['Latitude'][0]
                     instrument_longitude = \
