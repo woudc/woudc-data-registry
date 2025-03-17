@@ -88,8 +88,11 @@ dropdb:
 flake8:
 	flake8 woudc_data_registry
 
+bps-migrate:
+	. migration/bps/.migration.env && migration/bps/get-bps-metadata.sh -o data
+
 init:
-	woudc-data-registry admin init -d $(DATA)
+	woudc-data-registry admin init -d data/
 
 package:
 	python3 setup.py sdist bdist_wheel
@@ -105,6 +108,14 @@ setup_data:
 teardown:
 	woudc-data-registry admin registry teardown
 	woudc-data-registry admin search teardown
+
+reset:
+	@echo "This command will wipe out the following:"; \
+	echo "- ES indexes with basename '${WDR_SEARCH_INDEX_BASENAME}' on $(shell echo ${WDR_SEARCH_URL} | sed 's|^[^@]*@||' | sed 's|/.*||')"; \
+	echo "- Registry database '${WDR_DB_NAME}' on ${WDR_DB_HOST}"; \
+	echo ""; \
+	echo "Then it will fully rebuild the registry and search index with your initial data."; \
+	read -p "Are you sure you want to proceed? (y/N) " confirm && [ "$$confirm" = "y" ] && $(MAKE) --no-print-directory teardown bps-migrate setup init || echo "Aborted."
 
 test:
 	python3 setup.py test
