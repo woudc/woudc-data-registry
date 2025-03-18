@@ -118,6 +118,14 @@ MAPPINGS = {
             'data_class': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
+            },
+            'dataset_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'dataset_level': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
             }
         }
     },
@@ -423,7 +431,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'contributor': {
+            'contributor_acronym': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -679,7 +687,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'contributor_acronym': {
+            'contributor_id': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -763,7 +771,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'contributor_acronym': {
+            'contributor_id': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -871,7 +879,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'contributor_acronym': {
+            'contributor_id': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -997,7 +1005,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'contributor_acronym': {
+            'contributor_id': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -1310,8 +1318,8 @@ class SearchIndex(object):
 
             LOGGER.debug(f'Indexing documents into {index_name}')
             try:
-                # Perform the bulk operation without using 'success'
-                failed = helpers.bulk(
+                # Perform the bulk operation
+                success_count, failed = helpers.bulk(
                     self.connection,
                     wrapper,
                     raise_on_error=False,
@@ -1323,11 +1331,16 @@ class SearchIndex(object):
                         f"Some documents failed to index in '{index_name}'.")
                     for fail in failed:
                         LOGGER.error(f"Failure: {fail}")
-                    raise SearchIndexError(
-                        f"{len(failed)} documents failed to index "
-                        f"in '{index_name}'.\n"
+                    click.echo(
+                        f"[WARNING] {len(failed)} documents failed to index "
+                        f"in '{index_name}'. "
                         "Check error logs for details."
                     )
+                if success_count > 0:
+                    LOGGER.info(f"Successfully indexed {success_count} "
+                                f" documents into '{index_name}'.")
+                    click.echo(f"[SUCCESS] {success_count} documents indexed "
+                               f"into '{index_name}'.")
 
             except TlsError as err:
                 msg = (

@@ -154,7 +154,7 @@ class Contributor(base):
     contributor_id = Column(String, primary_key=True)
 
     name = Column(String, nullable=False)
-    acronym = Column(String, nullable=False, unique=True)
+    acronym = Column(String, nullable=False)
     country_id = Column(String, ForeignKey('countries.country_id'),
                         nullable=False)
     project_id = Column(String, ForeignKey('projects.project_id'),
@@ -255,20 +255,19 @@ class Dataset(base):
     __tablename__ = 'datasets'
 
     id_field = 'dataset_id'
-    id_dependencies = []  # No ID dependencies
+    id_dependencies = ['dataset_name', 'dataset_level']
 
     dataset_id = Column(String, primary_key=True)
 
     data_class = Column(String, nullable=False)
+    dataset_name = Column(String, nullable=False)
+    dataset_level = Column(String, nullable=False)
 
     def __init__(self, dict_):
-        if dict_['dataset_id'] == 'UmkehrN14':
-            self.dataset_id = '_'.join([dict_['dataset_id'],
-                                        str(dict_['data_level'])])
-        else:
-            self.dataset_id = dict_['dataset_id']
-
         self.data_class = dict_['data_class']
+        self.dataset_level = str(dict_['dataset_level'])
+        self.dataset_name = dict_['dataset_name']
+        self.dataset_id = f"{self.dataset_name}_{self.dataset_level}"
 
     @property
     def __geo_interface__(self):
@@ -278,7 +277,9 @@ class Dataset(base):
             'geometry': None,
             'properties': {
                 'identifier': self.dataset_id,
-                'data_class': self.data_class
+                'data_class': self.data_class,
+                'dataset_name': self.dataset_name,
+                'dataset_level': self.dataset_level
             }
         }
 
@@ -321,11 +322,9 @@ class Instrument(base):
 
     def __init__(self, dict_):
         self.station_id = dict_['station_id']
-        if dict_['dataset_id'] == 'UmkehrN14':
-            self.dataset_id = '_'.join([dict_['dataset_id'],
-                                        str(dict_['data_level'])])
-        else:
-            self.dataset_id = dict_['dataset_id']
+        self.dataset_name = dict_['dataset_name']
+        self.dataset_level = dict_['dataset_level']
+        self.dataset_form = str(dict_.get('dataset_form', '1'))  # noqa; defaults to '1' if empty/none/no Key found
         self.contributor = dict_['contributor']
         self.project = dict_['project']
 
@@ -357,14 +356,10 @@ class Instrument(base):
     def __geo_interface__(self):
         waf_basepath = config.WDR_WAF_BASEURL
 
-        if 'UmkehrN14' in self.dataset_id:
-            if '1.0' in self.dataset_id:
-                dataset_folder = 'UmkehrN14_1.0_1'
-            else:
-                dataset_folder = 'UmkehrN14_2.0_1'
-        else:
-            dataset_folder = f'{self.dataset_id}_1.0_1'
+        # dataset_form not saved in Instrument registry; defaults to form 1
+        self.dataset_form = '1'
 
+        dataset_folder = f'{self.dataset_id}_{self.dataset_form}'
         station_folder = f'{self.station.station_type.lower()}{self.station_id}'  # noqa
         instrument_folder = self.name.lower()
 
@@ -395,6 +390,8 @@ class Instrument(base):
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
+        self.dataset_id = f"{self.dataset_name}_{self.dataset_level}"
+
         if hasattr(self, 'contributor') and hasattr(self, 'project'):
             self.deployment_id = ':'.join([self.station_id, self.contributor,
                                           self.project])
@@ -670,7 +667,7 @@ class Deployment(base):
                 'station_name': self.station.station_name.name,
                 'country_name_en': self.station.country.name_en,
                 'country_name_fr': self.station.country.name_fr,
-                'contributor': self.contributor.acronym,
+                'contributor_acronym': self.contributor.acronym,
                 'contributor_name': self.contributor.name,
                 'contributor_project': self.contributor.project_id,
                 'contributor_url': self.contributor.url,
@@ -723,8 +720,7 @@ class DataRecord(base):
     # Extended CSV core fields
     content_class = Column(String, ForeignKey('projects.project_id'),
                            nullable=False)
-    content_category = Column(String, ForeignKey('datasets.dataset_id'),
-                              nullable=False)
+    content_category = Column(String, nullable=False)
     content_level = Column(String, nullable=False)
     content_form = Column(String, nullable=False)
 
@@ -733,6 +729,8 @@ class DataRecord(base):
     data_generation_version = Column(String, nullable=False)
     data_generation_scientific_authority = Column(String, nullable=True)
 
+    dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
+                        nullable=False)
     station_id = Column(String, ForeignKey('stations.station_id'),
                         nullable=False)
     instrument_id = Column(String, ForeignKey('instruments.instrument_id'),
@@ -802,6 +800,8 @@ class DataRecord(base):
         self._instrument_model = str(ecsv.extcsv['INSTRUMENT']['Model'])
         self._instrument_number = str(ecsv.extcsv['INSTRUMENT']['Number'])
 
+        self.dataset_id = f"{self.content_category}_{self.content_level}"
+
         self.deployment_id = ':'.join([
             self.station_id,
             self.data_generation_agency,
@@ -812,7 +812,7 @@ class DataRecord(base):
             self.instrument_name,
             self.instrument_model,
             self.instrument_number,
-            self.content_category,
+            self.dataset_id,
             self.deployment_id
         ])
 
@@ -940,7 +940,7 @@ class DataRecord(base):
         else:
             dataset_only = self.content_category
 
-        datasetdirname = f'{dataset_only}_{self.content_level}_{self.content_form}'  # noqa'
+        datasetdirname = f'{dataset_only}_{self.content_level}_{self.content_form}'  # noqa
 
         url_tokens = [
             basepath.rstrip('/'),
@@ -1202,8 +1202,8 @@ class PeerDataRecord(base):
     stn_type_enum = Enum('land', 'landFixed', 'landOnIce', name='stn_type')
 
     station_type = Column(stn_type_enum, nullable=False, default='land')
-    contributor_acronym = Column(String, ForeignKey('contributors.acronym'),
-                                 nullable=True)
+    contributor_id = Column(String, ForeignKey('contributors.contributor_id'),
+                            nullable=True)
     gaw_id = Column(String, nullable=True)
     country_id = Column(String, ForeignKey('countries.country_id'),
                         nullable=False)
@@ -1251,7 +1251,7 @@ class PeerDataRecord(base):
         self.source = dict_['source']
         self.measurement = dict_['measurement']
 
-        self.contributor_acronym = dict_['contributor_acronym']
+        self.contributor_id = dict_['contributor_id']
         self.station_id = dict_['station_id']
         self.station_name_id = f"{self.station_id}:{dict_['station_name']}"
         self.station_type = dict_['station_type']
@@ -1314,7 +1314,7 @@ class PeerDataRecord(base):
                 'station_type': self.station_type,
                 'gaw_url': f'{gaw_baseurl}/{gaw_pagename}',
                 'gaw_id': self.gaw_id,
-                'contributor_acronym': self.contributor_acronym,
+                'contributor_id': self.contributor_id,
                 'contributor_url':
                 self.contributor_url,
                 'country_id': self.country_id,
@@ -1430,9 +1430,8 @@ class UVIndex(base):
     def get_waf_path(self, dict_):
         """generate WAF url"""
 
-        datasetdirname = '{}_{}_{}'.format(self.dataset_id,
-                                           dict_['dataset_level'],
-                                           dict_['dataset_form'])
+        datasetdirname = f"{self.dataset_id}_{dict_['dataset_form']}"
+
         timestamp_date = datetime.datetime.strptime(
             dict_['timestamp_date'], '%Y-%m-%d').date()
         url_tokens = [
@@ -1467,8 +1466,8 @@ class UVIndex(base):
                 'station_gaw_url': f'{gaw_baseurl}/{gaw_pagename}',
                 'contributor_name':
                 self.instrument.deployment.contributor.name,
-                'contributor_acronym':
-                self.instrument.deployment.contributor.acronym,
+                'contributor_id':
+                self.instrument.deployment.contributor.contributor_id,
                 'contributor_url':
                 self.instrument.deployment.contributor.url,
                 'country_id': self.station.country.country_id,
@@ -1592,7 +1591,7 @@ class TotalOzone(base):
     def get_waf_path(self, dict_):
         """generate WAF url"""
 
-        datasetdirname = f"{self.dataset_id}_{dict_['dataset_level']}_{dict_['dataset_form']}"  # noqa
+        datasetdirname = f"{self.dataset_id}_{dict_['dataset_form']}"
         timestamp_date = datetime.datetime.strptime(
             dict_['timestamp_date'], '%Y-%m-%d').date()
         url_tokens = [
@@ -1627,8 +1626,8 @@ class TotalOzone(base):
                 'station_gaw_url': f'{gaw_baseurl}/{gaw_pagename}',
                 'contributor_name':
                 self.instrument.deployment.contributor.name,
-                'contributor_acronym':
-                self.instrument.deployment.contributor.acronym,
+                'contributor_id':
+                self.instrument.deployment.contributor.contributor_id,
                 'contributor_url':
                 self.instrument.deployment.contributor.url,
                 'country_id': self.station.country.country_id,
@@ -1763,7 +1762,7 @@ class OzoneSonde(base):
     def get_waf_path(self, dict_):
         """generate WAF url"""
 
-        datasetdirname = f"{self.dataset_id}_{dict_['dataset_level']}_{ dict_['dataset_form']}"  # noqa
+        datasetdirname = f"{self.dataset_id}_{dict_['dataset_form']}"
         timestamp_date = datetime.datetime.strptime(
             dict_['timestamp_date'], '%Y-%m-%d').date()
         url_tokens = [
@@ -1798,8 +1797,8 @@ class OzoneSonde(base):
                 'station_gaw_url': f'{gaw_baseurl}/{gaw_pagename}',
                 'contributor_name':
                 self.instrument.deployment.contributor.name,
-                'contributor_acronym':
-                self.instrument.deployment.contributor.acronym,
+                'contributor_id':
+                self.instrument.deployment.contributor.contributor_id,
                 'contributor_url':
                 self.instrument.deployment.contributor.url,
                 'country_id': self.station.country.country_id,
@@ -2335,13 +2334,17 @@ def init(ctx, datadir, init_search_index):
             discovery_metadata_ = DiscoveryMetadata(row)
             discovery_metadata_models.append(discovery_metadata_)
 
-    click.echo('Loading station dobson corrections items')
-    with open(station_dobson_corrections) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            station_dobson_corrections = StationDobsonCorrections(row)
-            station_dobson_corrections_models.append(
-                station_dobson_corrections)
+    try:
+        click.echo('Loading station dobson corrections items')
+        with open(station_dobson_corrections) as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                station_dobson_corrections = StationDobsonCorrections(row)
+                station_dobson_corrections_models.append(
+                    station_dobson_corrections)
+    except FileNotFoundError:
+        click.echo(f"[WARNING] File not found: {station_dobson_corrections}. "
+                   "Skipping loading of station dobson corrections.")
 
     click.echo('Storing projects in data registry')
     for model in project_models:

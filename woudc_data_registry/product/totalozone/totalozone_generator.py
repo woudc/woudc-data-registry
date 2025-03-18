@@ -93,9 +93,9 @@ def execute(path, bypass):
                 # get metadata fields
                 try:
                     agency = extcsv.extcsv['DATA_GENERATION']['Agency'][0]
-                    dataset_id = extcsv.extcsv['CONTENT']['Category'][0]
-                    level = extcsv.extcsv['CONTENT']['Level'][0]
-                    form = extcsv.extcsv['CONTENT']['Form'][0]
+                    dataset_name = extcsv.extcsv['CONTENT']['Category'][0]
+                    dataset_level = extcsv.extcsv['CONTENT']['Level'][0]
+                    dataset_form = extcsv.extcsv['CONTENT']['Form'][0]
                     project_id = extcsv.extcsv['CONTENT']['Class'][0]
                     station_type = extcsv.extcsv['PLATFORM']['Type'][0]
                     station_id = extcsv.extcsv['PLATFORM']['ID'][0]
@@ -142,6 +142,7 @@ def execute(path, bypass):
                     continue
 
                 # form ids for data insert
+                dataset_id = f"{dataset_name}_{str(dataset_level)}"
                 contributor_id = ':'.join([agency, project_id])
                 deployment_id = ':'.join([station_id, contributor_id])
                 instrument_id = ':'.join([instrument_name,
@@ -168,6 +169,8 @@ def execute(path, bypass):
                         instrument_ = {
                             'station_id': station_id,
                             'dataset_id': dataset_id,
+                            'dataset_name': dataset_name,
+                            'dataset_level': dataset_level,
                             'contributor': agency,
                             'project': project_id,
                             'name': instrument_name,
@@ -192,8 +195,8 @@ def execute(path, bypass):
                             'file_path': ipath,
                             'filename': filename,
                             'dataset_id': dataset_id,
-                            'dataset_level': level,
-                            'dataset_form': form,
+                            'dataset_level': dataset_level,
+                            'dataset_form': dataset_form,
                             'station_id': station_id,
                             'station_type': station_type,
                             'country_id': country,

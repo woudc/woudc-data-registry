@@ -118,7 +118,7 @@ def orchestrate(source, working_dir, metadata_only=False,
         for file_to_process, contributor in run_:
             click.echo(f'Processing filename: {file_to_process}')
 
-            LOGGER.info('Detecting file')
+            LOGGER.info(f'Detecting file: {file_to_process}')
             if not is_text_file(file_to_process):
                 _, is_error = op_report.add_message(101)
                 if is_error:

@@ -468,7 +468,9 @@ class Process(object):
         """
 
         project_id = self.extcsv.extcsv['CONTENT']['Class']
-        dataset_id = self.extcsv.extcsv['CONTENT']['Category']
+        dataset = self.extcsv.extcsv['CONTENT']['Category']
+        dataset_level = str(self.extcsv.extcsv['CONTENT']['Level'])
+        dataset_id = f"{dataset}_{dataset_level}"
         station_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
         country_id = self.extcsv.extcsv['PLATFORM']['Country']
 
@@ -526,7 +528,9 @@ class Process(object):
         """
 
         project_id = self.extcsv.extcsv['CONTENT']['Class']
-        dataset_id = self.extcsv.extcsv['CONTENT']['Category']
+        dataset = self.extcsv.extcsv['CONTENT']['Category']
+        dataset_level = str(self.extcsv.extcsv['CONTENT']['Level'])
+        dataset_id = f"{dataset}_{dataset_level}"
         station_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
 
         timestamp_date = self.extcsv.extcsv['TIMESTAMP']['Date']
@@ -590,23 +594,23 @@ class Process(object):
 
         dataset = self.extcsv.extcsv['CONTENT']['Category']
         level = self.extcsv.extcsv['CONTENT']['Level']
+        dataset_id = f"{dataset}_{level}"
 
-        if dataset == 'UmkehrN14':
-            dataset = '_'.join([dataset, str(level)])
-
-        LOGGER.debug(f'Validating dataset {dataset}')
-        dataset_model = {'dataset_id': dataset}
+        LOGGER.debug(f'Validating dataset {dataset_id}')
+        dataset_model = {'dataset_id': dataset_id}
 
         fields = ['dataset_id']
         response = self.registry.query_multiple_fields(Dataset, dataset_model,
                                                        fields, fields)
         if response:
-            LOGGER.debug(f'Match found for dataset {dataset}')
-            self.extcsv.extcsv['CONTENT']['Category'] = response.dataset_id
+            LOGGER.debug(f'Match found for dataset {dataset_id}')
+            self.extcsv.extcsv['CONTENT']['Category'] = (
+                response.dataset_id.rsplit('_', 1)[0]
+            )
             return True
         else:
             line = self.extcsv.line_num('CONTENT') + 2
-            return self._add_to_report(308, line, value=dataset)
+            return self._add_to_report(308, line, value=dataset_id)
 
     def check_contributor(self):
         """
@@ -1249,22 +1253,27 @@ class ProcessingError(Exception):
     pass
 
 
-def correct_instrument_value(instrument_value, type):
+def correct_instrument_value(instrument_value, value_type):
     """
     Corrects the values for the instrument table if not already in the correct
     format.
 
-    Prerequisite: #INSTRUMENT.Number and/or  #INSTRUMENT.model
+    Prerequisite: #INSTRUMENT.Number and/or #INSTRUMENT.Model
 
-    :returns: Corrected value
+    :param instrument_value: The value of the instrument (serial number or
+    model).
+    :param value_type: The type of value ('serial' or other).
+    :return: Corrected instrument value.
     """
-    if not instrument_value or instrument_value.lower() in ['na', 'n/a']:
-        return 'UNKNOWN'
+    # Convert to string to handle non-string inputs (e.g., numbers)
+    instrument_value = str(instrument_value).strip()
 
-    if instrument_value.lower() == 'unknown':
-        return 'UNKNOWN'
+    if not instrument_value or instrument_value.lower() in {
+        "na", "n/a", "unknown"
+    }:
+        return "UNKNOWN"
 
-    if type == 'serial':
-        instrument_value = instrument_value.lstrip('0') or '0'
+    if value_type == "serial":
+        return instrument_value.lstrip("0") or "0"
 
     return instrument_value

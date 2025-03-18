@@ -72,7 +72,7 @@ fi
 
 PROJECTS_QUERY="SELECT DISTINCT(project.project_acronym) AS project_id FROM project"
 
-DATASETS_QUERY="SELECT data_category AS dataset_id, data_class, data_level FROM dataset_type_definition ORDER BY data_category, data_level"
+DATASETS_QUERY="SELECT data_category AS dataset_name, data_class, data_level AS dataset_level FROM dataset_type_definition ORDER BY data_category, dataset_level"
 
 CONTRIBUTORS_QUERY="SELECT agency.agency_name AS name, agency.acronym  AS acronym, country.country_code AS country_id, project.project_acronym AS project_id, country.wmo_region AS wmo_region_id, agency.url, REPLACE(email.email_address, ',', ';') AS email, agency.ftpdir AS ftp_username, DATE(agency.eff_start_datetime) AS start_date, DATE(agency.eff_end_datetime) AS end_date, ST_X(agency.the_geom) AS x, ST_Y(agency.the_geom) AS y FROM agency JOIN country USING (country_id) JOIN email USING (email_id) JOIN project USING (project_id) ORDER BY name, acronym, country_id"
 
@@ -80,7 +80,7 @@ STATIONS_QUERY="SELECT DISTINCT ON (station_id) platform.woudc_platform_identifi
 
 STATION_NAMES_QUERY="(SELECT DISTINCT woudc_platform_identifier AS station_id, data_payload.platform_name AS name FROM data_payload FULL JOIN platform ON data_payload.platform_id = platform.platform_id WHERE data_payload.platform_name IS NOT NULL) UNION (SELECT DISTINCT woudc_platform_identifier AS station_id, platform_name AS name FROM platform) ORDER BY station_id, name"
 
-INSTRUMENTS_QUERY="SELECT platform.woudc_platform_identifier AS station_id, dtd.data_category AS dataset_id, dtd.data_level AS data_level, itd.instrument_type AS name, im.instrument_model AS model, instrument.instrument_serial_number AS serial, agency.acronym AS contributor, project_acronym AS project, DATE(instrument.eff_start_datetime) AS start_date, DATE(instrument.eff_end_datetime) AS end_date, ST_X(instrument.the_geom) AS x, ST_Y(instrument.the_geom) AS y, ST_Z(instrument.the_geom) AS z FROM instrument JOIN platform USING (platform_id) JOIN agency USING (agency_id) JOIN project USING (project_id) JOIN dataset_type_definition dtd USING (dataset_type_id) JOIN instrument_model im USING (instrument_model_id) JOIN instrument_type_definition itd USING (instrument_type_id) ORDER BY station_id, dataset_id, data_level, name, model, serial"
+INSTRUMENTS_QUERY="SELECT platform.woudc_platform_identifier AS station_id, dtd.data_category AS dataset_name, dtd.data_level AS dataset_level, itd.instrument_type AS name, im.instrument_model AS model, instrument.instrument_serial_number AS serial, agency.acronym AS contributor, project_acronym AS project, DATE(instrument.eff_start_datetime) AS start_date, DATE(instrument.eff_end_datetime) AS end_date, ST_X(instrument.the_geom) AS x, ST_Y(instrument.the_geom) AS y, ST_Z(instrument.the_geom) AS z FROM instrument JOIN platform USING (platform_id) JOIN agency USING (agency_id) JOIN project USING (project_id) JOIN dataset_type_definition dtd USING (dataset_type_id) JOIN instrument_model im USING (instrument_model_id) JOIN instrument_type_definition itd USING (instrument_type_id) ORDER BY station_id, dataset_name, dataset_level, name, model, serial"
 
 DEPLOYMENTS_QUERY="SELECT platform.woudc_platform_identifier AS station_id, CONCAT(agency.acronym, ':', project.project_acronym) AS contributor_id, DATE(platform.eff_start_datetime) AS start_date, DATE(platform.eff_end_datetime) AS end_date FROM agency JOIN platform USING (agency_id) JOIN project USING (project_id) ORDER BY station_id, contributor_id"
 

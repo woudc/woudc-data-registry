@@ -480,6 +480,14 @@ def update_extents():
             for (dataset, md) in datasets:
                 if dataset == inputs[input_table]['content_category']:
                     break
+            else:
+                msg = (
+                    "DiscoveryMetadata table does not contain this dataset: "
+                    f"{inputs[input_table]['content_category']}. "
+                    "Did you forget to initialize the database with data?"
+                )
+                LOGGER.error(msg)
+                raise ValueError(msg)
             md_loads = json.loads(md.replace('\\"', '"'))
 
             # Update spatial/temporal extents

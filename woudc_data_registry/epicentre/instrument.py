@@ -68,15 +68,18 @@ def build_instrument(ecsv):
     model = str(ecsv.extcsv['INSTRUMENT']['Model'])
     serial = str(ecsv.extcsv['INSTRUMENT']['Number'])
     station = str(ecsv.extcsv['PLATFORM']['ID'])
-    dataset = ecsv.extcsv['CONTENT']['Category']
+    dataset_name = ecsv.extcsv['CONTENT']['Category']
+    dataset_level = str(ecsv.extcsv['CONTENT']['Level'])
+    dataset_form = str(ecsv.extcsv['CONTENT']['Form'])
     contributor = str(ecsv.extcsv['DATA_GENERATION']['Agency'])
     project = str(ecsv.extcsv['CONTENT']['Class'])
     location = [ecsv.extcsv['LOCATION'].get(f, None)
                 for f in ['Longitude', 'Latitude', 'Height']]
     timestamp_date = ecsv.extcsv['TIMESTAMP']['Date']
 
+    dataset_id = f"{dataset_name}_{dataset_level}"
     instrument_id = ':'.join([name, model, serial,
-                              station, dataset, contributor])
+                              station, dataset_id, contributor])
 
     model = {
         'identifier': instrument_id,
@@ -84,7 +87,10 @@ def build_instrument(ecsv):
         'model': model,
         'serial': serial,
         'station_id': station,
-        'dataset_id': dataset,
+        'dataset_id': dataset_id,
+        'dataset_name': dataset_name,
+        'dataset_level': dataset_level,
+        'dataset_form': dataset_form,
         'contributor': contributor,
         'project': project,
         'start_date': timestamp_date,
@@ -133,7 +139,8 @@ def show(ctx, identifier):
 @click.command('add')
 @click.option('-st', '--station', 'station', required=True,
               help='station ID')
-@click.option('-d', '--dataset', 'dataset', required=True, help='dataset')
+@click.option('-d', '--dataset', 'dataset', required=True,
+              help='dataset ID: [dataset]_[dataset_level]')
 @click.option('-c', '--contributor', 'contributor', required=True,
               help='contributor ID')
 @click.option('-n', '--name', 'name', required=True, help='instrument name')
