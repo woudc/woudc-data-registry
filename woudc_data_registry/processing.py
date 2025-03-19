@@ -273,8 +273,8 @@ class Process(object):
             msg = 'Lax mode detected. NOT validating dataset-specific tables'
             LOGGER.info(msg)
         else:
-            dataset = self.extcsv.extcsv['CONTENT']['Category']
-            dataset_validator = get_validator(dataset, self.reports)
+            dataset_name = self.extcsv.extcsv['CONTENT']['Category']
+            dataset_validator = get_validator(dataset_name, self.reports)
 
             time_series_ok = self.check_time_series()
             dataset_validated = dataset_validator.check_all(self.extcsv)
@@ -468,9 +468,9 @@ class Process(object):
         """
 
         project_id = self.extcsv.extcsv['CONTENT']['Class']
-        dataset = self.extcsv.extcsv['CONTENT']['Category']
+        dataset_name = self.extcsv.extcsv['CONTENT']['Category']
         dataset_level = str(self.extcsv.extcsv['CONTENT']['Level'])
-        dataset_id = f"{dataset}_{dataset_level}"
+        dataset_id = f"{dataset_name}_{dataset_level}"
         station_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
         country_id = self.extcsv.extcsv['PLATFORM']['Country']
 
@@ -528,9 +528,9 @@ class Process(object):
         """
 
         project_id = self.extcsv.extcsv['CONTENT']['Class']
-        dataset = self.extcsv.extcsv['CONTENT']['Category']
+        dataset_name = self.extcsv.extcsv['CONTENT']['Category']
         dataset_level = str(self.extcsv.extcsv['CONTENT']['Level'])
-        dataset_id = f"{dataset}_{dataset_level}"
+        dataset_id = f"{dataset_name}_{dataset_level}"
         station_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
 
         timestamp_date = self.extcsv.extcsv['TIMESTAMP']['Date']
@@ -592,9 +592,9 @@ class Process(object):
                   validated successfully.
         """
 
-        dataset = self.extcsv.extcsv['CONTENT']['Category']
-        level = self.extcsv.extcsv['CONTENT']['Level']
-        dataset_id = f"{dataset}_{level}"
+        dataset_name = self.extcsv.extcsv['CONTENT']['Category']
+        dataset_level = self.extcsv.extcsv['CONTENT']['Level']
+        dataset_id = f"{dataset_name}_{dataset_level}"
 
         LOGGER.debug(f'Validating dataset {dataset_id}')
         dataset_model = {'dataset_id': dataset_id}
@@ -1013,46 +1013,46 @@ class Process(object):
 
         success = True
 
-        dataset = self.extcsv.extcsv['CONTENT']['Category']
-        level = self.extcsv.extcsv['CONTENT']['Level']
-        form = self.extcsv.extcsv['CONTENT']['Form']
+        dataset_name = self.extcsv.extcsv['CONTENT']['Category']
+        dataset_level = self.extcsv.extcsv['CONTENT']['Level']
+        dataset_form = self.extcsv.extcsv['CONTENT']['Form']
 
         valueline = self.extcsv.line_num('CONTENT') + 2
 
-        if not level:
-            if dataset == 'UmkehrN14' and 'C_PROFILE' in self.extcsv.extcsv:
+        if not dataset_level:
+            if dataset_name == 'UmkehrN14' and 'C_PROFILE' in self.extcsv.extcsv:
                 if not self._add_to_report(217, valueline, value=2.0):
                     success = False
-                self.extcsv.extcsv['CONTENT']['Level'] = level = 2.0
+                self.extcsv.extcsv['CONTENT']['Level'] = dataset_level = 2.0
             else:
                 if not self._add_to_report(217, valueline, value=1.0):
                     success = False
-                self.extcsv.extcsv['CONTENT']['Level'] = level = 1.0
-        elif not isinstance(level, float):
+                self.extcsv.extcsv['CONTENT']['Level'] = dataset_level = 1.0
+        elif not isinstance(dataset_level, float):
             try:
-                if not self._add_to_report(218, valueline, oldvalue=level,
-                                           newvalue=float(level)):
+                if not self._add_to_report(218, valueline, oldvalue=dataset_level,
+                                           newvalue=float(dataset_level)):
                     success = False
-                self.extcsv.extcsv['CONTENT']['Level'] = level = float(level)
+                self.extcsv.extcsv['CONTENT']['Level'] = dataset_level = float(dataset_level)
             except ValueError:
                 if not self._add_to_report(310, valueline):
                     success = False
 
-        if dataset in ['UmkehrN14_1.0', 'UmkehrN14_2.0']:
+        if dataset_name in ['UmkehrN14_1.0', 'UmkehrN14_2.0']:
             table_index = 'UmkehrN14'
         else:
-            table_index = dataset
+            table_index = dataset_name
 
-        if str(level) not in DOMAINS['Datasets'][table_index]:
+        if str(dataset_level) not in DOMAINS['Datasets'][table_index]:
             if not self._add_to_report(309, valueline, dataset=dataset):
                 success = False
 
-        if not isinstance(form, int):
+        if not isinstance(dataset_form, int):
             try:
-                if not self._add_to_report(219, valueline, oldvalue=form,
-                                           newvalue=int(form)):
+                if not self._add_to_report(219, valueline, oldvalue=dataset_form,
+                                           newvalue=int(dataset_form)):
                     success = False
-                self.extcsv.extcsv['CONTENT']['Form'] = form = int(form)
+                self.extcsv.extcsv['CONTENT']['Form'] = dataset_form = int(dataset_form)
             except ValueError:
                 if not self._add_to_report(311, valueline):
                     success = False
