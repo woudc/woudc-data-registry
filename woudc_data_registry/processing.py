@@ -469,7 +469,7 @@ class Process(object):
 
         project_id = self.extcsv.extcsv['CONTENT']['Class']
         dataset_name = self.extcsv.extcsv['CONTENT']['Category']
-        dataset_level = str(self.extcsv.extcsv['CONTENT']['Level'])
+        dataset_level = float(self.extcsv.extcsv['CONTENT']['Level'])
         dataset_id = f"{dataset_name}_{dataset_level}"
         station_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
         country_id = self.extcsv.extcsv['PLATFORM']['Country']
@@ -529,7 +529,7 @@ class Process(object):
 
         project_id = self.extcsv.extcsv['CONTENT']['Class']
         dataset_name = self.extcsv.extcsv['CONTENT']['Category']
-        dataset_level = str(self.extcsv.extcsv['CONTENT']['Level'])
+        dataset_level = float(self.extcsv.extcsv['CONTENT']['Level'])
         dataset_id = f"{dataset_name}_{dataset_level}"
         station_id = str(self.extcsv.extcsv['PLATFORM']['ID'])
 
@@ -593,7 +593,7 @@ class Process(object):
         """
 
         dataset_name = self.extcsv.extcsv['CONTENT']['Category']
-        dataset_level = self.extcsv.extcsv['CONTENT']['Level']
+        dataset_level = float(self.extcsv.extcsv['CONTENT']['Level'])
         dataset_id = f"{dataset_name}_{dataset_level}"
 
         LOGGER.debug(f'Validating dataset {dataset_id}')
