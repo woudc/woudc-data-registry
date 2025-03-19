@@ -86,7 +86,7 @@ DEPLOYMENTS_QUERY="SELECT platform.woudc_platform_identifier AS station_id, CONC
 
 NOTIFICATIONS_QUERY="SELECT title_en, title_fr, description_en, description_fr, tags_en, tags_fr, published, banner, visible, ST_X(the_geom) AS x, ST_Y(the_geom) AS y FROM notifications ORDER BY published"
 
-echo "Extracting metadata from woudc-archive"
+echo "Extracting metadata out of $WOUDC_ARCHIVE_DBNAME (archive database) from $WOUDC_ARCHIVE_HOST"
 export PGPASSWORD=$WOUDC_ARCHIVE_PASSWORD
 
 echo " Projects..."
@@ -110,7 +110,7 @@ psql -h $WOUDC_ARCHIVE_HOST -p $WOUDC_ARCHIVE_PORT -d $WOUDC_ARCHIVE_DBNAME -U $
 echo " Deployments..."
 psql -h $WOUDC_ARCHIVE_HOST -p $WOUDC_ARCHIVE_PORT -d $WOUDC_ARCHIVE_DBNAME -U $WOUDC_ARCHIVE_USERNAME -c "\\COPY ($DEPLOYMENTS_QUERY) TO $OUTPUT_DIR/deployments.csv WITH CSV HEADER;"
 
-echo "Extracting metadata from woudc-web-db"
+echo "Extracting metadata out of $WOUDC_DATAMART_DBNAME (web database) from $WOUDC_DATAMART_HOST"
 export PGPASSWORD=$WOUDC_DATAMART_PASSWORD
 
 echo " Notifications..."

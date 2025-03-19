@@ -89,7 +89,7 @@ flake8:
 	flake8 woudc_data_registry
 
 bps-migrate:
-	. migration/bps/.migration.env && migration/bps/get-bps-metadata.sh -o data
+	. migration/bps/migration.env && migration/bps/get-bps-metadata.sh -o data
 
 init:
 	woudc-data-registry admin init -d data/
