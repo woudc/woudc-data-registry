@@ -1020,7 +1020,10 @@ class Process(object):
         valueline = self.extcsv.line_num('CONTENT') + 2
 
         if not dataset_level:
-            if dataset_name == 'UmkehrN14' and 'C_PROFILE' in self.extcsv.extcsv:
+            if (
+                dataset_name == 'UmkehrN14'
+                and 'C_PROFILE' in self.extcsv.extcsv
+            ):
                 if not self._add_to_report(217, valueline, value=2.0):
                     success = False
                 self.extcsv.extcsv['CONTENT']['Level'] = dataset_level = 2.0
@@ -1030,29 +1033,41 @@ class Process(object):
                 self.extcsv.extcsv['CONTENT']['Level'] = dataset_level = 1.0
         elif not isinstance(dataset_level, float):
             try:
-                if not self._add_to_report(218, valueline, oldvalue=dataset_level,
-                                           newvalue=float(dataset_level)):
+                if not self._add_to_report(
+                    218, valueline, oldvalue=dataset_level,
+                    newvalue=float(dataset_level),
+                ):
                     success = False
-                self.extcsv.extcsv['CONTENT']['Level'] = dataset_level = float(dataset_level)
+                self.extcsv.extcsv['CONTENT']['Level'] = dataset_level = float(
+                    dataset_level
+                )
             except ValueError:
                 if not self._add_to_report(310, valueline):
                     success = False
 
-        if dataset_name in ['UmkehrN14_1.0', 'UmkehrN14_2.0']:
+        if dataset_name in [
+            'UmkehrN14_1.0', 'UmkehrN14_2.0'
+        ]:
             table_index = 'UmkehrN14'
         else:
             table_index = dataset_name
 
         if str(dataset_level) not in DOMAINS['Datasets'][table_index]:
-            if not self._add_to_report(309, valueline, dataset=dataset):
+            if not self._add_to_report(
+                309, valueline, dataset=dataset_name
+            ):
                 success = False
 
         if not isinstance(dataset_form, int):
             try:
-                if not self._add_to_report(219, valueline, oldvalue=dataset_form,
-                                           newvalue=int(dataset_form)):
+                if not self._add_to_report(
+                    219, valueline, oldvalue=dataset_form,
+                    newvalue=int(dataset_form),
+                ):
                     success = False
-                self.extcsv.extcsv['CONTENT']['Form'] = dataset_form = int(dataset_form)
+                self.extcsv.extcsv['CONTENT']['Form'] = dataset_form = int(
+                    dataset_form
+                )
             except ValueError:
                 if not self._add_to_report(311, valueline):
                     success = False
