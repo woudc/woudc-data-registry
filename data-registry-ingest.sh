@@ -3,10 +3,7 @@
 # The purpose of this script is to ingest all of the operational WOUDC Archive datasets and rename the generated ingest reports to avoid overwriting
 # Initial setup and table initialization of WOUDC Data Registry is required to run this script
 
-# TODAY=$(date +"%Y-%m-%d")
-TODAY='kevin-test'
-
-INGESTED_FILES_DIR="/apps/data/wdr-ingest/$TODAY"
+INGESTED_FILES_DIR="/apps/data/wdr-ingest/ingested-files"
 DATASET_PATHS=(
     "/apps/data/wdr-ingest/Archive-NewFormat/Broad-band_1.0_1"
     "/apps/data/wdr-ingest/Archive-NewFormat/Broad-band_2.0_1"
