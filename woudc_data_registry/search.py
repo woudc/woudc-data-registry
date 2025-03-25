@@ -1108,7 +1108,9 @@ class SearchIndex(object):
         self.index_basename = config.WDR_SEARCH_INDEX_BASENAME
         self.verify_certs = config.WDR_SEARCH_CERT_VERIFY
 
-        LOGGER.debug('Connecting to Elasticsearch')
+        LOGGER.debug(
+            f"Connecting to Elasticsearch (verify_certs=${self.verify_certs})"
+        )
 
         try:
             self.connection = Elasticsearch(
