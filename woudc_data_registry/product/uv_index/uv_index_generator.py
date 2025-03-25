@@ -81,8 +81,8 @@ def execute(path, update, start_year, end_year, bypass):
         registry_.save()
 
     # traverse directory of files
-    for dataset in datasets:
-        for dirname, dirnames, filenames in os.walk(dataset):
+    for dataset_path in datasets:
+        for dirname, dirnames, filenames in os.walk(dataset_path):
             # only ingest years within range for update command
             if update:
                 split_dir = dirname.split('/')
@@ -117,7 +117,7 @@ def execute(path, update, start_year, end_year, bypass):
                 # get common fields
                 try:
                     dataset_name = extcsv.extcsv['CONTENT']['Category'][0]
-                    dataset_level = extcsv.extcsv['CONTENT']['Level'][0]
+                    dataset_level = float(extcsv.extcsv['CONTENT']['Level'][0])
                     dataset_form = extcsv.extcsv['CONTENT']['Form'][0]
                     project_id = extcsv.extcsv['CONTENT']['Class'][0]
                     station_type = extcsv.extcsv['PLATFORM']['Type'][0]
@@ -148,7 +148,7 @@ def execute(path, update, start_year, end_year, bypass):
                 station = f'{station_type.upper()}{station_id}'
                 dataset_id = f"{dataset_name}_{str(dataset_level)}"
 
-                if dataset.lower() == 'spectral':
+                if dataset_name.lower() == 'spectral':
                     # find max set of table groupings
                     summary_table = 'GLOBAL_SUMMARY_NSF' \
                         if 'GLOBAL_SUMMARY_NSF' in extcsv.extcsv \
@@ -165,7 +165,7 @@ def execute(path, update, start_year, end_year, bypass):
                         max_index = 1
                     try:
                         uv_packages = compute_uv_index(ipath, extcsv,
-                                                       dataset, station,
+                                                       dataset_name, station,
                                                        instrument_name,
                                                        country, max_index)
 
@@ -173,10 +173,10 @@ def execute(path, update, start_year, end_year, bypass):
                         msg = f'Unable to compute UV for file {ipath}: {err}'  # noqa
                         LOGGER.error(msg)
                         continue
-                elif dataset.lower() == 'broad-band':
+                elif dataset_name.lower() == 'broad-band':
                     try:
                         uv_packages = compute_uv_index(ipath, extcsv,
-                                                       dataset, station,
+                                                       dataset_name, station,
                                                        instrument_name,
                                                        country)
                     except Exception as err:
@@ -188,7 +188,7 @@ def execute(path, update, start_year, end_year, bypass):
                     deployment_id = ':'.join([station_id, contributor_id])
                     instrument_id = ':'.join([instrument_name,
                                               instrument_model,
-                                              instrument_number, dataset,
+                                              instrument_number, dataset_id,
                                               deployment_id])
                     # check if instrument is in registry
                     exists = registry_.query_by_field(Instrument,
@@ -211,7 +211,7 @@ def execute(path, update, start_year, end_year, bypass):
                                 'station_id': station_id,
                                 'dataset_id': dataset_id,
                                 'dataset_name': dataset_name,
-                                'dataset_level': dataset_level,
+                                'dataset_level': str(dataset_level),
                                 'contributor': agency,
                                 'project': project_id,
                                 'name': instrument_name,
@@ -239,7 +239,7 @@ def execute(path, update, start_year, end_year, bypass):
                             'file_path': ipath,
                             'filename': filename,
                             'dataset_id': dataset_id,
-                            'dataset_level': dataset_level,
+                            'dataset_level': str(dataset_level),
                             'dataset_form': dataset_form,
                             'station_id': station_id,
                             'station_type': station_type,
