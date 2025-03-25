@@ -105,6 +105,12 @@ setup_data:
 	mkdir -p data
 	curl -o data/wmo-countries.json https://www.wmo.int/cpdb/data/membersandterritories.json
 
+sync:
+	woudc-data-registry admin search sync
+
+sync-product:
+	woudc-data-registry admin search product-sync
+
 teardown:
 	woudc-data-registry admin registry teardown
 	woudc-data-registry admin search teardown
@@ -115,7 +121,7 @@ reset:
 	echo "- Registry database '${WDR_DB_NAME}' on ${WDR_DB_HOST}"; \
 	echo ""; \
 	echo "Then it will fully rebuild the registry and search index with your initial data."; \
-	read -p "Are you sure you want to proceed? (y/N) " confirm && [ "$$confirm" = "y" ] && $(MAKE) --no-print-directory teardown bps-migrate setup init || echo "Aborted."
+	read -p "Are you sure you want to proceed? (y/N) " confirm && [ "$$confirm" = "y" ] && $(MAKE) --no-print-directory teardown bps-migrate setup init sync || echo "Aborted."
 
 test:
 	python3 setup.py test
