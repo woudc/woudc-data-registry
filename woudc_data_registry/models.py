@@ -372,7 +372,7 @@ class Instrument(base):
                 'station_id': self.station_id,
                 'station_name': self.station.station_name.name,
                 'data_class': self.dataset.data_class,
-                'dataset': self.dataset_id,
+                'dataset_id': self.dataset_id,
                 'contributor_name': self.deployment.contributor.name,
                 'name': self.name,
                 'model': self.model,
@@ -965,6 +965,7 @@ class DataRecord(base):
                 'content_category': self.content_category,
                 'content_level': self.content_level,
                 'content_form': self.content_form,
+                'dataset_id': self.dataset_id,
 
                 'data_generation_date':
                     strftime_rfc3339(self.data_generation_date),

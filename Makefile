@@ -101,6 +101,9 @@ setup:
 	woudc-data-registry admin registry setup
 	woudc-data-registry admin search setup
 
+setup-search:
+	woudc-data-registry admin search setup
+
 setup_data:
 	mkdir -p data
 	curl -o data/wmo-countries.json https://www.wmo.int/cpdb/data/membersandterritories.json
@@ -115,13 +118,22 @@ teardown:
 	woudc-data-registry admin registry teardown
 	woudc-data-registry admin search teardown
 
+teardown-search:
+	woudc-data-registry admin search teardown
+
 reset:
 	@echo "This command will wipe out the following:"; \
-	echo "- ES indexes with basename '${WDR_SEARCH_INDEX_BASENAME}' on $(shell echo ${WDR_SEARCH_URL} | sed 's|^[^@]*@||' | sed 's|/.*||')"; \
+	echo "- ES indexes with prefix '${WDR_SEARCH_INDEX_BASENAME}.' on $(shell echo ${WDR_SEARCH_URL} | sed 's|^[^@]*@||' | sed 's|/.*||')"; \
 	echo "- Registry database '${WDR_DB_NAME}' on ${WDR_DB_HOST}"; \
 	echo ""; \
 	echo "Then it will fully rebuild the registry and search index with your initial data."; \
 	read -p "Are you sure you want to proceed? (y/N) " confirm && [ "$$confirm" = "y" ] && $(MAKE) --no-print-directory teardown bps-migrate setup init sync || echo "Aborted."
+
+reset-search:
+	@echo "This command will wipe out ES indexes with prefix '${WDR_SEARCH_INDEX_BASENAME}.' on $(shell echo ${WDR_SEARCH_URL} | sed 's|^[^@]*@||' | sed 's|/.*||')"; \
+	echo ""; \
+	echo "Then it will fully rebuild the search indices with your data from '${WDR_DB_NAME}' on ${WDR_DB_HOST}."; \
+	read -p "Are you sure you want to proceed? (y/N) " confirm && [ "$$confirm" = "y" ] && $(MAKE) --no-print-directory teardown-search setup-search sync || echo "Aborted."
 
 test:
 	python3 setup.py test

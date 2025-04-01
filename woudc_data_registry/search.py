@@ -370,7 +370,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'dataset': {
+            'dataset_id': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -477,6 +477,10 @@ MAPPINGS = {
             },
             'content_level': {
                 'type': 'float'
+            },
+            'dataset_id': {
+                'type': 'keyword',
+                'fields': {'raw': typedefs['keyword']}
             },
             'data_generation_agency': {
                 'type': 'text',
