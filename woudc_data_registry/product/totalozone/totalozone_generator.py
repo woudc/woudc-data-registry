@@ -76,8 +76,12 @@ def execute(path, bypass):
     registry_.save()
 
     # traverse directory of files
-    for dataset in datasets:
-        for dirname, dirnames, filenames in os.walk(dataset):
+    previously_seen_instrument = []
+    for dataset_path in datasets:
+        for dirname, dirnames, filenames in os.walk(dataset_path):
+            successful_files = []
+            unsuccessful_files = []
+            LOGGER.info(f'Parsing through directory: {dirname}')
             for filename in filenames:
                 ipath = os.path.join(dirname, filename)
                 contents = read_file(ipath)
@@ -88,6 +92,7 @@ def execute(path, bypass):
                 except Exception as err:
                     msg = f'Unable to parse extcsv {ipath}: {err}'
                     LOGGER.error(msg)
+                    unsuccessful_files.append(ipath)
                     continue
 
                 # get metadata fields
@@ -100,7 +105,8 @@ def execute(path, bypass):
                     station_type = extcsv.extcsv['PLATFORM']['Type'][0]
                     station_id = extcsv.extcsv['PLATFORM']['ID'][0]
                     country = extcsv.extcsv['PLATFORM']['Country'][0]
-                    instrument_name = extcsv.extcsv['INSTRUMENT']['Name'][0]
+                    instrument_name = correct_instrument_value(
+                        extcsv.extcsv['INSTRUMENT']['Name'][0], 'name')
                     instrument_model = correct_instrument_value(
                         extcsv.extcsv['INSTRUMENT']['Model'][0], 'model')
                     instrument_number = correct_instrument_value(
@@ -114,6 +120,7 @@ def execute(path, bypass):
                 except Exception as err:
                     msg = f'Unable to get metadata from extcsv {ipath}: {err}'
                     LOGGER.error(msg)
+                    unsuccessful_files.append(ipath)
                     continue
 
                 if len(station_id) < 3:
@@ -125,21 +132,24 @@ def execute(path, bypass):
                     wlcode = extcsv.extcsv['DAILY']['WLCode']
                     obscode = extcsv.extcsv['DAILY']['ObsCode']
                     columno3 = extcsv.extcsv['DAILY']['ColumnO3']
-                    stddevo3 = extcsv.extcsv['DAILY']['StdDevO3']
-                    utc_begin = extcsv.extcsv['DAILY']['UTC_Begin']
-                    utc_end = extcsv.extcsv['DAILY']['UTC_End']
-                    utc_mean = extcsv.extcsv['DAILY']['UTC_Mean']
-                    nobs = extcsv.extcsv['DAILY']['nObs']
-                    mmu = extcsv.extcsv['DAILY']['mMu']
-                    columnso2 = extcsv.extcsv['DAILY']['ColumnSO2']
-                    monthly_date = extcsv.extcsv['MONTHLY']['Date']
-                    npts = extcsv.extcsv['MONTHLY']['Npts']
-                    monthly_co3 = extcsv.extcsv['MONTHLY']['ColumnO3']
-                    monthly_stdevo3 = extcsv.extcsv['MONTHLY']['StdDevO3']
                 except Exception:
                     msg = 'Unable to parse TotalOzone table row from file'
                     LOGGER.error(msg)
                     continue
+
+                stddevo3 = extcsv.extcsv.get('DAILY', {}).get('StdDevO3')
+                utc_begin = extcsv.extcsv.get('DAILY', {}).get('UTC_Begin')
+                utc_end = extcsv.extcsv.get('DAILY', {}).get('UTC_End')
+                utc_mean = extcsv.extcsv.get('DAILY', {}).get('UTC_Mean')
+                nobs = extcsv.extcsv.get('DAILY', {}).get('nObs')
+                mmu = extcsv.extcsv.get('DAILY', {}).get('mMu')
+                columnso2 = extcsv.extcsv.get('DAILY', {}).get('ColumnSO2')
+
+                monthly_date = extcsv.extcsv.get('MONTHLY', {}).get('Date')
+                npts = extcsv.extcsv.get('MONTHLY', {}).get('Npts')
+                monthly_co3 = extcsv.extcsv.get('MONTHLY', {}).get('ColumnO3')
+                monthly_stdevo3 = extcsv.extcsv.get(
+                    'MONTHLY', {}).get('StdDevO3')
 
                 # form ids for data insert
                 dataset_id = f"{dataset_name}_{str(dataset_level)}"
@@ -149,11 +159,13 @@ def execute(path, bypass):
                                           instrument_model,
                                           instrument_number, dataset_id,
                                           deployment_id])
+
                 # check if instrument is in registry
                 exists = registry_.query_by_field(Instrument,
                                                   'instrument_id',
-                                                  instrument_id)
-                if not exists:
+                                                  instrument_id, True)
+                if (not exists and
+                        instrument_id not in previously_seen_instrument):
                     # instrument not found. add it to registry
                     if bypass:
                         LOGGER.info('Skipping instrument addition check')
@@ -181,50 +193,84 @@ def execute(path, bypass):
                             'y': instrument_latitude,
                             'z': instrument_height,
                         }
-                        add_metadata(Instrument, instrument_,
-                                     True, False)
+                        try:
+                            add_metadata(Instrument, instrument_,
+                                         True, False)
+                        except ValueError as e:
+                            LOGGER.error(f'Error adding instrument: {e}.'
+                                         ' Skipping Insertion')
+                    previously_seen_instrument.append(instrument_id)
 
                 first = True
+                success = 0
                 for i in range(len(date)):
                     if conv(columno3[i]):
                         if first:
                             observation_date = conv(date[i])
                             first = False
 
-                        ins_data = {
-                            'file_path': ipath,
-                            'filename': filename,
-                            'dataset_id': dataset_id,
-                            'dataset_level': dataset_level,
-                            'dataset_form': dataset_form,
-                            'station_id': station_id,
-                            'station_type': station_type,
-                            'country_id': country,
-                            'instrument_id': instrument_id,
-                            'instrument_name': instrument_name,
-                            'observation_date': observation_date,
-                            'date': conv(date[i]),
-                            'wlcode': conv(wlcode[i]),
-                            'obscode': conv(obscode[i]),
-                            'columno3': conv(columno3[i]),
-                            'stddevo3': conv(stddevo3[i]),
-                            'utc_begin': conv(utc_begin[i]),
-                            'utc_end': conv(utc_end[i]),
-                            'utc_mean': conv(utc_mean[i]),
-                            'nobs': conv(nobs[i]),
-                            'mmu': conv(mmu[i]),
-                            'columnso2': conv(columnso2[i]),
-                            'monthly_date': conv(monthly_date[0]),
-                            'npts': conv(npts[0]),
-                            'monthly_columno3': conv(monthly_co3[0]),
-                            'monthly_stdevo3': conv(monthly_stdevo3[0]),
-                            'timestamp_date': timestamp_date,
-                            'x': instrument_longitude,
-                            'y': instrument_latitude,
-                            'z': instrument_height,
-                        }
-                    ozone_object = TotalOzone(ins_data)
-                    registry_.save(ozone_object)
+                        try:
+                            ins_data = {
+                                'file_path': ipath,
+                                'filename': filename,
+                                'dataset_id': dataset_id,
+                                'dataset_level': dataset_level,
+                                'dataset_form': dataset_form,
+                                'station_id': station_id,
+                                'station_type': station_type,
+                                'country_id': country,
+                                'instrument_id': exists.instrument_id
+                                if exists else instrument_id,
+                                'instrument_name': instrument_name,
+                                'observation_date': observation_date,
+                                'date': conv(date[i]),
+                                'wlcode': conv(wlcode[i]),
+                                'obscode': conv(obscode[i]),
+                                'columno3': conv(columno3[i]),
+                                'stddevo3': conv(
+                                    stddevo3[i]) if stddevo3 else None,
+                                'utc_begin': conv(
+                                    utc_begin[i]) if utc_begin else None,
+                                'utc_end': conv(
+                                    utc_end[i]) if utc_end else None,
+                                'utc_mean': conv(
+                                    utc_mean[i]) if utc_mean else None,
+                                'nobs': conv(nobs[i]) if nobs else None,
+                                'mmu': conv(mmu[i]) if mmu else None,
+                                'columnso2': conv(
+                                    columnso2[i]) if columnso2 else None,
+                                'monthly_date': conv(
+                                    monthly_date[0]) if monthly_date else None,
+                                'npts': conv(npts[0]) if npts else None,
+                                'monthly_columno3': conv(
+                                    monthly_co3[0]) if npts else None,
+                                'monthly_stdevo3': conv(
+                                        monthly_stdevo3[0]
+                                    ) if monthly_stdevo3 else None,
+                                'timestamp_date': timestamp_date,
+                                'x': instrument_longitude,
+                                'y': instrument_latitude,
+                                'z': instrument_height,
+                            }
+                            ozone_object = TotalOzone(ins_data)
+                            registry_.save(ozone_object)
+                            LOGGER.info(f'Inserted {ozone_object}')
+                            success += 1
+                        except Exception as err:
+                            msg = (f'Unable to insert UV index {ipath}:'
+                                   f' {err}')
+                            LOGGER.error(msg)
+                            continue
+
+                if success > 0:
+                    successful_files.append(ipath)
+                else:
+                    unsuccessful_files.append(ipath)
+
+                pass_ratio = f'{len(successful_files)} / {len(filenames)}'
+                LOGGER.info(f'Successful Files: {pass_ratio}')
+                fail_ratio = f'{len(unsuccessful_files)} / {len(filenames)}'
+                LOGGER.info(f'Unsuccessful Files: {fail_ratio}')
 
     LOGGER.debug('Done get_data().')
 
