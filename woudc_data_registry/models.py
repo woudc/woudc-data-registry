@@ -2460,12 +2460,12 @@ def sync(ctx):
     search_index = SearchIndex()
 
     search_index_config = config.EXTRAS.get('search_index', {})
-    registry_contents = []
 
     click.echo('Begin data registry backend sync on ', nl=False)
     for clazz in model_classes:
         plural_name = clazz.__tablename__
         plural_caps = ''.join(map(str.capitalize, plural_name.split('_')))
+        registry_contents = []
 
         enabled_flag = f'{plural_name}_enabled'
         if not search_index_config.get(enabled_flag, True):
