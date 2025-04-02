@@ -80,9 +80,13 @@ def execute(path, update, start_year, end_year, bypass):
         registry_.session.query(UVIndex).delete()
         registry_.save()
 
+    previously_seen_instrument = []
     # traverse directory of files
     for dataset_path in datasets:
+        successful_files = []
+        unsuccessful_files = []
         for dirname, dirnames, filenames in os.walk(dataset_path):
+            LOGGER.info(f'Parsing through directory: {dirname}')
             # only ingest years within range for update command
             if update:
                 split_dir = dirname.split('/')
@@ -112,6 +116,7 @@ def execute(path, update, start_year, end_year, bypass):
                 except Exception as err:
                     msg = f'Unable to parse extcsv {ipath}: {err}'
                     LOGGER.error(msg)
+                    unsuccessful_files.append(ipath)
                     continue
 
                 # get common fields
@@ -140,6 +145,7 @@ def execute(path, update, start_year, end_year, bypass):
                 except Exception as err:
                     msg = f'Unable to get data from extcsv {ipath}: {err}'
                     LOGGER.error(msg)
+                    unsuccessful_files.append(ipath)
                     continue
 
                 if len(station_id) == 2:
@@ -172,6 +178,7 @@ def execute(path, update, start_year, end_year, bypass):
                     except Exception as err:
                         msg = f'Unable to compute UV for file {ipath}: {err}'  # noqa
                         LOGGER.error(msg)
+                        unsuccessful_files.append(ipath)
                         continue
                 elif dataset_name.lower() == 'broad-band':
                     try:
@@ -182,32 +189,36 @@ def execute(path, update, start_year, end_year, bypass):
                     except Exception as err:
                         msg = f'Unable to compute UV for file {ipath}: {err}'  # noqa
                         LOGGER.error(msg)
+                        unsuccessful_files.append(ipath)
+                        continue
 
-                    # form ids for data insert
-                    contributor_id = ':'.join([agency, project_id])
-                    deployment_id = ':'.join([station_id, contributor_id])
-                    instrument_id = ':'.join([instrument_name,
-                                              instrument_model,
-                                              instrument_number, dataset_id,
-                                              deployment_id])
-                    # check if instrument is in registry
-                    exists = registry_.query_by_field(Instrument,
-                                                      'instrument_id',
-                                                      instrument_id)
-                    if not exists:
-                        # instrument not found. add it to registry
-                        if bypass:
-                            LOGGER.info('Skipping instrument addition check')
-                            allow_add_instrument = True
-                        else:
-                            response = \
-                                input(f'Instrument {instrument_id} not found. '
-                                      'Add? (y/n) [n]: ')
-                            allow_add_instrument = \
-                                response.lower() in ['y', 'yes']
+                # form ids for data insert
+                contributor_id = ':'.join([agency, project_id])
+                deployment_id = ':'.join([station_id, contributor_id])
+                instrument_id = ':'.join([instrument_name,
+                                          instrument_model,
+                                          instrument_number, dataset_id,
+                                          deployment_id])
+                # check if instrument is in registry
+                exists = registry_.query_by_field(Instrument,
+                                                  'instrument_id',
+                                                  instrument_id, True)
 
-                        if allow_add_instrument:
-                            instrument_ = {
+                if (not exists and
+                        instrument_id not in previously_seen_instrument):
+                    # instrument not found. add it to registry
+                    if bypass:
+                        LOGGER.info('Skipping instrument addition check')
+                        allow_add_instrument = True
+                    else:
+                        response = \
+                            input(f'Instrument {instrument_id} not found. '
+                                  'Add? (y/n) [n]: ')
+                        allow_add_instrument = \
+                            response.lower() in ['y', 'yes']
+
+                    if allow_add_instrument:
+                        instrument_ = {
                                 'station_id': station_id,
                                 'dataset_id': dataset_id,
                                 'dataset_name': dataset_name,
@@ -222,19 +233,26 @@ def execute(path, update, start_year, end_year, bypass):
                                 'y': instrument_latitude,
                                 'z': instrument_height,
                             }
+                        try:
                             add_metadata(Instrument, instrument_,
                                          True, False)
+                        except ValueError as e:
+                            LOGGER.error(f'Error adding instrument: {e}.'
+                                         ' Skipping Insertion')
+                        previously_seen_instrument.append(instrument_id)
 
-                    # compute max daily uv index value
-                    uv_max = None
-                    for package in uv_packages:
-                        if uv_max:
-                            uv_max = max(package['uv'], uv_max)
-                        else:
-                            uv_max = package['uv']
+                # compute max daily uv index value
+                uv_max = None
+                for package in uv_packages:
+                    if uv_max:
+                        uv_max = max(package['uv'], uv_max)
+                    else:
+                        uv_max = package['uv']
 
-                    # insert and save uv index model objects
-                    for package in uv_packages:
+                # insert and save uv index model objects
+                success = 0
+                for package in uv_packages:
+                    try:
                         ins_data = {
                             'file_path': ipath,
                             'filename': filename,
@@ -244,7 +262,8 @@ def execute(path, update, start_year, end_year, bypass):
                             'station_id': station_id,
                             'station_type': station_type,
                             'country_id': country,
-                            'instrument_id': instrument_id,
+                            'instrument_id': exists.instrument_id
+                            if exists else instrument_id,
                             'instrument_name': instrument_name,
                             'gaw_id': gaw_id,
                             'solar_zenith_angle': package['zen_angle'],
@@ -261,11 +280,27 @@ def execute(path, update, start_year, end_year, bypass):
                         }
                         uv_object = UVIndex(ins_data)
                         registry_.save(uv_object)
+                        LOGGER.info(f'Inserted UV index {uv_object}')
+                        success += 1
+                    except Exception as err:
+                        msg = (f'Unable to insert UV index {ipath}:'
+                               f' {err}')
+                        LOGGER.error(msg)
+                        continue
+                if success > 0:
+                    successful_files.append(ipath)
+                else:
+                    unsuccessful_files.append(ipath)
+
+                pass_ratio = f'{len(successful_files)} / {len(filenames)}'
+                LOGGER.info(f'Successful Files: {pass_ratio}')
+                fail_ratio = f'{len(unsuccessful_files)} / {len(filenames)}'
+                LOGGER.info(f'Unsuccessful Files: {fail_ratio}')
 
     LOGGER.debug('Done get_data().')
 
 
-def compute_uv_index(ipath, extcsv, dataset, station,
+def compute_uv_index(ipath, extcsv, dataset_name, station,
                      instrument_name, country, max_index=1):
     """
     Compute UV index
@@ -276,12 +311,13 @@ def compute_uv_index(ipath, extcsv, dataset, station,
     uv_packages = []
 
     if all([
-        dataset.lower() == 'spectral',
+        dataset_name.lower() == 'spectral',
             any([
             'biospherical' in instrument_name.lower(),
             'brewer' in instrument_name.lower()
             ])
     ]):
+        LOGGER.debug('Spectral UV index computation ...')
 
         # Some spectral files are missing TIMESTAMP per each payload
         # Get and store first Date
@@ -306,6 +342,9 @@ def compute_uv_index(ipath, extcsv, dataset, station,
                 global_summary_t = '_'.join(['GLOBAL_SUMMARY', str(index)])
                 global_summary_nsf_t = '_'.join(['GLOBAL_SUMMARY_NSF',
                                                  str(index)])
+
+            LOGGER.debug(f'Processing {timestamp_t} {global_summary_t}'
+                         f' {global_summary_nsf_t} tables')
 
             # common spectral fields
             try:
@@ -400,7 +439,7 @@ def compute_uv_index(ipath, extcsv, dataset, station,
             uv_packages.append(package)
 
     if all([
-        dataset.lower() == 'broad-band',
+        dataset_name.lower() == 'broad-band',
         any([
             'biometer' in instrument_name.lower(),
             'kipp_zonen' in instrument_name.lower(),

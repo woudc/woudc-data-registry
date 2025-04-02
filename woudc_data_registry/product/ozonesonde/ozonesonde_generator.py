@@ -66,6 +66,7 @@ def execute(path, bypass):
 
     datasets = [
         '/'.join([path, 'OzoneSonde_1.0_1']),
+        '/'.join([path, 'OzoneSonde_1.0_2']),
     ]
 
     registry_ = registry.Registry()
@@ -75,9 +76,13 @@ def execute(path, bypass):
     registry_.save()
 
     count = 0
+    previously_seen_instrument = []
     # traverse directory of files
-    for dataset in datasets:
-        for dirname, dirnames, filenames in os.walk(dataset):
+    for dataset_path in datasets:
+        for dirname, dirnames, filenames in os.walk(dataset_path):
+            successful_files = []
+            unsuccessful_files = []
+            LOGGER.info(f'Parsing through directory: {dirname}')
             for filename in filenames:
                 ipath = os.path.join(dirname, filename)
                 contents = read_file(ipath)
@@ -88,6 +93,7 @@ def execute(path, bypass):
                 except Exception as err:
                     msg = f'Unable to parse extcsv {ipath}: {err}'
                     LOGGER.error(msg)
+                    unsuccessful_files.append(ipath)
                     continue
 
                 # get metadata fields
@@ -100,7 +106,8 @@ def execute(path, bypass):
                     station_type = extcsv.extcsv['PLATFORM']['Type'][0]
                     station_id = extcsv.extcsv['PLATFORM']['ID'][0]
                     country = extcsv.extcsv['PLATFORM']['Country'][0]
-                    instrument_name = extcsv.extcsv['INSTRUMENT']['Name'][0]
+                    instrument_name = correct_instrument_value(
+                        extcsv.extcsv['INSTRUMENT']['Name'][0], 'name')
                     instrument_model = \
                         correct_instrument_value(
                             extcsv.extcsv['INSTRUMENT']['Model'][0], 'model')
@@ -116,46 +123,55 @@ def execute(path, bypass):
                 except Exception as err:
                     msg = f'Unable to get metadata from extcsv {ipath}: {err}'
                     LOGGER.error(msg)
+                    unsuccessful_files.append(ipath)
                     continue
 
                 if len(station_id) < 3:
                     station_id = station_id.zfill(3)
 
                 # get data fields
-                try:
-                    integratedo3 = \
-                        extcsv.extcsv['FLIGHT_SUMMARY']['IntegratedO3']
-                    correctioncode = \
-                        extcsv.extcsv['FLIGHT_SUMMARY']['WLCode']
-                    sondetotalo3 = \
-                        extcsv.extcsv['FLIGHT_SUMMARY']['SondeTotalO3']
-                    correctionfactor = \
-                        extcsv.extcsv['FLIGHT_SUMMARY']['CorrectionFactor']
-                    totalo3 = extcsv.extcsv['FLIGHT_SUMMARY']['TotalO3']
-                    wlcode = extcsv.extcsv['FLIGHT_SUMMARY']['WLCode']
-                    obstype = extcsv.extcsv['FLIGHT_SUMMARY']['ObsType']
-                    flight_instrument = \
-                        extcsv.extcsv['FLIGHT_SUMMARY']['Instrument']
-                    flight_number = extcsv.extcsv['FLIGHT_SUMMARY']['Number']
-                    profile_pressure = extcsv.extcsv['PROFILE']['Pressure']
-                    o3partialpressure = \
-                        extcsv.extcsv['PROFILE']['O3PartialPressure']
-                    temperature = extcsv.extcsv['PROFILE']['Temperature']
-                    windspeed = extcsv.extcsv['PROFILE']['WindSpeed']
-                    winddirection = extcsv.extcsv['PROFILE']['WindDirection']
-                    levelcode = extcsv.extcsv['PROFILE']['LevelCode']
-                    duration = extcsv.extcsv['PROFILE']['Duration']
-                    gpheight = extcsv.extcsv['PROFILE']['GPHeight']
-                    relativehumidity = \
-                        extcsv.extcsv['PROFILE']['RelativeHumidity']
-                    sampletemperature = \
-                        extcsv.extcsv['PROFILE']['SampleTemperature']
+                flight_summary = extcsv.extcsv.get('FLIGHT_SUMMARY', {})
+                profile = extcsv.extcsv.get('PROFILE', {})
 
-                except Exception as err:
-                    msg = 'Unable to parse OzoneSonde table row from file'
-                    LOGGER.error(msg)
-                    LOGGER.error(err)
-                    continue
+                integratedo3 = flight_summary.get('IntegratedO3')
+
+                correctioncode = flight_summary.get(
+                    'WLCode') or [None] * len(integratedo3)
+                sondetotalo3 = flight_summary.get(
+                    'SondeTotalO3') or [None] * len(integratedo3)
+                correctionfactor = flight_summary.get(
+                    'CorrectionFactor') or [None] * len(integratedo3)
+                totalo3 = flight_summary.get(
+                    'TotalO3') or [None] * len(integratedo3)
+                wlcode = flight_summary.get(
+                    'WLCode') or [None] * len(integratedo3)
+                obstype = flight_summary.get(
+                    'ObsType') or [None] * len(integratedo3)
+                flight_instrument = flight_summary.get(
+                    'Instrument') or [None] * len(integratedo3)
+                flight_number = flight_summary.get(
+                    'Number') or [None] * len(integratedo3)
+
+                profile_pressure = profile.get('Pressure')
+
+                o3partialpressure = profile.get(
+                    'O3PartialPressure') or [None] * len(profile_pressure)
+                temperature = profile.get(
+                    'Temperature') or [None] * len(profile_pressure)
+                windspeed = profile.get(
+                    'WindSpeed') or [None] * len(profile_pressure)
+                winddirection = profile.get(
+                    'WindDirection') or [None] * len(profile_pressure)
+                levelcode = profile.get(
+                    'LevelCode') or [None] * len(profile_pressure)
+                duration = profile.get(
+                    'Duration') or [None] * len(profile_pressure)
+                gpheight = profile.get(
+                    'GPHeight') or [None] * len(profile_pressure)
+                relativehumidity = profile.get(
+                    'RelativeHumidity') or [None] * len(profile_pressure)
+                sampletemperature = profile.get(
+                    'SampleTemperature') or [None] * len(profile_pressure)
 
                 # replace empty strings in data with None
                 for i in range(len(integratedo3)):
@@ -193,8 +209,9 @@ def execute(path, bypass):
                 # check if instrument is in registry
                 exists = registry_.query_by_field(Instrument,
                                                   'instrument_id',
-                                                  instrument_id)
-                if not exists:
+                                                  instrument_id, True)
+                if (not exists and
+                        instrument_id not in previously_seen_instrument):
                     # instrument not found. add it to registry
                     if bypass:
                         LOGGER.info('Skipping instrument addition check')
@@ -222,46 +239,70 @@ def execute(path, bypass):
                             'y': instrument_latitude,
                             'z': instrument_height,
                         }
-                        add_metadata(Instrument, instrument_,
-                                     True, False)
+                        try:
+                            add_metadata(Instrument, instrument_,
+                                         True, False)
+                        except ValueError as e:
+                            LOGGER.error(f'Error adding instrument: {e}.'
+                                         ' Skipping Insertion')
+                    previously_seen_instrument.append(instrument_id)
 
-                ins_data = {
-                    'file_path': ipath,
-                    'filename': filename,
-                    'dataset_id': dataset_id,
-                    'dataset_level': dataset_level,
-                    'dataset_form': dataset_form,
-                    'station_id': station_id,
-                    'station_type': station_type,
-                    'country_id': country,
-                    'instrument_id': instrument_id,
-                    'instrument_name': instrument_name,
-                    'integratedo3': integratedo3,
-                    'correctioncode': correctioncode,
-                    'sondetotalo3': sondetotalo3,
-                    'correctionfactor': correctionfactor,
-                    'totalo3': totalo3,
-                    'wlcode': wlcode,
-                    'obstype': obstype,
-                    'flight_instrument': flight_instrument,
-                    'flight_number': flight_number,
-                    'profile_pressure': profile_pressure,
-                    'o3partialpressure': o3partialpressure,
-                    'temperature': temperature,
-                    'windspeed': windspeed,
-                    'winddirection': winddirection,
-                    'levelcode': levelcode,
-                    'duration': duration,
-                    'gpheight': gpheight,
-                    'relativehumidity': relativehumidity,
-                    'sampletemperature': sampletemperature,
-                    'timestamp_date': timestamp_date,
-                    'x': instrument_longitude,
-                    'y': instrument_latitude,
-                    'z': instrument_height,
-                }
-                ozone_object = OzoneSonde(ins_data)
-                registry_.save(ozone_object)
+                success = 0
+                try:
+                    ins_data = {
+                        'file_path': ipath,
+                        'filename': filename,
+                        'dataset_id': dataset_id,
+                        'dataset_level': dataset_level,
+                        'dataset_form': dataset_form,
+                        'station_id': station_id,
+                        'station_type': station_type,
+                        'country_id': country,
+                        'instrument_id': exists.instrument_id
+                        if exists else instrument_id,
+                        'instrument_name': instrument_name,
+                        'integratedo3': integratedo3,
+                        'correctioncode': correctioncode,
+                        'sondetotalo3': sondetotalo3,
+                        'correctionfactor': correctionfactor,
+                        'totalo3': totalo3,
+                        'wlcode': wlcode,
+                        'obstype': obstype,
+                        'flight_instrument': flight_instrument,
+                        'flight_number': flight_number,
+                        'profile_pressure': profile_pressure,
+                        'o3partialpressure': o3partialpressure,
+                        'temperature': temperature,
+                        'windspeed': windspeed,
+                        'winddirection': winddirection,
+                        'levelcode': levelcode,
+                        'duration': duration,
+                        'gpheight': gpheight,
+                        'relativehumidity': relativehumidity,
+                        'sampletemperature': sampletemperature,
+                        'timestamp_date': timestamp_date,
+                        'x': instrument_longitude,
+                        'y': instrument_latitude,
+                        'z': instrument_height,
+                    }
+                    ozone_object = OzoneSonde(ins_data)
+                    registry_.save(ozone_object)
+                    LOGGER.info(f'Inserted {ozone_object}')
+                    success += 1
+                except Exception as err:
+                    msg = (f'Unable to insert UV index {ipath}:'
+                           f' {err}')
+                    LOGGER.error(msg)
+                    continue
+                if success > 0:
+                    successful_files.append(ipath)
+                else:
+                    unsuccessful_files.append(ipath)
+
+                pass_ratio = f'{len(successful_files)} / {len(filenames)}'
+                LOGGER.info(f'Successful Files: {pass_ratio}')
+                fail_ratio = f'{len(unsuccessful_files)} / {len(filenames)}'
+                LOGGER.info(f'Unsuccessful Files: {fail_ratio}')
 
     LOGGER.debug('Done get_data().')
     print(count)

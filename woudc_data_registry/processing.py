@@ -1283,12 +1283,16 @@ def correct_instrument_value(instrument_value, value_type):
     # Convert to string to handle non-string inputs (e.g., numbers)
     instrument_value = str(instrument_value).strip()
 
-    if not instrument_value or instrument_value.lower() in {
-        "na", "n/a", "unknown"
-    }:
-        return "UNKNOWN"
+    if not instrument_value or instrument_value.lower() in ['na', 'n/a']:
+        return 'UNKNOWN'
 
-    if value_type == "serial":
-        return instrument_value.lstrip("0") or "0"
+    if instrument_value.lower() == 'unknown':
+        return 'UNKNOWN'
+
+    if value_type in ('model', 'name'):
+        return instrument_value.capitalize()
+
+    if value_type == 'serial':
+        instrument_value = instrument_value.lstrip('0') or '0'
 
     return instrument_value
