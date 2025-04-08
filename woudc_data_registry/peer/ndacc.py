@@ -82,7 +82,7 @@ def parse_index(csv_dict_reader):
                 properties = dict(
                     source='ndacc',
                     measurement=row['dataset'],
-                    contributor_acronym=station_metadata[0],
+                    contributor_id=f"{station_metadata[0]}:WOUDC",
                     station_id=station_metadata[2],
                     station_name=row['oscar_site_name'],
                     gaw_id=row['gaw_id'],
@@ -101,8 +101,10 @@ def parse_index(csv_dict_reader):
                 )
                 yield properties
             else:
-                LOGGER.debug('No station metadata found.')
-                msg = f"Failed to persist PeerDataRecord {row['url']}"
+                msg = (
+                    'No station metadata found. '
+                    f"Failed to persist PeerDataRecord {row['url']}"
+                )
                 LOGGER.error(msg)
                 yield {}
 
