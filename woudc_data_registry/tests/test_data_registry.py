@@ -679,6 +679,25 @@ class DatestampParsingTest(unittest.TestCase):
         self.assertEqual(self._parse_datestamp(present.strftime('%Y-%m-%d')),
                          present)
 
+    def test_datetime_input(self):
+        dt = datetime(2023, 7, 17, 15, 30, 45)
+        expected = "2023-07-17T15:30:45Z"
+        self.assertEqual(util.strftime_rfc3339(dt), expected)
+
+    def test_date_input(self):
+        d = date(2023, 7, 17)
+        # Since no time is provided, time will default to 00:00:00
+        expected = "2023-07-17T00:00:00Z"
+        self.assertEqual(util.strftime_rfc3339(d), expected)
+
+    def test_none_input(self):
+        self.assertIsNone(util.strftime_rfc3339(None))
+
+    def test_midnight(self):
+        dt = datetime(2023, 1, 1, 0, 0, 0)
+        expected = "2023-01-01T00:00:00Z"
+        self.assertEqual(util.strftime_rfc3339(dt), expected)
+
     def test_invalid_parts(self):
         """Test parsing dates fails with non-numeric characters"""
 
@@ -740,6 +759,37 @@ class DatestampParsingTest(unittest.TestCase):
             self._parse_datestamp('2019-01-24-12-30')
         with self.assertRaises(ValueError):
             self._parse_datestamp('2019-06-30:16')
+
+
+class TestGetDate(unittest.TestCase):
+
+    def test_datetime_string(self):
+        input_str = "2023-07-17T12:30:00Z"
+        expected = datetime(2023, 7, 17, 12, 30, 0)
+        self.assertEqual(util.get_date(input_str), expected)
+
+    def test_date_string_with_force_date(self):
+        input_str = "2023-07-17"
+        expected = date(2023, 7, 17)
+        self.assertEqual(util.get_date(input_str, force_date=True), expected)
+
+    def test_date_object(self):
+        input_date = date(2023, 7, 17)
+        self.assertEqual(util.get_date(input_date), input_date)
+
+    def test_none_input(self):
+        self.assertIsNone(util.get_date(None))
+
+    def test_invalid_string_format(self):
+        with self.assertRaises(ValueError):
+            util.get_date("17-07-2023")
+
+    def test_force_date_with_datetime_string(self):
+        """
+        Check that passing datetime string with force_date=True raises error
+        """
+        with self.assertRaises(ValueError):
+            util.get_date("2023-07-17T12:30:00Z", force_date=True)
 
 
 class UTCOffsetParsingTest(unittest.TestCase):
@@ -1383,6 +1433,20 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(len(point['coordinates']), 2)
         self.assertEqual(point['coordinates'][0], -75)
         self.assertEqual(point['coordinates'][1], 45)
+
+        point = util.point2geojsongeometry(-75, 45, None)
+        self.assertEqual(len(point['coordinates']), 2)
+        self.assertEqual(point['coordinates'][0], -75)
+        self.assertEqual(point['coordinates'][1], 45)
+
+        point = util.point2geojsongeometry(None, None)
+        self.assertIsNone(point)
+
+        point = util.point2geojsongeometry(1, None)
+        self.assertIsNone(point)
+
+        point = util.point2geojsongeometry(None, 1)
+        self.assertIsNone(point)
 
     def test_str2bool(self):
         """test boolean evaluation"""

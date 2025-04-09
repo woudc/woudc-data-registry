@@ -43,180 +43,20 @@
 #
 # =================================================================
 
+from datetime import datetime
 import unittest
-import os
-import subprocess
 import uuid
-from click.testing import CliRunner
+import requests
 
 
 from unittest.mock import patch, mock_open
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from woudc_data_registry.models import DataRecord
-from woudc_data_registry import config
-from woudc_data_registry.util import generate_geojson_payload
-from woudc_data_registry.controller import gather, delete_record
-
-"""
-You need to set up a test environment for your tests. So setup and populate a
-database and directory with files that have been ingested.
-
-Change WDR_DB_NAME and WDR_SEARCH_INDEX for testing perposes.
-"""
-
-
-class TestBasicDeletion(unittest.TestCase):
-    """Test case for basic functionality of deleting a record."""
-
-    def test_01_file_deletion(self):
-        """Run bash commands and verify the outcome."""
-
-        # Bash commands to run
-        commands = [
-            'woudc-data-registry data ingest '
-            './woudc_data_registry/tests/data/totalozone/'
-            'totalozone-correct.csv',
-            'rm ' + config.WDR_FILE_TRASH + '/totalozone-correct.csv'
-        ]
-
-        runner = CliRunner()
-
-        engine = create_engine(config.WDR_DATABASE_URL,
-                               echo=config.WDR_DB_DEBUG)
-        Session = sessionmaker(bind=engine, expire_on_commit=False)
-        session = Session()
-
-        filenames_OG = [
-            file for file in os.listdir(config.WDR_FILE_TRASH)
-            if os.path.isfile(os.path.join(config.WDR_FILE_TRASH, file))
-        ]
-
-        file_count_OG = len(filenames_OG)
-
-        result_OG = session.query(DataRecord.output_filepath).all()
-        result_list_OG = [row[0] for row in result_OG]
-        row_count_OG = len(result_list_OG)
-        print(result_list_OG)
-
-        # Ingesting the File
-        subprocess.run(commands[0], shell=True, check=True)
-
-        result = session.query(DataRecord.output_filepath).all()
-        result_list = [row[0] for row in result]
-        row_count = len(result_list)
-
-        output_filepath = (
-            config.WDR_WAF_BASEDIR +
-            '/Archive-NewFormat/TotalOzone_1.0_1/stn077/brewer/2010/'
-            'totalozone-correct.csv'
-        )
-
-        self.assertEqual(row_count, row_count_OG + 1)
-        self.assertTrue(output_filepath in result_list)
-
-        # Deleting the File
-        result = runner.invoke(
-            delete_record,
-            [
-                config.WDR_WAF_BASEDIR +
-                '/Archive-NewFormat/TotalOzone_1.0_1/stn077/brewer/2010/'
-                'totalozone-correct.csv'
-            ]
-        )
-
-        assert result.exit_code == 0
-
-        filenames_01 = [
-            file for file in os.listdir(config.WDR_FILE_TRASH)
-            if os.path.isfile(os.path.join(config.WDR_FILE_TRASH, file))
-        ]
-        file_count_01 = len(filenames_01)
-
-        result2 = session.query(DataRecord.output_filepath).all()
-        result_list2 = [row[0] for row in result2]
-        row_count2 = len(result_list2)
-
-        self.assertEqual(file_count_01, file_count_OG + 1)
-        self.assertEqual(row_count2, row_count_OG)
-        self.assertEqual(result_list2, result_list_OG)
-        self.assertFalse(commands[0].split('/')[-1] in result_list2)
-
-        subprocess.run(commands[1], shell=True, check=True)
-
-        session.close()
-
-    def test_02_absent_file_deletion(self):
-        """
-        Run bash commands and verify the outcome where the file
-        path does not exist.
-        """
-        runner = CliRunner()
-
-        # Deleting the File
-        result = runner.invoke(
-            delete_record,
-            [
-                config.WDR_WAF_BASEDIR +
-                '/Archive-NewFormat/TotalOzone_1.0_1/stn077/brewer/2010/'
-                'totalozone-correct.csv'
-            ]
-        )
-
-        # Check that it failed (non-zero exit code)
-        self.assertNotEqual(result.exit_code, 0)
-        self.assertIn("does not exist", result.output)
-
-    def test_03_absent_file_DB_deletion(self):
-        """
-        Run bash commands and verify the outcome where the file path
-        exists but the row does not.
-        """
-        commands = [
-            'cp ./woudc_data_registry/tests/data/totalozone/'
-            'totalozone-correct.csv '
-            + config.WDR_WAF_BASEDIR + '/Archive-NewFormat'
-            '/TotalOzone_1.0_1/stn077/brewer/2010',
-            'rm ' + config.WDR_WAF_BASEDIR + '/Archive-NewFormat'
-            '/TotalOzone_1.0_1/stn077/brewer/2010/totalozone-correct.csv'
-        ]
-        # Get information
-        engine = create_engine(config.WDR_DATABASE_URL,
-                               echo=config.WDR_DB_DEBUG)
-        Session = sessionmaker(bind=engine, expire_on_commit=False)
-        session = Session()
-
-        filenames_OG = [
-            file for file in os.listdir(config.WDR_FILE_TRASH)
-            if os.path.isfile(os.path.join(config.WDR_FILE_TRASH, file))
-        ]
-        file_count_OG = len(filenames_OG)
-
-        result_OG = session.query(DataRecord.output_filepath).all()
-        result_list_OG = [row[0] for row in result_OG]
-        row_count_OG = len(result_list_OG)
-
-        # Copy the file to the WAF so the path exists
-        # but the file is not in the DB
-        subprocess.run(commands[0], shell=True, check=True)
-
-        filenames_01 = [
-            file for file in os.listdir(config.WDR_FILE_TRASH)
-            if os.path.isfile(os.path.join(config.WDR_FILE_TRASH, file))
-        ]
-        file_count_01 = len(filenames_OG)
-
-        result_01 = session.query(DataRecord.output_filepath).all()
-        result_list_01 = [row[0] for row in result_01]
-        row_count_01 = len(result_list_01)
-
-        self.assertEqual(filenames_OG, filenames_01)
-        self.assertEqual(file_count_OG, file_count_01)
-
-        self.assertEqual(result_list_OG, result_list_01)
-        self.assertEqual(row_count_OG, row_count_01)
-
-        subprocess.run(commands[1], shell=True, check=True)
+from woudc_data_registry.util import (
+    generate_geojson_payload, get_HTTP_HEAD_response
+)
+from woudc_data_registry.dobson_corrections import (
+    parse_csv, parse_dat, custom_day_of_year, fix_line_commas,
+    get_correct_factor
+)
 
 
 class DummyRecord:
@@ -332,44 +172,176 @@ class TestGenerateGeoJsonPayload(unittest.TestCase):
         mock_logger.error.assert_called_once_with('x or y is None')
 
 
-class TestGathering(unittest.TestCase):
-    def testconnection(self):
-        """Test connection to the ftp account."""
-        commands = [
-            'rm -r yyyy-mm-dd'
-            ]
+class TestGetHTTPHeadResponse(unittest.TestCase):
 
-        runner = CliRunner()
-        result = runner.invoke(gather, ['yyyy-mm-dd'])
+    @patch('requests.head')
+    def test_successful_response(self, mock_head):
+        mock_response = mock_open()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = mock_open()
+        mock_head.return_value = mock_response
 
-        assert result.exit_code == 0
+        status_code = get_HTTP_HEAD_response(
+            'https://woudc.org/archive/Archive-NewFormat/'
+        )
+        self.assertEqual(status_code, 200)
 
-        folders = [
-            name for name in os.listdir('yyyy-mm-dd')
-            if os.path.isdir(os.path.join('yyyy-mm-dd', name))
-        ]
+    @patch('requests.head')
+    def test_error_response(self, mock_head):
+        mock_head.side_effect = requests.exceptions.RequestException(
+            "Network error"
+        )
+        status_code = get_HTTP_HEAD_response('http://nonexistent.example.com')
+        self.assertEqual(status_code, '404')
 
-        folder_files = {
-            folder: [
-                file for file in os.listdir(os.path.join('yyyy-mm-dd', folder))
-                if os.path.isfile(os.path.join('yyyy-mm-dd', folder, file))
-            ]
-            for folder in os.listdir('yyyy-mm-dd')
-            if os.path.isdir(os.path.join('yyyy-mm-dd', folder))
-        }
 
-        shadoz_files = folder_files.get('shadoz', [])
+class TestDobsonCorrections(unittest.TestCase):
+    """Test cases for Dobson corrections."""
 
-        # Edit this accordingly
-        self.assertGreater(len(folders), 0, "No folders found in yyyy-mm-dd")
-        self.assertIn('shadoz', folders,
-                      "shadoz folder not found in yyyy-mm-dd")
+    def test_parse_csv(self):
+        """
+        Test that the parse_csv function correctly reads a CSV file
+        and returns the expected dictionary.
+        """
+        file_path = (
+            'woudc_data_registry/tests/data/general/ecsv-comments.csv'
+        )
+        dictionary = parse_csv(file_path)
+        self.assertIsInstance(dictionary, dict,
+                              "Expected a dictionary from parse_csv.")
+        self.assertEqual(dictionary.get('CONTENT')[1][1], 'OzoneSonde')
+        self.assertEqual(dictionary.get('DATA_GENERATION')[1][1], 'NOAA-CMDL')
+        self.assertEqual(dictionary.get('PLATFORM')[1][1], '440')
+        self.assertEqual(dictionary.get('INSTRUMENT')[1][1], '2Z')
+        self.assertEqual(dictionary.get('LOCATION')[1][1], '-66.57')
+        self.assertEqual(dictionary.get('TIMESTAMP')[1][1], '2004-07-09')
 
-        self.assertGreater(len(shadoz_files), 0, "No files in yyyy-mm-dd")
-        self.assertEqual(len(shadoz_files), 1659)
+        double_spaced_file_path = (
+            './woudc_data_registry/tests/data/general/ecsv-double-spaced.csv'
+        )
+        dictionary2 = parse_csv(double_spaced_file_path)
+        self.assertIsInstance(dictionary, dict,
+                              "Expected a dictionary from parse_csv.")
+        self.assertEqual(dictionary2.get('CONTENT')[1][1], 'TotalOzone')
+        self.assertEqual(dictionary2.get('DATA_GENERATION')[1][1], 'RMDA')
+        self.assertEqual(dictionary2.get('PLATFORM')[1][1], '002')
+        self.assertEqual(dictionary2.get('INSTRUMENT')[1][1], 'MKIII')
+        self.assertEqual(dictionary2.get('LOCATION')[1][1], '95.520')
+        self.assertEqual(dictionary2.get('TIMESTAMP')[1][1], '2011-11-01')
+        self.assertEqual(dictionary2.get('DAILY')[1][0], '2011-11-01')
 
-        subprocess.run(commands[0], shell=True, check=True,
-                       stdout=subprocess.PIPE, text=True)
+        file_path_with_no_data = ('./not_real_file.csv')
+        dictionary3 = parse_csv(file_path_with_no_data)
+        self.assertEqual(dictionary3, {})
+
+    def test_parse_csv_invalid_file(self):
+        """
+        Test that the parse_csv function raises a ValueError
+        when given an invalid file path.
+        """
+        empty_file_path = (
+            './woudc_data_registry/tests/data/general/pass_and_fail/'
+            'KW160914.CSV'
+        )
+        dictionary = parse_csv(empty_file_path)
+        self.assertIsInstance(dictionary, dict,
+                              "Expected a dictionary from parse_csv.")
+        self.assertEqual(len(dictionary), 0,
+                         "Expected an empty dictionary for an invalid file.")
+        self.assertEqual(dictionary, {})
+
+        error_file_path = (
+            './woudc_data_registry/tests/data/general/'
+            'euc-jp.dat'
+        )
+        dictionary2 = parse_csv(error_file_path)
+        self.assertIsInstance(dictionary2, dict,
+                              "Expected a dictionary from parse_csv.")
+        self.assertEqual(len(dictionary2), 0,
+                         "Expected an empty dictionary for an invalid file.")
+        self.assertEqual(dictionary2, {})
+
+    def test_custom_doy_february(self):
+        """Test custom_day_of_year for February dates."""
+        with self.assertRaises(ValueError):
+            datetime(2023, 2, 29)
+
+        date = datetime(2024, 2, 29)  # Leap year
+        self.assertEqual(custom_day_of_year(date), 60)
+
+    def test_custom_doy_march(self):
+        """Test custom_day_of_year for March dates."""
+        date = datetime(2023, 3, 1)  # Non-leap year
+        self.assertEqual(custom_day_of_year(date), 61)
+
+        date = datetime(2024, 3, 1)
+        self.assertEqual(custom_day_of_year(date), 61)
+
+    def test_custom_doy_december(self):
+        """Test custom_day_of_year for December dates."""
+        date = datetime(2023, 12, 31)
+        self.assertEqual(custom_day_of_year(date), 366)  # Normally 365 + 1
+
+        date = datetime(2024, 12, 31)
+        self.assertEqual(custom_day_of_year(date), 366)
+
+    def test_fix_line_commas(self):
+        """Test that the fix_line_commas function replaces commas correctly."""
+        line = "2010-11-01,9,ZS,342.6,2.5,16.2,"
+        fixed_line = fix_line_commas(line, 10)
+        self.assertEqual(fixed_line.count(','), 10)
+
+        # Test with no commas
+        line_no_commas = "2010-11-01,9,ZS,342.6,2.5,16.2,19.5,18.2,8,3.6,-4.0"
+        fixed_line_no_commas = fix_line_commas(line_no_commas, 10)
+        self.assertEqual(fixed_line_no_commas.count(','), 10)
+
+    def test_parse_dat_file(self):
+        """
+        Test that the parse_dat_file function reads a .dat file correctly.
+        """
+        file_path = (
+            './woudc_data_registry/tests/data/dobsonCorrections'
+            '/1_Leopoldville_Kinshasa_TEMISfilename_Brazzaville_Kinshasa_'
+            'teff_abscoef.dat'
+        )
+        dictionary = parse_dat(file_path)
+        self.assertIsInstance(dictionary, dict,
+                              "Expected a dictionary from parse_csv.")
+        self.assertEqual(
+            dictionary.get('1'),
+            ['-48.0852', '1.4224', '1.0068', '0.4513', '1.0171'])
+        self.assertEqual(
+            dictionary.get('2'),
+            ['-48.1581', '1.4223', '1.0068', '0.4512', '1.0172'])
+        self.assertEqual(
+            dictionary.get('366'),
+            ['-47.9949', '1.4225', '1.0067', '0.4513', '1.0170']
+        )
+
+    def test_correct_factor(self):
+        """
+        Test the get_correct_factor function to return the right
+        correction factor.
+        """
+        file_path = (
+            './woudc_data_registry/tests/data/dobsonCorrections'
+            '/1_Leopoldville_Kinshasa_TEMISfilename_Brazzaville_Kinshasa_'
+            'teff_abscoef.dat'
+        )
+        dictionary = parse_dat(file_path)
+        self.assertEqual(
+            get_correct_factor(dictionary, 'AD', '1'),
+            (1.0068, -48.0852)
+        )
+        self.assertEqual(
+            get_correct_factor(dictionary, 'CD', '1'),
+            (1.0171, -48.0852)
+        )
+        self.assertEqual(
+            get_correct_factor(dictionary, '', '1'),
+            'Unknown Wavelength'
+        )
 
 
 if __name__ == '__main__':

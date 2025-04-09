@@ -52,11 +52,6 @@ import ssl
 import smtplib
 import uuid
 
-import tarfile
-import rarfile
-import zipfile
-
-import ftputil
 
 import requests
 import json
@@ -69,180 +64,6 @@ import woudc_data_registry.config as config
 LOGGER = logging.getLogger(__name__)
 
 RFC3339_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
-
-
-def gathering(host, username, password, basedir_incoming, skip_dirs,
-              px_basedir, keep_files):
-    """gather candidate files from incoming FTP"""
-
-    gathered = []
-    gathered_files_to_remove = []
-
-    with ftputil.FTPHost(host, username, password) as ftp:
-        LOGGER.info('Connected to %s', host)
-        LOGGER.info('Skip directories: %s', skip_dirs)
-        for root, dirs, files in ftp.walk(basedir_incoming, topdown=True):
-            LOGGER.debug('Removing skip directories: %s', skip_dirs)
-            dirs[:] = [d for d in dirs if d not in skip_dirs]
-            for name in files:
-                ipath = '%s/%s' % (root, name)
-                mtime = datetime.fromtimestamp(ftp.stat(ipath)[8])
-                fpath = '%s%s%s' % (px_basedir, os.sep, ipath)
-                ipath_ftp_abs = '%s%s' % (host, ipath)
-
-                LOGGER.info('Adding file %s to processing queue',
-                            ipath_ftp_abs)
-                gathered.append({
-                    'contributor': ipath.lstrip('/').split('/')[0],
-                    'ipath': ipath,
-                    'ipath_ftp_abs': ipath_ftp_abs,
-                    'mtime': mtime,
-                    'fpath': os.path.normpath(fpath),
-                    'decomp': False
-                })
-
-        LOGGER.info('%d files in processing queue', len(gathered))
-        for gathered_file in gathered:
-            LOGGER.info('Inspecting gathered file %s', gathered_file)
-            if all([gathered_file['ipath'] is not None,
-                    not gathered_file['decomp']]):
-                LOGGER.info('File passed in')
-                if ftp.path.isfile(gathered_file['ipath']):
-                    try:
-                        os.makedirs(os.path.dirname(gathered_file['fpath']))
-                    except OSError as err:
-                        LOGGER.warning('Local directory %s not created: %s',
-                                       gathered_file['fpath'], err)
-
-                    ftp.download(gathered_file['ipath'],
-                                 gathered_file['fpath'])
-
-                    LOGGER.info('Downloaded FTP file %s to %s',
-                                gathered_file['ipath_ftp_abs'],
-                                gathered_file['fpath'])
-
-                    # handle compressed files here
-                    if any([tarfile.is_tarfile(gathered_file['fpath']),
-                            rarfile.is_rarfile(gathered_file['fpath']),
-                            zipfile.is_zipfile(gathered_file['fpath'])]):
-                        LOGGER.info('Decompressing file: %s',
-                                    gathered_file['fpath'])
-                        comm_ipath_ftp_abs = gathered_file['ipath_ftp_abs']
-                        comm_fpath = gathered_file['fpath']
-                        comm_mtime = gathered_file['mtime']
-                        comm_dirname = os.path.dirname(comm_fpath)
-
-                        # decompress
-                        try:
-                            files = decompress(gathered_file['fpath'])
-                        except Exception as err:
-                            LOGGER.error('Unable to decompress %s: %s',
-                                         gathered_file['fpath'], err)
-                            continue
-                        LOGGER.info('Decompressed files: %s',
-                                    ', '.join(files))
-
-                        for fil in files:
-                            fpath = os.path.join(comm_dirname, fil)
-                            if os.path.isfile(fpath):
-                                gathered.append({
-                                    'contributor': gathered_file[
-                                        'ipath'].lstrip('/').split('/')[0],
-                                    'ipath': fpath,
-                                    'ipath_ftp_abs': comm_ipath_ftp_abs,
-                                    'mtime': comm_mtime,
-                                    'fpath': os.path.normpath(fpath),
-                                    'decomp': True
-                                })
-                        # remove from gathered
-                        gathered_files_to_remove.append(gathered_file)
-
-                    if not keep_files:
-                        LOGGER.info('Removing file %s',
-                                    gathered_file['ipath'])
-                        ftp.remove(gathered_file['ipath'])
-
-                else:
-                    LOGGER.info('FTP file %s could not be downloaded',
-                                gathered_file['ipath_ftp_abs'])
-
-    LOGGER.info('%s archive files gathered to remove',
-                len(gathered_files_to_remove))
-    for gftr in gathered_files_to_remove:
-        gathered.remove(gftr)
-        LOGGER.info('Removed %s from gathered list', gftr)
-    LOGGER.info('%s files gathered', len(gathered))
-
-    return gathered
-
-
-def decompress(ipath):
-    """decompress compressed files"""
-
-    file_list = []
-    success = True
-
-    LOGGER.debug('ipath: %s', ipath)
-
-    if tarfile.is_tarfile(ipath):
-        tar = tarfile.open(ipath)
-        for item in tar:
-            try:
-                item.name = os.path.basename(item.name)
-                file_list.append(item.name)
-                tar.extract(item, os.path.dirname(ipath))
-            except Exception as err:
-                success = False
-                LOGGER.error('Unable to decompress from tar %s: %s',
-                             item.name, err)
-
-    elif rarfile.is_rarfile(ipath):
-        rar = rarfile.RarFile(ipath)
-        for item in rar.infolist():
-            try:
-                item.filename = os.path.basename(item.filename)
-                file_list.append(item.filename)
-                rar.extract(item, os.path.dirname(ipath))
-            except Exception as err:
-                success = False
-                LOGGER.error('Unable to decompress from rar %s: %s',
-                             item.filename, err)
-
-    elif zipfile.is_zipfile(ipath):
-        zipf = zipfile.ZipFile(ipath)
-        for item in zipf.infolist():
-            if item.filename.endswith('/'):  # filename is dir, skip
-                LOGGER.info('item %s is a directory, skipping', item.filename)
-                continue
-            try:
-                item_filename = os.path.basename(item.filename)
-                file_list.append(item_filename)
-                data = zipf.read(item.filename)
-                filename = '%s%s%s' % (os.path.dirname(ipath),
-                                       os.sep, item_filename)
-                LOGGER.info('Filename: %s', filename)
-                with open(filename, 'wb') as ff:
-                    ff.write(data)
-                # zipf.extract(item.filename, os.path.dirname(ipath))
-            except Exception as err:
-                success = False
-                LOGGER.error('Unable to decompress from zip %s: %s',
-                             item.filename, err)
-    else:
-        msg = ('File %s is not a compressed file and will not be compressed.'
-               % ipath)
-        LOGGER.warning(msg)
-
-    if success:  # delete the archive file
-        LOGGER.info('Deleting archive file: %s', ipath)
-        try:
-            os.unlink(ipath)
-        except Exception as err:
-            LOGGER.error(err)
-    else:
-        LOGGER.info('Decompress failed, not deleting %s', ipath)
-
-    return file_list
 
 
 def get_HTTP_HEAD_response(url):
@@ -260,7 +81,6 @@ def get_HTTP_HEAD_response(url):
         LOGGER.info(f"Status Code: {response.status_code}")
         return response.status_code
     except requests.exceptions.RequestException as e:
-        LOGGER.info(f"Status Code: {response.status_code}")
         LOGGER.error(f"An error occurred while making a request to {url}: {e}")
         return '404'
 

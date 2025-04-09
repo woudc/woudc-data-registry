@@ -391,6 +391,17 @@ class Registry(object):
         results = self.session.query(table).filter(*conditions).delete()
         return results
 
+    def delete_table(self, table):
+        """
+        Delete all rows from a table.
+
+        :param table: Table to be deleted.
+        :returns: void
+        """
+        LOGGER.debug(f'Deleting all rows from {table.__tablename__}')
+        self.session.query(table).delete()
+        self.session.commit()
+
     def save(self, obj=None):
         """
         Helper function to save object to registry.
