@@ -336,7 +336,6 @@ class Registry(object):
             LOGGER.debug(f'Deleting for {field} = {value}')
             condition = field == value
 
-        print(self.session.query(obj).filter(condition))
         self.session.query(obj).filter(condition).delete()
         self.session.commit()
         # self.session.rollback()

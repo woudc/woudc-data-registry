@@ -133,7 +133,7 @@ def execute(path, bypass):
                 flight_summary = extcsv.extcsv.get('FLIGHT_SUMMARY', {})
                 profile = extcsv.extcsv.get('PROFILE', {})
 
-                integratedo3 = flight_summary.get('IntegratedO3')
+                integratedo3 = flight_summary.get('IntegratedO3', {})
 
                 correctioncode = flight_summary.get(
                     'WLCode') or [None] * len(integratedo3)
@@ -152,7 +152,7 @@ def execute(path, bypass):
                 flight_number = flight_summary.get(
                     'Number') or [None] * len(integratedo3)
 
-                profile_pressure = profile.get('Pressure')
+                profile_pressure = profile.get('Pressure', {})
 
                 o3partialpressure = profile.get(
                     'O3PartialPressure') or [None] * len(profile_pressure)
@@ -247,6 +247,11 @@ def execute(path, bypass):
                                          ' Skipping Insertion')
                     previously_seen_instrument.append(instrument_id)
 
+                try:
+                    instrument_height = float(instrument_height)
+                except (TypeError, ValueError, OverflowError):
+                    instrument_height = None
+
                 success = 0
                 try:
                     ins_data = {
@@ -305,7 +310,6 @@ def execute(path, bypass):
                 LOGGER.info(f'Unsuccessful Files: {fail_ratio}')
 
     LOGGER.debug('Done get_data().')
-    print(count)
 
 
 def conv(i):

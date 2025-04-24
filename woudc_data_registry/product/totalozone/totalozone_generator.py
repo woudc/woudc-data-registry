@@ -210,6 +210,11 @@ def execute(path, bypass):
                             first = False
 
                         try:
+                            instrument_height = float(instrument_height)
+                        except (TypeError, ValueError, OverflowError):
+                            instrument_height = None
+
+                        try:
                             ins_data = {
                                 'file_path': ipath,
                                 'filename': filename,
