@@ -3,6 +3,7 @@ elasticsearch
 ftputil
 jsonschema
 paho-mqtt
+pygeometa
 pyyaml
 rarfile
 requests
