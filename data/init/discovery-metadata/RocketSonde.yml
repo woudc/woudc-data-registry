@@ -1,0 +1,115 @@
+mcf:
+    version: 1.0
+
+metadata:
+    identifier: RocketSonde
+    language: en
+    language_alternate: fr
+    charset: utf8
+    hierarchylevel: dataset
+    datestamp: 2025-04-05
+
+spatial:
+    datatype: vector
+    geomtype: point
+
+identification:
+    language: eng; CAN
+    charset: utf8
+    title:
+        en: &title_en Rocketsonde
+        fr: &title_fr Sonde pour la fusée
+    abstract:
+        en: &abstract_en ROCOZ data campaigns designed to survey latitude and seasonal changes in ozone densities in the stratosphere and lower mesosphere.  Further information can be found at https://woudc.org/archive/Archive-NewFormat/RocketSonde_1.0_1/DSS_ROCOZ_Ozonesondes.pdf
+        fr: &abstract_fr campagnes de données ROCOZ conçus pour étudier la latitude et les changements saisonniers dans les densités d'ozone dans la stratosphère et la mésosphère inférieure. Plus d'informations peuvent être trouvées à https://woudc.org/archive/Archive-NewFormat/RocketSonde_1.0_1/DSS_ROCOZ_Ozonesondes.pdf
+    edition: 1.0
+    dates:
+        creation: 2025-04-30
+        publication: 2025-04-30
+    wmo_data_policy: core
+    doi: 10.14287/10000009
+    keywords:
+        default:
+            keywords:
+                en:
+                    - ozone
+                    - rocketsonde
+                    - Super Loki
+                    - arcas
+                    - synoptic
+                    - level 1.0
+                fr:
+                    - ozone
+                    - sonde pour la fusée
+                    - Super Loki
+                    - arcas
+                    - synoptique
+                    - niveau 1.0
+        wmo:
+            keywords:
+                - atmospheric-composition
+            keywords_type: theme
+            vocabulary:
+                name: WMO WIS2 Topic Hierarchy
+                url: https://codes.wmo.int/wis/topic-hierarchy/earth-system-discipline
+    topiccategory:
+        - climatologyMeteorologyAtmosphere
+    extents:
+        spatial:
+            - bbox: [-180,-90,180,90]
+              crs: 4326
+        temporal:
+            - begin: 1965-03-07
+              end: 1994-07-06
+              resolution: P1D
+    fees: None
+    accessconstraints: None
+    license:
+        name: WMO Unified Data Policy
+        url: https://library.wmo.int/idurl/4/58009
+    rights:
+        en: Copyright (c) 2010 Her Majesty the Queen in Right of Canada
+        fr: Copyright (c) 2010 Her Majesty the Queen in Right of Canada
+    url: https://woudc.org/en/data/dataset-information/rocketsonde
+    status: onGoing
+    maintenancefrequency: continual
+
+contact:
+    host: &contact_poc
+        organization: World Ozone and Ultraviolet Radiation Data Centre
+        url: https://woudc.org/en/contact
+        individualname: Data centre manager
+        positionname: Data centre manager
+        phone: '+01-416-802-5741'
+        fax: None
+        address: 4905 Dufferin Street
+        city: Toronto
+        administrativearea: Ontario
+        postalcode: M3H 5T4
+        country: Canada
+        email: woudc@ec.gc.ca
+        hoursofservice: 0700h - 1500h EST
+        contactinstructions: email
+
+distribution:
+    waf_level_1.0_1:
+        url: https://woudc.org/archive/Archive-NewFormat/RocketSonde_1.0_1
+        type: text/html
+        rel: canonical
+        name: Web Accessible Folder (WAF)
+        description:
+            en: Web accessible folder (WAF)
+            fr: Web accessible folder (WAF)
+        function: download
+
+    api:
+        url: https://api.woudc.org/collections/data_records
+        type: application/json
+        rel: service
+        name:
+            en: *title_en
+            fr: *title_fr
+        description:
+            en: *abstract_en
+            fr: *abstract_fr
+        function: download

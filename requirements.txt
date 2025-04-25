@@ -2,6 +2,7 @@ click
 elasticsearch
 ftputil
 jsonschema
+pygeometa
 pyyaml
 rarfile
 requests

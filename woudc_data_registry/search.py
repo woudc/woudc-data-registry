@@ -242,6 +242,12 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'language': {
+                'type': 'object',
+                'properties': {
+                    'code': {'type': 'keyword'}
+                }
+            },
             'levels': {
                 'type': 'nested',
                 'properties': {
