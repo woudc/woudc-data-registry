@@ -1,6 +1,7 @@
 click
 elasticsearch
 jsonschema
+pygeometa
 pyyaml
 requests
 sqlalchemy
