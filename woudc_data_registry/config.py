@@ -92,6 +92,12 @@ WDR_FTP_SKIP_DIRS_INCOMING = os.getenv('WDR_FTP_SKIP_DIRS_INCOMING')
 WDR_FTP_KEEP_FILES = os.getenv(
                             'WDR_FTP_KEEP_FILES',
                             'True').strip().lower() in ('true', '1', 'yes')
+WDR_NOTIFICATION_MESSAGE = os.getenv('WDR_NOTIFICATION_MESSAGE')
+WDR_MQTT_BROKER_HOST = os.getenv('WDR_MQTT_BROKER_HOST')
+WDR_MQTT_BROKER_PORT = os.getenv('WDR_MQTT_BROKER_PORT')
+WDR_MQTT_BROKER_USERNAME = os.getenv('WDR_MQTT_BROKER_USERNAME')
+WDR_MQTT_BROKER_PASSWORD = os.getenv('WDR_MQTT_BROKER_PASSWORD')
+WDR_MQTT_CLIENT_ID = os.getenv('WDR_MQTT_CLIENT_ID')
 
 if not WDR_SEARCH_INDEX_BASENAME:
     msg = 'WDR_SEARCH_INDEX_BASENAME was not set. \
