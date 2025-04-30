@@ -1,0 +1,32 @@
+{
+    "id": "uuid.uuid4()",
+    "conformsTo": [
+        "http://wis.wmo.int/spec/wnm/1/conf/core"
+    ],
+    "type": "Feature",
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+            "x",
+            "y",
+            "z"  
+        ]
+    },
+    "properties": {
+        "pubtime": "data_record.publication_datetime",
+        "datetime": "data_record.timestamp_dateTdata_record.timestamp_timedata_record.timestamp_utcoffset",
+        "integrity": { 
+            "method": "sha512",
+            "value": "A2KNxvks...S8qfSCw=="
+        },
+        "data_id": "data_record.data_id",
+        "metadata_id": "urn:wmo:md:org-woudc:data_record.dataset_id"
+    },
+    "links": [
+        {
+            "href": "data_record.url",
+            "rel": "canonical",
+            "type": "text/csv"
+        }
+    ]
+}
