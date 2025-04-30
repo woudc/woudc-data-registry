@@ -73,6 +73,7 @@ jobs:
       run: |
         coverage run -a --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_data_registry
         coverage run -a --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_report_generation
+        coverage run -a --source=woudc_data_registry -m unittest woudc_data_registry.tests.test_commands
         coverage report -m
         coveralls --service=github
     - name: Build Python package 🏗️
