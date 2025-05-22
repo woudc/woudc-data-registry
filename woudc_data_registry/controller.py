@@ -277,7 +277,7 @@ def send_feedback(ctx, failed_files, test, ops):
     """Send operating reports to contributors. """
 
     LOGGER.debug("test: {} ops: {}".format(test, ops))
-    with open(config.WDR_TEMPLATE_PATH, 'r') as file:
+    with open(config.WDR_FEEDBACK_TEMPLATE_PATH, 'r') as file:
         message = file.read()
 
     templates = failed_files.read().split('\n\n')
