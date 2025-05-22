@@ -33,12 +33,20 @@ jobs:
       name: Setup Python ${{ matrix.python-version }}
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Update package lists
+      run: sudo apt-get update
+    - name: Enable universe repository
+      run: sudo add-apt-repository universe
+    - name: Clean package cache
+      run: sudo rm -rf /var/lib/apt/lists/*
     - name: Install system dependencies 📦
-      run: sudo apt-get install -y dh-python devscripts fakeroot debhelper python3-all python3-setuptools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y dh-python devscripts fakeroot debhelper python3-all python3-setuptools
     - name: Ensure Python 3.10 is Installed
       run: sudo apt-get install -y python3.10 python3.10-dev python3.10-venv
     - name: Install Debian Build Dependencies
-      run: sudo apt-get update && sudo apt-get build-dep -y .
+      run: sudo apt-get update --fix-missing && sudo apt-get build-dep -y .
     - name: Install woudc-extcsv requirement 📦
       run: |
         git clone https://github.com/woudc/woudc-extcsv.git
