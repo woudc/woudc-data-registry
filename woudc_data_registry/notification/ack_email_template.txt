@@ -1,0 +1,28 @@
+(This is an automated email)
+
+Dear WOUDC contributor,
+
+This email provides acknowledgment of your data submission to
+WOUDC on $DATE.
+
+files submitted: 
+$FILES
+
+Thank you for your data contributions and support of the World Meteorological
+Organization Global Atmosphere Watch program.
+
+World Ozone and Ultraviolet Radiation Data Centre
+
+Meteorological Service of Canada
+Environment and Climate Change Canada
+4905 Dufferin Street
+Toronto, ON M3H 5T4
+Canada
+Email: ec.woudc.ec@canada.ca
+Website: http://woudc.org
+Data policy: http://woudc.org/about/data-policy.php
+Data submissions: ftp://ftp.woudc.org
+Data access: http://woudc.org/about/data-access.php
+Contributor guidebook: http://guide.woudc.org
+
+Dobson and Brewer software: http://www.o3soft.eu
