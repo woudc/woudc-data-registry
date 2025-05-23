@@ -18,7 +18,7 @@ Environment and Climate Change Canada
 4905 Dufferin Street
 Toronto, ON M3H 5T4
 Canada
-Email: ec.woudc.ec@canada.ca
+Email: woudc@ec.gc.ca
 Website: http://woudc.org
 Data policy: http://woudc.org/about/data-policy.php
 Data submissions: ftp://ftp.woudc.org

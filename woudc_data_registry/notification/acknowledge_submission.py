@@ -19,7 +19,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2015 Government of Canada
+# Copyright (c) 2025 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -50,15 +50,19 @@ import os
 import sys
 
 import ftputil
-from sqlalchemy import text
+from sqlalchemy import text, select
 from woudc_data_registry import config
 from woudc_data_registry.util import str2bool, send_email
 from woudc_data_registry.registry import Registry
 from woudc_data_registry.models import Contributor
+
 LOGGER = logging.getLogger(__name__)
-
 FORMATTER = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-
+SKIP_DIRS = ["woudcadmin", "level-0", "org1", "org2", "provisional", "calibration", "px-testing", "px-testing2"]
+ACKNOWLEDGE_SUBMISSION_HOURS =config.ACKNOWLEDGE_SUBMISSION_HOURS
+NOW = datetime.datetime.now()
+ACKNOWLEDGE_SUBMISSION_ONLY = False
+WDR_FEEDBACK_TEMPLATE_PATH = config.WDR_FEEDBACK_TEMPLATE_PATH
 
 def days2hours(days):
     """helper function to convert days to hours"""
@@ -92,7 +96,6 @@ def send_ack_emails(contributor_dict):
     """helper function to send acknowledgement email to each contributor"""
     
     test_email = config.WDR_EMAIL_TEST
-    msg_template_path = os.getenv('ACK_TEMP_PATH')
     msg_template = None
 
     try: 
@@ -120,7 +123,7 @@ def send_ack_emails(contributor_dict):
         bccs = []
     
     for contributor in contributor_dict:
-        with open(msg_template_path) as fp:
+        with open(WDR_FEEDBACK_TEMPLATE_PATH) as fp:
             msg_template = fp.read()
         # needs access to the file names submitted, must be available in contributor_dict
         msg_template = msg_template.replace('$FILES', '\n'.join(contributor_dict[contributor]))\
@@ -206,7 +209,8 @@ def _get_agency_emails():
     registry = Registry()
     model = Contributor
     try:
-        contributors = registry.session.query(Contributor) # return only the email and ftp_username columns
+        contributor_emails = registry.session.query(model.email, model.ftp_username)
+        emails = {model.ftp_username: model.email for model.email, model.ftp_username in contributor_emails}
 
     except Exception as err:
         msg =\
@@ -215,31 +219,24 @@ def _get_agency_emails():
         LOGGER.critical(msg)
         raise err
 
-    emails = {model.ftp_username: model.email for model in contributors}
     registry.close_session()
     return emails 
 
-ACKNOWLEDGE_SUBMISSION_ONLY = False
+if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        if sys.argv[1] == 'acknowledge_submission':
+            ACKNOWLEDGE_SUBMISSION_ONLY = True
+            LOGGER.info('Acknowledge submission Gather only mode detected, no processing or '
+                        'publishing enabled')
+    
+    WDR_FTP_HOST = config.WDR_FTP_HOST
+    WDR_FTP_USER = config.WDR_FTP_USER
+    WDR_FTP_PASS = config.WDR_FTP_PASS
+    WDR_FTP_BASEDIR_INCOMING = config.WDR_FTP_BASEDIR_INCOMING
 
-if len(sys.argv) == 2:
-    if sys.argv[1] == 'acknowledge_submission':
-        ACKNOWLEDGE_SUBMISSION_ONLY = True
-        LOGGER.info('Acknowledge submission Gather only mode detected, no processing or '
-                     'publishing enabled')
-
-FTP_HOST = os.getenv('FTP_HOST')
-FTP_USER = os.getenv('FTP_USER')
-FTP_PASS = os.getenv('FTP_PASS')
-FTP_BASEDIR_INCOMING = os.getenv('FTP_BASEDIR_INCOMING')
-SKIP_DIRS = "woudcadmin,level-0,org1,org2,provisional,calibration,px-testing,px-testing2".split(',')
-ACKNOWLEDGE_SUBMISSION_HOURS = os.getenv('ACKNOWLEDGE_SUBMISSION_HOURS')
-EMAIL_GATHER_CONFIRMATION = 'true'
-TODAY = datetime.datetime.today()
-NOW = datetime.datetime.now()
-
-if ACKNOWLEDGE_SUBMISSION_ONLY:
-    LOGGER.info('Acknowledging files')
-    FILES_GATHERED = acknowledge_submission(FTP_HOST, FTP_USER, FTP_PASS,
-                            FTP_BASEDIR_INCOMING, SKIP_DIRS, NOW,
-                            ACKNOWLEDGE_SUBMISSION_HOURS, True)
-    sys.exit(0)
+    if ACKNOWLEDGE_SUBMISSION_ONLY:
+        LOGGER.info('Acknowledging files')
+        FILES_GATHERED = acknowledge_submission(WDR_FTP_HOST, WDR_FTP_USER, WDR_FTP_PASS,
+                                WDR_FTP_BASEDIR_INCOMING, SKIP_DIRS, NOW,
+                                ACKNOWLEDGE_SUBMISSION_HOURS, True)
+        sys.exit(0)
