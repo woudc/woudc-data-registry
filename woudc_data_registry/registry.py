@@ -260,6 +260,30 @@ class Registry(object):
 
         return self.session.query(obj).filter(condition).first()
 
+    def query_by_field_range(self, obj, by, start, end,
+                             case_insensitive=False):
+        """
+        query data by field range
+        :param obj: Object instance of the table to query in
+        :param by: Field name to be queried
+        :param start: Start of the range
+        :param end: End of the range
+        :param case_insensitive: `bool` of whether to query strings
+                                 case-insensitively
+        :returns: Query results
+        """
+
+        field = getattr(obj, by)
+        if case_insensitive:
+            LOGGER.debug(f'Querying for LOWER({field}) BETWEEN \
+                LOWER({start}) AND LOWER({end})')
+            condition = func.lower(field).between(start.lower(), end.lower())
+        else:
+            LOGGER.debug(f'Querying for {field} BETWEEN {start} AND {end}')
+            condition = field.between(start, end)
+
+        return self.session.query(obj).filter(condition).all()
+
     def query_multiple_fields(self, table, values, fields=None,
                               case_insensitive=()):
         """
