@@ -1,7 +1,9 @@
 click
 elasticsearch
+ftputil
 jsonschema
 pyyaml
+rarfile
 requests
 sqlalchemy
 wheel

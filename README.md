@@ -138,6 +138,9 @@ woudc-data-registry instrument update --help
 #### Data Processing
 
 ```bash
+# Gather the files from the ftp account
+woudc-data-registry data gather /path/to/dir
+
 # ingest directory of files (walks directory recursively)
 woudc-data-registry data ingest /path/to/dir
 

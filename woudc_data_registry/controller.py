@@ -53,7 +53,8 @@ from woudc_extcsv import (ExtendedCSV, NonStandardDataError,
 
 from woudc_data_registry import config
 from woudc_data_registry.util import (is_text_file, read_file,
-                                      send_email, delete_file_from_record)
+                                      send_email, delete_file_from_record,
+                                      gathering)
 
 
 from woudc_data_registry.processing import Process
@@ -341,8 +342,40 @@ def delete_record(ctx, file_path):
     LOGGER.info("Done deleting record")
 
 
+@click.command()
+@click.argument('folder_path')
+@click.pass_context
+def gather(ctx, folder_path):
+    """Gather all the files in a directory tree"""
+    while os.path.exists(folder_path):
+        click.echo(f"Folder '{folder_path}' already exists.")
+        folder_path = click.prompt(
+            "Please provide a folder path that does not exist yet", type=str
+        )
+    # Folder doesn't exist, create it
+    os.makedirs(folder_path)
+
+    try:
+        click.echo(f"Folder '{folder_path}' has been created successfully.")
+        skip_incoming_folders = (
+            'woudcadmin,level-0,org1,org2,provisional,calibration,'
+            'px-testing,px-testing2'
+        )
+        FILES_GATHERED = gathering(config.WDR_FTP_HOST, config.WDR_FTP_USER,
+                                   config.WDR_FTP_PASS,
+                                   config.WDR_FTP_BASEDIR_INCOMING,
+                                   skip_incoming_folders,
+                                   folder_path, config.WDR_FTP_KEEP_FILES)
+        click.echo(f"Gathered {FILES_GATHERED} files from the FTP server.")
+    except Exception as err:
+        LOGGER.error('Unable to gather: %s', err)
+
+    LOGGER.info("Done Gathering files")
+
+
 data.add_command(ingest)
 data.add_command(verify)
 data.add_command(generate_emails, name='generate-emails')
 data.add_command(send_feedback, name='send-feedback')
 data.add_command(delete_record, name='delete-record')
+data.add_command(gather)

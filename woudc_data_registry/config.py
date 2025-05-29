@@ -88,9 +88,14 @@ WDR_FILE_TRASH = os.getenv('WDR_FILE_TRASH')
 WDR_FTP_HOST = os.getenv('WDR_FTP_HOST')
 WDR_FTP_USER = os.getenv('WDR_FTP_USER')
 WDR_FTP_PASS = os.getenv('WDR_FTP_PASS')
-WDR_FTP_BASEDIR_INCOMING = os.getenv('FTP_BASEDIR_INCOMING')
+
 ACKNOWLEDGE_SUBMISSION_HOURS = os.getenv('ACKNOWLEDGE_SUBMISSION_HOURS')
 WDR_FEEDBACK_TEMPLATE_PATH = os.getenv('WDR_FEEDBACK_TEMPLATE_PATH')
+WDR_FTP_BASEDIR_INCOMING = os.getenv('WDR_FTP_BASEDIR_INCOMING')
+WDR_FTP_SKIP_DIRS_INCOMING = os.getenv('WDR_FTP_SKIP_DIRS_INCOMING')
+WDR_FTP_KEEP_FILES = os.getenv(
+                            'WDR_FTP_KEEP_FILES',
+                            'True').strip().lower() in ('true', '1', 'yes')
 
 if not WDR_SEARCH_INDEX_BASENAME:
     msg = 'WDR_SEARCH_INDEX_BASENAME was not set. \
