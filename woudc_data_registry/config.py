@@ -99,7 +99,7 @@ WDR_FTP_KEEP_FILES = os.getenv(
                             'True').strip().lower() in ('true', '1', 'yes')
 WDR_ACKNOWLEDGE_SUBMISSION_HOURS = os.getenv(
     'WDR_ACKNOWLEDGE_SUBMISSION_HOURS')
-WDR_FEEDBACK_TEMPLATE_PATH = os.getenv('WDR_FEEDBACK_TEMPLATE_PATH')
+WDR_ACKNOWLEDGE_TEMPLATE_PATH = os.getenv('WDR_ACKNOWLEDGE_TEMPLATE_PATH')
 WDR_FTP_SKIP_DIRS_INCOMING = os.getenv('WDR_FTP_SKIP_DIRS_INCOMING')
 WDR_FTP_KEEP_FILES = os.getenv(
                             'WDR_FTP_KEEP_FILES',
