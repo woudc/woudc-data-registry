@@ -1,5 +1,4 @@
 click
-ftputil
 elasticsearch
 ftputil
 jsonschema
