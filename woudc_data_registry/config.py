@@ -76,9 +76,6 @@ WDR_UV_INDEX_FORMULA_LOOKUP = os.getenv('WDR_UV_INDEX_FORMULA_LOOKUP')
 WDR_EMAIL_HOST = os.getenv('WDR_EMAIL_HOST')
 WDR_EMAIL_PORT = os.getenv('WDR_EMAIL_PORT')
 WDR_EMAIL_SECURE = os.getenv('WDR_EMAIL_SECURE')
-WDR_EMAIL_TEST = (
-    os.getenv('WDR_EMAIL_TEST', 'true').strip().lower() in ('true', '1', 'yes')
-)
 WDR_EMAIL_TEST = os.getenv('WDR_EMAIL_TEST',
                            'true').strip().lower() in ('true', '1', 'yes')
 WDR_EMAIL_FROM_USERNAME = os.getenv('WDR_EMAIL_FROM_USERNAME')
