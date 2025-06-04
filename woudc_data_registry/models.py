@@ -1140,16 +1140,26 @@ class Notification(base):
         self.set_keywords_en(dict_['keywords_en'])
         self.set_keywords_fr(dict_['keywords_fr'])
 
-        self.published_date = dict_['published']
         self.banner = dict_.get('banner', False)
         self.visible = dict_.get('visible', True)
 
         self.x = dict_['x']
         self.y = dict_['y']
 
-        year_month_day = datetime.datetime. \
-            strptime(self.published_date[0:10], '%Y-%m-%d')
-        self.notification_id = strftime_rfc3339(year_month_day)
+        published_value = dict_['published']
+        if isinstance(published_value, str):
+            self.published_date = datetime.datetime.strptime(
+                published_value[:10],
+                '%Y-%m-%d')
+        else:
+            self.published_date = published_value
+
+        # Normalize to start-of-day UTC for generating notification_id
+        published_normalized = self.published_date.replace(hour=0, 
+                                                           minute=0,
+                                                           second=0,
+                                                           microsecond=0)
+        self.notification_id = strftime_rfc3339(published_normalized)
 
     def get_keywords_en(self):
         return self.keywords_en.split(',')
@@ -2509,9 +2519,9 @@ def product_sync(ctx):
     """Sync products to Elasticsearch"""
 
     products = [
-       OzoneSonde,
-       TotalOzone,
-       UVIndex
+        OzoneSonde,
+        TotalOzone,
+        UVIndex
     ]
 
     registry_ = registry.Registry()

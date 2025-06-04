@@ -103,12 +103,18 @@ def show(ctx, identifier):
 def add(ctx, identifier, path):
     """Add a news notification"""
 
+    LOGGER.info('Loading notification file from: %s', path)
     with open(path) as news_file:
         notification = yaml.safe_load(news_file)
-        notification['published'] = datetime.now()
+        if 'published' not in notification:
+            notification['published'] = datetime.now().strftime('%Y-%m-%d')
 
         if identifier:
             notification['identifier'] = identifier
+
+        LOGGER.debug('Parsed notification:\n%s',
+                     yaml.dump(notification, sort_keys=False, 
+                               allow_unicode=True))
 
         added = add_metadata(Notification, notification,
                              save_to_registry, save_to_index)
@@ -124,12 +130,17 @@ def add(ctx, identifier, path):
 def update(ctx, identifier, path):
     """Update news notification"""
 
+    LOGGER.info('Loading notification file from: %s', path)
     with open(path) as news_file:
         notification = yaml.safe_load(news_file)
 
         if len(notification.keys()) == 1:
             click.echo('No updates specified')
             return
+
+        LOGGER.debug('Parsed notification:\n%s',
+                     yaml.dump(notification, sort_keys=False, 
+                               allow_unicode=True))
 
         update_metadata(Notification, identifier, notification,
                         save_to_registry, save_to_index)
@@ -140,7 +151,7 @@ def update(ctx, identifier, path):
 @click.argument('identifier', required=True)
 @click.pass_context
 def delete(ctx, identifier):
-    """Delete a station"""
+    """Delete a notification"""
 
     if len(get_metadata(Notification, identifier)) == 0:
         click.echo('Station not found')

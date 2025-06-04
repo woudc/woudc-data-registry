@@ -227,7 +227,7 @@ def delete_metadata(entity, identifier,
                         .delete()
 
     if save_to_registry:
-        REGISTRY.save()
+        REGISTRY.session.commit()
     if save_to_index:
         SEARCH_INDEX.unindex(entity, identifier)
 
