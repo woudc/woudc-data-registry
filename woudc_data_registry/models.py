@@ -1155,7 +1155,7 @@ class Notification(base):
             self.published_date = published_value
 
         # Normalize to start-of-day UTC for generating notification_id
-        published_normalized = self.published_date.replace(hour=0, 
+        published_normalized = self.published_date.replace(hour=0,
                                                            minute=0,
                                                            second=0,
                                                            microsecond=0)

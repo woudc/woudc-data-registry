@@ -230,6 +230,11 @@ To generate emails for contributors:
 woudc-data-registry data generate-emails /path/to/dir
 ```
 
+#### Publishing Notifications to MQTT Server
+```bash
+woudc-data-registry data publish-notification --hours number_of_hours
+```
+
 #### Delete Record
 
 ```bash
