@@ -1,0 +1,105 @@
+mcf:
+    version: 1.0
+
+metadata:
+    identifier: uv_index_hourly
+    language: en
+    language_alternate: fr
+    charset: utf8
+    hierarchylevel: dataset
+    datestamp: 2025-04-05
+
+spatial:
+    datatype: vector
+    geomtype: point
+
+identification:
+    language: eng; CAN
+    charset: utf8
+    title:
+        en: &title_en UV Index (hourly maximum)
+        fr: &title_fr Indice UV (maximum horaire)
+    abstract:
+        en: &abstract_en Developed by Canadian scientists in 1992, the ultraviolet index or UV index measures the strength of sunburn-producing ultraviolet radiation at a given location and time.  The index values are calculated from measurements made by ground-based spectometers, broad-band filter radiometer and multi-filter radiometer.  UV index values can also be retrieved from satellite measurements of atmospheric ozone and cloud cover.  The UV index is measured on a linear scale with higher values indicative of greater risk of sunburn on human skin.  Mean noontime UV index values in summer range from 1 in the Arctic to about 12 over the subtropical latitudes.  It can be as high as 26 over higher elevations in the tropics.  Factors affecting the UV index are sun elevation, total amount of ozone in the atmosphere, cloud cover, reflection from snow cover and local pollution.  Forecasts of UV index are now routinely made by various meteorological centres, and adopted as a standard indicator of UV radiation by the World Meteorological Organization and the World Health Organization.
+        fr: &abstract_fr Mis au point par des scientifiques canadiens en 1992, l’indice ultraviolet, ou indice UV, mesure l’intensité du rayonnement ultraviolet pouvant causer des coups de soleil à un endroit précis et à une heure donnée.  Les valeurs de l’indice sont calculées d’après les mesures effectuées par des spectromètres au sol, un radiomètre à filtre à bande large et un radiomètre multifiltre.  Les valeurs de l’indice UV peuvent également être tirées des mesures satellitaires de l’ozone atmosphérique et de la couverture nuageuse.  L’indice UV est mesuré sur une échelle linéaire dont les valeurs les plus élevées indiquent un risque accru de coup de soleil sur la peau humaine.  Les valeurs moyennes de l’indice UV à midi, en été, sont comprises entre 1 dans l’Arctique et près de 12 à des latitudes subtropicales.  Cet indice peut monter jusqu’à 26 dans des zones de haute altitude sous les tropiques.  Les facteurs influant sur l’indice UV sont la hauteur du soleil, la quantité totale d’ozone dans l’atmosphère, la couverture nuageuse, la réflexion produite par la couverture de neige et la pollution locale.  Les prévisions de l’indice UV sont maintenant couramment effectuées par les divers centres météorologiques et ont été adoptées comme indicateur standard du rayonnement UV par l’Organisation météorologique mondiale et l’Organisation mondiale de la santé.
+    edition: 1.0
+    dates:
+        creation: 2025-04-30
+        publication: 2025-04-30
+    wmo_data_policy: core
+    doi: 10.14287/10000013
+    keywords:
+        default:
+            keywords:
+                en:
+                    - ultraviolet radiation
+                    - spectral
+                    - broadband
+                    - multiband
+                    - solar zenith angle
+                    - sunburn
+                fr:
+                    - rayonnement ultraviolet
+                    - spectral
+                    - large bande
+                    - multibande 
+                    - angle zénithal du soleil
+                    - coup de soleil
+        wmo:
+            keywords:
+                - atmospheric-composition
+            keywords_type: theme
+            vocabulary:
+                name: WMO WIS2 Topic Hierarchy
+                url: https://codes.wmo.int/wis/topic-hierarchy/earth-system-discipline
+    topiccategory:
+        - climatologyMeteorologyAtmosphere
+    extents:
+        spatial:
+            - bbox: [-180,-90,180,90]
+              crs: 4326
+        temporal:
+            - begin: 1988-11-18
+              end: 
+              resolution: P1D
+    fees: None
+    accessconstraints: None
+    license:
+        name: WMO Unified Data Policy
+        url: https://library.wmo.int/idurl/4/58009
+    rights:
+        en: Copyright (c) 2010 Her Majesty the Queen in Right of Canada
+        fr: Copyright (c) 2010 Her Majesty the Queen in Right of Canada
+    url: https://woudc.org/en/data/dataset-information/uv_index_hourly
+    status: onGoing
+    maintenancefrequency: continual
+
+contact:
+    host: &contact_poc
+        organization: World Ozone and Ultraviolet Radiation Data Centre
+        url: https://woudc.org/en/contact
+        individualname: Data centre manager
+        positionname: Data centre manager
+        phone: '+01-416-802-5741'
+        fax: None
+        address: 4905 Dufferin Street
+        city: Toronto
+        administrativearea: Ontario
+        postalcode: M3H 5T4
+        country: Canada
+        email: woudc@ec.gc.ca
+        hoursofservice: 0700h - 1500h EST
+        contactinstructions: email
+
+distribution:
+    api:
+        url: https://api.woudc.org/collections/uv_index_hourly
+        type: application/json
+        rel: service
+        name:
+            en: *title_en
+            fr: *title_fr
+        description:
+            en: *abstract_en
+            fr: *abstract_fr
+        function: download
