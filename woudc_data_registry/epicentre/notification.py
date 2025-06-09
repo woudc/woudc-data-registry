@@ -113,7 +113,7 @@ def add(ctx, identifier, path):
             notification['identifier'] = identifier
 
         LOGGER.debug('Parsed notification:\n%s',
-                     yaml.dump(notification, sort_keys=False, 
+                     yaml.dump(notification, sort_keys=False,
                                allow_unicode=True))
 
         added = add_metadata(Notification, notification,
@@ -139,7 +139,7 @@ def update(ctx, identifier, path):
             return
 
         LOGGER.debug('Parsed notification:\n%s',
-                     yaml.dump(notification, sort_keys=False, 
+                     yaml.dump(notification, sort_keys=False,
                                allow_unicode=True))
 
         update_metadata(Notification, identifier, notification,
