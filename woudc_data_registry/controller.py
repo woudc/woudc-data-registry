@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2024 Government of Canada
+# Copyright (c) 2025 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -52,9 +52,9 @@ from woudc_extcsv import (ExtendedCSV, NonStandardDataError,
                           MetadataValidationError)
 
 from woudc_data_registry import config
+from woudc_data_registry.gather import gather as gather_
 from woudc_data_registry.util import (is_text_file, read_file,
-                                      send_email, delete_file_from_record,
-                                      gathering)
+                                      send_email, delete_file_from_record)
 
 
 from woudc_data_registry.processing import Process
@@ -343,32 +343,27 @@ def delete_record(ctx, file_path):
 
 
 @click.command()
-@click.argument('folder_path')
+@click.argument('path')
 @click.pass_context
-def gather(ctx, folder_path):
+def gather(ctx, path):
     """Gather all the files in a directory tree"""
-    while os.path.exists(folder_path):
-        click.echo(f"Folder '{folder_path}' already exists.")
-        folder_path = click.prompt(
-            "Please provide a folder path that does not exist yet", type=str
-        )
-    # Folder doesn't exist, create it
-    os.makedirs(folder_path)
+    while os.path.exists(path):
+        click.echo(f"Directory '{path}' already exists.")
+        path = click.prompt('Please provide a new directory', type=str)
+
+    # Directory doesn't exist, create it
+    os.makedirs(path)
 
     try:
-        click.echo(f"Folder '{folder_path}' has been created successfully.")
-        skip_incoming_folders = (
+        click.echo(f"Directory '{path}' has been created successfully.")
+        skip_incoming_directories = (
             'woudcadmin,level-0,org1,org2,provisional,calibration,'
             'px-testing,px-testing2'
         )
-        FILES_GATHERED = gathering(config.WDR_FTP_HOST, config.WDR_FTP_USER,
-                                   config.WDR_FTP_PASS,
-                                   config.WDR_FTP_BASEDIR_INCOMING,
-                                   skip_incoming_folders,
-                                   folder_path, config.WDR_FTP_KEEP_FILES)
-        click.echo(f"Gathered {FILES_GATHERED} files from the FTP server.")
+        FILES_GATHERED = gather_(path, skip_incoming_directories)
+        click.echo(f"Gathered {FILES_GATHERED} files.")
     except Exception as err:
-        LOGGER.error('Unable to gather: %s', err)
+        LOGGER.error(f'Unable to gather: {err}')
 
     LOGGER.info("Done Gathering files")
 

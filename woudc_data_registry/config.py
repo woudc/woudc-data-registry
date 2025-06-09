@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2024 Government of Canada
+# Copyright (c) 2025 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -45,6 +45,7 @@
 
 import logging
 import os
+from woudc_data_registry.util import str2bool
 
 import yaml
 
@@ -52,9 +53,7 @@ LOGGER = logging.getLogger(__name__)
 
 WDR_LOGGING_LOGLEVEL = os.getenv('WDR_LOGGING_LOGLEVEL', 'ERROR')
 WDR_LOGGING_LOGFILE = os.getenv('WDR_LOGGING_LOGFILE')
-
-WDR_DB_DEBUG = os.getenv('WDR_DB_DEBUG',
-                         'False').strip().lower() in ('true', '1', 'yes')
+WDR_DB_DEBUG = str2bool(os.getenv('WDR_DB_DEBUG', 'False'))
 WDR_DB_TYPE = os.getenv('WDR_DB_TYPE')
 WDR_DB_HOST = os.getenv('WDR_DB_HOST')
 WDR_DB_PORT = int(os.getenv('WDR_DB_PORT', 5432))
@@ -64,9 +63,7 @@ WDR_DB_NAME = os.getenv('WDR_DB_NAME')
 WDR_SEARCH_TYPE = os.getenv('WDR_SEARCH_TYPE', 'elasticsearch')
 WDR_SEARCH_URL = os.getenv('WDR_SEARCH_URL')
 WDR_SEARCH_INDEX_BASENAME = os.getenv('WDR_SEARCH_INDEX_BASENAME')
-WDR_SEARCH_CERT_VERIFY = os.getenv(
-                            'WDR_SEARCH_CERT_VERIFY',
-                            'True').strip().lower() in ('true', '1', 'yes')
+WDR_SEARCH_CERT_VERIFY = str2bool(os.getenv('WDR_SEARCH_CERT_VERIFY', 'True'))
 WDR_WAF_BASEDIR = os.getenv('WDR_WAF_BASEDIR')
 WDR_WAF_BASEURL = os.getenv('WDR_WAF_BASEURL', 'https://woudc.org/archive')
 WDR_ERROR_CONFIG = os.getenv('WDR_ERROR_CONFIG')
@@ -89,9 +86,7 @@ WDR_FTP_USER = os.getenv('WDR_FTP_USER')
 WDR_FTP_PASS = os.getenv('WDR_FTP_PASS')
 WDR_FTP_BASEDIR_INCOMING = os.getenv('WDR_FTP_BASEDIR_INCOMING')
 WDR_FTP_SKIP_DIRS_INCOMING = os.getenv('WDR_FTP_SKIP_DIRS_INCOMING')
-WDR_FTP_KEEP_FILES = os.getenv(
-                            'WDR_FTP_KEEP_FILES',
-                            'True').strip().lower() in ('true', '1', 'yes')
+WDR_FTP_KEEP_FILES = str2bool(os.getenv('WDR_FTP_KEEP_FILES', 'True'))
 
 if not WDR_SEARCH_INDEX_BASENAME:
     msg = 'WDR_SEARCH_INDEX_BASENAME was not set. \
