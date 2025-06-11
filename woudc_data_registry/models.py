@@ -265,7 +265,7 @@ class Dataset(base):
 
     def __init__(self, dict_):
         self.data_class = dict_['data_class']
-        self.dataset_level = str(dict_['dataset_level'])
+        self.dataset_level = str(float(dict_['dataset_level']))
         self.dataset_name = dict_['dataset_name']
         self.dataset_id = f"{self.dataset_name}_{self.dataset_level}"
 
@@ -323,7 +323,7 @@ class Instrument(base):
     def __init__(self, dict_):
         self.station_id = dict_['station_id']
         self.dataset_name = dict_['dataset_name']
-        self.dataset_level = dict_['dataset_level']
+        self.dataset_level = str(float(dict_['dataset_level']))
         self.dataset_form = str(dict_.get('dataset_form', '1'))  # noqa; defaults to '1' if empty/none/no Key found
         self.contributor = dict_['contributor']
         self.project = dict_['project']
