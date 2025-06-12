@@ -251,8 +251,9 @@ def send_email(message, subject, from_email_address, to_email_addresses,
     :param from_email_address: email of the sender
     :param to_email_addresses: list of emails of the receipients
     :param host: host of SMTP server
-    :param cc_addresses: list of cc email addresses
     :param port: port on SMTP server
+    :param cc_addresses: list of cc email addresses
+    :param bcc_addresses: list of bcc email addresses
     :param secure: Turn on/off TLS
     :param from_email_password: password of sender, if TLS is turned on
     :returns: list of emailing statuses
