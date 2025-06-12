@@ -136,7 +136,10 @@ def send_ack_emails(contributor_dict):
         subject = 'WOUDC data submission confirmation (%s)' % (contributor)
         if not str2bool(test_email):
             try:
-                toaddrs = agency_emails[contributor]
+                if ';' in agency_emails[contributor]:
+                    toaddrs = agency_emails[contributor].split(';')
+                else:
+                    toaddrs = agency_emails[contributor].split(',')
             except Exception:
                 msg = (
                     'Unable to get email for agency: %s. Skipping.'
@@ -150,7 +153,7 @@ def send_ack_emails(contributor_dict):
                 contributor,
                 agency_emails[contributor]
             )
-            toaddrs = config.WDR_EMAIL_TO.split(',')
+            toaddrs = config.WDR_EMAIL_TO.split(';')
             subject = 'TEST: ' + subject
         try:
             send_email(
@@ -266,7 +269,6 @@ def _get_agency_emails():
         raise err
 
     registry.close_session()
-    return emails
     return emails
 
 
