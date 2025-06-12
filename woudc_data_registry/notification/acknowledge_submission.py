@@ -153,7 +153,7 @@ def send_ack_emails(contributor_dict):
                 contributor,
                 agency_emails[contributor]
             )
-            toaddrs = config.WDR_EMAIL_TO.split(',')
+            toaddrs = config.WDR_EMAIL_TO.split(';')
             subject = 'TEST: ' + subject
         try:
             send_email(
