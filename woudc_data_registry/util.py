@@ -251,8 +251,9 @@ def send_email(message, subject, from_email_address, to_email_addresses,
     :param from_email_address: email of the sender
     :param to_email_addresses: list of emails of the receipients
     :param host: host of SMTP server
-    :param cc_addresses: list of cc email addresses
     :param port: port on SMTP server
+    :param cc_addresses: list of cc email addresses
+    :param bcc_addresses: list of bcc email addresses
     :param secure: Turn on/off TLS
     :param from_email_password: password of sender, if TLS is turned on
     :returns: list of emailing statuses
@@ -283,19 +284,22 @@ def send_email(message, subject, from_email_address, to_email_addresses,
             cc_addresses is not None,
             cc_addresses != ['']
             ]):
-        to_email_addresses += cc_addresses
         cc = True
     LOGGER.debug('bcc: {}' .format(bcc_addresses))
-    # bcc
+    bcc = False
     if all([
             bcc_addresses is not None,
             bcc_addresses != ['']
             ]):
-        to_email_addresses += bcc_addresses
+        bcc = True
 
     LOGGER.debug('to_email: {}' .format(to_email_addresses))
     if isinstance(to_email_addresses, str):
-        to_email_addresses = to_email_addresses.split(';')
+        # checking whether to split by ';' or ','
+        if ';' in to_email_addresses:
+            to_email_addresses = to_email_addresses.split(';')
+        else:
+            to_email_addresses = to_email_addresses.split(',')
 
     # set up the message
     msg = MIMEMultipart()
@@ -315,8 +319,14 @@ def send_email(message, subject, from_email_address, to_email_addresses,
         LOGGER.debug(
             'Sending report to {}'.format(to_email_addresses)
             )
+        LOGGER.debug('cc_addresses: {}'.format(cc_addresses))
+        recipients = to_email_addresses + cc_addresses
+        if (bcc):  # Add BCC addresses if they exist
+            recipients += bcc_addresses
+            LOGGER.debug('bcc_addresses: {}'.format(bcc_addresses))
+
         send_status = server.sendmail(
-            msg['From'], to_email_addresses + cc_addresses, text)
+            msg['From'], recipients, text)
         send_statuses.append(send_status)
     except Exception as err:
         error_msg = (
