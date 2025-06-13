@@ -1,0 +1,124 @@
+mcf:
+    version: 1.0
+
+metadata:
+    identifier: Broad-band
+    language: en
+    language_alternate: fr
+    charset: utf8
+    hierarchylevel: dataset
+    datestamp: 2025-04-05
+
+spatial:
+    datatype: vector
+    geomtype: point
+
+identification:
+    language: eng; CAN
+    charset: utf8
+    title:
+        en: &title_en Broadband
+        fr: &title_fr Bande large
+    abstract:
+        en: &abstract_en Measurements of ultraviolet-A (UV-A), UV-B radiation and erythemally weighted UV radiation. The measurement technique utilizes colored glass optical filters to block the Sun’s visible spectra and a UV sensitive fluorescent phosphor to convert the UV light into visible light, which is then measured by a solid-state photodetector.
+        fr: &abstract_fr Mesures du rayonnement ultraviolet-A (UV-A), du rayonnement ultraviolet-B (UV-B) et du rayonnement des UV érythématogènes. La technique de mesure consiste en une combinaison de filtres optiques de verre de couleur pour bloquer les spectres visibles du soleil et d'une couche de phosphore fluorescent, sensible aux UV, pour convertir les UV-B en lumière visible, puis à mesurer celle-ci au moyen d'un détecteur photo-électrique à semi-conducteurs.
+    edition: 1.0
+    dates:
+        creation: 2025-04-30
+        publication: 2025-04-30
+    wmo_data_policy: core
+    doi: 10.14287/10000012
+    keywords:
+        default:
+            keywords:
+                en:
+                    - uv-a
+                    - uv-b
+                    - uv
+                    - radiation
+                    - broad-band
+                    - level 1.0
+                fr:
+                    - uv-a
+                    - uv-b
+                    - uv
+                    - rayonnement
+                    - bande large
+                    - niveau 1.0
+        wmo:
+            keywords:
+                - atmospheric-composition
+            keywords_type: theme
+            vocabulary:
+                name: WMO WIS2 Topic Hierarchy
+                url: https://codes.wmo.int/wis/topic-hierarchy/earth-system-discipline
+    topiccategory:
+        - climatologyMeteorologyAtmosphere
+    extents:
+        spatial:
+            - bbox: [-180,-90,180,90]
+              crs: 4326
+        temporal:
+            - begin: 1997-01-09
+              end: 
+              resolution: P1D
+    fees: None
+    accessconstraints: None
+    license:
+        name: WMO Unified Data Policy
+        url: https://library.wmo.int/idurl/4/58009
+    rights:
+        en: Copyright (c) 2010 Her Majesty the Queen in Right of Canada
+        fr: Copyright (c) 2010 Her Majesty the Queen in Right of Canada
+    url: https://woudc.org/en/data/dataset-information/spectral
+    status: onGoing
+    maintenancefrequency: continual
+
+contact:
+    host: &contact_poc
+        organization: World Ozone and Ultraviolet Radiation Data Centre
+        url: https://woudc.org/en/contact
+        individualname: Data centre manager
+        positionname: Data centre manager
+        phone: '+01-416-802-5741'
+        fax: None
+        address: 4905 Dufferin Street
+        city: Toronto
+        administrativearea: Ontario
+        postalcode: M3H 5T4
+        country: Canada
+        email: woudc@ec.gc.ca
+        hoursofservice: 0700h - 1500h EST
+        contactinstructions: email
+
+distribution:
+    waf_level_1.0_1:
+        url: https://woudc.org/archive/Archive-NewFormat/Broad-band_1.0_1
+        type: text/html
+        rel: canonical
+        name: Web Accessible Folder (WAF)
+        description:
+            en: Web accessible folder (WAF)
+            fr: Web accessible folder (WAF)
+        function: download
+    waf_level_2.0_1:
+        url: https://woudc.org/archive/Archive-NewFormat/Broad-band_2.0_1
+        type: text/html
+        rel: canonical
+        name: Web Accessible Folder (WAF)
+        description:
+            en: Web accessible folder (WAF)
+            fr: Web accessible folder (WAF)
+        function: download
+
+    api:
+        url: https://api.woudc.org/collections/data_records
+        type: application/json
+        rel: service
+        name:
+            en: *title_en
+            fr: *title_fr
+        description:
+            en: *abstract_en
+            fr: *abstract_fr
+        function: download
