@@ -284,19 +284,22 @@ def send_email(message, subject, from_email_address, to_email_addresses,
             cc_addresses is not None,
             cc_addresses != ['']
             ]):
-        to_email_addresses += cc_addresses
         cc = True
     LOGGER.debug('bcc: {}' .format(bcc_addresses))
-    # bcc
+    bcc = False
     if all([
             bcc_addresses is not None,
             bcc_addresses != ['']
             ]):
-        to_email_addresses += bcc_addresses
+        bcc = True
 
     LOGGER.debug('to_email: {}' .format(to_email_addresses))
     if isinstance(to_email_addresses, str):
-        to_email_addresses = to_email_addresses.split(';')
+        # checking whether to split by ';' or ','
+        if ';' in to_email_addresses:
+            to_email_addresses = to_email_addresses.split(';')
+        else:
+            to_email_addresses = to_email_addresses.split(',')
 
     # set up the message
     msg = MIMEMultipart()
@@ -304,6 +307,9 @@ def send_email(message, subject, from_email_address, to_email_addresses,
     msg['To'] = ', '.join(to_email_addresses)
     if cc:
         msg['Cc'] = ', '.join(cc_addresses)  # Add CC addresses if they exist
+    if bcc:
+        msg['Bcc'] = ', '.join(bcc_addresses)
+        # Add BCC addresses if they exist
     msg['Subject'] = subject
     msg.attach(MIMEText(message, 'plain'))
 
