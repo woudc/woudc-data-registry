@@ -752,10 +752,6 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'file_path': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
             'dataset_id': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
@@ -857,10 +853,6 @@ MAPPINGS = {
         'index': 'totalozone',
         'properties': {
             'identifier': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'file_path': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -983,10 +975,6 @@ MAPPINGS = {
         'index': 'ozonesonde',
         'properties': {
             'identifier': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'file_path': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
