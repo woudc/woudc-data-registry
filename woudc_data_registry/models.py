@@ -1162,13 +1162,37 @@ class Notification(base):
         self.notification_id = strftime_rfc3339(published_normalized)
 
     def get_keywords_en(self):
-        return self.keywords_en.split(',')
+        if isinstance(self.keywords_en, str):
+            return self.keywords_en.split(',')
+        elif isinstance(self.keywords_en, list):
+            return self.keywords_en
+        else:
+            LOGGER.error(
+                "Unexpected type for self.keywords_en: %s",
+                type(self.keywords_en).__name__
+            )
+            raise TypeError(
+                f"Expected self.keywords_en to be str or list, "
+                f"got {type(self.keywords_en).__name__}"
+            )
 
     def set_keywords_en(self, keywords):
         self.keywords_en = ','.join(keywords)
 
     def get_keywords_fr(self):
-        return self.keywords_fr.split(',')
+        if isinstance(self.keywords_fr, str):
+            return self.keywords_fr.split(',')
+        elif isinstance(self.keywords_fr, list):
+            return self.keywords_fr
+        else:
+            LOGGER.error(
+                "Unexpected type for self.keywords_fr: %s",
+                type(self.keywords_fr).__name__
+            )
+            raise TypeError(
+                f"Expected self.keywords_fr to be str or list, "
+                f"got {type(self.keywords_fr).__name__}"
+            )
 
     def set_keywords_fr(self, keywords):
         self.keywords_fr = ','.join(keywords)
