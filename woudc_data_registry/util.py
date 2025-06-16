@@ -165,7 +165,7 @@ def delete_file_from_record(file_path, table):
     registry = Registry()
 
     filename = file_path.split('/')[-1]
-    condition = {'filename': filename, 'output_filepath': file_path}
+    condition = {'filename': filename, 'publish_filepath': file_path}
 
     result = registry.query_multiple_fields(table, condition)
     if not result:

@@ -160,7 +160,7 @@ def orchestrate(source, working_dir, metadata_only=False,
                     data_record.filename = os.path.basename(file_to_process)
                     data_record.url = \
                         data_record.get_waf_path(config.WDR_WAF_BASEURL)
-                    data_record.output_filepath = \
+                    data_record.publish_filepath = \
                         data_record.get_waf_path(config.WDR_WAF_BASEDIR)
                     if verify_only:
                         click.echo('Verified but not ingested')

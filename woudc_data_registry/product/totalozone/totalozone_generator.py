@@ -216,7 +216,7 @@ def execute(path, bypass):
 
                         try:
                             ins_data = {
-                                'file_path': ipath,
+                                'ingest_filepath': ipath,
                                 'filename': filename,
                                 'dataset_id': dataset_id,
                                 'dataset_level': dataset_level,
