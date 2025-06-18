@@ -295,7 +295,7 @@ def execute(path, bypass):
                     LOGGER.info(f'Inserted {ozone_object}')
                     success += 1
                 except Exception as err:
-                    msg = (f'Unable to insert UV index {ipath}:'
+                    msg = (f'Unable to insert Ozonesonde {ipath}:'
                            f' {err}')
                     LOGGER.error(msg)
                     continue

@@ -2,6 +2,7 @@ click
 elasticsearch
 ftputil
 jsonschema
+paho-mqtt
 pyyaml
 rarfile
 requests
