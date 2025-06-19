@@ -50,7 +50,11 @@ import click
 import csv
 import json
 import codecs
-import yaml
+import copy
+
+from pygeometa.core import read_mcf
+from pygeometa.schemas.wmo_wcmp2 import WMOWCMP2OutputSchema
+
 from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
                         Float, Enum, ForeignKey, Integer, String, Time,
                         UniqueConstraint, ForeignKeyConstraint, ARRAY, Text,
@@ -65,7 +69,6 @@ from woudc_data_registry import config, registry
 from woudc_data_registry.search import SearchIndex, search
 from woudc_data_registry.util import (get_date, point2geojsongeometry,
                                       strftime_rfc3339)
-import woudc_data_registry.generate_metadata as generate_metadata
 
 base = declarative_base()
 
@@ -415,22 +418,15 @@ class DiscoveryMetadata(base):
     _metadata = Column(String, nullable=False)
 
     def __init__(self, dict_):
-        self.discovery_metadata_id = dict_['discovery_metadata_id']
-        self._metadata = dict_['metadata']
+        self.discovery_metadata_id = dict_['id']
+        self._metadata = json.dumps(dict_)
 
     @property
     def __geo_interface__(self):
-        metadata = json.loads(self._metadata.replace('\\"', '"'))
-        metadata['properties']['identifier'] = self.discovery_metadata_id
-        return {
-            'id': self.discovery_metadata_id,
-            'type': 'Feature',
-            'geometry': None,
-            'properties':  metadata['properties']
-        }
+        return json.loads(self._metadata)
 
     def __repr__(self):
-        return f'Project ({self.discovery_metadata_id})'
+        return f'Discovery Metadata ({self.discovery_metadata_id})'
 
 
 class Project(base):
@@ -2251,7 +2247,7 @@ def init(ctx, datadir, init_search_index):
     instruments = os.path.join(datadir, 'instruments.csv')
     deployments = os.path.join(datadir, 'deployments.csv')
     notifications = os.path.join(datadir, 'notifications.csv')
-    discovery_metadata = os.path.join(datadir, 'woudc.skos.yaml')
+    discovery_metadata = os.path.join(datadir, 'init', 'discovery-metadata')
     station_dobson_corrections = os.path.join(
         datadir, 'station_dobson_corrections.csv')
 
@@ -2362,12 +2358,34 @@ def init(ctx, datadir, init_search_index):
             notification_models.append(notification)
 
     click.echo('Loading discovery metadata items')
-    with open(discovery_metadata) as yamlfile:
-        yamldict = yaml.load(yamlfile, Loader=yaml.FullLoader)
-        reader = generate_metadata.generate_metadata(yamldict)
-        for row in reader:
-            discovery_metadata_ = DiscoveryMetadata(row)
+    for filename in os.listdir(discovery_metadata):
+        if filename.endswith(".yml"):
+            filepath = os.path.join(discovery_metadata, filename)
+            yamldict = read_mcf(filepath)
+            identifier = yamldict['metadata']['identifier']
+            yamldict['metadata']['identifier'] = f"{identifier}_en"
+            wmo_wcmp2_os = WMOWCMP2OutputSchema()
+            jsondict = wmo_wcmp2_os.write(yamldict, stringify=False)
+            jsondict['properties']['woudc:content_category'] = identifier
+            end_date = jsondict['time']['interval'][1]
+            if end_date in ("", ".."):
+                jsondict['time']['interval'][1] = None
+            discovery_metadata_ = DiscoveryMetadata(jsondict)
             discovery_metadata_models.append(discovery_metadata_)
+
+            yamldict_fr = copy.deepcopy(yamldict)
+            base_identifier = yamldict['metadata']['identifier']
+            yamldict_fr['metadata']['identifier'] = (
+                base_identifier.replace("en", "fr")
+            )
+            yamldict_fr['metadata']['language'] = 'fr'
+            yamldict_fr['metadata']['language_alternate'] = 'en'
+            jsondict_fr = wmo_wcmp2_os.write(yamldict_fr, stringify=False)
+            end_date_fr = jsondict_fr['time']['interval'][1]
+            if end_date_fr in ("", ".."):
+                jsondict_fr['time']['interval'][1] = None
+            discovery_metadata_fr = DiscoveryMetadata(jsondict_fr)
+            discovery_metadata_models.append(discovery_metadata_fr)
 
     try:
         click.echo('Loading station dobson corrections items')

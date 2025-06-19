@@ -46,6 +46,7 @@
 
 import json
 import logging
+
 from woudc_data_registry.registry import Registry
 import woudc_data_registry.models
 
@@ -478,7 +479,8 @@ def update_extents():
 
         else:
             for (dataset, md) in datasets:
-                if dataset == inputs[input_table]['content_category']:
+                dataset_original = '_'.join(dataset.split('_')[:-1])
+                if dataset_original == inputs[input_table]['content_category']:
                     break
             else:
                 msg = (

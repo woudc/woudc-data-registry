@@ -1,0 +1,117 @@
+mcf:
+    version: 1.0
+
+metadata:
+    identifier: UmkehrN14_1.0
+    language: en
+    language_alternate: fr
+    charset: utf8
+    hierarchylevel: dataset
+    datestamp: 2025-04-05
+
+spatial:
+    datatype: vector
+    geomtype: point
+
+identification:
+    language: eng; CAN
+    charset: utf8
+    title:
+        en: &title_en Level 1.0
+        fr: &title_fr Niveau 1.0
+    abstract:
+        en: &abstract_en Umkehr measurements are ozone profiles compiled using 14 N-values, measured with ultraviolet spectrophotometers of the ratio of zenith sky light intensities of two wavelengths in the solar ultraviolet range when the sun is near the horizon. Level 1 is raw Umkehr data which contains data collected at 14 zenith angles.
+        fr: &abstract_fr Les mesures Umkehr sont des profils d'ozone dressés en appliquant 14 valeurs N, mesurés au moyen de spectrophotomètres à ultraviolet du ratio des intensités lumineuses du ciel au zénith de deux longueurs d'onde dans la plage des ultraviolets solaires lorsque le soleil est près de l'horizon. Le niveau 1 correspond aux données Umkehr brutes qui contiennent les données recueillies à 14 angles zénithaux.
+    edition: 1.0
+    dates:
+        creation: 2025-04-30
+        publication: 2025-04-30
+    wmo_data_policy: core
+    doi: 10.14287/10000005
+    keywords:
+        default:
+            keywords:
+                en:
+                    - umkehr
+                    - umkehrN14
+                    - "14"
+                    - solar
+                    - zenith
+                    - angle
+                    - level 1.0
+                fr:
+                    - umkehr
+                    - umkehr N14
+                    - "14"
+                    - solaire
+                    - zénith
+                    - angle
+                    - niveau 1.0
+        wmo:
+            keywords:
+                - atmospheric-composition
+            keywords_type: theme
+            vocabulary:
+                name: WMO WIS2 Topic Hierarchy
+                url: https://codes.wmo.int/wis/topic-hierarchy/earth-system-discipline
+    topiccategory:
+        - climatologyMeteorologyAtmosphere
+    extents:
+        spatial:
+            - bbox: [-180,-90,180,90]
+              crs: 4326
+        temporal:
+            - begin: 1951-10-21
+              end: 
+              resolution: P1D
+    fees: None
+    accessconstraints: None
+    license:
+        name: WMO Unified Data Policy
+        url: https://library.wmo.int/idurl/4/58009
+    rights:
+        en: Copyright (c) 2010 Her Majesty the Queen in Right of Canada
+        fr: Copyright (c) 2010 Her Majesty the Queen in Right of Canada
+    url: https://woudc.org/en/data/dataset-information/umkehrn14_1
+    status: onGoing
+    maintenancefrequency: continual
+
+contact:
+    host: &contact_poc
+        organization: World Ozone and Ultraviolet Radiation Data Centre
+        url: https://woudc.org/en/contact
+        individualname: Data centre manager
+        positionname: Data centre manager
+        phone: '+01-416-802-5741'
+        fax: None
+        address: 4905 Dufferin Street
+        city: Toronto
+        administrativearea: Ontario
+        postalcode: M3H 5T4
+        country: Canada
+        email: woudc@ec.gc.ca
+        hoursofservice: 0700h - 1500h EST
+        contactinstructions: email
+
+distribution:
+    waf_level_1.0_1:
+        url: https://woudc.org/archive/Archive-NewFormat/UmkehrN14_1.0_1
+        type: text/html
+        rel: canonical
+        name: Web Accessible Folder (WAF)
+        description:
+            en: Web accessible folder (WAF)
+            fr: Web accessible folder (WAF)
+        function: download
+
+    api:
+        url: https://api.woudc.org/collections/data_records
+        type: application/json
+        rel: service
+        name:
+            en: *title_en
+            fr: *title_fr
+        description:
+            en: *abstract_en
+            fr: *abstract_fr
+        function: download
