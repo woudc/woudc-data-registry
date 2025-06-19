@@ -174,11 +174,12 @@ def decompress(ipath):
 
     if tarfile.is_tarfile(ipath):
         tar = tarfile.open(ipath)
+        folder_name = ipath.replace('.tar', '')
+        os.makedirs(folder_name, exist_ok=True)
         for item in tar:
             try:
-                item.name = os.path.basename(item.name)
                 file_list.append(item.name)
-                tar.extract(item, os.path.dirname(ipath))
+                tar.extract(item, folder_name, folder_name)
             except Exception as err:
                 success = False
                 msg = f'Unable to decompress from tar {item.name}: {err}'
@@ -186,11 +187,12 @@ def decompress(ipath):
 
     elif rarfile.is_rarfile(ipath):
         rar = rarfile.RarFile(ipath)
+        folder_name = ipath.replace('.rar', '')
+        os.makedirs(folder_name, exist_ok=True)
         for item in rar.infolist():
             try:
-                item.filename = os.path.basename(item.filename)
                 file_list.append(item.filename)
-                rar.extract(item, os.path.dirname(ipath))
+                rar.extract(item, path=folder_name)
             except Exception as err:
                 success = False
                 msg = f'Unable to decompress from rar {item.filename}: {err}'
@@ -204,9 +206,11 @@ def decompress(ipath):
                 continue
             try:
                 item_filename = os.path.basename(item.filename)
+                zip_folder = ipath.replace('.zip', '')
                 file_list.append(item_filename)
                 data = zipf.read(item.filename)
-                filename = f'{os.path.dirname(ipath)}/{item_filename}'
+                os.makedirs(zip_folder, exist_ok=True)
+                filename = f'{zip_folder}/{item_filename}'
                 LOGGER.info(f'Filename: {filename}')
                 with open(filename, 'wb') as ff:
                     ff.write(data)
