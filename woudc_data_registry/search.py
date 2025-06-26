@@ -242,6 +242,16 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'language': {
+                'type': 'object',
+                'properties': {
+                    'code': {'type': 'keyword'}
+                }
+            },
+            'woudc:content_category': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'levels': {
                 'type': 'nested',
                 'properties': {
