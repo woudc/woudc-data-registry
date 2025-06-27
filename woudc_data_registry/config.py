@@ -96,6 +96,10 @@ WDR_MQTT_BROKER_PORT = os.getenv('WDR_MQTT_BROKER_PORT')
 WDR_MQTT_BROKER_USERNAME = os.getenv('WDR_MQTT_BROKER_USERNAME')
 WDR_MQTT_BROKER_PASSWORD = os.getenv('WDR_MQTT_BROKER_PASSWORD')
 WDR_MQTT_CLIENT_ID = os.getenv('WDR_MQTT_CLIENT_ID')
+WDR_WOUDC_STATION_TEMIS_COMBINED = os.getenv(
+    'WDR_WOUDC_STATION_TEMIS_COMBINED')
+WDR_DOBSON_CORRECTION_OUTPUT = os.getenv(
+    'WDR_DOBSON_CORRECTION_OUTPUT')
 
 if not WDR_SEARCH_INDEX_BASENAME:
     msg = 'WDR_SEARCH_INDEX_BASENAME was not set. \
@@ -136,7 +140,6 @@ if None in [WDR_ERROR_CONFIG, WDR_EXTRA_CONFIG]:
     msg = 'Central configuration environment variables are not set!'
     LOGGER.error(msg)
     raise EnvironmentError(msg)
-
 
 try:
     with open(WDR_EXTRA_CONFIG) as extra_config_file:

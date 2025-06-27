@@ -57,6 +57,7 @@ from woudc_data_registry.models import DataRecord
 from woudc_data_registry import config
 from woudc_data_registry.util import generate_geojson_payload
 from woudc_data_registry.controller import gather, delete_record
+from woudc_data_registry.dobson_corrections import number_of_lines_till_end
 
 """
 You need to set up a test environment for your tests. So setup and populate a
@@ -370,6 +371,37 @@ class TestGathering(unittest.TestCase):
 
         subprocess.run(commands[0], shell=True, check=True,
                        stdout=subprocess.PIPE, text=True)
+
+
+class TestDobsonCorrections(unittest.TestCase):
+    """Test cases for Dobson corrections."""
+
+    def test_number_of_lines_till_end(self):
+        """
+        Test that this function returns the correct number of lines
+        in the corrected Dobson file.
+        """
+        num_lines = number_of_lines_till_end(
+            './woudc_data_registry/tests/data/totalozoneobs/'
+            'totalozoneobs-correct.csv'
+        )
+        self.assertEqual(num_lines, 3,
+                         "Expected 1 line in the corrected Dobson file, "
+                         f"got {num_lines} instead.")
+        
+        num_lines2 = number_of_lines_till_end(
+            './woudc_data_registry/tests/data/general/ecsv-comments.csv'
+        )
+        self.assertEqual(num_lines2, 3,
+                         "Expected 3 lines in the ecsv-comments file, "
+                         f"got {num_lines2} instead.")
+
+        num_lines3 = number_of_lines_till_end(
+            './woudc_data_registry/tests/data/general/pass_and_fail/LT160223.CSV'
+        )
+        self.assertEqual(num_lines3, 2,
+                         "Expected 1 line in the LT160223.CSV file, "
+                         f"got {num_lines3} instead.")
 
 
 if __name__ == '__main__':

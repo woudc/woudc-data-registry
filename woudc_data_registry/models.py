@@ -1887,8 +1887,10 @@ class StationDobsonCorrections(base):
 
     def __init__(self, dict_):
         self.station_id = dict_['station']
-        self.AD_corrected = bool(dict_['AD_corrected'])
-        self.CD_corrected = bool(dict_['CD_corrected'])
+        self.AD_corrected = dict_[
+            'AD_corrected'].strip().lower() in ('true', '1', 'yes', 't')
+        self.CD_corrected = dict_[
+            'CD_corrected'].strip().lower() in ('true', '1', 'yes', 't')
         self.AD_correcting_source = dict_['AD_correcting_source']
         self.CD_correcting_source = dict_['CD_correcting_source']
         self.CD_correcting_factor = dict_['CD_correcting_factor']
@@ -2130,36 +2132,37 @@ def setup_dobson_correction(ctx, datadir):
             click.echo('Deleting current StationDobsonCorrections table')
             registry_.session.query(StationDobsonCorrections).delete()
             registry_.save()
-            try:
-                click.echo(
-                    f'Generating model: '
-                    f'{StationDobsonCorrections.__tablename__}'
-                )
-                StationDobsonCorrections.__table__.create(
-                    engine, checkfirst=True)
-                click.echo('Done')
-            except (OperationalError, ProgrammingError) as err:
-                click.echo(f'ERROR: {err}')
-
-            station_dobson_corrections = os.path.join(
-                datadir, 'station_dobson_corrections.csv')
-
-            station_dobson_corrections_models = []
-
-            click.echo('Loading station dobson corrections items')
-            with open(station_dobson_corrections) as csvfile:
-                reader = csv.DictReader(csvfile)
-                for row in reader:
-                    station_dobson_corrections = StationDobsonCorrections(row)
-                    station_dobson_corrections_models.append(
-                        station_dobson_corrections)
-
-            click.echo('Storing station dobson corrections items in registry')
-            for model in station_dobson_corrections_models:
-                registry_.save(model)
         else:
             click.echo("Skipping teardown of the "
                        "StationDobsonCorrections table")
+    station_dobson_corrections = os.path.join(
+        datadir, 'station_dobson_corrections.csv')
+
+    station_dobson_corrections_models = []
+
+    try:
+        click.echo(
+            f'Generating model: '
+            f'{StationDobsonCorrections.__tablename__}'
+        )
+        StationDobsonCorrections.__table__.create(
+            engine, checkfirst=True)
+        click.echo('Done')
+    except (OperationalError, ProgrammingError) as err:
+        click.echo(f'ERROR: {err}')
+
+    click.echo('Loading station dobson corrections items')
+    with open(station_dobson_corrections) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            print(row)
+            station_dobson_corrections = StationDobsonCorrections(row)
+            station_dobson_corrections_models.append(
+                station_dobson_corrections)
+
+    click.echo('Storing station dobson corrections items in registry')
+    for model in station_dobson_corrections_models:
+        registry_.save(model)
 
     click.echo('Creating ES index for station dobson corrections')
     search_index = SearchIndex()
