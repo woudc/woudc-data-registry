@@ -1029,6 +1029,34 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'flight_integratedo3': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'flight_correctioncode': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'flight_sondetotalo3': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'flight_correctionfactor': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'flight_totalo3': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'flight_wlcode': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'flight_obstype': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'pressure': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}

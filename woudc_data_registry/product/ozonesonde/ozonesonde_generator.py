@@ -133,24 +133,78 @@ def execute(path, bypass):
                 flight_summary = extcsv.extcsv.get('FLIGHT_SUMMARY', {})
                 profile = extcsv.extcsv.get('PROFILE', {})
 
-                integratedo3 = flight_summary.get('IntegratedO3', {})
+                integratedo3 = flight_summary.get('IntegratedO3', None)
+                if isinstance(integratedo3, list):
+                    integratedo3 = (
+                        integratedo3[0]
+                        if integratedo3 and integratedo3[0] != ''
+                        else None
+                    )
 
-                correctioncode = flight_summary.get(
-                    'WLCode') or [None] * len(integratedo3)
-                sondetotalo3 = flight_summary.get(
-                    'SondeTotalO3') or [None] * len(integratedo3)
+                correctioncode = flight_summary.get('CorrectionCode', None)
+                if isinstance(correctioncode, list):
+                    correctioncode = (
+                        correctioncode[0]
+                        if correctioncode and correctioncode[0] != ''
+                        else None
+                    )
+
+                sondetotalo3 = flight_summary.get('SondeTotalO3', None)
+                if isinstance(sondetotalo3, list):
+                    sondetotalo3 = (
+                        sondetotalo3[0]
+                        if sondetotalo3 and sondetotalo3[0] != ''
+                        else None
+                    )
+
                 correctionfactor = flight_summary.get(
-                    'CorrectionFactor') or [None] * len(integratedo3)
-                totalo3 = flight_summary.get(
-                    'TotalO3') or [None] * len(integratedo3)
-                wlcode = flight_summary.get(
-                    'WLCode') or [None] * len(integratedo3)
-                obstype = flight_summary.get(
-                    'ObsType') or [None] * len(integratedo3)
-                flight_instrument = flight_summary.get(
-                    'Instrument') or [None] * len(integratedo3)
-                flight_number = flight_summary.get(
-                    'Number') or [None] * len(integratedo3)
+                    'CorrectionFactor', None)
+                if isinstance(correctionfactor, list):
+                    correctionfactor = (
+                        correctionfactor[0]
+                        if correctionfactor and correctionfactor[0] != ''
+                        else None
+                    )
+
+                totalo3 = flight_summary.get('TotalO3', None)
+                if isinstance(totalo3, list):
+                    totalo3 = (
+                        totalo3[0]
+                        if totalo3 and totalo3[0] != ''
+                        else None
+                    )
+
+                wlcode = flight_summary.get('WLCode', None)
+                if isinstance(wlcode, list):
+                    wlcode = (
+                        wlcode[0]
+                        if wlcode and wlcode[0] != ''
+                        else None
+                    )
+
+                obstype = flight_summary.get('ObsType', None)
+                if isinstance(obstype, list):
+                    obstype = (
+                        obstype[0]
+                        if obstype and obstype[0] != ''
+                        else None
+                    )
+
+                flight_instrument = flight_summary.get('Instrument', None)
+                if isinstance(flight_instrument, list):
+                    flight_instrument = (
+                        flight_instrument[0]
+                        if flight_instrument and flight_instrument[0] != ''
+                        else None
+                    )
+
+                flight_number = flight_summary.get('Number', None)
+                if isinstance(flight_number, list):
+                    flight_number = (
+                        flight_number[0]
+                        if flight_number and flight_number[0] != ''
+                        else None
+                    )
 
                 profile_pressure = profile.get('Pressure', {})
 
@@ -172,18 +226,6 @@ def execute(path, bypass):
                     'RelativeHumidity') or [None] * len(profile_pressure)
                 sampletemperature = profile.get(
                     'SampleTemperature') or [None] * len(profile_pressure)
-
-                # replace empty strings in data with None
-                for i in range(len(integratedo3)):
-                    integratedo3[i] = conv(integratedo3[i])
-                    correctioncode[i] = conv(correctioncode[i])
-                    sondetotalo3[i] = conv(sondetotalo3[i])
-                    correctionfactor[i] = conv(correctionfactor[i])
-                    totalo3[i] = conv(totalo3[i])
-                    wlcode[i] = conv(wlcode[i])
-                    obstype[i] = conv(obstype[i])
-                    flight_instrument[i] = conv(flight_instrument[i])
-                    flight_number[i] = conv(flight_number[i])
 
                 for i in range(len(profile_pressure)):
                     profile_pressure[i] = conv(profile_pressure[i])
