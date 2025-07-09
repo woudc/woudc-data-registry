@@ -254,7 +254,7 @@ def execute(path, update, start_year, end_year, bypass):
                 for package in uv_packages:
                     try:
                         ins_data = {
-                            'file_path': ipath,
+                            'ingest_filepath': ipath,
                             'filename': filename,
                             'dataset_id': dataset_id,
                             'dataset_level': str(dataset_level),
