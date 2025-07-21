@@ -56,6 +56,7 @@ from woudc_data_registry.epicentre.station import station
 from woudc_data_registry.log import setup_logger
 from woudc_data_registry.models import admin
 from woudc_data_registry.product import product
+from woudc_data_registry.dobson_corrections import correction
 
 __version__ = '0.3.dev0'
 
@@ -79,3 +80,4 @@ cli.add_command(notification)
 cli.add_command(peer)
 cli.add_command(product)
 cli.add_command(station)
+cli.add_command(correction)

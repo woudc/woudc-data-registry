@@ -163,6 +163,18 @@ woudc-data-registry data verify foo.dat -l
 woudc-data-registry data ingest /path/to/dir -l
 ```
 
+#### Dobson Section Corrections
+```bash
+# Corrects both AD and CD data from TotalOzone Dobson Data
+woudc-data-registry correction dobson-correction /path/to/dir --mode [test|ops]
+
+# --code gives to option to choose to correct a specific code 
+woudc-data-registry correction dobson-correction /path/to/dir --code [AD|CD] --mode [test|ops]
+
+# --weeklyingest outputs the files in a specific folder structure, similar to incoming folders
+woudc-data-registry correction dobson-correction /path/to/dir --mode [test|ops] --weeklyingest
+```
+
 #### Search Index Generation
 
 ```bash
