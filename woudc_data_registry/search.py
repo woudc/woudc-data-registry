@@ -1195,7 +1195,15 @@ class SearchIndex(object):
                     "WDR_SEARCH_CERT_VERIFY=False if "
                     "connecting to an internal dev server."
                 )
-            except (ConnectionError, RequestError) as err:
+            except RequestError as err:
+                msg = (
+                    f"Index '{index_name}' already exists. Skipping.\n"
+                    f"{err}"
+                )
+                LOGGER.warning(msg)
+                click.echo(msg)
+                continue
+            except ConnectionError as err:
                 LOGGER.error(
                     "Error occurred while creating "
                     f"index '{index_name}': {err}"
@@ -1234,10 +1242,13 @@ class SearchIndex(object):
             try:
                 self.connection.indices.delete(index=index_name)
             except NotFoundError as err:
-                LOGGER.error(
-                    f"Index '{index_name}' not found. Skipping deletion.")
-                raise SearchIndexError(
-                    f"Index '{index_name}' not found: {err}")
+                msg = (
+                    f"Index '{index_name}' not found. Skipping deletion.\n"
+                    f"{err}"
+                )
+                LOGGER.warning(msg)
+                click.echo(msg)
+                continue
             except TlsError as err:
                 LOGGER.error(
                     "TLS error occurred while trying to delete "
