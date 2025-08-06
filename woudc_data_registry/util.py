@@ -147,9 +147,7 @@ def publish_to_MQTT_Broker(info):
             ciphers=None
         )
 
-        # client.tls_insecure_set(False)
-
-        # Add certificate verification toggle
+        # Certificate verification toggle
         cert_verify_disabled = (hasattr(config, 'WDR_MQTT_CERT_VERIFY') and
                                 not config.WDR_MQTT_CERT_VERIFY)
         if cert_verify_disabled:
@@ -177,7 +175,7 @@ def publish_to_MQTT_Broker(info):
         client.loop_stop()
         client.disconnect()
 
-        LOGGER.info(f"MQTT publish successful: {href}")
+        LOGGER.info(f"MQTT publish successful for file: {href}")
 
     except Exception as e:
         LOGGER.error(f"MQTT error: {e}")
