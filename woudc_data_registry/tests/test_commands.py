@@ -100,7 +100,7 @@ class TestGenerateGeoJsonPayload(unittest.TestCase):
             }
         }
 
-    @patch("woudc_data_registry.config.WDR_NOTIFICATION_MESSAGE",
+    @patch("woudc_data_registry.config.WDR_MQTT_NOTIFICATION_TEMPLATE_PATH",
            "dummy_path.json")
     @patch(
         "woudc_data_registry.util.open",
