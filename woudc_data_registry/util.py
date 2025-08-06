@@ -106,9 +106,10 @@ def generate_geojson_payload(info):
         geojson["properties"]["pubtime"] = (
             f"{info[key]['record'].published_datetime}"
         )
+        timestamp_time = info[key]['record'].timestamp_time or '00:00:00'
         geojson["properties"]["datetime"] = (
             f"{info[key]['record'].timestamp_date}T"
-            f"{info[key]['record'].timestamp_time}"
+            f"{timestamp_time}"
             f"{info[key]['record'].timestamp_utcoffset}"
         )
         geojson["properties"]["data_id"] = info[key]["record"].data_record_id
