@@ -113,9 +113,14 @@ def generate_geojson_payload(info):
             f"{info[key]['record'].timestamp_utcoffset}"
         )
         geojson["properties"]["data_id"] = info[key]["record"].data_record_id
-        geojson["properties"]["metadata_id"] = (
-            f"urn:wmo:md:org-woudc:{info[key]['record'].dataset_id}"
-        )
+        if info[key]["record"].content_category == 'UmkehrN14':
+            geojson["properties"]["metadata_id"] = (
+                f"urn:wmo:md:org-woudc:{info[key]['record'].dataset_id}"
+            )
+        else:
+            geojson["properties"]["metadata_id"] = (
+                f"urn:wmo:md:org-woudc:{info[key]['record'].content_category}"
+            )
         geojson["links"][0]["href"] = info[key]["record"].url
         geojson["id"] = str(uuid.uuid4())
         notifications.append(geojson)
