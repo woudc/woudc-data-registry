@@ -48,143 +48,16 @@ import logging
 import io
 import os
 import shutil
-import ssl
 import smtplib
-import uuid
 
-
-import requests
-import json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import paho.mqtt.client as mqtt
 from woudc_data_registry.registry import Registry
 import woudc_data_registry.config as config
 
 LOGGER = logging.getLogger(__name__)
 
 RFC3339_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
-
-
-def get_HTTP_HEAD_response(url):
-    """
-    Get HTTP HEAD response
-
-    :param url: URL to be evaluated
-    :returns: `requests.Response` object
-    """
-
-    try:
-        response = requests.head(url)
-        response.raise_for_status()
-        LOGGER.info(f"HTTP Headers: {response}")
-        LOGGER.info(f"Status Code: {response.status_code}")
-        return response.status_code
-    except requests.exceptions.RequestException as e:
-        LOGGER.error(f"An error occurred while making a request to {url}: {e}")
-        return '404'
-
-
-def generate_geojson_payload(info):
-    """
-    Generate GeoJSON payload
-
-    :returns: `dict` of GeoJSON payload
-    """
-    notifications = []
-    for key in info:
-        with open(config.WDR_MQTT_NOTIFICATION_TEMPLATE_PATH, 'r') as file:
-            geojson = json.load(file)
-        x = info[key]["record"].x
-        y = info[key]["record"].y
-        z = getattr(info[key]["record"], "z", None)
-        if x is None or y is None:
-            LOGGER.error('x or y is None')
-            geojson["geometry"] = None
-        else:
-            geojson["geometry"]["coordinates"] = [x, y, z]
-        geojson["properties"]["pubtime"] = (
-            f"{info[key]['record'].published_datetime}"
-        )
-        timestamp_time = info[key]['record'].timestamp_time or '00:00:00'
-        geojson["properties"]["datetime"] = (
-            f"{info[key]['record'].timestamp_date}T"
-            f"{timestamp_time}"
-            f"{info[key]['record'].timestamp_utcoffset}"
-        )
-        geojson["properties"]["data_id"] = info[key]["record"].data_record_id
-        if info[key]["record"].content_category == 'UmkehrN14':
-            geojson["properties"]["metadata_id"] = (
-                f"urn:wmo:md:org-woudc:{info[key]['record'].dataset_id}"
-            )
-        else:
-            geojson["properties"]["metadata_id"] = (
-                f"urn:wmo:md:org-woudc:{info[key]['record'].content_category}"
-            )
-        geojson["links"][0]["href"] = info[key]["record"].url
-        geojson["id"] = str(uuid.uuid4())
-        notifications.append(geojson)
-    return notifications
-
-
-def publish_to_MQTT_Broker(info):
-    """
-    Publish to MQTT Broker
-
-    :param Info: `dict` of information to be published
-    :returns: `bool` of whether the publish was successful
-    """
-    try:
-        client = mqtt.Client(
-            client_id=config.WDR_MQTT_CLIENT_ID,
-            clean_session=True
-        )
-
-        client.username_pw_set(
-            config.WDR_MQTT_BROKER_USERNAME,
-            config.WDR_MQTT_BROKER_PASSWORD
-        )
-        client.tls_set(
-            ca_certs="/etc/ssl/certs/ca-certificates.crt",
-            certfile=None,
-            keyfile=None,
-            cert_reqs=ssl.CERT_REQUIRED,
-            tls_version=ssl.PROTOCOL_TLS,
-            ciphers=None
-        )
-
-        # Certificate verification toggle
-        cert_verify_disabled = (hasattr(config, 'WDR_MQTT_CERT_VERIFY') and
-                                not config.WDR_MQTT_CERT_VERIFY)
-        if cert_verify_disabled:
-            client.tls_insecure_set(True)  # Bypass certificate verification
-            LOGGER.warning("SSL certificate verification disabled \
-                           - not recommended for production")
-        else:
-            client.tls_insecure_set(False)
-
-        client.connect(
-            config.WDR_MQTT_BROKER_HOST,
-            int(config.WDR_MQTT_BROKER_PORT),
-            60
-        )
-        client.loop_start()
-
-        href = info.get('links')[0].get('href')
-        path_extension = '/'.join(href.split('/')[5:])
-        mqtt_path = "origin/a/wis2/org-woudc/data/core/atmospheric-composition"
-        # Send the payload (uncomment this for real data):
-        payload = json.dumps(info)
-
-        client.publish(f"{mqtt_path}/{path_extension}", payload)
-
-        client.loop_stop()
-        client.disconnect()
-
-        LOGGER.info(f"MQTT publish successful for file: {href}")
-
-    except Exception as e:
-        LOGGER.error(f"MQTT error: {e}")
 
 
 def send_email(message, subject, from_email_address, to_email_addresses,
