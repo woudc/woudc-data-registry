@@ -43,6 +43,7 @@
 #
 # =================================================================
 
+from copy import deepcopy
 import logging
 
 import click
@@ -97,8 +98,7 @@ dataset_links = {
 }
 
 DATE_FORMAT = 'date_time_no_millis'
-
-MAPPINGS = {
+MAPPINGS_ALL = {
     'projects': {
         'index': 'project',
         'properties': {
@@ -1180,12 +1180,20 @@ class SearchIndex(object):
 
         return f'{self.index_basename}.{index_name}'
 
-    def create(self):
+    def create(self, models_list=[]):
         """create search indexes"""
 
         search_index_config = config.EXTRAS.get('search_index', {})
 
-        for key, definition in MAPPINGS.items():
+        MAPPINGS_FILTERED = {}
+        if models_list:
+            for model in models_list:
+                if model in MAPPINGS_ALL:
+                    MAPPINGS_FILTERED[model] = MAPPINGS_ALL[model]
+        else:
+            MAPPINGS_FILTERED = deepcopy(MAPPINGS_ALL)
+
+        for key, definition in MAPPINGS_FILTERED.items():
             # Skip indexes that have been manually disabled.
             enabled_flag = f'{key}_enabled'
             if not search_index_config.get(enabled_flag, True):
@@ -1262,12 +1270,20 @@ class SearchIndex(object):
                     "Please check the logs for more details."
                 )
 
-    def delete(self):
+    def delete(self, models_list=[]):
         """delete search indexes"""
 
         search_index_config = config.EXTRAS.get('search_index', {})
 
-        for key, definition in MAPPINGS.items():
+        MAPPINGS_FILTERED = {}
+        if models_list:
+            for model in models_list:
+                if model in MAPPINGS_ALL:
+                    MAPPINGS_FILTERED[model] = MAPPINGS_ALL[model]
+        else:
+            MAPPINGS_FILTERED = deepcopy(MAPPINGS_ALL)
+
+        for key, definition in MAPPINGS_FILTERED.items():
             # Skip indexes that have been manually disabled.
             enabled_flag = f'{key}_enabled'
             if not search_index_config.get(enabled_flag, True):
@@ -1317,7 +1333,7 @@ class SearchIndex(object):
 
         try:
             index_name = self.generate_index_name(
-                MAPPINGS['data_records']['index'])
+                MAPPINGS_ALL['data_records']['index'])
 
             result = self.connection.get(index=index_name,
                                          id=identifier)
@@ -1344,7 +1360,7 @@ class SearchIndex(object):
             return False
 
         index_name = self.generate_index_name(
-            MAPPINGS[domain.__tablename__]['index'])
+            MAPPINGS_ALL[domain.__tablename__]['index'])
 
         if isinstance(target, dict):
             # Index/update single document the normal way.
@@ -1445,7 +1461,7 @@ class SearchIndex(object):
             return False
 
         index_name = self.generate_index_name(
-            MAPPINGS[domain.__tablename__]['index'])
+            MAPPINGS_ALL[domain.__tablename__]['index'])
 
         if isinstance(target, str):
             # <target> is a document ID, delete normally.
@@ -1495,7 +1511,7 @@ class SearchIndex(object):
             return False
 
         index_name = self.generate_index_name(
-            MAPPINGS[domain.__tablename__]['index'])
+            MAPPINGS_ALL[domain.__tablename__]['index'])
 
         ids = [document['id'] for document in targets]
 
@@ -1528,23 +1544,33 @@ def search():
 
 @click.command('setup')
 @click.pass_context
-def create_indexes(ctx):
+# search setup
+@click.option('--models', '-m', help='classes to create', is_flag=False)
+def create_indexes(ctx, models):
     """create search indexes"""
 
     click.echo('Creating indexes')
     es = SearchIndex()
-    es.create()
+    if models:
+        es.create(models.split(','))
+    else:
+        es.create()
     click.echo('Done')
 
 
 @click.command('teardown')
 @click.pass_context
-def delete_indexes(ctx):
+@click.option('--models', '-m', help='classes to delete', is_flag=False)
+# search teardown
+def delete_indexes(ctx, models):
     """delete search indexes"""
 
     click.echo('Deleting indexes')
     es = SearchIndex()
-    es.delete()
+    if models:
+        es.delete(models.split(','))
+    else:
+        es.delete()
     click.echo('Done')
 
 
