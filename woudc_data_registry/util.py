@@ -53,6 +53,8 @@ import smtplib
 import uuid
 
 
+import base64
+import hashlib
 import requests
 import json
 from email.mime.multipart import MIMEMultipart
@@ -103,15 +105,31 @@ def generate_geojson_payload(info):
             geojson["geometry"] = None
         else:
             geojson["geometry"]["coordinates"] = [x, y, z]
+
+        publish_date, publish_time = (
+            str(info[key]['record'].published_datetime).split(' ')
+        )
         geojson["properties"]["pubtime"] = (
-            f"{info[key]['record'].published_datetime}"
+            f"{publish_date}T{publish_time}+00:00"
         )
         timestamp_time = info[key]['record'].timestamp_time or '00:00:00'
+        timestamp_offset = info[key]['record'].timestamp_utcoffset or '+00:00'
+        if len(timestamp_offset.split(':')) > 2:
+            timestamp_offset = timestamp_offset[:-3]
         geojson["properties"]["datetime"] = (
             f"{info[key]['record'].timestamp_date}T"
             f"{timestamp_time}"
-            f"{info[key]['record'].timestamp_utcoffset}"
+            f"{timestamp_offset}"
         )
+
+        with open(info[key]['record'].output_filepath, 'rb') as f:
+            file_data = f.read()
+            sha256_digest = hashlib.sha512(file_data).digest()
+            b64_md5_hash = base64.b64encode(
+                sha256_digest
+            ).decode('utf-8')
+            geojson["properties"]["integrity"] = b64_md5_hash
+
         geojson["properties"]["data_id"] = info[key]["record"].data_record_id
         geojson["properties"]["metadata_id"] = (
             f"urn:wmo:md:org-woudc:{info[key]['record'].dataset_id}"

@@ -383,7 +383,7 @@ def publish_notification(ctx, hours):
     registry = Registry()
     ingested_records = registry.query_by_field_range(
         DataRecord, "published_datetime", date, today)
-    LOGGER.info(f"Found records sooner than {date}")
+    LOGGER.info(f"{len(ingested_records)} records found sooner than {date}")
     url_template = 'https://woudc.org/archive/Archive-NewFormat'
     responses = {}
     no_message = []
@@ -417,7 +417,7 @@ def publish_notification(ctx, hours):
             }
         else:
             no_message.append(ingest_filepath)
-    LOGGER.debug(f'Responses: {responses}')
+    LOGGER.debug(f'{len(responses)} Records found.')
     LOGGER.debug(f'No message: {no_message}')
     notifications = generate_geojson_payload(responses)
     LOGGER.debug('geoJSON Generated.')
