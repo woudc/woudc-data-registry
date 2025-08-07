@@ -116,8 +116,8 @@ data/notifications.csv
 data/projects.csv
 data/station-names.csv
 data/stations.csv
-data/station_dobson_corrections.csv
-data/dobsonCorrections
+data/dobsonCorrections/TEMIS_Teff/
+data/dobsonCorrections/WOUDC_stations_TEMIS_combined/
 
 # VSCode settings
 .vscode/
