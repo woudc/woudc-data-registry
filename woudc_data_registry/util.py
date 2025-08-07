@@ -93,7 +93,7 @@ def generate_geojson_payload(info):
     """
     notifications = []
     for key in info:
-        with open(config.WDR_NOTIFICATION_MESSAGE, 'r') as file:
+        with open(config.WDR_MQTT_NOTIFICATION_TEMPLATE_PATH, 'r') as file:
             geojson = json.load(file)
         x = info[key]["record"].x
         y = info[key]["record"].y
@@ -106,9 +106,10 @@ def generate_geojson_payload(info):
         geojson["properties"]["pubtime"] = (
             f"{info[key]['record'].published_datetime}"
         )
+        timestamp_time = info[key]['record'].timestamp_time or '00:00:00'
         geojson["properties"]["datetime"] = (
             f"{info[key]['record'].timestamp_date}T"
-            f"{info[key]['record'].timestamp_time}"
+            f"{timestamp_time}"
             f"{info[key]['record'].timestamp_utcoffset}"
         )
         geojson["properties"]["data_id"] = info[key]["record"].data_record_id
@@ -147,7 +148,15 @@ def publish_to_MQTT_Broker(info):
             ciphers=None
         )
 
-        client.tls_insecure_set(False)
+        # Certificate verification toggle
+        cert_verify_disabled = (hasattr(config, 'WDR_MQTT_CERT_VERIFY') and
+                                not config.WDR_MQTT_CERT_VERIFY)
+        if cert_verify_disabled:
+            client.tls_insecure_set(True)  # Bypass certificate verification
+            LOGGER.warning("SSL certificate verification disabled \
+                           - not recommended for production")
+        else:
+            client.tls_insecure_set(False)
 
         client.connect(
             config.WDR_MQTT_BROKER_HOST,
@@ -167,7 +176,7 @@ def publish_to_MQTT_Broker(info):
         client.loop_stop()
         client.disconnect()
 
-        LOGGER.info("MQTT publish successful")
+        LOGGER.info(f"MQTT publish successful for file: {href}")
 
     except Exception as e:
         LOGGER.error(f"MQTT error: {e}")
