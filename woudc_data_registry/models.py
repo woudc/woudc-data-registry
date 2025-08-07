@@ -87,6 +87,7 @@ class Country(base):
 
     id_field = 'country_id'
     id_dependencies = []  # No ID dependencies
+    foreign_relations = []
 
     country_id = Column(String, nullable=False, primary_key=True)
     name_en = Column(String, nullable=False, unique=True)
@@ -714,7 +715,6 @@ class DataRecord(base):
             'timestamp_date',
             'data_generation_version'
         ]
-
     data_record_id = Column(String, primary_key=True)
 
     # Extended CSV core fields
@@ -1019,7 +1019,6 @@ class Contribution(base):
     id_field = 'contribution_id'
     id_dependencies = ['project_id', 'dataset_id', 'station_id',
                        'instrument_name']
-
     project_id = Column(String, ForeignKey('projects.project_id'),
                         nullable=False, default='WOUDC')
     contribution_id = Column(String, primary_key=True)
@@ -1227,7 +1226,6 @@ class PeerDataRecord(base):
     __table_args__ = (UniqueConstraint('url'),)
 
     id_field = 'url'
-
     source = Column(String, nullable=False)
     measurement = Column(String, nullable=False)
     station_id = Column(String, nullable=False)
@@ -1404,9 +1402,18 @@ class UVIndex(base):
     z = Column(Float, nullable=True)
 
     # relationships
-    station = relationship('Station', backref=__tablename__)
-    instrument = relationship('Instrument', backref=__tablename__)
-    dataset = relationship('Dataset', backref=__tablename__)
+    station = relationship(
+        'Station',
+        backref=__tablename__
+    )
+    instrument = relationship(
+        'Instrument',
+        backref=__tablename__
+    )
+    dataset = relationship(
+        'Dataset',
+        backref=__tablename__
+    )
 
     def __init__(self, dict_):
 
@@ -1932,6 +1939,58 @@ class StationDobsonCorrections(base):
             )
 
 
+class ContributorNotification(base):
+    """ Data Registry Contributor Notification """
+    __tablename__ = 'contributor_notification'
+
+    id_field = "activity_id"
+    id_dependencies = [
+        "contributor_id",
+        "reminder_number",
+        "reminder_datetime"
+    ]
+
+    # columns
+    contributor_notification_id = Column(String, primary_key=True)
+    reminder_number = Column(Integer, nullable=False, default=1)
+    contributor_id = Column(
+        String,
+        ForeignKey('contributors.contributor_id'),
+        nullable=False
+    )
+    reminder_datetime = Column(
+        DateTime,
+        nullable=False,
+        default=datetime.datetime.now()
+    )
+
+    # relationships
+
+    def __init__(self, dict_):
+        """serializer"""
+        # self.contributor_notification_id = \
+        #     dict_['contributor_notification_id']
+        self.reminder_number = dict_['reminder_number']
+        self.contributor_id = dict_['contributor_id']
+        self.reminder_datetime = dict_['reminder_datetime']
+
+        self.generate_ids()
+
+    def generate_ids(self):
+        """Builds and sets class ID field from other attributes"""
+        if all([hasattr(self, field) and getattr(self, field) is not None
+                for field in self.id_dependencies]):
+            components = [getattr(self, field)
+                          for field in self.id_dependencies]
+            self.contributor_notification_id = (
+                f"{self.contributor_notification_id}:RN-{components[1]}"
+                f":DT-{components[2]}"
+            )
+
+    def __repr__(self):
+        return f'Contributor Notification ({self.reminder_number})'
+
+
 def build_contributions(instrument_models):
     """function that forms contributions from other model lists"""
 
@@ -2091,19 +2150,145 @@ def show_config(ctx):
 
 @click.command()
 @click.pass_context
-def setup(ctx):
+@click.option('--models', '-m', help='Models to create', is_flag=False)
+def setup(ctx, models):
     """create models"""
 
     from woudc_data_registry import config
 
     engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DB_DEBUG)
 
-    try:
-        click.echo('Generating models')
-        base.metadata.create_all(engine, checkfirst=True)
-        click.echo('Done')
-    except (OperationalError, ProgrammingError) as err:
-        click.echo(f'ERROR: {err}')
+    if models:
+        tables = models.split(',')
+    #   click.echo(type(tables))
+        for table in tables:
+            try:
+                # check if table already exists
+                table_class = string_to_model(table.strip())
+                if (table_class.__tablename__
+                        not in inspect(engine).get_table_names()):
+                    click.echo(f'Generating models: {models}')
+                    # print(f'testing: {foreign}')
+                    base.metadata.create_all(
+                        engine,
+                        checkfirst=True,
+                        tables=[table_class.__table__]
+                    )
+                else:
+                    click.echo(f'Model {table} already exists, skipping')
+                click.echo('Done')
+            except (OperationalError, ProgrammingError):
+                # inspector = inspect(engine)
+                model_list = []
+                for foreign_table in get_foreign_tables(table_class):
+                    model_list.append(table_to_model(foreign_table))
+                # print(f'testing: {model_list}')
+                foreign = ", ".join(model_list)
+                click.ClickException(
+                    f'Cannot create model {table}, {table} depends on: '
+                    f'{foreign}. Please create {foreign} first.'
+                )
+    else:
+        try:
+            click.echo('Generating models')
+            base.metadata.create_all(engine, checkfirst=True)
+            click.echo('Done')
+        except (OperationalError, ProgrammingError) as err:
+            click.echo(f'ERROR: {err}')
+
+
+def get_foreign_tables(model):
+    foreign_tables = []
+    mapper = inspect(model)
+    for column in mapper.columns:
+        if column.foreign_keys:
+            for fk in column.foreign_keys:
+                foreign_tables.append(fk.column.table.name)
+    return foreign_tables
+
+
+def table_to_model(table: str):
+    """ given a list of tables, return a list of models"""
+    if table == 'contributors':
+        return 'Contributor'
+    elif table == 'stations':
+        return 'Station'
+    elif table == 'countries':
+        return 'Country'
+    elif table == 'datasets':
+        return 'Dataset'
+    elif table == 'instruments':
+        return 'Instrument'
+    elif table == 'deployments':
+        return 'Deployment'
+    elif table == 'contributions':
+        return 'Contribution'
+    elif table == 'notifications':
+        return 'Notification'
+    elif table == 'peer_data_records':
+        return 'PeerDataRecord'
+    elif table == 'uv_index_hourly':
+        return 'UVIndex'
+    elif table == 'totalozone':
+        return 'TotalOzone'
+    elif table == 'ozonesonde':
+        return 'OzoneSonde'
+    elif table == 'station_dobson_corrections':
+        return 'StationDobsonCorrections'
+    elif table == 'contributor_notification':
+        return 'ContributorNotification'
+    elif table == 'projects':
+        return 'Project'
+    elif table == 'station_names':
+        return 'StationName'
+    elif table == 'discovery_metadata':
+        return 'DiscoveryMetadata'
+    elif table == 'data_records':
+        return 'DataRecord'
+    else:
+        raise click.ClickException(f'{table} is not a valid table')
+
+
+def string_to_model(model_name: str):
+    """ given a model name, return the model class"""
+    if model_name == "Contributor":
+        return Contributor
+    elif model_name == "Station":
+        return Station
+    elif model_name == "Country":
+        return Country
+    elif model_name == 'Dataset':
+        return Dataset
+    elif model_name == 'Instrument':
+        return Instrument
+    elif model_name == 'Deployment':
+        return Deployment
+    elif model_name == 'Contribution':
+        return Contribution
+    elif model_name == 'Notification':
+        return Notification
+    elif model_name == 'PeerDataRecord':
+        return PeerDataRecord
+    elif model_name == 'UVIndex':
+        return UVIndex
+    elif model_name == 'TotalOzone':
+        return TotalOzone
+    elif model_name == 'OzoneSonde':
+        return OzoneSonde
+    elif model_name == 'StationDobsonCorrections':
+        return StationDobsonCorrections
+    elif model_name == 'ContributorNotification':
+        return ContributorNotification
+    elif model_name == 'Project':
+        return Project
+    elif model_name == 'StationName':
+        return StationName
+    elif model_name == 'DiscoveryMetadata':
+        return DiscoveryMetadata
+    elif model_name == 'DataRecord':
+        return DataRecord
+    else:
+        raise click.ClickException(f'{model_name} is not a valid model')
 
 
 @click.command()
@@ -2227,28 +2412,75 @@ def setup_dobson_correction(ctx, datadir):
 
 @click.command()
 @click.pass_context
-def teardown(ctx):
+@click.option(
+    '--models', '-m',
+    help='Tear down tables for the specified models'
+)
+def teardown(ctx, models):
     """delete models"""
 
     from woudc_data_registry import config
 
     engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DB_DEBUG)
 
-    try:
-        click.echo('Deleting models')
-        base.metadata.drop_all(engine, checkfirst=True)
+    registry_ = registry.Registry()
+
+    if models:
+        tables = models.split(',')
+        for table in tables:  # need to account for tables that should NOT \
+            # be deleted
+            try:
+                click.echo(f'Deleting models: {models}')
+                dependency = find_dependency(engine, string_to_model(table))
+                if dependency:
+                    raise click.ClickException(
+                        f'Cannot delete {table} model. '
+                        f'{", ".join(dependency)} models depend on {table} '
+                        'Please delete the dependent models first'
+                    )
+                else:
+                    table_class = string_to_model(table.strip())
+                    registry_.drop_table(table_class)
+
+            except (OperationalError, ProgrammingError, AttributeError) as err:
+                click.echo(f'ERROR: {err}')
+
         click.echo('Done')
-    except (OperationalError, ProgrammingError) as err:
-        click.echo(f'ERROR: {err}')
+        registry_.save()
+
+    else:
+        try:
+            click.echo('Deleting models')
+            base.metadata.drop_all(engine, checkfirst=True)
+            click.echo('Done')
+        except (OperationalError, ProgrammingError) as err:
+            click.echo(f'ERROR: {err}')
+
+
+def find_dependency(engine, table_class):
+    """find which tables depend on the given table"""
+    inspector = inspect(engine)
+    dependent_tables = []
+    for table_name in inspector.get_table_names():  # table names, not models
+        model = table_to_model(table_name)
+        foreign_tables = get_foreign_tables(string_to_model(model))
+        if table_class.__tablename__ in foreign_tables:
+            dependent_tables.append(model)
+
+    return dependent_tables
 
 
 @click.command()
 @click.pass_context
-@click.option('--datadir', '-d',
-              type=click.Path(exists=True, resolve_path=True),
-              help='Path to core metadata files')
-@click.option('--init-search-index', is_flag=True,
-              help='Causes records to be stored in the search index as well')
+@click.option(
+    '--datadir', '-d',
+    type=click.Path(exists=True, resolve_path=True),
+    help='Path to core metadata files'
+)
+@click.option(
+    '--init-search-index', is_flag=True,
+    help='Causes records to be stored in the search index as well'
+)
 def init(ctx, datadir, init_search_index):
     """initialize core system metadata"""
     import os
@@ -2270,6 +2502,8 @@ def init(ctx, datadir, init_search_index):
     discovery_metadata = os.path.join(datadir, 'woudc.skos.yaml')
     station_dobson_corrections = os.path.join(
         datadir, 'station_dobson_corrections.csv')
+    # contributor_notifications = os.path.join(
+    #     datadir, 'contributor_notifications.csv')
 
     registry_ = registry.Registry()
 
@@ -2323,6 +2557,13 @@ def init(ctx, datadir, init_search_index):
         for row in reader:
             contributor = Contributor(row)
             contributor_models.append(contributor)
+
+    click.echo('Loading contributor notifications metadata')
+    # with open(contributor_notifications) as csvfile:
+    #     reader = csv.DictReader(csvfile)
+    #     for row in reader:
+    #         contributor_notifications = ContributorNotification(row)
+    #         notification_models.append(contributor_notifications)
 
     click.echo('Loading station names metadata')
     with open(station_names) as csvfile:
@@ -2500,24 +2741,11 @@ def init(ctx, datadir, init_search_index):
 
 @click.command('sync')
 @click.pass_context
-def sync(ctx):
+@click.option('--models', '-m', help='class to sync', is_flag=False)
+def sync(ctx, models):
     """Sync search index with data registry"""
-
-    model_classes = [
-        Project,
-        Dataset,
-        Country,
-        Contributor,
-        Station,
-        Instrument,
-        Deployment,
-        DataRecord,
-        Contribution,
-        Notification,
-        PeerDataRecord,
-        DiscoveryMetadata,
-        StationDobsonCorrections
-    ]
+    # want to add an option to specify the class to sync
+    model_classes = []
 
     registry_ = registry.Registry()
     search_index = SearchIndex()
@@ -2525,6 +2753,31 @@ def sync(ctx):
     search_index_config = config.EXTRAS.get('search_index', {})
 
     click.echo('Begin data registry backend sync on ', nl=False)
+
+    if models:
+        for model in models.split(','):
+            # check if models is a valid model:
+            if string_to_model(model.strip()) is not None:
+                model_classes.append(model)
+            else:
+                click.ClickException(f'{model} is not a valid model')
+    else:
+        model_classes = [
+            Project,
+            Dataset,
+            Country,
+            Contributor,
+            Station,
+            Instrument,
+            Deployment,
+            DataRecord,
+            Contribution,
+            Notification,
+            PeerDataRecord,
+            DiscoveryMetadata,
+            StationDobsonCorrections
+        ]
+
     for clazz in model_classes:
         plural_name = clazz.__tablename__
         plural_caps = ''.join(map(str.capitalize, plural_name.split('_')))
@@ -2568,14 +2821,25 @@ def sync(ctx):
 
 @click.command()
 @click.pass_context
-def product_sync(ctx):
+@click.option('--models', '-m', help='class to sync', is_flag=False)
+def product_sync(ctx, models):
     """Sync products to Elasticsearch"""
 
-    products = [
-        OzoneSonde,
-        TotalOzone,
-        UVIndex
-    ]
+    products = []
+
+    if models:
+        for model in models.split(','):
+            if string_to_model(model.strip()) is not None:
+                products.append(string_to_model(model.strip()))
+            else:
+                click.ClickException(f'{model} is not a valid model')
+
+    else:
+        products = [
+            OzoneSonde,
+            TotalOzone,
+            UVIndex
+        ]
 
     registry_ = registry.Registry()
     search_index = SearchIndex()
