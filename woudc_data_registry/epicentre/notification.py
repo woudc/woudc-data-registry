@@ -110,7 +110,9 @@ def add(ctx, identifier, path, verbosity):
     with open(path) as news_file:
         notification = yaml.safe_load(news_file)
         if 'published' not in notification:
-            notification['published'] = datetime.now().strftime('%Y-%m-%d')
+            notification['published_date'] = (
+                datetime.now().strftime('%Y-%m-%d')
+            )
 
         if identifier:
             notification['identifier'] = identifier

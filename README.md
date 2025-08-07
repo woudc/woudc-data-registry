@@ -81,6 +81,9 @@ woudc-data-registry admin search setup
 # load core metadata
 woudc-data-registry admin init -d data/
 
+# backup core metadata
+woudc-data-registry admin backup -d data/
+
 # cleanups
 
 # re-initialize model (database tables)
