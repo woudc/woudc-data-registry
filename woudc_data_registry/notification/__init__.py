@@ -43,43 +43,29 @@
 #
 # =================================================================
 
+import logging
+
 import click
 
-from woudc_data_registry import config, epicentre
-from woudc_data_registry.controller import data
-from woudc_data_registry.epicentre.contributor import contributor
-from woudc_data_registry.epicentre.deployment import deployment
-from woudc_data_registry.epicentre.instrument import instrument
-from woudc_data_registry.epicentre.notification import notification
-from woudc_data_registry.peer import peer
-from woudc_data_registry.epicentre.station import station
-from woudc_data_registry.log import setup_logger
-from woudc_data_registry.models import admin
-from woudc_data_registry.product import product
-from woudc_data_registry.dobson_corrections import correction
-from woudc_data_registry.notification import publish
+from woudc_data_registry.notification.pubsub import (
+    publish_notification as publish_notification_
+)
 
-__version__ = '0.3.dev0'
-
-setup_logger(config.WDR_LOGGING_LOGLEVEL, config.WDR_LOGGING_LOGFILE)
+LOGGER = logging.getLogger(__name__)
 
 
 @click.group()
-@click.version_option(version=__version__)
-def cli():
+def publish():
+    """Notification management"""
     pass
 
 
-cli.add_command(admin)
-cli.add_command(contributor)
-cli.add_command(data)
-cli.add_command(deployment)
-cli.add_command(epicentre.dataset)
-cli.add_command(epicentre.project)
-cli.add_command(instrument)
-cli.add_command(notification)
-cli.add_command(peer)
-cli.add_command(product)
-cli.add_command(station)
-cli.add_command(correction)
-cli.add_command(publish)
+@click.command()
+@click.pass_context
+@click.option('--hours', type=int, required=True)
+def publish_notification(ctx, hours):
+    """Publish a notification to WMO WIS2"""
+    publish_notification_(hours)
+
+
+publish.add_command(publish_notification)
