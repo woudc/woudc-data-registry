@@ -50,7 +50,7 @@ from elasticsearch import Elasticsearch, helpers
 from elasticsearch.exceptions import (ConnectionError, NotFoundError,
                                       RequestError)
 from elastic_transport import TlsError
-from woudc_data_registry import config
+from woudc_data_registry import config, models
 
 LOGGER = logging.getLogger(__name__)
 
@@ -97,7 +97,6 @@ dataset_links = {
 }
 
 DATE_FORMAT = 'date_time_no_millis'
-
 MAPPINGS = {
     'projects': {
         'index': 'project',
@@ -1175,12 +1174,32 @@ class SearchIndex(object):
 
         return f'{self.index_basename}.{index_name}'
 
-    def create(self):
+    def create(self, models_list=[]):
         """create search indexes"""
 
         search_index_config = config.EXTRAS.get('search_index', {})
 
-        for key, definition in MAPPINGS.items():
+        # if models are specified, only create the keys given
+        mapper = []
+        if models_list:
+            for model in models_list:
+                model_class = models.string_to_model(model)
+                if model_class:
+                    mapper.append(
+                        (
+                            model_class.__tablename__,
+                            MAPPINGS[
+                                model_class.__tablename__
+                            ]
+                        )
+                    )
+                else:
+                    LOGGER.warning(f"Model '{model_class.__tablename__}' is"
+                                   "not defined in MAPPINGS. Skipping"
+                                   "index creation.")
+        else:
+            mapper = MAPPINGS.items()
+        for key, definition in mapper:
             # Skip indexes that have been manually disabled.
             enabled_flag = f'{key}_enabled'
             if not search_index_config.get(enabled_flag, True):
@@ -1254,12 +1273,32 @@ class SearchIndex(object):
                     "Please check the logs for more details."
                 )
 
-    def delete(self):
+    def delete(self, models=[]):
         """delete search indexes"""
 
         search_index_config = config.EXTRAS.get('search_index', {})
 
-        for key, definition in MAPPINGS.items():
+        # if models are specified, only create the keys given
+        mapper = []
+        if models:
+            for model in models:
+                model_class = models.string_to_model(model)
+                if model_class:
+                    mapper.append(
+                        (
+                            model_class.__tablename__,
+                            MAPPINGS[model_class.__tablename__]
+                        )
+                    )
+                else:
+                    LOGGER.warning(f"Model '{model_class.__tablename__}' is"
+                                   "not defined in MAPPINGS."
+                                   "Skipping index creation.")
+                    # raise exception?
+        else:
+            mapper = MAPPINGS.items()
+
+        for key, definition in mapper:
             # Skip indexes that have been manually disabled.
             enabled_flag = f'{key}_enabled'
             if not search_index_config.get(enabled_flag, True):
@@ -1520,23 +1559,33 @@ def search():
 
 @click.command('setup')
 @click.pass_context
-def create_indexes(ctx):
+# search setup
+@click.option('--models', '-m', help='classes to create', is_flag=False)
+def create_indexes(ctx, models):
     """create search indexes"""
 
     click.echo('Creating indexes')
     es = SearchIndex()
-    es.create()
+    if models:
+        es.create(models.split(','))
+    else:
+        es.create()
     click.echo('Done')
 
 
 @click.command('teardown')
 @click.pass_context
-def delete_indexes(ctx):
+@click.option('--models', '-m', help='classes to delete', is_flag=False)
+# search teardown
+def delete_indexes(ctx, models):
     """delete search indexes"""
 
     click.echo('Deleting indexes')
     es = SearchIndex()
-    es.delete()
+    if models:
+        es.delete(models.split(','))
+    else:
+        es.delete()
     click.echo('Done')
 
 

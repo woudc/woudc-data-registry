@@ -249,6 +249,9 @@ def send_email(message, subject, from_email_address, to_email_addresses,
     msg['To'] = ', '.join(to_email_addresses)
     if cc:
         msg['Cc'] = ', '.join(cc_addresses)  # Add CC addresses if they exist
+    if bcc:
+        msg['Bcc'] = ', '.join(bcc_addresses)
+        # Add BCC addresses if they exist
     msg['Subject'] = subject
     msg.attach(MIMEText(message, 'plain'))
 
