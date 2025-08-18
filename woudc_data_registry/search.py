@@ -221,11 +221,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'abstract_en': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'abstract_fr': {
+            'abstract': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -234,18 +230,24 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'keywords_en': {
+            'keywords': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'keywords_fr': {
+            'language': {
+                'type': 'object',
+                'properties': {
+                    'code': {'type': 'keyword'}
+                }
+            },
+            'woudc:content_category': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
             'levels': {
                 'type': 'nested',
                 'properties': {
-                    'label_en': {
+                    'label': {
                         'type': 'text',
                         'fields': {'raw': typedefs['keyword']}
                     },
@@ -256,7 +258,7 @@ MAPPINGS = {
                                 'type': 'text',
                                 'fields': {'raw': typedefs['keyword']}
                             },
-                            'label_en': {
+                            'label': {
                                 'type': 'text',
                                 'fields': {'raw': typedefs['keyword']}
                             }
@@ -277,11 +279,7 @@ MAPPINGS = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'title_en': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'title_fr': {
+            'title': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
@@ -296,7 +294,14 @@ MAPPINGS = {
             'dataset_snapshots': dataset_links,
             'waf': dataset_links,
             'wfs': dataset_links,
-            'wms': dataset_links
+            'wms': dataset_links,
+        },
+        'time': {
+            'properties': {
+                'interval': {
+                    'type': 'keyword'
+                }
+            }
         }
     },
     'stations': {
@@ -1208,6 +1213,9 @@ class SearchIndex(object):
                 settings['mappings']['properties']['properties'] = {
                     'properties': definition['properties']
                 }
+
+            if 'time' in definition:
+                settings['mappings']['properties']['time'] = definition['time']
 
             try:
                 self.connection.indices.create(index=index_name, body=settings)

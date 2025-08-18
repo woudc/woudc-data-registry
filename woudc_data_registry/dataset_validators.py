@@ -253,6 +253,10 @@ class TotalOzoneValidator(DatasetValidator):
         timestamp1_time = extcsv.extcsv['TIMESTAMP'].get('Time')
         daily_dates = extcsv.extcsv['DAILY']['Date']
 
+        if not daily_dates:
+            LOGGER.warning('No observation dates')
+            return False
+
         timestamp1_startline = extcsv.line_num('TIMESTAMP')
         timestamp1_valueline = timestamp1_startline + 2
 
@@ -696,6 +700,10 @@ class UmkehrValidator(DatasetValidator):
         timestamp1_date = extcsv.extcsv['TIMESTAMP']['Date']
         timestamp1_time = extcsv.extcsv['TIMESTAMP'].get('Time')
         observation_dates = extcsv.extcsv[data_table]['Date']
+
+        if not observation_dates:
+            LOGGER.warning('No observation dates')
+            return False
 
         timestamp1_startline = extcsv.line_num('TIMESTAMP')
         timestamp1_valueline = timestamp1_startline + 2
