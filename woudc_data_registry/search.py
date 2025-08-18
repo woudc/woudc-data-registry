@@ -296,10 +296,10 @@ MAPPINGS = {
             'wfs': dataset_links,
             'wms': dataset_links,
         },
-        "time": {
-            "properties": {
-                "interval": {
-                    "type": "keyword"
+        'time': {
+            'properties': {
+                'interval': {
+                    'type': 'keyword'
                 }
             }
         }
