@@ -1,5 +1,5 @@
 click
-elasticsearch
+elasticsearch<9
 ftputil
 jsonschema
 paho-mqtt
