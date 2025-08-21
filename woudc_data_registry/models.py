@@ -761,7 +761,7 @@ class DataRecord(base):
 
     ingest_filepath = Column(String, nullable=False)
     filename = Column(String, nullable=False)
-    output_filepath = Column(String, nullable=False)
+    publish_filepath = Column(String, nullable=False)
 
     url = Column(String, nullable=False)
     es_id = Column(String, nullable=False)
@@ -996,10 +996,7 @@ class DataRecord(base):
 
                 'number_of_observations': self.number_of_observations,
 
-                'ingest_filepath': self.ingest_filepath,
                 'filename': self.filename,
-                'output_filepath': self.output_filepath,
-
                 'url': self.url
             }
         }
@@ -1374,7 +1371,7 @@ class UVIndex(base):
                        'observation_time']
 
     uv_id = Column(String, primary_key=True)
-    file_path = Column(String, nullable=False)
+    ingest_filepath = Column(String, nullable=False)
     url = Column(String, nullable=False)
     dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
                         nullable=False)
@@ -1407,7 +1404,7 @@ class UVIndex(base):
 
     def __init__(self, dict_):
 
-        self.file_path = dict_['file_path']
+        self.ingest_filepath = dict_['ingest_filepath']
 
         self.dataset_id = dict_['dataset_id']
         self.station_id = dict_['station_id']
@@ -1490,7 +1487,6 @@ class UVIndex(base):
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
                 'identifier': self.uv_id,
-                'file_path': self.file_path,
                 'dataset_id': self.dataset_id,
                 'station_id': self.station_id,
                 'station_name': self.station.station_name.name,
@@ -1543,7 +1539,7 @@ class TotalOzone(base):
     id_dependencies = ['instrument_id', 'daily_date', 'file_name']
 
     ozone_id = Column(String, primary_key=True)
-    file_path = Column(String, nullable=False)
+    ingest_filepath = Column(String, nullable=False)
     file_name = Column(String, nullable=False)
     url = Column(String, nullable=False)
     dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
@@ -1585,7 +1581,7 @@ class TotalOzone(base):
 
     def __init__(self, dict_):
 
-        self.file_path = dict_['file_path']
+        self.ingest_filepath = dict_['ingest_filepath']
         self.file_name = dict_['filename']
 
         self.dataset_id = dict_['dataset_id']
@@ -1650,7 +1646,6 @@ class TotalOzone(base):
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
                 'identifier': self.ozone_id,
-                'file_path': self.file_path,
                 'dataset_id': self.dataset_id,
                 'station_id': self.station_id,
                 'station_name': self.station.station_name.name,
@@ -1711,7 +1706,7 @@ class OzoneSonde(base):
     id_dependencies = ['instrument_id', 'timestamp_date', 'file_name']
 
     ozone_id = Column(String, primary_key=True)
-    file_path = Column(String, nullable=False)
+    ingest_filepath = Column(String, nullable=False)
     file_name = Column(String, nullable=False)
     url = Column(String, nullable=False)
     dataset_id = Column(String, ForeignKey('datasets.dataset_id'),
@@ -1755,7 +1750,7 @@ class OzoneSonde(base):
 
     def __init__(self, dict_):
 
-        self.file_path = dict_['file_path']
+        self.ingest_filepath = dict_['ingest_filepath']
         self.file_name = dict_['filename']
 
         self.dataset_id = dict_['dataset_id']
@@ -1821,7 +1816,6 @@ class OzoneSonde(base):
             'geometry': point2geojsongeometry(self.x, self.y, self.z),
             'properties': {
                 'identifier': self.ozone_id,
-                'file_path': self.file_path,
                 'dataset_id': self.dataset_id,
                 'station_id': self.station_id,
                 'station_name': self.station.station_name.name,
