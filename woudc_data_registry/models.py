@@ -100,9 +100,9 @@ class Country(base):
     link = Column(String, nullable=False)
 
     def __init__(self, dict_):
-        self.country_id = dict_['id']
-        self.name_en = dict_['country_name']
-        self.name_fr = dict_['french_name']
+        self.country_id = dict_['country_id']
+        self.name_en = dict_['name_en']
+        self.name_fr = dict_['name_fr']
 
         self.wmo_region_id = dict_['wmo_region_id']
         self.regional_involvement = dict_['regional_involvement']
@@ -189,7 +189,14 @@ class Contributor(base):
         self.name = dict_['name']
         self.acronym = dict_['acronym']
 
-        self.generate_ids()
+        try:
+            self.contributor_id = dict_['contributor_id']
+        except KeyError:
+            LOGGER.warning(
+                'contributor_id not found in dict, generating from '
+                'acronym and project_id'
+            )
+            self.generate_ids()
 
         self.wmo_region_id = dict_['wmo_region_id']
         self.url = dict_['url']
@@ -211,7 +218,7 @@ class Contributor(base):
         except Exception as err:
             LOGGER.error(err)
 
-        self.active = dict_.get('active', True)
+        self.active = bool(dict_.get('active', True))
         self.last_validated_datetime = datetime.datetime.utcnow()
         self.x = dict_['x']
         self.y = dict_['y']
@@ -325,17 +332,27 @@ class Instrument(base):
 
     def __init__(self, dict_):
         self.station_id = dict_['station_id']
-        self.dataset_name = dict_['dataset_name']
-        self.dataset_level = str(float(dict_['dataset_level']))
         self.dataset_form = str(dict_.get('dataset_form', '1'))  # noqa; defaults to '1' if empty/none/no Key found
-        self.contributor = dict_['contributor']
-        self.project = dict_['project']
 
         self.name = dict_['name']
         self.model = dict_['model']
         self.serial = dict_['serial']
 
-        self.generate_ids()
+        try:
+            self.instrument_id = dict_['instrument_id']
+            self.dataset_id = dict_['dataset_id']
+            self.deployment_id = dict_['deployment_id']
+        except KeyError:
+            LOGGER.warning(
+                'deployment_id not found in dict, generating from '
+                'station_id, contributor and project'
+            )
+            self.dataset_name = dict_['dataset_name']
+            self.dataset_level = str(float(dict_['dataset_level']))
+            self.contributor = dict_['contributor']
+            self.project = dict_['project']
+            self.generate_ids()
+
         try:
             if isinstance(dict_['start_date'], datetime.date):
                 self.start_date = dict_['start_date']
@@ -423,7 +440,6 @@ class DiscoveryMetadata(base):
 
     @property
     def __geo_interface__(self):
-        print(json.loads(self._metadata))
         return json.loads(self._metadata)
 
     def __repr__(self):
@@ -497,10 +513,18 @@ class Station(base):
         """serializer"""
 
         self.station_id = dict_['station_id']
-        self.station_name_id = f"{self.station_id}:{dict_['station_name']}"
+        try:
+            self.station_name_id = dict_['station_name_id']
+        except KeyError:
+            LOGGER.warning(
+                'station_name_id not found in dict, generating'
+                ' from station_id and station_name'
+            )
+            self.station_name_id = f"{self.station_id}:{dict_['station_name']}"
+
         self.station_type = dict_['station_type']
 
-        self._name = dict_['station_name']
+        self._name = self.station_name_id.split(':')[1]
 
         if dict_['gaw_id'] != '':
             self.gaw_id = dict_['gaw_id']
@@ -586,8 +610,14 @@ class StationName(base):
     def __init__(self, dict_):
         self.station_id = dict_['station_id']
         self.name = dict_['name']
-
-        self.generate_ids()
+        try:
+            self.station_name_id = dict_['station_name_id']
+        except KeyError:
+            LOGGER.warning(
+                'station_name_id not found in dict,'
+                ' generating from station_id and name'
+            )
+            self.generate_ids()
 
     def __repr__(self):
         return f'Station name ({self.station_id}, {self.name})'
@@ -629,7 +659,14 @@ class Deployment(base):
         self.station_id = dict_['station_id']
         self.contributor_id = dict_['contributor_id']
 
-        self.generate_ids()
+        try:
+            self.deployment_id = dict_['deployment_id']
+        except KeyError:
+            LOGGER.warning(
+                'deployment_id not found in dict,'
+                ' generating from station_id and contributor_id'
+            )
+            self.generate_ids()
 
         try:
             if isinstance(dict_['start_date'], datetime.date):
@@ -1134,16 +1171,16 @@ class Notification(base):
         self.description_en = dict_['description_en']
         self.description_fr = dict_['description_fr']
 
-        self.set_keywords_en(dict_['keywords_en'])
-        self.set_keywords_fr(dict_['keywords_fr'])
+        self.keywords_en = dict_['keywords_en']
+        self.keywords_fr = dict_['keywords_fr']
 
-        self.banner = dict_.get('banner', False)
-        self.visible = dict_.get('visible', True)
+        self.banner = bool(dict_.get('banner', False))
+        self.visible = bool(dict_.get('visible', True))
 
         self.x = dict_['x']
         self.y = dict_['y']
 
-        published_value = dict_['published']
+        published_value = dict_['published_date']
         if isinstance(published_value, str):
             self.published_date = datetime.datetime.strptime(
                 published_value[:10],
@@ -1156,43 +1193,14 @@ class Notification(base):
                                                            minute=0,
                                                            second=0,
                                                            microsecond=0)
-        self.notification_id = strftime_rfc3339(published_normalized)
-
-    def get_keywords_en(self):
-        if isinstance(self.keywords_en, str):
-            return self.keywords_en.split(',')
-        elif isinstance(self.keywords_en, list):
-            return self.keywords_en
-        else:
-            LOGGER.error(
-                "Unexpected type for self.keywords_en: %s",
-                type(self.keywords_en).__name__
+        try:
+            self.notification_id = dict_['notification_id']
+        except KeyError:
+            LOGGER.warning(
+                'notification_id not found in dict, generating from '
+                'title_en and published_date'
             )
-            raise TypeError(
-                f"Expected self.keywords_en to be str or list, "
-                f"got {type(self.keywords_en).__name__}"
-            )
-
-    def set_keywords_en(self, keywords):
-        self.keywords_en = ','.join(keywords)
-
-    def get_keywords_fr(self):
-        if isinstance(self.keywords_fr, str):
-            return self.keywords_fr.split(',')
-        elif isinstance(self.keywords_fr, list):
-            return self.keywords_fr
-        else:
-            LOGGER.error(
-                "Unexpected type for self.keywords_fr: %s",
-                type(self.keywords_fr).__name__
-            )
-            raise TypeError(
-                f"Expected self.keywords_fr to be str or list, "
-                f"got {type(self.keywords_fr).__name__}"
-            )
-
-    def set_keywords_fr(self, keywords):
-        self.keywords_fr = ','.join(keywords)
+            self.notification_id = strftime_rfc3339(published_normalized)
 
     @property
     def __geo_interface__(self):
@@ -2160,7 +2168,6 @@ def setup_dobson_correction(ctx, datadir):
         reader = csv.DictReader(csvfile)
         for row in reader:
             temp = {}
-            print(f"row: {row}")
             temp['station'] = row['station'][3:]
             temp['AD_corrected'] = True
             temp['CD_corrected'] = True
@@ -2260,12 +2267,10 @@ def init(ctx, datadir, init_search_index):
     if datadir is None:
         raise click.ClickException('Missing required data directory')
 
-    wmo_countries = os.path.join(datadir, 'wmo-countries.json')
-    countries = os.path.join(datadir, 'init', 'countries.json')
+    countries = os.path.join(datadir, 'countries.csv')
     contributors = os.path.join(datadir, 'contributors.csv')
     stations = os.path.join(datadir, 'stations.csv')
-    ships = os.path.join(datadir, 'init', 'ships.csv')
-    station_names = os.path.join(datadir, 'station-names.csv')
+    station_names = os.path.join(datadir, 'station_names.csv')
     datasets = os.path.join(datadir, 'datasets.csv')
     projects = os.path.join(datadir, 'projects.csv')
     instruments = os.path.join(datadir, 'instruments.csv')
@@ -2290,21 +2295,11 @@ def init(ctx, datadir, init_search_index):
     discovery_metadata_models = []
     station_dobson_corrections_models = []
 
-    click.echo('Loading WMO countries metadata')
-    with open(wmo_countries) as jsonfile:
-        countries_data = json.load(jsonfile)
-        for row in countries_data['countries']:
-            country_data = countries_data['countries'][row]
-            if country_data['id'] != 'NUL':
-                country = Country(country_data)
-                country_models.append(country)
-
-    click.echo('Loading local country updates metadata')
-    with open(countries) as jsonfile:
-        countries_data = json.load(jsonfile)
-        for row in countries_data:
-            country_data = countries_data[row]
-            country = Country(country_data)
+    click.echo('Loading country updates metadata')
+    with open(countries) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            country = Country(row)
             country_models.append(country)
 
     click.echo('Loading datasets metadata')
@@ -2346,15 +2341,6 @@ def init(ctx, datadir, init_search_index):
             station = Station(row)
             station_models.append(station)
 
-    with open(ships) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            for field in row:
-                if row[field] == '':
-                    row[field] = None
-            ship = Station(row)
-            station_models.append(ship)
-
     click.echo('Loading deployments metadata')
     with open(deployments) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -2373,11 +2359,6 @@ def init(ctx, datadir, init_search_index):
     with open(notifications) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            row['keywords_en'] = row['tags_en'].split(',')
-            row['keywords_fr'] = row['tags_fr'].split(',')
-            row['banner'] = row['banner'] == 't'
-            row['visible'] = row['visible'] == 't'
-
             notification = Notification(row)
             notification_models.append(notification)
 
@@ -2523,6 +2504,49 @@ def init(ctx, datadir, init_search_index):
             StationDobsonCorrections, station_dobson_corrections)
 
 
+@click.command('backup')
+@click.pass_context
+@click.option('--datadir', '-d',
+              type=click.Path(exists=True, resolve_path=True),
+              help='Directory to store backup database tables as csv files.')
+def backup(ctx, datadir):
+    """Backup data registry database tables to CSV files"""
+    import os
+
+    if datadir is None:
+        raise click.ClickException('Missing required data directory')
+
+    registry_ = registry.Registry()
+
+    model_classes = [
+        Project,
+        Dataset,
+        Country,
+        Contributor,
+        Station,
+        StationName,
+        Instrument,
+        Deployment,
+        Notification
+    ]
+    for model in model_classes:
+        records = registry_.query_full_index(model)
+
+        csv_name = f"{model.__tablename__}.csv"
+        csv_path = os.path.join(datadir, csv_name)
+
+        with open(csv_path, 'w', newline='') as f:
+            headers = [column.name for column in model.__table__.columns]
+
+            writer = csv.writer(f)
+            writer.writerow(headers)
+
+            for row in records:
+                writer.writerow([getattr(row, h) for h in headers])
+
+        click.echo('Completed data backup of {model} into {csv_path}')
+
+
 @click.command('sync')
 @click.pass_context
 def sync(ctx):
@@ -2649,6 +2673,7 @@ admin.add_command(show_config)
 admin.add_command(registry__)
 admin.add_command(search)
 admin.add_command(setup_dobson_correction)
+admin.add_command(backup)
 
 registry__.add_command(setup)
 registry__.add_command(teardown)
