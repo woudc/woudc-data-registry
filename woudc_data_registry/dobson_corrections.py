@@ -63,7 +63,7 @@ csv_content = ''
 TABLES = [
     'CONTENT', 'DATA_GENERATION', 'PLATFORM',
     'INSTRUMENT', 'LOCATION', 'TIMESTAMP', 'DAILY',
-    'MONTHLY'
+    'MONTHLY', 'OBSERVATIONS'
     ]
 
 
@@ -79,10 +79,14 @@ def parse_csv(in_path):
     current_headers = None
 
     try:
-        with open(in_path, 'r', encoding='utf-8', errors='ignore') as infile:
+        with open(
+            in_path, 'r', encoding='utf-8-sig', errors='ignore'
+        ) as infile:
             for line in infile:
                 i = 0
                 line = line.strip()
+                # For Testing:
+                # print(f"Processing line: {line}")
 
                 # Identify table titles (lines starting with '#')
                 if line.startswith('#'):
@@ -197,7 +201,7 @@ def find_new_directory(csv_file, weeklyingest):
     data_generation_content = csv_file.get('DATA_GENERATION')
 
     station_id = platform_content[1][
-        platform_content[0].index('ID')] if platform_content else ''
+        platform_content[0].index('ID')].zfill(3) if platform_content else ''
 
     if timestamp_content:
         date_index = timestamp_content[0].index('Date')
@@ -277,15 +281,14 @@ def correct_file(csv_file, csv_content, code, mode):
     :return: The corrected csv content.
     """
     platform_content = csv_file.get('PLATFORM')
-    print(platform_content)
     station_id = platform_content[1][
         platform_content[0].index('ID')] if platform_content else ''
 
-    print(f"Station Name: {station_id}")
+    LOGGER.info(f"Station Name: {station_id}")
 
     try:
         dat_file_path = find_dat_file(station_id.lstrip('0'))
-        print(f"Dat File Path: {dat_file_path}")
+        LOGGER.info(f"Dat File Path: {dat_file_path}")
         dat_file = parse_dat(dat_file_path)
     except FileNotFoundError:
         LOGGER.error(f"Dat file not found for station: {station_id}")
@@ -295,11 +298,10 @@ def correct_file(csv_file, csv_content, code, mode):
         LOGGER.info('DAILY is in csv_file')
         data = csv_file['DAILY']
         # station_id = csv_file['PLATFORM'][1]
-        print(station_id)
         # Getting the index of wlcode and columns so we can use them
         # to check the values of each line.
-        wlcode_ind = data[0].index('WLCode')
-        column03_ind = data[0].index('ColumnO3')
+        wlcode_ind = [c.lower() for c in data[0]].index('wlcode')
+        column03_ind = [c.lower() for c in data[0]].index('columno3')
 
         # Get the first line to correct the files
         replacing_string = ','.join(data[0])
@@ -324,8 +326,9 @@ def correct_file(csv_file, csv_content, code, mode):
         # Get the Dobson correction code from the database
         registry = Registry()
         dobson_correction = registry.query_by_field(
-            StationDobsonCorrections, 'station_id', station_id)
-        if dobson_correction:
+            StationDobsonCorrections, 'station_id', station_id.zfill(3)
+        )
+        if dobson_correction is not {}:
             AD_source = dobson_correction.AD_correcting_source
             CD_source = dobson_correction.CD_correcting_source
             CD_correcting_factor = dobson_correction.CD_correcting_factor
@@ -339,18 +342,37 @@ def correct_file(csv_file, csv_content, code, mode):
 
         # Go through each line in the DAILY table
         for i in data[1:]:
-            if len(i) < 3:
+            if len(i) < 4:
                 continue
 
-            date = datetime.strptime(i[0], '%Y-%m-%d')
+            try:
+                date = datetime.strptime(i[0], '%Y-%m-%d')
+            except ValueError:
+                LOGGER.warning(f"Invalid date format in line: {i[0]}")
+                continue
+
             day_of_year = custom_day_of_year(date)
 
             # Get the columnO3 (the value that needs to be corrected)
-            column03 = float(i[column03_ind])
-            wlcode = float(i[wlcode_ind])
+            try:
+                column03 = (
+                    float(i[column03_ind])
+                    if i[column03_ind] not in ('', '-')
+                    else ''
+                )
+                wlcode = (
+                    float(i[wlcode_ind])
+                    if i[wlcode_ind] not in ('', '-')
+                    else ''
+                )
+            except ValueError:
+                LOGGER.warning(f"Invalid value in line: {i}")
+                continue
 
             Coeff = ''
             ColumnO3Corrected = ''
+            correction_factor = ''
+            teff_climate = ''
 
             # Get the correcting coefficient and corrected the columnO3
             if (wlcode in [0, 4] and correct_AD and
@@ -358,7 +380,6 @@ def correct_file(csv_file, csv_content, code, mode):
                 Coeff, teff_climate = get_correct_factor(
                     dat_file, 'AD', day_of_year
                 )
-                ColumnO3Corrected = column03 * Coeff
                 correction_factor = 'AD'
             elif (wlcode in [2, 6] and correct_CD and
                   (code is None or code == 'CD')):
@@ -372,17 +393,25 @@ def correct_file(csv_file, csv_content, code, mode):
                         dat_file, 'AD', day_of_year
                     )
                     correction_factor = 'AD'
+
+            if column03 == '' or Coeff == '':
+                LOGGER.warning(f"ColumnO3 is empty in line: {i}")
+            else:
                 ColumnO3Corrected = column03 * Coeff
 
             # Create the fixed lines
             replacing_string = ",".join(i)
 
-            deltaColumnO3corrected = (
-                ColumnO3Corrected - column03
-            )
-            deltaPercentageColumnO3 = (
-                (deltaColumnO3corrected / column03) * 100
-            )
+            if ColumnO3Corrected != '':
+                deltaColumnO3corrected = (
+                    ColumnO3Corrected - column03
+                )
+                deltaPercentageColumnO3 = (
+                    (deltaColumnO3corrected / column03) * 100
+                )
+            else:
+                deltaColumnO3corrected = ''
+                deltaPercentageColumnO3 = ''
 
             if mode == "test":
                 replacement_string = (
@@ -449,7 +478,8 @@ def controller(directory, code, mode, weeklyingest):
             if os.path.isfile(file_path):
                 LOGGER.info(f"Working on file: {file_path}")
                 csv_file = parse_csv(file_path)
-                print(csv_file)
+                # For Testing:
+                # print(f"parse_csv: {csv_file}")
 
                 if csv_file == {}:
                     LOGGER.error(f"{file} could not be corrected.")
@@ -460,7 +490,9 @@ def controller(directory, code, mode, weeklyingest):
                         csv_file['INSTRUMENT'][1][0].lower() != 'dobson'
                     )
                     content = csv_file['CONTENT'][1][1].lower() != 'totalozone'
-                    with open(file_path, 'r') as f:
+                    with open(
+                        file_path, 'r', encoding='utf-8', errors='replace'
+                    ) as f:
                         csv_content = f.read()
                 except Exception as e:
                     LOGGER.error(f"{file} could not be corrected: {e}")

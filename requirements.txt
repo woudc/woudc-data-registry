@@ -2,6 +2,7 @@ click
 elasticsearch<9
 ftputil
 jsonschema
+pandas
 paho-mqtt
 pygeometa
 pyyaml
