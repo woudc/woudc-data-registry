@@ -51,7 +51,7 @@ from pathlib import Path
 from woudc_extcsv import (ExtendedCSV, NonStandardDataError,
                           MetadataValidationError)
 
-from woudc_data_registry import config
+from woudc_data_registry import cli_options, config
 from woudc_data_registry.gather import gather as gather_
 from woudc_data_registry.util import (is_text_file, read_file,
                                       send_email, delete_file_from_record)
@@ -224,6 +224,7 @@ def data():
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.argument('source', type=click.Path(exists=True, resolve_path=True,
                                           dir_okay=True, file_okay=True))
 @click.option('--report', '-r', 'reports_dir', default=None,
@@ -232,7 +233,7 @@ def data():
               help='Only validate core metadata tables')
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-def ingest(ctx, source, reports_dir, lax, bypass):
+def ingest(ctx, source, reports_dir, lax, bypass, verbosity):
     """ingest a single data submission or directory of files"""
 
     orchestrate(source, reports_dir, metadata_only=lax, bypass=bypass)
@@ -241,13 +242,14 @@ def ingest(ctx, source, reports_dir, lax, bypass):
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.argument('source', type=click.Path(exists=True, resolve_path=True,
                                           dir_okay=True, file_okay=True))
 @click.option('--lax', '-l', 'lax', is_flag=True,
               help='Only validate core metadata tables')
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-def verify(ctx, source, lax, bypass):
+def verify(ctx, source, lax, bypass, verbosity):
     """verify a single data submission or directory of files"""
 
     orchestrate(source, None, metadata_only=lax,
@@ -256,9 +258,10 @@ def verify(ctx, source, lax, bypass):
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('--working-dir', '-w', 'working_dir', required=True,
               type=click.Path(exists=True, resolve_path=True, file_okay=False))
-def generate_emails(ctx, working_dir):
+def generate_emails(ctx, working_dir, verbosity):
     """Write an email report based on the processing run in <working_dir>"""
 
     registry = Registry()
@@ -272,10 +275,11 @@ def generate_emails(ctx, working_dir):
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('--test', is_flag=True, help="Enable the test flag.")
 @click.option('--ops', is_flag=True, help="Enable the ops flag.")
 @click.argument('failed_files', type=click.File('r'))
-def send_feedback(ctx, failed_files, test, ops):
+def send_feedback(ctx, failed_files, test, ops, verbosity):
     """Send operating reports to contributors. """
 
     LOGGER.debug("test: {} ops: {}".format(test, ops))
@@ -335,9 +339,10 @@ def send_feedback(ctx, failed_files, test, ops):
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.argument('file_path', type=click.Path(
     exists=True, dir_okay=False, readable=True))
-def delete_record(ctx, file_path):
+def delete_record(ctx, file_path, verbosity):
     LOGGER.info(f"Deleting record for file: {file_path}")
     delete_file_from_record(file_path, DataRecord)
     update_extents()
@@ -345,9 +350,10 @@ def delete_record(ctx, file_path):
 
 
 @click.command()
+@cli_options.OPTION_VERBOSITY
 @click.argument('path')
 @click.pass_context
-def gather(ctx, path):
+def gather(ctx, path, verbosity):
     """Gather all the files in a directory tree"""
     while os.path.exists(path):
         click.echo(f"Directory '{path}' already exists.")

@@ -51,7 +51,7 @@ from elasticsearch import Elasticsearch, helpers
 from elasticsearch.exceptions import (ConnectionError, NotFoundError,
                                       RequestError)
 from elastic_transport import TlsError
-from woudc_data_registry import config
+from woudc_data_registry import cli_options, config
 
 LOGGER = logging.getLogger(__name__)
 
@@ -1532,13 +1532,14 @@ def search():
 
 @click.command('setup')
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 # search setup
 @click.option(
     '--index-names', '-i',
     help='index names to create. E.g. data_records,stations',
     is_flag=False
 )
-def create_indexes(ctx, index_names):
+def create_indexes(ctx, index_names, verbosity):
     """create search indexes"""
 
     es = SearchIndex()
@@ -1559,11 +1560,12 @@ def create_indexes(ctx, index_names):
 
 @click.command('teardown')
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option(
     '--index-names', '-i',
     help='index names to delete. E.g. data_records,stations', is_flag=False)
 # search teardown
-def delete_indexes(ctx, index_names):
+def delete_indexes(ctx, index_names, verbosity):
     """delete search indexes"""
 
     click.echo('Deleting indexes')

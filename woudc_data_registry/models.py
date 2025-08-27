@@ -65,7 +65,7 @@ from sqlalchemy.orm import relationship
 
 from elasticsearch.exceptions import (ConnectionError, RequestError)
 
-from woudc_data_registry import config, registry
+from woudc_data_registry import cli_options, config, registry
 from woudc_data_registry.search import SearchIndex, search
 from woudc_data_registry.util import (get_date, point2geojsongeometry,
                                       strftime_rfc3339)
@@ -2138,7 +2138,8 @@ def admin():
 
 @click.command('config')
 @click.pass_context
-def show_config(ctx):
+@cli_options.OPTION_VERBOSITY
+def show_config(ctx, verbosity):
 
     masked = None
 
@@ -2177,8 +2178,9 @@ def show_config(ctx):
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('--models', '-m', help='Models to create', is_flag=False)
-def setup(ctx, models):
+def setup(ctx, models, verbosity):
     """create models"""
 
     from woudc_data_registry import config
@@ -2210,10 +2212,11 @@ def setup(ctx, models):
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('--datadir', '-d',
               type=click.Path(exists=True, resolve_path=True),
               help='Path to core metadata files')
-def setup_dobson_correction(ctx, datadir):
+def setup_dobson_correction(ctx, datadir, verbosity):
     """ Add the station Dobson correction table and ES index to the
     database and ES, respectively, that does not have it. """
     from woudc_data_registry import config
@@ -2329,11 +2332,12 @@ def setup_dobson_correction(ctx, datadir):
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option(
     '--models', '-m',
     help='Tear down tables for the specified models'
 )
-def teardown(ctx, models):
+def teardown(ctx, models, verbosity):
     """delete models"""
 
     from woudc_data_registry import config
@@ -2366,6 +2370,7 @@ def teardown(ctx, models):
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option(
     '--datadir', '-d',
     type=click.Path(exists=True, resolve_path=True),
@@ -2375,7 +2380,7 @@ def teardown(ctx, models):
     '--init-search-index', is_flag=True,
     help='Causes records to be stored in the search index as well'
 )
-def init(ctx, datadir, init_search_index):
+def init(ctx, datadir, init_search_index, verbosity):
     """initialize core system metadata"""
     import os
 
@@ -2657,10 +2662,11 @@ def init(ctx, datadir, init_search_index):
             StationDobsonCorrections, station_dobson_corrections)
 
 
-@click.command('sync')
+@click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('--models', '-m', help='class to sync', is_flag=False)
-def sync(ctx, models):
+def sync(ctx, models, verbosity):
     """Sync search index with data registry"""
     # want to add an option to specify the class to sync
     model_classes = []
@@ -2745,8 +2751,9 @@ def sync(ctx, models):
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('--models', '-m', help='class to sync', is_flag=False)
-def product_sync(ctx, models):
+def product_sync(ctx, models, verbosity):
     """Sync products to Elasticsearch"""
 
     products = []

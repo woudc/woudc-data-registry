@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # =================================================================
 #
 # Terms and Conditions of Use
@@ -52,7 +50,7 @@ from datetime import datetime
 import calendar
 import os
 
-from woudc_data_registry import config
+from woudc_data_registry import cli_options, config
 from woudc_data_registry.registry import Registry
 from woudc_data_registry.models import StationDobsonCorrections
 
@@ -528,6 +526,7 @@ def correction():
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.argument('directory', type=click.Path(exists=True))
 @click.option('--code', type=click.Choice(['AD', 'CD']),
               default=None, show_default=True,
@@ -536,7 +535,8 @@ def correction():
               help="Enable the weekly ingest flag.")
 @click.option('--mode', type=click.Choice(['test', 'ops']),
               help="Choose 'test' or 'ops' for the mode.")
-def dobson_correction(ctx, directory, code, mode, weeklyingest):
+def dobson_correction(ctx, directory, code, mode, weeklyingest,
+                      verbosity):
     """ Correct columnO3 in TotalOZone Dobson files"""
     if mode is None:
         click.echo(

@@ -44,6 +44,8 @@
 # =================================================================
 
 import click
+
+from woudc_data_registry import cli_options
 from woudc_data_registry.product.ozonesonde.ozonesonde_generator \
     import generate_ozonesonde
 from woudc_data_registry.generate_metadata import update_extents
@@ -57,11 +59,12 @@ def ozonesonde():
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.argument('srcdir', type=click.Path(exists=True, resolve_path=True,
                                           dir_okay=True, file_okay=True))
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-def generate(ctx, srcdir, bypass=False):
+def generate(ctx, srcdir, verbosity, bypass=False):
     """Generate OzoneSonde table"""
 
     bypass_ = bypass

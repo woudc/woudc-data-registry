@@ -47,7 +47,7 @@ import logging
 
 import click
 
-from woudc_data_registry import registry
+from woudc_data_registry import cli_options, registry
 from woudc_data_registry.models import Dataset, Project
 
 LOGGER = logging.getLogger(__name__)
@@ -88,7 +88,8 @@ def dataset():
 
 @click.command('list')
 @click.pass_context
-def list_datasets(ctx):
+@cli_options.OPTION_VERBOSITY
+def list_datasets(ctx, verbosity):
     """List all registered datasets"""
 
     for r in get_datasets():
@@ -103,7 +104,8 @@ def project():
 
 @click.command('list')
 @click.pass_context
-def list_projects(ctx):
+@cli_options.OPTION_VERBOSITY
+def list_projects(ctx, verbosity):
     """List all registered projects"""
 
     for r in get_projects():

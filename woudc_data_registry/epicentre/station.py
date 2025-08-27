@@ -54,7 +54,7 @@ from woudc_data_registry.epicentre.metadata import (
 from woudc_data_registry.models import Station, StationName
 from woudc_data_registry.util import json_serial
 
-from woudc_data_registry import config
+from woudc_data_registry import cli_options, config
 
 LOGGER = logging.getLogger(__name__)
 
@@ -91,17 +91,19 @@ def station():
 
 @click.command('list')
 @click.pass_context
-def list_(ctx):
+@cli_options.OPTION_VERBOSITY
+def list_(ctx, verbosity):
     """List all stations"""
 
     for c in get_metadata(Station):
         click.echo(f'{c.station_id.ljust(3)} {c.station_name.name}')
 
 
-@click.command('show')
+@click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.argument('identifier', required=True)
-def show(ctx, identifier):
+def show(ctx, identifier, verbosity):
     """Show station details"""
 
     r = get_metadata(Station, identifier)
@@ -114,7 +116,9 @@ def show(ctx, identifier):
                           default=json_serial))
 
 
-@click.command('add')
+@click.command()
+@click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('-id', '--identifier', 'identifier', required=True,
               help='acronym')
 @click.option('-t', '--type', 'type_', required=False, default='STN',
@@ -130,9 +134,8 @@ def show(ctx, identifier):
               help='end date')
 @click.option('-g', '--geometry', 'geometry', required=True,
               help='latitude,longitude,elevation')
-@click.pass_context
 def add(ctx, identifier, name, type_, gaw_id, country,
-        wmo_region, start_date, end_date, geometry):
+        wmo_region, start_date, end_date, geometry, verbosity):
     """Add a station"""
 
     geom_tokens = geometry.split(',')
@@ -155,7 +158,9 @@ def add(ctx, identifier, name, type_, gaw_id, country,
     click.echo(f'Station {identifier} added')
 
 
-@click.command('update')
+@click.command()
+@click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('-id', '--identifier', 'identifier', required=True,
               help='acronym')
 @click.option('-t', '--type', 'type_', help='station type')
@@ -167,9 +172,8 @@ def add(ctx, identifier, name, type_, gaw_id, country,
 @click.option('-ed', '--end-date', 'end_date', help='end date')
 @click.option('-g', '--geometry', 'geometry',
               help='latitude,longitude,elevation')
-@click.pass_context
 def update(ctx, identifier, name, type_, gaw_id, country,
-           wmo_region, start_date, end_date, geometry):
+           wmo_region, start_date, end_date, geometry, verbosity):
     """Update station information"""
 
     station_ = {
@@ -207,10 +211,11 @@ def update(ctx, identifier, name, type_, gaw_id, country,
     click.echo(f'Station {identifier} updated')
 
 
-@click.command('delete')
-@click.argument('identifier', required=True)
+@click.command()
+@cli_options.OPTION_VERBOSITY
 @click.pass_context
-def delete(ctx, identifier):
+@click.argument('identifier', required=True)
+def delete(ctx, identifier, verbosity):
     """Delete a station"""
 
     if len(get_metadata(Station, identifier)) == 0:

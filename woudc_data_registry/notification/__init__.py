@@ -47,6 +47,7 @@ import logging
 
 import click
 
+from woudc_data_registry import cli_options
 from woudc_data_registry.notification.pubsub import (
     publish_notification as publish_notification_
 )
@@ -62,8 +63,9 @@ def publish():
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('--hours', type=int, required=True)
-def publish_notification(ctx, hours):
+def publish_notification(ctx, hours, verbosity):
     """Publish a notification to WMO WIS2"""
     publish_notification_(hours)
 

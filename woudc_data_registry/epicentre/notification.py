@@ -55,7 +55,7 @@ from woudc_data_registry.epicentre.metadata import (
 from woudc_data_registry.models import Notification
 from woudc_data_registry.util import json_serial
 
-from woudc_data_registry import config
+from woudc_data_registry import cli_options, config
 
 LOGGER = logging.getLogger(__name__)
 
@@ -71,17 +71,19 @@ def notification():
 
 @click.command('list')
 @click.pass_context
-def list_(ctx):
+@cli_options.OPTION_VERBOSITY
+def list_(ctx, verbosity):
     """List all news notifications"""
 
     for c in get_metadata(Notification):
         click.echo(f'{c.published_date} {c.title_en}')
 
 
-@click.command('show')
+@click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.argument('identifier', required=True)
-def show(ctx, identifier):
+def show(ctx, identifier, verbosity):
     """Show news notification details"""
 
     r = get_metadata(Notification, identifier)
@@ -94,13 +96,14 @@ def show(ctx, identifier):
                           default=json_serial))
 
 
-@click.command('add')
+@click.command()
+@click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('-id', '--identifier', 'identifier', required=False,
               help='Forced news item identifier')
 @click.option('-p', '--path', required=True,
               help='Path to YML file with news notification definition')
-@click.pass_context
-def add(ctx, identifier, path):
+def add(ctx, identifier, path, verbosity):
     """Add a news notification"""
 
     LOGGER.info('Loading notification file from: %s', path)
@@ -121,13 +124,14 @@ def add(ctx, identifier, path):
         click.echo(f'Notification {added.notification_id} added')
 
 
-@click.command('update')
+@click.command()
+@click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('-id', '--identifier', 'identifier', required=False,
               help='Forced news item identifier')
 @click.option('-p', '--path', required=True,
               help='Path to YML file with news notification definition')
-@click.pass_context
-def update(ctx, identifier, path):
+def update(ctx, identifier, path, verbosity):
     """Update news notification"""
 
     LOGGER.info('Loading notification file from: %s', path)
@@ -147,10 +151,11 @@ def update(ctx, identifier, path):
         click.echo(f'Notification {identifier} updated')
 
 
-@click.command('delete')
-@click.argument('identifier', required=True)
+@click.command()
 @click.pass_context
-def delete(ctx, identifier):
+@cli_options.OPTION_VERBOSITY
+@click.argument('identifier', required=True)
+def delete(ctx, identifier, verbosity):
     """Delete a notification"""
 
     if len(get_metadata(Notification, identifier)) == 0:

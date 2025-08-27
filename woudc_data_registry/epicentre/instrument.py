@@ -51,7 +51,7 @@ from woudc_data_registry.epicentre.metadata import (
 from woudc_data_registry.models import Instrument
 from woudc_data_registry.util import json_serial
 
-from woudc_data_registry import config
+from woudc_data_registry import cli_options, config
 
 from datetime import datetime
 
@@ -111,7 +111,8 @@ def instrument():
 
 @click.command('list')
 @click.pass_context
-def list_(ctx):
+@cli_options.OPTION_VERBOSITY
+def list_(ctx, verbosity):
     """List all instruments"""
 
     for c in get_metadata(Instrument):
@@ -120,10 +121,11 @@ def list_(ctx):
         click.echo(f'{descriptor.ljust(30)} - {station}, {c.dataset_id}')
 
 
-@click.command('show')
+@click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.argument('identifier', required=True)
-def show(ctx, identifier):
+def show(ctx, identifier, verbosity):
     """Show instrument details"""
 
     r = get_metadata(Instrument, identifier)
@@ -136,7 +138,8 @@ def show(ctx, identifier):
                           default=json_serial))
 
 
-@click.command('add')
+@click.command()
+@click.pass_context
 @click.option('-st', '--station', 'station', required=True,
               help='station ID')
 @click.option('-d', '--dataset', 'dataset', required=True,
@@ -150,8 +153,8 @@ def show(ctx, identifier):
               help='instrument serial number')
 @click.option('-g', '--geometry', 'geometry', required=True,
               help='latitude,longitude[,height]')
-@click.pass_context
-def add(ctx, station, dataset, contributor, name, model, serial, geometry):
+def add(ctx, station, dataset, contributor, name, model, serial, geometry,
+        verbosity):
     """Add an instrument"""
 
     geom_tokens = geometry.split(',')
@@ -177,7 +180,9 @@ def add(ctx, station, dataset, contributor, name, model, serial, geometry):
     click.echo(f'Instrument {result.instrument_id} added')
 
 
-@click.command('update')
+@click.command()
+@click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('-id', '--identifier', 'identifier', required=True,
               help='identifier')
 @click.option('-st', '--station', 'station', help='station ID')
@@ -188,9 +193,8 @@ def add(ctx, station, dataset, contributor, name, model, serial, geometry):
 @click.option('-s', '--serial', 'serial', help='instrument serial number')
 @click.option('-g', '--geometry', 'geometry',
               help='latitude,longitude[,height]')
-@click.pass_context
 def update(ctx, identifier, station, dataset,
-           contributor, name, model, serial, geometry):
+           contributor, name, model, serial, geometry, verbosity):
     """Update instrument information"""
 
     instrument_ = {}
@@ -236,10 +240,11 @@ def update(ctx, identifier, station, dataset,
     click.echo(f'Instrument {identifier} updated')
 
 
-@click.command('delete')
-@click.argument('identifier', required=True)
+@click.command()
 @click.pass_context
-def delete(ctx, identifier):
+@cli_options.OPTION_VERBOSITY
+@click.argument('identifier', required=True)
+def delete(ctx, identifier, verbosity):
     """Delete an instrument"""
 
     if len(get_metadata(Instrument, identifier)) == 0:
@@ -248,7 +253,7 @@ def delete(ctx, identifier):
 
     q = f'Are you sure you want to delete instrument {identifier}?'
 
-    if click.confirm(q):  # noqa
+    if click.confirm(q):
         delete_metadata(Instrument, identifier,
                         save_to_registry, save_to_index)
         click.echo(f'Instrument {identifier} deleted')

@@ -44,6 +44,8 @@
 # =================================================================
 
 import click
+
+from woudc_data_registry import cli_options
 from woudc_data_registry.generate_metadata import update_extents
 from woudc_data_registry.product.uv_index.uv_index_generator \
     import generate_uv_index
@@ -57,11 +59,12 @@ def uv_index():
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.argument('srcdir', type=click.Path(exists=True, resolve_path=True,
                                           dir_okay=True, file_okay=True))
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
               help='Bypass permission prompts while ingesting')
-def generate(ctx, srcdir, bypass=False):
+def generate(ctx, srcdir, verbosity, bypass=False):
     """Generate UV index"""
 
     bypass_ = bypass
@@ -80,6 +83,7 @@ def generate(ctx, srcdir, bypass=False):
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.argument('srcdir', type=click.Path(exists=True, resolve_path=True,
                                           dir_okay=True, file_okay=True))
 @click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
@@ -88,7 +92,7 @@ def generate(ctx, srcdir, bypass=False):
               help='lower bound of date range inclusive')
 @click.option('--end-year', '-ey', 'end_year', default=None,
               help='upper bound of date range inclusive')
-def update(ctx, srcdir, start_year, end_year, bypass=False):
+def update(ctx, srcdir, start_year, end_year, verbosity, bypass=False):
     """Only generate UV index within date range"""
 
     generate_uv_index(srcdir, True, start_year, end_year, bypass)
