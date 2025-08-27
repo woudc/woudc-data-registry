@@ -46,7 +46,7 @@
 import logging
 import re
 
-from sqlalchemy import func, create_engine
+from sqlalchemy import func, create_engine, text
 from sqlalchemy.exc import DataError, SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
@@ -158,9 +158,7 @@ class Registry(object):
         :returns: list of distinct values
         """
 
-        LOGGER.debug(
-            f'Querying distinct values for {domain} from subquery'
-        )
+        LOGGER.debug(f'Querying distinct values for {domain} from subquery')
         results = [v[0] for v in self.session.query(domain).filter(
                       field.in_(subquery)).distinct()]
 
@@ -400,6 +398,20 @@ class Registry(object):
         """
         LOGGER.debug(f'Deleting all rows from {table.__tablename__}')
         self.session.query(table).delete()
+        self.session.commit()
+
+    def drop_table(self, table):
+        """
+        Drop table from database
+
+        :param table: `str` of table name
+
+        :returns: `None`
+        """
+
+        LOGGER.debug(f'Dropping table {table}')
+        drop_stmt = f'DROP TABLE IF EXISTS {table}'
+        self.session.execute(text(drop_stmt))
         self.session.commit()
 
     def save(self, obj=None):
