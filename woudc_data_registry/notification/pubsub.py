@@ -75,7 +75,6 @@ def publish_notification(hours):
     """
     today = datetime.datetime.now()
     date_ = today - datetime.timedelta(hours=hours)
-    date_ = date_.replace(minute=0, second=0, microsecond=0)
     registry = Registry()
     ingested_records = registry.query_by_field_range(
         DataRecord, "published_datetime", date_, today)
@@ -116,6 +115,7 @@ def publish_notification(hours):
                 'message': message
             }
         else:
+            LOGGER.warning(f"{url} not found on web.")
             no_message.append(ingest_filepath)
     LOGGER.debug(f'{len(responses)} records found.')
     LOGGER.debug(f'No message: {no_message}')
