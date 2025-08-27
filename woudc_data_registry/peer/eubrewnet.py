@@ -48,6 +48,7 @@ import logging
 
 import click
 
+from woudc_data_registry import cli_options
 from woudc_data_registry.models import PeerDataRecord
 from woudc_data_registry.registry import Registry
 
@@ -117,9 +118,10 @@ def eubrewnet():
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('-fi', '--file-index', type=click.Path(exists=True,
               resolve_path=True), help='Path to file index')
-def index(ctx, file_index):
+def index(ctx, file_index, verbosity):
     """index EUBREWNET file index"""
 
     if file_index is None:

@@ -43,17 +43,17 @@
 #
 # =================================================================
 
-import click
 from datetime import date
-
 import json
+
+import click
 
 from woudc_data_registry.epicentre.metadata import (
     add_metadata, get_metadata, update_metadata, delete_metadata)
 from woudc_data_registry.models import Deployment
 from woudc_data_registry.util import json_serial
 
-from woudc_data_registry import config
+from woudc_data_registry import cli_options, config
 
 save_to_registry = config.EXTRAS['cli']['registry_enabled']
 save_to_index = config.EXTRAS['cli']['search_index_enabled']
@@ -88,17 +88,19 @@ def deployment():
 
 @click.command('list')
 @click.pass_context
-def list_(ctx):
+@cli_options.OPTION_VERBOSITY
+def list_(ctx, verbosity):
     """List all deployments"""
 
     for c in get_metadata(Deployment):
         click.echo(f'{c.contributor_id.ljust(20)} @ {c.station_id}')
 
 
-@click.command('show')
+@click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.argument('identifier', required=True)
-def show(ctx, identifier):
+def show(ctx, identifier, verbosity):
     """Show deployment details"""
 
     r = get_metadata(Deployment, identifier)
@@ -111,7 +113,9 @@ def show(ctx, identifier):
                           default=json_serial))
 
 
-@click.command('add')
+@click.command()
+@click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('-s', '--station', 'station', required=True, help='station')
 @click.option('-c', '--contributor', 'contributor', required=True,
               help='contributor')
@@ -120,8 +124,7 @@ def show(ctx, identifier):
               type=click.DateTime(['%Y-%m-%d']), help='deployment start date')
 @click.option('-ed', '--end', 'end_date', required=False, default=None,
               type=click.DateTime(['%Y-%m-%d']), help='deployment end date')
-@click.pass_context
-def add(ctx, station, contributor, start_date, end_date):
+def add(ctx, station, contributor, start_date, end_date, verbosity):
     """Add a deployment"""
 
     start_date = start_date.date()
@@ -140,7 +143,9 @@ def add(ctx, station, contributor, start_date, end_date):
     click.echo(f'Deployment {result.deployment_id} added')
 
 
-@click.command('update')
+@click.command()
+@click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('-id', '--identifier', 'identifier', required=True,
               help='identifier')
 @click.option('-s', '--station', 'station', help='station')
@@ -149,8 +154,8 @@ def add(ctx, station, contributor, start_date, end_date):
               type=click.DateTime(['%Y-%m-%d']), help='deployment start date')
 @click.option('-ed', '--end', 'end_date', type=click.DateTime(['%Y-%m-%d']),
               help='deployment end date')
-@click.pass_context
-def update(ctx, identifier, station, contributor, start_date, end_date):
+def update(ctx, identifier, station, contributor, start_date, end_date,
+           verbosity):
     """Update deployment information"""
 
     deployment_ = {}
@@ -173,10 +178,11 @@ def update(ctx, identifier, station, contributor, start_date, end_date):
     click.echo(f'Deployment {identifier} updated')
 
 
-@click.command('delete')
-@click.argument('identifier', required=True)
+@click.command()
 @click.pass_context
-def delete(ctx, identifier):
+@click.argument('identifier', required=True)
+@cli_options.OPTION_VERBOSITY
+def delete(ctx, identifier, verbosity):
     """Delete a deployment"""
 
     if len(get_metadata(Deployment, identifier)) == 0:

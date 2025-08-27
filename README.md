@@ -57,6 +57,9 @@ vi foo.env  # edit database connection parameters, etc.
 ### Initializing the Database
 
 ```bash
+
+# NOTE: -v/--verbosity option applies to all CLI commands
+
 # create database
 make ENV=foo.env createdb
 
@@ -65,6 +68,9 @@ make ENV=foo.env dropdb
 
 # show configuration
 woudc-data-registry admin config
+
+# show configuration and set output verbosity
+woudc-data-registry admin config --verbosity DEBUG
 
 # initialize model (database tables)
 woudc-data-registry admin registry setup

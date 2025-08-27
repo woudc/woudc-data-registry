@@ -49,6 +49,7 @@ import logging
 
 import click
 
+from woudc_data_registry import cli_options
 from woudc_data_registry.epicentre.metadata import (
     add_metadata, get_metadata, update_metadata, delete_metadata)
 from woudc_data_registry.models import Contributor
@@ -70,17 +71,19 @@ def contributor():
 
 @click.command('list')
 @click.pass_context
-def list_(ctx):
+@cli_options.OPTION_VERBOSITY
+def list_(ctx, verbosity):
     """List all contributors"""
 
     for c in get_metadata(Contributor):
         click.echo(f'{c.contributor_id.ljust(24)} {c.name}')
 
 
-@click.command('show')
+@click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.argument('identifier', required=True)
-def show(ctx, identifier):
+def show(ctx, identifier, verbosity):
     """Show contributor details"""
 
     r = get_metadata(Contributor, identifier)
@@ -93,7 +96,9 @@ def show(ctx, identifier):
                           default=json_serial))
 
 
-@click.command('add')
+@click.command()
+@click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('-n', '--name', 'name', required=True, help='name')
 @click.option('-a', '--acronym', 'acronym', required=True, help='acronym')
 @click.option('-c', '--country', 'country', required=True, help='country')
@@ -106,9 +111,8 @@ def show(ctx, identifier):
               help='FTP username')
 @click.option('-g', '--geometry', 'geometry', required=True,
               help='latitude,longitude')
-@click.pass_context
 def add(ctx, name, acronym, country, project, wmo_region,
-        url, email, ftp_username, geometry):
+        url, email, ftp_username, geometry, verbosity):
     """Add a contributor"""
 
     geom_tokens = geometry.split(',')
@@ -131,7 +135,9 @@ def add(ctx, name, acronym, country, project, wmo_region,
     click.echo(f'Contributor {result.contributor_id} added')
 
 
-@click.command('update')
+@click.command()
+@click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('-id', '--identifier', 'identifier', required=True,
               help='acronym')
 @click.option('-n', '--name', 'name', help='name')
@@ -143,9 +149,8 @@ def add(ctx, name, acronym, country, project, wmo_region,
 @click.option('-e', '--email', 'email', help='email')
 @click.option('-f', '--ftp-username', 'ftp_username', help='FTP username')
 @click.option('-g', '--geometry', 'geometry', help='latitude,longitude')
-@click.pass_context
 def update(ctx, identifier, name, acronym, country, project,
-           wmo_region, url, email, ftp_username, geometry):
+           wmo_region, url, email, ftp_username, geometry, verbosity):
     """Update contributor information"""
 
     contributor_ = {
@@ -182,10 +187,11 @@ def update(ctx, identifier, name, acronym, country, project,
     click.echo(f'Contributor {identifier} updated')
 
 
-@click.command('delete')
-@click.argument('identifier', required=True)
+@click.command()
 @click.pass_context
-def delete(ctx, identifier):
+@cli_options.OPTION_VERBOSITY
+@click.argument('identifier', required=True)
+def delete(ctx, identifier, verbosity):
     """Delete a contributor"""
 
     if len(get_metadata(Contributor, identifier)) == 0:

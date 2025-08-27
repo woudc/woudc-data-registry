@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2021 Government of Canada
+# Copyright (c) 2025 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -43,43 +43,27 @@
 #
 # =================================================================
 
+import logging
+import sys
+
 import click
 
-from woudc_data_registry import cli_options
-from woudc_data_registry.product.totalozone.totalozone_generator \
-    import generate_totalozone
-from woudc_data_registry.generate_metadata import update_extents
+
+def OPTION_VERBOSITY(f):
+    logging_options = ['ERROR', 'WARNING', 'INFO', 'DEBUG']
+
+    def callback(ctx, param, value):
+        if value is not None:
+            logging.basicConfig(stream=sys.stdout,
+                                level=getattr(logging, value))
+        return True
+
+    return click.option('--verbosity', '-v',
+                        type=click.Choice(logging_options),
+                        help='Verbosity',
+                        callback=callback)(f)
 
 
-@click.group()
-def totalozone():
-    """TotalOzone management"""
-    pass
-
-
-@click.command()
-@click.pass_context
-@cli_options.OPTION_VERBOSITY
-@click.argument('srcdir', type=click.Path(exists=True, resolve_path=True,
-                                          dir_okay=True, file_okay=True))
-@click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
-              help='Bypass permission prompts while ingesting')
-def generate(ctx, srcdir, verbosity, bypass=False):
-    """Generate TotalOzone table"""
-
-    bypass_ = bypass
-
-    if not bypass_:
-        q = ('This command will erase and rebuild'
-             ' the TotalOzone table. Are you sure?')
-
-        if click.confirm(q):
-            bypass_ = True
-
-    if bypass_:
-        generate_totalozone(srcdir, bypass)
-
-    update_extents()
-
-
-totalozone.add_command(generate)
+def cli_callbacks(f):
+    f = OPTION_VERBOSITY(f)
+    return f
