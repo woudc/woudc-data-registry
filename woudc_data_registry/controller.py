@@ -46,7 +46,6 @@
 import click
 import logging
 import os
-import datetime
 
 from pathlib import Path
 from woudc_extcsv import (ExtendedCSV, NonStandardDataError,
@@ -55,10 +54,9 @@ from woudc_extcsv import (ExtendedCSV, NonStandardDataError,
 from woudc_data_registry import config
 from woudc_data_registry.gather import gather as gather_
 from woudc_data_registry.util import (is_text_file, read_file,
-                                      send_email, delete_file_from_record,
-                                      get_HTTP_HEAD_response,
-                                      publish_to_MQTT_Broker,
-                                      generate_geojson_payload)
+                                      send_email, delete_file_from_record)
+
+from woudc_data_registry.notification.pubsub import publish_notification
 
 
 from woudc_data_registry.processing import Process
@@ -370,59 +368,6 @@ def gather(ctx, path):
         LOGGER.error(f'Unable to gather: {err}')
 
     LOGGER.info("Done Gathering files")
-
-
-@click.command()
-@click.pass_context
-@click.option('--hours', type=int, required=True)
-def publish_notification(ctx, hours):
-    """Publish a notification to WMO WIS2"""
-    today = datetime.datetime.now()
-    date = today - datetime.timedelta(hours=hours)
-    date = date.replace(minute=0, second=0, microsecond=0)
-    registry = Registry()
-    ingested_records = registry.query_by_field_range(
-        DataRecord, "published_datetime", date, today)
-    LOGGER.info(f"Found records sooner than {date}")
-    url_template = 'https://woudc.org/archive/Archive-NewFormat'
-    responses = {}
-    no_message = []
-    for record in ingested_records:
-        instrument = record.instrument_id.split(':')[0].lower()
-        year = record.timestamp_date.year
-        dataset = (
-            f'{record.content_category}_{record.content_level}_'
-            f'{record.content_form}'
-        )
-        ingest_filepath = record.ingest_filepath
-        url = (
-            f'{url_template}/{dataset}/stn{record.station_id}/'
-            f'{instrument}/{year}/{record.filename}'
-        )
-
-        LOGGER.info(f'Found {url}')
-        http_reponse = get_HTTP_HEAD_response(url)
-        if http_reponse == 200:
-            query = registry.query_distinct_by_fields(
-                DataRecord.ingest_filepath, DataRecord, {
-                    "ingest_filepath": ingest_filepath})
-            if len(query) == 1:
-                message = 'new record'
-            elif len(query) > 1:
-                message = 'update record'
-            responses[ingest_filepath] = {
-                'record': record,
-                'status_code': http_reponse,
-                'message': message
-            }
-        else:
-            no_message.append(ingest_filepath)
-    LOGGER.debug(f'Responses: {responses}')
-    LOGGER.debug(f'No message: {no_message}')
-    notifications = generate_geojson_payload(responses)
-    LOGGER.debug('geoJSON Generated.')
-    for notification in notifications:
-        publish_to_MQTT_Broker(notification)
 
 
 data.add_command(ingest)
