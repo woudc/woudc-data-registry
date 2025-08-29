@@ -17,8 +17,8 @@ identification:
     language: eng; CAN
     charset: utf8
     title:
-        en: &title_en Level 1.0
-        fr: &title_fr Niveau 1.0
+        en: &title_en UmkehrN14 Level 1.0
+        fr: &title_fr UmkehrN14 Niveau 1.0
     abstract:
         en: &abstract_en Umkehr measurements are ozone profiles compiled using 14 N-values, measured with ultraviolet spectrophotometers of the ratio of zenith sky light intensities of two wavelengths in the solar ultraviolet range when the sun is near the horizon. Level 1 is raw Umkehr data which contains data collected at 14 zenith angles.
         fr: &abstract_fr Les mesures Umkehr sont des profils d'ozone dressés en appliquant 14 valeurs N, mesurés au moyen de spectrophotomètres à ultraviolet du ratio des intensités lumineuses du ciel au zénith de deux longueurs d'onde dans la plage des ultraviolets solaires lorsque le soleil est près de l'horizon. Le niveau 1 correspond aux données Umkehr brutes qui contiennent les données recueillies à 14 angles zénithaux.
