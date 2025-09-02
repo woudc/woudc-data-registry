@@ -2733,8 +2733,10 @@ def sync(ctx, models, verbosity):
                 raise click.ClickException(f'{model} is not a valid model')
         valid_model_names = ', '.join(
             clazz.__name__ for clazz in model_classes)
-        click.echo("Only the following models will be",
-                   f"synced: {valid_model_names}")
+        click.echo(
+            f"Only the following models will be "
+            f"synced: {valid_model_names}"
+        )
 
     else:
         model_classes = [
