@@ -1983,13 +1983,13 @@ class ContributorNotification(base):
         default=datetime.datetime.now()
     )
     # test or ops
-    mode = Column(String, nullable=False, default='ops')
+    mode = Column(String, nullable=False)
 
     def __init__(self, dict_):
         """serializer"""
         self.contributor_id = dict_['contributor_id']
+        self.mode = dict_['mode']
 
-        print(f"dict_['reminder_number']: {dict_['reminder_number']}")
         try:
             if isinstance(dict_['reminder_number'], int):
                 self.reminder_number = dict_['reminder_number']
