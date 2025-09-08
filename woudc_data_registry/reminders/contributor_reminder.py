@@ -138,21 +138,19 @@ def get_last_activity(acronym):
     if not last_activity_datetime:
         # Log a more specific message if no activity is found.
         LOGGER.info(f"Contributor '{acronym}' has no submitted files.")
-        registration_date = registry.session.query(
+        # Return a neutral result since no activity means no recent activity.
+        validation_status = registry.session.query(
             Contributor.last_validated_datetime).filter(
             Contributor.acronym == acronym).order_by(
-            Contributor.last_validated_datetime.desc()).first()[0].date()
+            Contributor.last_validated_datetime.desc()).first()[0]
         # to avoid sending reminder emails to newly registered contributors
-        if (registration_date < NOT_ACTIVE_SINCE_DATE
-                and registration_date > ACTIVE_WITHIN_DATE):
+        if (validation_status.date() < NOT_ACTIVE_SINCE_DATE
+                and validation_status > ACTIVE_WITHIN_DATE):
             LOGGER.info(f"Contributor '{acronym}' has not been active "
-                        f"in the last {config.WDR_REMIND_NOT_ACTIVE_FOR}")
-            return (False, registration_date)
+                        "in the last 6 months")
+            return (False, validation_status.date())
         else:
-            LOGGER.info(f"Contributor '{acronym}' was registered within "
-                        f"the last {config.WDR_REMIND_NOT_ACTIVE_FOR}. "
-                        "Skipping...")
-            return (True, registration_date)
+            return (True, validation_status.date())
 
     last_activity_date = last_activity_datetime.date()
     LOGGER.debug(f"Last activity for contributor '{acronym}' was on "
