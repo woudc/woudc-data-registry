@@ -181,6 +181,11 @@ woudc-data-registry data verify foo.dat -l
 
 # ingest with only core metadata checks
 woudc-data-registry data ingest /path/to/dir -l
+
+# update date ranges of all relevant tables with dates gathered from data_records
+woudc-data-registry data update-date-ranges
+# optional: update specific supported tables in comma seperated format. e.g.
+woudc-data-registry data update-date-ranges -m "Contributor,Deployment,Station,Instrument"
 ```
 
 #### Dobson Section Corrections

@@ -46,20 +46,25 @@
 
 import json
 import logging
+from datetime import datetime
 
 from woudc_data_registry.registry import Registry
+from sqlalchemy import func
 import woudc_data_registry.models
 
 
 LOGGER = logging.getLogger(__name__)
 
-WOUDC_OWS = 'https://geo.woudc.org/ows'
-WOUDC_ARCHIVE = 'https://beta.woudc.org/archive/'
-WOUDC_DATA = 'https://beta.woudc.org/en/data/data-search-and-download'
-
 
 def generate_metadata(woudc_yaml):
-    """generate list of MCF ConfigParser objects from WOUDC YAML"""
+    """
+    DEPRECATED
+    generate list of MCF ConfigParser objects from WOUDC YAML
+    """
+
+    WOUDC_OWS = 'https://geo.woudc.org/ows'
+    WOUDC_ARCHIVE = 'https://woudc.org/archive/'
+    WOUDC_DATA = 'https://woudc.org/en/data/data-search-and-download'
 
     u1 = u2 = None
     dict_list = []
@@ -72,7 +77,7 @@ def generate_metadata(woudc_yaml):
 
     # Go through each dataset collection
     for data_category in data_categories:
-        for key, value in data_category.items():
+        for key in data_category.items():
             for datasetcollection in data_category[key]['datasetcollections']:
                 for key1, value1 in datasetcollection.items():
                     # Find umkehr and duplicate for levels 1.0 and 2.0
@@ -105,7 +110,7 @@ def generate_metadata(woudc_yaml):
                             # Metadata dictionary for current dataset
                             dataset_md = {"type": "Feature",
                                           "properties": {},
-                                          "geometry": None
+                                          "geometry": {}
                                           }
 
                             if key2 == 'UmkehrN14_1.0':
@@ -131,11 +136,9 @@ def generate_metadata(woudc_yaml):
                                 value2['keywords_en']
                             dataset_md['properties']['keywords_fr'] = \
                                 value2['keywords_fr']
-                            dataset_md['properties']['temporal_begin'] = \
-                                time_begin
-                            dataset_md['properties']['temporal_end'] = \
-                                time_end
-                            dataset_md['properties']['spatial_extent'] = \
+                            dataset_md['time']['interval'] = [time_begin,
+                                                              time_end]
+                            dataset_md['geometry']['spatial_extent'] = \
                                 [-180, -90, 180, 90]
                             dataset_md['properties']['title_en'] = \
                                 value2['label_en']
@@ -145,7 +148,7 @@ def generate_metadata(woudc_yaml):
                                 topiccategory
                             dataset_md['properties']['uri'] = uri
 
-                            names = []
+                            # names = []
                             if 'levels' in value2:
                                 levels = []
                                 for level in value2['levels']:
@@ -161,30 +164,6 @@ def generate_metadata(woudc_yaml):
                                             for key4, value4 in ntwk.items():
                                                 curr_network['label_en'] = \
                                                     value4['label_en']
-                                                if 'instruments' in value4:
-                                                    names = []
-                                                    if isinstance(
-                                                        value4['instruments'],
-                                                        list
-                                                    ):
-                                                        for i in value4[
-                                                         'instruments'
-                                                        ]:
-                                                            for key5, value5 \
-                                                             in i.items():
-                                                                if key5 in [
-                                                                  'label_en',
-                                                                  'label_fr'
-                                                                 ]:
-                                                                    pass
-                                                                else:
-                                                                    names\
-                                                                      .append(
-                                                                        key5
-                                                                      )
-                                                    curr_network[
-                                                      'instruments'
-                                                    ] = names
                                             networks.append(curr_network)
                                             curr_level['networks'] = networks
                                     levels.append(curr_level)
@@ -210,24 +189,6 @@ def generate_metadata(woudc_yaml):
                                         if 'instruments' in value4:
                                             curr_network['label_en'] = \
                                                 value4['label_en']
-                                            names = []
-                                            if isinstance(
-                                              value4['instruments'],
-                                              list
-                                            ):
-                                                for instrument in value4[
-                                                  'instruments'
-                                                ]:
-                                                    for key5, value5 in \
-                                                      instrument.items():
-                                                        if key5 in [
-                                                          'label_en',
-                                                          'label_fr'
-                                                        ]:
-                                                            pass
-                                                        else:
-                                                            names.append(key5)
-                                        curr_network['instruments'] = names
                                         networks.append(curr_network)
                                 curr_level['networks'] = networks
                                 levels.append(curr_level)
@@ -310,7 +271,11 @@ def generate_metadata(woudc_yaml):
 
 
 def update_extents():
-    # Update metadata for each row in DiscoveryMetadata table
+    """
+    Update metadata for each row in DiscoveryMetadata table
+
+    :returns: void
+    """
     [
       DataRecord, UVIndex, OzoneSonde, TotalOzone,
       DiscoveryMetadata, Instrument
@@ -352,42 +317,65 @@ def update_extents():
     # Connect to registry and update dataset metadata
     registry = Registry()
     # Select all rows from discovery_metadata
-    datasets_class_list = registry.query_full_index(DiscoveryMetadata)
-    datasets = []
-    for curr_dataset in datasets_class_list:
-        datasets += [(curr_dataset.discovery_metadata_id,
-                      curr_dataset._metadata)]
+    instrument_link = "https://api.woudc.org/collections/instruments"
+    discovery_metadata_list = registry.query_full_index(DiscoveryMetadata)
+    curr_discovery_metadata = []
+    for curr_dataset in discovery_metadata_list:
+        curr_discovery_metadata += [(curr_dataset.discovery_metadata_id,
+                                    curr_dataset._metadata)]
     LOGGER.debug('Updating Discovery Metadata table...')
     tables = ['ozonesonde', 'totalozone', 'uv_index_hourly', 'data_records']
 
     for input_table in tables:
-        if input_table == 'data_records':
+        if input_table == 'data_records':  # update all other datasets
             # Select data records content categories
             categories = registry.query_distinct(DataRecord.content_category)
-            # Loop through each dataset and update the geoJSON
-            for (dataset, md) in datasets:
+            LOGGER.debug(
+                f"Categories to update discovery metadata: {categories}"
+            )
+            # Loop through each dataset and update the geoJSON metadata
+            for (discovery_metadata_id, md) in curr_discovery_metadata:
+                LOGGER.info(
+                    f"Updating discovery metadata for {discovery_metadata_id}"
+                )
                 md_loads = json.loads(md.replace('\\"', '"'))
-                if dataset in categories:
-                    # Update spatial/temporal extents
+                dataset_short = discovery_metadata_id.split('_')[0]
+                LOGGER.debug(f"dataset_short: {dataset_short}")
+                if dataset_short in categories:
+                    query_values = {'content_category': dataset_short}
+                    # Treat UmkehrN14 datasets as separate by level
+                    if dataset_short == 'UmkehrN14':
+                        content_level = discovery_metadata_id.split('_')[1]
+                        query_values['content_level'] = content_level
                     extents = registry.query_extents(
-                                      DataRecord,
-                                      DataRecord.timestamp_date,
-                                      'content_category',
-                                      dataset)[0]
-
-                    md_loads['properties']['spatial_extent'] = [extents[2],
-                                                                extents[3],
-                                                                extents[4],
-                                                                extents[5]]
-                    md_loads['properties']['temporal_begin'] = str(extents[0])
-                    md_loads['properties']['temporal_end'] = str(extents[1])
+                        DataRecord,
+                        DataRecord.timestamp_date,
+                        query_values
+                    )[0]
+                    md_loads['geometry'] = {
+                        'type': 'Polygon',
+                        'coordinates': [[
+                            [extents[2], extents[3]],  # [minLon, minLat]
+                            [extents[4], extents[3]],  # [maxLon, minLat]
+                            [extents[4], extents[5]],  # [maxLon, maxLat]
+                            [extents[2], extents[5]],  # [minLon, maxLat]
+                            [extents[2], extents[3]]   # Close the bbox polygon
+                        ]]
+                    }
+                    md_loads['time']['interval'] = [str(extents[0]),
+                                                    str(extents[1])]
+                    # Update 'updated' datetime
+                    md_loads['updated'] = datetime.utcnow().strftime(
+                        '%Y-%m-%dT%H:%M:%SZ'
+                    )
                     # Update levels and networks
-                    values = {'content_category': dataset}
                     levels = registry.query_distinct_by_fields(
                                 DataRecord.content_level,
                                 DataRecord,
-                                values
+                                query_values
                     )
+                    LOGGER.debug(f"levels: {levels}")
+                    md_loads['properties']['levels'] = []  # reset levels
                     if 'levels' not in md_loads['properties']:
                         # Add levels field if it does not already exist
                         md_loads['properties']['levels'] = []
@@ -397,27 +385,23 @@ def update_extents():
                             if level['label_en'] == f'Level {curr_level}':
                                 is_included = True
                         if not is_included:
-                            if dataset.startswith(('TotalOzone', 'UmkehrN14')):
+                            if dataset_short.startswith(('TotalOzone',
+                                                         'UmkehrN14')):
                                 label_en = 'Other'
                             else:
-                                label_en = dataset
+                                label_en = discovery_metadata_id
                             # Add level item if it does not already exist
-                            md_loads['properties']['levels'].append(
-                                {'label_en': f'Level {curr_level}',
-                                 'networks': [{
-                                     'label_en': label_en,
-                                     'instruments': []
+                            md_loads['properties']['levels'].append({
+                                'label_en': f'Level {curr_level}',
+                                'networks': [{
+                                     'label_en': label_en
                                  }]
-                                 })
+                            })
                         # Get distinct instruments for current level
-                        values = {
-                            'content_category': dataset,
-                            'content_level': curr_level
-                        }
                         subquery = registry.query_distinct_by_fields(
                                        DataRecord.instrument_id,
                                        DataRecord,
-                                       values
+                                       query_values
                         )
                         instruments = registry.query_distinct_in(
                                        Instrument.name,
@@ -427,62 +411,46 @@ def update_extents():
                         for level in md_loads['properties']['levels']:
                             if level['label_en'] == f'Level {curr_level}':
                                 for ins in instruments:
-                                    is_included = False
-                                    otherIndex = [False, -1]
-                                    for n in level['networks']:
-                                        if n['label_en'] == 'Other':
-                                            otherIndex = [True,
-                                                          level[
-                                                            'networks'
-                                                          ].index(n)]
-                                        if ins.lower() in n['instruments']:
-                                            is_included = True
-                                    if not is_included:
-                                        if dataset.startswith(
-                                                   ('TotalOzone', 'UmkehrN14')
-                                        ):
-                                            if ins.lower() in [
-                                               'brewer', 'dobson', 'saoz']:
-                                                level['networks'].append({
-                                                    'label_en': ins,
-                                                    'instruments': [
-                                                      ins.lower()
-                                                    ]
-                                                })
-
-                                            elif otherIndex[0]:
-                                                level['networks'][
-                                                    otherIndex[1]][
-                                                    'instruments'
-                                                ].append(ins.lower())
-                                            else:
-                                                level['networks'].append({
-                                                    'label_en': 'Other',
-                                                    'instruments': [
-                                                        ins.lower()
-                                                    ]
-                                                })
-                                        else:
-                                            level['networks'][0][
-                                              'instruments'
-                                            ].append(ins.lower())
-                                for network in level['networks']:
-                                    # Remove any empty networks
-                                    if len(network['instruments']) == 0:
-                                        level['networks'].remove(network)
-
+                                    # check if instrument concepts
+                                    #  is in metadata:
+                                    if len(md_loads["properties"]["themes"
+                                                                  ]) < 2:
+                                        ins_concept = {"concepts": []}
+                                        # link to API instruments collection
+                                        ins_concept["scheme"] = instrument_link
+                                        ins_concept["concepts"].append({
+                                            "id": ins.lower()})
+                                        md_loads["properties"][
+                                            "themes"].append(ins_concept)
+                                    else:
+                                        if {"id": ins.lower()} not in md_loads[
+                                            "properties"]["themes"][1][
+                                                "concepts"]:
+                                            ins_concept = md_loads[
+                                                "properties"]["themes"
+                                                              ][1]["concepts"]
+                                            ins_concept.append({
+                                                "id": ins.lower()})
+                                for n in level['networks']:
+                                    if 'instruments' in n.keys():
+                                        n.pop('instruments', n['instruments'])
                     md_updated = json.dumps(md_loads)
-                    md_updated = md_updated.replace('"', '\\"')
                     # Update metadata in corresponding row
                     new_value = {'_metadata': md_updated}
                     registry.update_by_field(
                       new_value, DiscoveryMetadata,
-                      'discovery_metadata_id', dataset
+                      'discovery_metadata_id', discovery_metadata_id
                     )
+                else:
+                    LOGGER.warn(f"{dataset_short} does not belong in the "
+                                "dataset categories.\n"
+                                "No metadata update applied for this dataset.")
 
-        else:
-            for (dataset, md) in datasets:
-                dataset_original = '_'.join(dataset.split('_')[:-1])
+        else:  # data products: 'ozonesonde', 'totalozone', 'uv_index_hourly'
+            for (discovery_metadata_id, md) in curr_discovery_metadata:
+                dataset_original = '_'.join(
+                    discovery_metadata_id.split('_')[:-1]
+                )
                 if dataset_original == inputs[input_table]['content_category']:
                     break
             else:
@@ -494,17 +462,30 @@ def update_extents():
                 LOGGER.error(msg)
                 raise ValueError(msg)
             md_loads = json.loads(md.replace('\\"', '"'))
+            LOGGER.info(
+                f"Updating dataset_original: {dataset_original}\n"
+                f"inputs[input_table]['model']: {inputs[input_table]['model']}"
+            )
 
             # Update spatial/temporal extents
             extents = registry.query_extents(
                inputs[input_table]['model'], inputs[input_table]['date_field']
             )[0]
-            md_loads['properties']['spatial_extent'] = [extents[2],
-                                                        extents[3],
-                                                        extents[4],
-                                                        extents[5]]
-            md_loads['properties']['temporal_begin'] = str(extents[0])
-            md_loads['properties']['temporal_end'] = str(extents[1])
+            md_loads['geometry'] = {
+                'type': 'Polygon',
+                'coordinates': [[
+                    [extents[2], extents[3]],  # [minLon, minLat]
+                    [extents[4], extents[3]],  # [maxLon, minLat]
+                    [extents[4], extents[5]],  # [maxLon, maxLat]
+                    [extents[2], extents[5]],  # [minLon, maxLat]
+                    [extents[2], extents[3]]   # Close the bbox polygon
+                ]]
+            }
+            md_loads['time']['interval'] = [str(extents[0]), str(extents[1])]
+            # Update 'updated' datetime
+            md_loads['updated'] = datetime.utcnow().strftime(
+                '%Y-%m-%dT%H:%M:%SZ'
+            )
             # Update levels and networks
             levels = inputs[input_table]['levels']
             if 'levels' not in md_loads['properties']:
@@ -522,43 +503,117 @@ def update_extents():
                         {
                           'label_en': f'Level {curr_level}',
                           'networks': [{
-                              'label_en': inputs[input_table]['label_en'],
-                              'instruments': []
+                              'label_en': inputs[input_table]['label_en']
                           }]
                         }
                     )
 
-                # Get distinct instruments for current level
-                subquery = registry.query_distinct(
-                               inputs[input_table]['ins_id']
-                )
-                instruments = registry.query_distinct_in(
-                               Instrument.name,
-                               Instrument.instrument_id,
-                               subquery
-                )
-                for level in md_loads['properties']['levels']:
-                    if level['label_en'] == f'Level {curr_level}':
-                        for ins in instruments:
-                            is_included = False
-                            for n in level['networks']:
-                                if ins.lower() in n['instruments']:
-                                    is_included = True
-                            if not is_included:
-                                level['networks'][0]['instruments'].append(
-                                    ins.lower()
-                                )
-                        for network in level['networks']:
-                            # Remove any empty networks
-                            if len(network['instruments']) == 0:
-                                level['networks'].remove(network)
-
             md_updated = json.dumps(md_loads)
+            md_updated.replace('\\"', '"')
             # Update metadata in corresponding row
             new_value = {'_metadata': md_updated}
             registry.update_by_field(
-                new_value, DiscoveryMetadata, 'discovery_metadata_id', dataset
+                new_value, DiscoveryMetadata,
+                'discovery_metadata_id', discovery_metadata_id
             )
 
     registry.close_session()
     return True
+
+
+def update_data_submission_ranges(registry, tables=None):
+    """
+    Update date ranges for each station, instrument, contributor, and
+    deployment of the data submission
+
+    :returns: void
+    """
+
+    [
+        Contributor, Deployment, Station, DataRecord, Instrument
+    ] = [
+        woudc_data_registry.models.Contributor,
+        woudc_data_registry.models.Deployment,
+        woudc_data_registry.models.Station,
+        woudc_data_registry.models.DataRecord,
+        woudc_data_registry.models.Instrument
+    ]
+    if (tables is None) or (tables is not None and 'Instrument' in tables):
+        LOGGER.info('Updating Instrument date ranges')
+        instruments_daterange = (
+            registry.session.query(
+                DataRecord.instrument_id,
+                func.max(DataRecord.timestamp_date).label("max_timestamp"),
+                func.min(DataRecord.timestamp_date).label("min_timestamp")
+            ).group_by(DataRecord.instrument_id).all())
+
+        # update instrument date ranges
+        for inst in instruments_daterange:
+            registry.update_by_field({'end_date': inst[1],
+                                      'start_date': inst[2]
+                                      }, Instrument, 'instrument_id', inst[0])
+
+    if (tables is None) or (tables is not None and 'Contributor' in tables):
+        LOGGER.info('Updating Contributor date ranges')
+        contributors_daterange = (
+            registry.session.query(
+                DataRecord.data_generation_agency,
+                func.max(DataRecord.timestamp_date).label("max_timestamp"),
+                func.min(DataRecord.timestamp_date).label("min_timestamp")
+            ).group_by(DataRecord.data_generation_agency).all())
+
+        # update contributor date ranges
+        for contr in contributors_daterange:
+            registry.update_by_field({'end_date': contr[1],
+                                      'start_date': contr[2]}, Contributor,
+                                     'acronym', contr[0])
+
+    if (tables is None) or (tables is not None and 'Station' in tables):
+        LOGGER.info('Updating Stations date ranges')
+        stations_daterange = (
+            registry.session.query(
+                DataRecord.station_id,
+                func.max(DataRecord.timestamp_date).label("max_timestamp"),
+                func.min(DataRecord.timestamp_date).label("min_timestamp")
+            ).group_by(DataRecord.station_id).all())
+
+        # update station date ranges
+        for stn in stations_daterange:
+            registry.update_by_field({'end_date': stn[1], 'start_date': stn[2]
+                                      }, Station, 'station_id', stn[0])
+
+    if (tables is None) or (tables is not None and 'Deployment' in tables):
+        LOGGER.info('Updating Deployment date ranges')
+        deployments_daterange = (
+            registry.session.query(
+                DataRecord.data_generation_agency,
+                DataRecord.station_id,
+                func.max(DataRecord.timestamp_date).label("max_timestamp"),
+                func.min(DataRecord.timestamp_date).label("min_timestamp"),
+                DataRecord.content_class
+            ).group_by(DataRecord.data_generation_agency,
+                       DataRecord.content_class,
+                       DataRecord.station_id).all()
+        )
+
+        # get the contributor_id associated with the data_generation_agency
+        # {deployment_id: {end_date: str , start_date: str}}
+        deployments_updates = {}
+        for deploy in deployments_daterange:
+            agency = deploy[0]
+            station_id = deploy[1]
+            content_class = deploy[4]
+            contributor_id = f"{agency}:{content_class}"
+            # subquery for the deployment_id
+            deployment_id = registry.session.query(
+                Deployment.deployment_id
+            ).filter(Deployment.contributor_id == contributor_id,
+                     Deployment.station_id == station_id).scalar()
+            deployments_updates[deployment_id] = {
+                'end_date': deploy[2],
+                'start_date': deploy[3]}
+        # update deployment date ranges
+        for deployment_id in deployments_updates:
+            updated_dates = deployments_updates[deployment_id]
+            registry.update_by_field(updated_dates, Deployment,
+                                     'deployment_id', deployment_id)
