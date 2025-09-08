@@ -1921,6 +1921,7 @@ class StationDobsonCorrections(base):
     AD_correcting_source = Column(String(255), nullable=False)
     CD_correcting_source = Column(String(255), nullable=False)
     CD_correcting_factor = Column(String(255), nullable=False, default='cd')
+    correction_status = Column(String(255), nullable=False, default=False)
     correction_comments = Column(Text, nullable=False)
 
     # relationshipts
@@ -1935,6 +1936,7 @@ class StationDobsonCorrections(base):
         self.AD_correcting_source = dict_['AD_correcting_source']
         self.CD_correcting_source = dict_['CD_correcting_source']
         self.CD_correcting_factor = dict_['CD_correcting_factor']
+        self.correction_status = dict_['correction_status']
         self.correction_comments = dict_['correction_comments']
 
         self.generate_ids()
@@ -2321,10 +2323,11 @@ def setup_dobson_correction(ctx, datadir, verbosity):
             temp['CD_corrected'] = True
             temp['AD_correcting_source'] = 'ECCC'
             temp['CD_correcting_source'] = row['Processing group']
+            temp['correction_status'] = row['Correction Status']
             temp['correction_comments'] = row['special comments']
             if row['CD-bias corrected'] == 'TRUE':
                 temp['CD_correcting_factor'] = 'AD'
-            if row['CD-bias corrected'] == 'FALSE':
+            elif row['CD-bias corrected'] == 'FALSE':
                 temp['CD_correcting_factor'] = 'CD'
             else:
                 temp['CD_correcting_factor'] = ''
@@ -2585,6 +2588,7 @@ def init(ctx, datadir, init_search_index, verbosity):
                 temp['CD_corrected'] = True
                 temp['AD_correcting_source'] = 'ECCC'
                 temp['CD_correcting_source'] = row['Processing group']
+                temp['correction_status'] = row['Correction Status']
                 temp['correction_comments'] = row['special comments']
                 if row['CD-bias corrected'] == 'TRUE':
                     temp['CD_correcting_factor'] = 'AD'
