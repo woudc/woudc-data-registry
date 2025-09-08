@@ -88,6 +88,7 @@ PARSER.add_argument(
     )
 )
 ARGS = PARSER.parse_args()
+LOGGER.debug(f"Contributor reminder set with ARGS.mode: {ARGS.mode}")
 
 # connect to db
 registry = Registry()
@@ -137,10 +138,21 @@ def get_last_activity(acronym):
     if not last_activity_datetime:
         # Log a more specific message if no activity is found.
         LOGGER.info(f"Contributor '{acronym}' has no submitted files.")
-        # Return a neutral result since no activity means no recent activity.
-        # Todo: compare with Contributor.last_validated_datetime for this case
+        registration_date = registry.session.query(
+            Contributor.last_validated_datetime).filter(
+            Contributor.acronym == acronym).order_by(
+            Contributor.last_validated_datetime.desc()).first()[0].date()
         # to avoid sending reminder emails to newly registered contributors
-        return (False, datetime.now().date())
+        if (registration_date < NOT_ACTIVE_SINCE_DATE
+                and registration_date > ACTIVE_WITHIN_DATE):
+            LOGGER.info(f"Contributor '{acronym}' has not been active "
+                        f"in the last {config.WDR_REMIND_NOT_ACTIVE_FOR}")
+            return (False, registration_date)
+        else:
+            LOGGER.info(f"Contributor '{acronym}' was registered within "
+                        f"the last {config.WDR_REMIND_NOT_ACTIVE_FOR}. "
+                        "Skipping...")
+            return (True, registration_date)
 
     last_activity_date = last_activity_datetime.date()
     LOGGER.debug(f"Last activity for contributor '{acronym}' was on "
@@ -149,16 +161,17 @@ def get_last_activity(acronym):
         last_activity_date < NOT_ACTIVE_SINCE_DATE
         and last_activity_date > ACTIVE_WITHIN_DATE
     ):
-        LOGGER.info(f"Contributor '{acronym}' has not been active in the last "
-                    "6 months.")
+        LOGGER.info(f"Contributor '{acronym}' has not been active in "
+                    f"the last {config.WDR_REMIND_NOT_ACTIVE_FOR}.")
         return (False, last_activity_date)
     else:
-        LOGGER.info(f"Contributor '{acronym}' has been active recently.")
+        LOGGER.info(f"Contributor '{acronym}' has been active recently. "
+                    "Skipping...")
         return (True, last_activity_date)
 
 
 def get_last_reminder(contributor_acronym, last_activity):
-    """Check which number reminder a contributor has in the last 6 months."""
+    """Check which reminder number a contributor has in the last 6 months."""
     most_recent_notification = (
         registry.session.query(
             ContributorNotification.reminder_datetime,
@@ -167,23 +180,24 @@ def get_last_reminder(contributor_acronym, last_activity):
         .join(Contributor,
               Contributor.contributor_id ==
               ContributorNotification.contributor_id)
-        .filter(Contributor.acronym == contributor_acronym)
+        .filter(Contributor.acronym == contributor_acronym,
+                ContributorNotification.mode == ARGS.mode)
         .order_by(ContributorNotification.contributor_notification_id.desc())
         .first()
     )
     LOGGER.debug(f"{contributor_acronym}: {most_recent_notification}")
 
     if not most_recent_notification:
-        most_recent_number = 0
+        recent_number_of_reminders = 0
     elif last_activity > most_recent_notification[0].date():
         # reset the reminder number because of recent activity
-        most_recent_number = 0
+        recent_number_of_reminders = 0
     else:
-        most_recent_number = most_recent_notification[1]
+        recent_number_of_reminders = most_recent_notification[1]
 
-    LOGGER.info(f"Contributor {contributor_acronym} has {most_recent_number} "
-                "reminders.")
-    return most_recent_number
+    LOGGER.info(f"Contributor {contributor_acronym} has "
+                f"{recent_number_of_reminders} reminders.")
+    return recent_number_of_reminders
 
 
 def get_contributor_emails(registry):
@@ -222,7 +236,7 @@ def send_contributor_reminder(acronym, email):
     except Exception:
         bccs = []
 
-    subject = 'WOUDC data submission reminder (%s)' % (acronym)
+    subject = f"WOUDC data submission reminder ({acronym})"
 
     with open(WDR_REMIND_TEMPLATE_PATH) as fp:
         msg_template = fp.read()
@@ -231,10 +245,7 @@ def send_contributor_reminder(acronym, email):
         try:
             toaddrs = email.split(';')
         except Exception:
-            msg = (
-                'Unable to get email for agency: %s. Skipping.'
-                % acronym
-            )
+            msg = f"Unable to get email for agency: {acronym}. Skipping..."
             LOGGER.error(msg)
     else:
         toaddrs = config.WDR_EMAIL_TO.split(',')
@@ -253,13 +264,9 @@ def send_contributor_reminder(acronym, email):
             password
         )
         timestamp = datetime.now()
-        LOGGER.info(
-            'Email sent to: %s using email %s.', acronym, toaddrs
-        )
+        LOGGER.info(f"Email sent to: {acronym} using email {toaddrs}.")
     except Exception as err:
-        msg = (
-            f"Unable to send email to: {acronym}. Due to: {err}"
-        )
+        msg = f"Unable to send email to: {acronym}. Due to: {err}"
         LOGGER.error(msg)
 
     return timestamp
