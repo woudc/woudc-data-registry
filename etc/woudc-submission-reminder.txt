@@ -1,0 +1,24 @@
+Dear WOUDC contributor,
+
+This is a reminder to submit your ozone or UV radiation data to the World Ozone and Ultraviolet Data Centre (WOUDC).  With the objective of having timely data available on WOUDC, we will be sending monthly email reminders to agencies that haven't submitted data from each of their stations in the last 6 months. 
+
+Your data represents an important contribution to the Global Atmosphere Watch (GAW). This WMO program is a partnership involving the members of WMO, contributing networks and other collaborating organizations.  GAW provides reliable scientific data and information on the chemical composition of the atmosphere, its natural and anthropogenic change, and helps to improve the understanding of interactions between the atmosphere, the oceans and the biosphere.
+
+Your station details are available by searching for your agency on the WOUDC station page: https://woudc.org/en/data/stations
+
+Thank you for your data contributions and support of the World Meteorological Organization Global Atmosphere Watch program.
+
+The World Ozone and Ultraviolet Data Centre (WOUDC)
+Meteorological Service of Canada
+Environment and Climate Change Canada
+4905 Dufferin Street
+Toronto, ON M3H 5T4
+Canada
+Email: woudc@ec.gc.ca
+Website: https://woudc.org
+Data policy: https://woudc.org/en/data/data-use-policy
+Data submissions: ftp://ftp.woudc.org
+Data access: https://woudc.org/en/data/data-access
+Contributor guidebook: https://guide.woudc.org
+
+Dobson and Brewer software: http://www.o3soft.eu
