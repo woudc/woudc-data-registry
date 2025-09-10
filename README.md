@@ -74,9 +74,13 @@ woudc-data-registry admin config --verbosity DEBUG
 
 # initialize model (database tables)
 woudc-data-registry admin registry setup
+# optional: initialize specific models only in comma seperated format. e.g.
+woudc-data-registry admin registry setup -m ""DiscoveryMetadata,DataRecord""
 
 # initialize search engine
 woudc-data-registry admin search setup
+# optional: initialize specific indexes only in comma seperated format. e.g.
+woudc-data-registry admin search setup -i "data_records,stations"
 
 # load core metadata
 woudc-data-registry admin init -d data/
@@ -93,6 +97,12 @@ woudc-data-registry admin registry setup
 # re-initialize search engine
 woudc-data-registry admin search teardown
 woudc-data-registry admin search setup
+
+# optional: teardown specific tables in comma seperated format. e.g.
+woudc-data-registry admin registry teardown -m "DataRecord,OzoneSonde"
+
+# optional teardown specific indexes in comma seperated format. e.g.
+woudc-data-registry admin search teardown -i "data_records,stations"
 
 # If required reinitialized StationDobsonCorrections table and index
 woudc-data-registry admin setup-dobson-correction -d data/
@@ -189,6 +199,8 @@ woudc-data-registry correction dobson-correction /path/to/dir --mode [test|ops] 
 ```bash
 # sync all data and metadata tables (except data product tables) to ElasticSearch
 woudc-data-registry admin search sync
+# optional: sync only to specific tables to ES in comma seperated format. e.g.
+woudc-data-registry admin search sync -m "DiscoveryMetadata,DataRecord"
 
 # sync the data product tables (uv_index_hourly, totalozone, and ozonesonde) to ElasticSearch
 woudc-data-registry admin search product-sync
@@ -249,6 +261,14 @@ To generate emails for contributors:
 
 ```bash
 woudc-data-registry data generate-emails /path/to/dir
+```
+
+#### Sending Reminder Emails to Contributors
+
+```bash
+python3 woudc_data_registry/reminders/contributor_reminder.py --mode ops
+# For testing:
+python3 woudc_data_registry/reminders/contributor_reminder.py --mode test
 ```
 
 #### Publishing Notifications to MQTT Server
