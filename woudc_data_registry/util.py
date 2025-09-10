@@ -137,7 +137,7 @@ def send_email(message, subject, from_email_address, to_email_addresses,
     # send message
     try:
         LOGGER.debug(
-            'Sending report to {}'.format(to_email_addresses)
+            'Sending email to {}'.format(to_email_addresses)
             )
         LOGGER.debug('cc_addresses: {}'.format(cc_addresses))
         recipients = to_email_addresses + cc_addresses
