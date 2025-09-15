@@ -157,7 +157,7 @@ def generate_geojson_payload(info):
             )
         )
 
-        with open(info[key]['record'].output_filepath, 'rb') as f:
+        with open(info[key]['record'].publish_filepath, 'rb') as f:
             file_data = f.read()
             sha256_digest = hashlib.sha512(file_data).digest()
             b64_md5_hash = base64.b64encode(
