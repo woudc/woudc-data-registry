@@ -79,6 +79,9 @@ celerybeat-schedule
 *.sage.py
 
 # Environments
+dev.env
+stage.env
+ops.env
 .env
 .venv
 env/
@@ -118,6 +121,10 @@ data/station-names.csv
 data/stations.csv
 data/dobsonCorrections/TEMIS_Teff/
 data/dobsonCorrections/WOUDC_stations_TEMIS_combined/
+
+# testing
+post_ingest_logs
+testpostingestcommands.sh
 
 # VSCode settings
 .vscode/
