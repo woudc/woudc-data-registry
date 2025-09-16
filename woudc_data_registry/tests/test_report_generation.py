@@ -58,7 +58,7 @@ from woudc_data_registry import models, report, util
 SANDBOX_DIR = '/tmp/woudc-data-registry'
 
 
-def dummy_extCSV(source):
+def dummy_extcsv(source):
     """
     Returns a woudc-extcsv ExtendedCSV instace built from the filepath <source>
     with dummy output settings (no logs or reports).

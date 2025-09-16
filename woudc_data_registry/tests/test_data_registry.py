@@ -55,7 +55,7 @@ from woudc_data_registry import report, util
 from woudc_data_registry import dataset_validators as dv
 
 
-def dummy_extCSV(source):
+def dummy_extcsv(source):
     """
     Returns a parser.ExtendedCSV instace built from the filepath <source>
     with dummy output settings (no logs or reports).
@@ -88,7 +88,7 @@ class ParserTest(unittest.TestCase):
     def test_get_value_type(self):
         """test value typing"""
 
-        dummy = dummy_extCSV('')
+        dummy = dummy_extcsv('')
 
         self.assertIsNone(dummy.typecast_value('Dummy', 'TEst', '', 0))
         self.assertIsInstance(
@@ -119,7 +119,7 @@ class ParserTest(unittest.TestCase):
     def test_build_table(self):
         """Test table management methods directly"""
 
-        ecsv = dummy_extCSV('')
+        ecsv = dummy_extcsv('')
         fields = ['Class', 'Category', 'Level', 'Form']
         values = ['WOUDC', 'Spectral', '1.0', '1']
 
@@ -170,7 +170,7 @@ class ParserTest(unittest.TestCase):
     def test_row_filling(self):
         """Test that omitted columns in a row are filled in with nulls"""
 
-        ecsv = dummy_extCSV('')
+        ecsv = dummy_extcsv('')
         ecsv.init_table('TIMESTAMP', ['UTCOffset', 'Date', 'Time'], 1)
         ecsv.add_values_to_table('TIMESTAMP', ['+00:00:00', '2019-04-30'], 3)
 
@@ -197,7 +197,7 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-field-capitalization.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
 
         content_fields = DOMAINS['Common']['CONTENT']['required_fields']
@@ -238,7 +238,7 @@ class ParserTest(unittest.TestCase):
             ['00:00:10', '0.6'],
         ]
 
-        ecsv = dummy_extCSV('')
+        ecsv = dummy_extcsv('')
         self.assertEqual(ecsv.init_table('CONTENT', content_fields, 1),
                          'CONTENT')
         ecsv.add_values_to_table('CONTENT', content_values, 3)
@@ -280,7 +280,7 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/general/20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
 
         self.assertEqual('20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv',
@@ -289,7 +289,7 @@ class ParserTest(unittest.TestCase):
         # Error-free file with a space in its instrument name
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-space-in-instrument-name.csv'))
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
 
         self.assertEqual('20111101.Brewer-foo.MKIII.201.RMDA.csv',
@@ -301,7 +301,7 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/general/Brewer229_Daily_SEP2016.493'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
 
         self.assertTrue(set(DOMAINS['Common'].keys()).issubset(
@@ -316,7 +316,7 @@ class ParserTest(unittest.TestCase):
             'data/general/not-an-ecsv.dat'))
 
         with self.assertRaises(NonStandardDataError):
-            ecsv = dummy_extCSV(contents)
+            ecsv = dummy_extcsv(contents)
             ecsv.validate_metadata_tables()
 
         # Text file not in Extended CSV format, featuring non-ASCII characters
@@ -324,7 +324,7 @@ class ParserTest(unittest.TestCase):
             'data/general/euc-jp.dat'))
 
         with self.assertRaises(NonStandardDataError):
-            ecsv = dummy_extCSV(contents)
+            ecsv = dummy_extcsv(contents)
             ecsv.validate_metadata_tables()
 
     def test_missing_required_table(self):
@@ -333,7 +333,7 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-missing-location-table.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         self.assertIsInstance(ecsv, ExtendedCSV)
 
         with self.assertRaises(MetadataValidationError):
@@ -346,7 +346,7 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-missing-location-latitude.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         self.assertIsInstance(ecsv, ExtendedCSV)
 
         with self.assertRaises(MetadataValidationError):
@@ -357,7 +357,7 @@ class ParserTest(unittest.TestCase):
             'data/general/ecsv-missing-instrument-name.csv'))
 
         with self.assertRaises(MetadataValidationError):
-            ecsv = dummy_extCSV(contents)
+            ecsv = dummy_extcsv(contents)
             ecsv.validate_metadata_tables()
 
     def test_missing_optional_table(self):
@@ -366,7 +366,7 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-missing-monthly-table.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
 
         ecsv.validate_dataset_tables()
@@ -381,7 +381,7 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-missing-location-height.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
 
         self.assertIsNone(ecsv.extcsv['LOCATION']['Height'])
@@ -390,7 +390,7 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-missing-platform-gawid.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
 
         self.assertIn('GAW_ID', ecsv.extcsv['PLATFORM'])
@@ -403,14 +403,14 @@ class ParserTest(unittest.TestCase):
             'data/general/ecsv-empty-timestamp2-table.csv'))
 
         with self.assertRaises(NonStandardDataError):
-            ecsv = dummy_extCSV(contents)
+            ecsv = dummy_extcsv(contents)
             ecsv.validate_metadata_tables()
 
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-empty-timestamp2-fields.csv'))
 
         with self.assertRaises(MetadataValidationError):
-            ecsv = dummy_extCSV(contents)
+            ecsv = dummy_extcsv(contents)
             ecsv.validate_metadata_tables()
 
     def test_table_height(self):
@@ -420,7 +420,7 @@ class ParserTest(unittest.TestCase):
             'data/general/ecsv-excess-timestamp-table-rows.csv'))
 
         with self.assertRaises(MetadataValidationError):
-            ecsv = dummy_extCSV(contents)
+            ecsv = dummy_extcsv(contents)
             ecsv.validate_metadata_tables()
 
     def test_table_occurrences(self):
@@ -430,7 +430,7 @@ class ParserTest(unittest.TestCase):
             'data/general/ecsv-excess-location-table.csv'))
 
         with self.assertRaises(MetadataValidationError):
-            ecsv = dummy_extCSV(contents)
+            ecsv = dummy_extcsv(contents)
             ecsv.validate_metadata_tables()
 
     def test_line_spacing(self):
@@ -439,14 +439,14 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-no-spaced.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         self.assertTrue(set(DOMAINS['Common']).issubset(set(ecsv.extcsv)))
 
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-double-spaced.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         self.assertTrue(set(DOMAINS['Common']).issubset(set(ecsv.extcsv)))
 
@@ -456,7 +456,7 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-comments.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         self.assertTrue(set(DOMAINS['Common']).issubset(set(ecsv.extcsv)))
 
@@ -466,11 +466,12 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/general/20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
 
         schema = DOMAINS['Datasets']['Broad-band']['1.0']['1']
-        version = ecsv._determine_version(schema)
+        determine_version = getattr(ecsv, '_determine_version')
+        version = determine_version(schema)
 
         self.assertEqual(version, '2')
         for param in schema[version]:
@@ -480,11 +481,12 @@ class ParserTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/general/20100109.Kipp_Zonen.UV-S-B-C.020579.ASM-ARG.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
 
         schema = DOMAINS['Datasets']['Broad-band']['1.0']['1']
-        version = ecsv._determine_version(schema)
+        determine_version = getattr(ecsv, '_determine_version')
+        version = determine_version(schema)
 
         self.assertEqual(version, '1')
         for param in schema[version]:
@@ -561,10 +563,14 @@ class TimestampParsingTest(unittest.TestCase):
 
     def setUp(self):
         # Only need a dummy parser since no input is coming from files.
-        self.parser = dummy_extCSV('')
+        self.parser = dummy_extcsv('')
 
     def _parse_timestamp(self, raw_string):
-        return self.parser.parse_timestamp('Dummy', raw_string, 0)
+        try:
+            return self.parser.parse_timestamp('Dummy', raw_string, 0)
+        except TypeError as e:
+            # Convert TypeError to ValueError for consistency
+            raise ValueError(f"Invalid timestamp format: {raw_string}") from e
 
     def test_success(self):
         """Test parsing valid timestamps"""
@@ -657,7 +663,7 @@ class DatestampParsingTest(unittest.TestCase):
 
     def setUp(self):
         # Only need a dummy parser since no input is coming from files.
-        self.parser = dummy_extCSV('')
+        self.parser = dummy_extcsv('')
 
     def _parse_datestamp(self, raw_string):
         return self.parser.parse_datestamp('Dummy', raw_string, 0)
@@ -797,7 +803,7 @@ class UTCOffsetParsingTest(unittest.TestCase):
 
     def setUp(self):
         # Only need a dummy parser since no input is coming from files.
-        self.parser = dummy_extCSV('')
+        self.parser = dummy_extcsv('')
 
     def _parse_offset(self, raw_string):
         return self.parser.parse_utcoffset('Dummy', raw_string, 0)
@@ -921,22 +927,25 @@ class DatasetValidationTest(unittest.TestCase):
         datasets = ['Broad-band', 'Lidar', 'Multi-band', 'OzoneSonde',
                     'RocketSonde', 'Spectral', 'TotalOzone', 'TotalOzoneObs']
 
-        for dataset in datasets:
-            with report.OperatorReport() as null_reporter:
+        with report.OperatorReport() as null_reporter:
+            for dataset in datasets:
                 dataset2 = dataset.replace('-', '')
                 validator_name = f'{dataset2}Validator'
                 validator = dv.get_validator(dataset, null_reporter)
 
-            if hasattr(dv, validator_name):
-                self.assertIsInstance(validator, getattr(dv, validator_name))
-            else:
-                self.assertIsInstance(validator, dv.DatasetValidator)
+                if hasattr(dv, validator_name):
+                    self.assertIsInstance(
+                        validator,
+                        getattr(dv, validator_name)
+                    )
+                else:
+                    self.assertIsInstance(validator, dv.DatasetValidator)
 
-        validator = dv.get_validator('UmkehrN14', null_reporter)
-        self.assertIsInstance(validator, dv.UmkehrValidator)
+            validator = dv.get_validator('UmkehrN14', null_reporter)
+            self.assertIsInstance(validator, dv.UmkehrValidator)
 
-        with self.assertRaises(ValueError):
-            dv.get_validator('a generic string', null_reporter)
+            with self.assertRaises(ValueError):
+                dv.get_validator('a generic string', null_reporter)
 
     def test_totalozone_checks(self):
         """Test that TotalOzone checks produce expected warnings/errors"""
@@ -945,7 +954,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/totalozone/totalozone-disordered.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -964,7 +973,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/totalozone/totalozone-duplicated.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -983,7 +992,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/totalozone/totalozone-mismatch-timestamp-date.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1002,7 +1011,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/totalozone/totalozone-mismatch-timestamp-time.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1017,7 +1026,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/totalozone/totalozone-missing-timestamp.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1039,7 +1048,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/totalozone/totalozone-correct.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1055,13 +1064,14 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/totalozone/totalozone-all300.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
         reporter = ecsv.reports
         validator = dv.get_validator('TotalOzone', reporter)
-        derived = validator.derive_monthly_from_daily(ecsv)
+        self.assertIsInstance(validator, dv.TotalOzoneValidator)
+        derived = validator.derive_monthly_from_daily(ecsv)  # type: ignore
 
         self.assertEqual(derived['Date'], ecsv.extcsv['TIMESTAMP']['Date'])
         self.assertEqual(derived['ColumnO3'], 300)
@@ -1084,7 +1094,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/totalozoneobs/totalozoneobs-disordered.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1103,7 +1113,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/totalozoneobs/totalozoneobs-duplicated.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1122,7 +1132,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/totalozoneobs/totalozoneobs-correct.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1139,7 +1149,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/spectral/spectral-extra-profile.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1156,7 +1166,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/spectral/spectral-extra-timestamp.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1171,7 +1181,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/spectral/spectral-all-different.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1186,7 +1196,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/spectral/spectral-correct.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1204,7 +1214,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/lidar/lidar-extra-profile.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1219,7 +1229,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/lidar/lidar-extra-summary.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1234,7 +1244,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             'data/lidar/lidar-correct.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1251,10 +1261,10 @@ class DatasetValidationTest(unittest.TestCase):
         in an Umkehr Level <level> file.
         """
 
-        if float(level) == 1.0:
-            prefix = 'umkehr1'
-            data_table = 'N14_VALUES'
-        elif float(level) == 2.0:
+        # if float(level) == 1.0:
+        prefix = 'umkehr1'
+        data_table = 'N14_VALUES'
+        if float(level) == 2.0:
             prefix = 'umkehr2'
             data_table = 'C_PROFILE'
 
@@ -1262,7 +1272,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             f'data/umkehr/{prefix}-disordered.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
         reporter = ecsv.reports
@@ -1280,7 +1290,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             f'data/umkehr/{prefix}-duplicated.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1299,7 +1309,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             f'data/umkehr/{prefix}-mismatch-timestamp-date.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1318,7 +1328,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             f'data/umkehr/{prefix}-mismatch-timestamp-time.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1333,7 +1343,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             f'data/umkehr/{prefix}-missing-timestamp.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1355,7 +1365,7 @@ class DatasetValidationTest(unittest.TestCase):
         contents = util.read_file(resolve_test_data_path(
             f'data/umkehr/{prefix}-correct.csv'))
 
-        ecsv = dummy_extCSV(contents)
+        ecsv = dummy_extcsv(contents)
         ecsv.validate_metadata_tables()
         ecsv.validate_dataset_tables()
 
@@ -1416,6 +1426,7 @@ class UtilTest(unittest.TestCase):
         """test point GeoJSON geometry creation"""
 
         point = util.point2geojsongeometry(-75, 45)
+        assert point is not None
         self.assertIsInstance(point, dict)
         self.assertEqual(point['type'], 'Point')
         self.assertIsInstance(point['coordinates'], list)
@@ -1424,17 +1435,20 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(point['coordinates'][1], 45)
 
         point = util.point2geojsongeometry(-75, 45, 333)
+        assert point is not None
         self.assertEqual(len(point['coordinates']), 3)
         self.assertEqual(point['coordinates'][0], -75)
         self.assertEqual(point['coordinates'][1], 45)
         self.assertEqual(point['coordinates'][2], 333)
 
         point = util.point2geojsongeometry(-75, 45, 0)
+        assert point is not None
         self.assertEqual(len(point['coordinates']), 2)
         self.assertEqual(point['coordinates'][0], -75)
         self.assertEqual(point['coordinates'][1], 45)
 
         point = util.point2geojsongeometry(-75, 45, None)
+        assert point is not None
         self.assertEqual(len(point['coordinates']), 2)
         self.assertEqual(point['coordinates'][0], -75)
         self.assertEqual(point['coordinates'][1], 45)
