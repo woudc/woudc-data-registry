@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2024 Government of Canada
+# Copyright (c) 2025 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -43,6 +43,15 @@
 #
 # =================================================================
 
+"""
+Test suite for WDR in a local environment
+
+You need to set up a test environment for your tests. So setup and populate a
+database and directory with files that have been ingested.
+
+Change WDR_DB_NAME and WDR_SEARCH_INDEX for testing perposes.
+"""
+
 import unittest
 import os
 import subprocess
@@ -53,13 +62,6 @@ from sqlalchemy.orm import sessionmaker
 from woudc_data_registry.models import DataRecord
 from woudc_data_registry import config
 from woudc_data_registry.controller import delete_record
-
-"""
-You need to set up a test environment for your tests. So setup and populate a
-database and directory with files that have been ingested.
-
-Change WDR_DB_NAME and WDR_SEARCH_INDEX for testing perposes.
-"""
 
 
 class TestBasicDeletion(unittest.TestCase):

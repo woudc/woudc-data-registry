@@ -18,7 +18,7 @@
 # those files. Users are asked to read the 3rd Party Licenses
 # referenced with those assets.
 #
-# Copyright (c) 2024 Government of Canada
+# Copyright (c) 2025 Government of Canada
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -42,6 +42,10 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 # =================================================================
+
+"""
+Test suite for data registry related functions
+"""
 
 import os
 import unittest
@@ -264,7 +268,10 @@ class ParserTest(unittest.TestCase):
         self.assertIsInstance(ecsv.extcsv['CONTENT']['Level'], float)
         self.assertIsInstance(ecsv.extcsv['CONTENT']['Form'], int)
 
-        ecsv.collimate_tables(['GLOBAL'], DOMAINS['Datasets']['Broad-band']['1.0']['1']['2'])  # noqa
+        ecsv.collimate_tables(
+            ['GLOBAL'],
+            DOMAINS['Datasets']['Broad-band']['1.0']['1']['2']
+        )
         self.assertIsInstance(ecsv.extcsv['GLOBAL']['Time'], list)
         self.assertIsInstance(ecsv.extcsv['GLOBAL']['Irradiance'], list)
 
@@ -686,20 +693,24 @@ class DatestampParsingTest(unittest.TestCase):
                          present)
 
     def test_datetime_input(self):
+        """Test datetime input"""
         dt = datetime(2023, 7, 17, 15, 30, 45)
         expected = "2023-07-17T15:30:45Z"
         self.assertEqual(util.strftime_rfc3339(dt), expected)
 
     def test_date_input(self):
+        """Test date input"""
         d = date(2023, 7, 17)
         # Since no time is provided, time will default to 00:00:00
         expected = "2023-07-17T00:00:00Z"
         self.assertEqual(util.strftime_rfc3339(d), expected)
 
     def test_none_input(self):
+        """Test none input"""
         self.assertIsNone(util.strftime_rfc3339(None))
 
     def test_midnight(self):
+        """Test midnight datetime"""
         dt = datetime(2023, 1, 1, 0, 0, 0)
         expected = "2023-01-01T00:00:00Z"
         self.assertEqual(util.strftime_rfc3339(dt), expected)
@@ -768,25 +779,31 @@ class DatestampParsingTest(unittest.TestCase):
 
 
 class TestGetDate(unittest.TestCase):
+    """Test suite for util.get_date"""
 
     def test_datetime_string(self):
+        """Test datetime string format is valid"""
         input_str = "2023-07-17T12:30:00Z"
         expected = datetime(2023, 7, 17, 12, 30, 0)
         self.assertEqual(util.get_date(input_str), expected)
 
     def test_date_string_with_force_date(self):
+        """Test date string with force_date is valid"""
         input_str = "2023-07-17"
         expected = date(2023, 7, 17)
         self.assertEqual(util.get_date(input_str, force_date=True), expected)
 
     def test_date_object(self):
+        """Test date object is valid"""
         input_date = date(2023, 7, 17)
         self.assertEqual(util.get_date(input_date), input_date)
 
     def test_none_input(self):
+        """Test date being None"""
         self.assertIsNone(util.get_date(None))
 
     def test_invalid_string_format(self):
+        """Test invalid date string format"""
         with self.assertRaises(ValueError):
             util.get_date("17-07-2023")
 
