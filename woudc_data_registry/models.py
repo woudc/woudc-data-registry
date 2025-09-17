@@ -43,6 +43,7 @@
 #
 # =================================================================
 
+import os
 import datetime
 import logging
 
@@ -66,7 +67,7 @@ from sqlalchemy.orm import relationship
 from elasticsearch.exceptions import (ConnectionError, RequestError)
 
 from woudc_data_registry import cli_options, config, registry
-from woudc_data_registry.search import SearchIndex, search
+from woudc_data_registry.search import SearchIndex, search, MAPPINGS_ALL
 from woudc_data_registry.util import (get_date, point2geojsongeometry,
                                       strftime_rfc3339)
 
@@ -413,8 +414,9 @@ class Instrument(base):
         self.dataset_id = f"{self.dataset_name}_{self.dataset_level}"
 
         if hasattr(self, 'contributor') and hasattr(self, 'project'):
-            self.deployment_id = ':'.join([self.station_id, self.contributor,
-                                          self.project])
+            self.deployment_id = (
+                f"{self.station_id}:{self.contributor}:{self.project}"
+            )
 
         if all([hasattr(self, field) and getattr(self, field) is not None
                 for field in self.id_dependencies]):
@@ -440,7 +442,7 @@ class DiscoveryMetadata(base):
 
     @property
     def __geo_interface__(self):
-        return json.loads(self._metadata)
+        return json.loads(self._metadata)  # type: ignore[arg-type]
 
     def __repr__(self):
         return f'Discovery Metadata ({self.discovery_metadata_id})'
@@ -514,9 +516,10 @@ class Station(base):
 
         self.station_id = dict_['station_id']
 
-        self.station_name_id = f"{self.station_id}:{dict_['station_name']}"
-        if 'station_name_id' in dict_.keys():
+        if 'station_name_id' in dict_:
             self.station_name_id = dict_['station_name_id']
+        else:
+            self.station_name_id = f"{self.station_id}:{dict_['station_name']}"
 
         self.station_type = dict_['station_type']
 
@@ -823,17 +826,21 @@ class DataRecord(base):
         self.dataset_id = f"{self.content_category}_{self.content_level}"
 
         self.deployment_id = ':'.join([
-            self.station_id,
-            self.data_generation_agency,
-            self.content_class
+            x for x in [
+                self.station_id,
+                self.data_generation_agency,
+                self.content_class
+            ] if x is not None
         ])
 
         self.instrument_id = ':'.join([
-            self.instrument_name,
-            self.instrument_model,
-            self.instrument_number,
-            self.dataset_id,
-            self.deployment_id
+            x for x in [
+                self.instrument_name,
+                self.instrument_model,
+                self.instrument_number,
+                self.dataset_id,
+                self.deployment_id
+            ] if x is not None
         ])
 
         self.timestamp_utcoffset = ecsv.extcsv['TIMESTAMP']['UTCOffset']
@@ -960,13 +967,16 @@ class DataRecord(base):
         else:
             dataset_only = self.content_category
 
-        datasetdirname = f'{dataset_only}_{self.content_level}_{self.content_form}'  # noqa
+        datasetdirname = (
+            f"{dataset_only}_{self.content_level}_{self.content_form}"
+        )
 
         url_tokens = [
             basepath.rstrip('/'),
             'Archive-NewFormat',
-            datasetdirname, f'{self.platform_type.lower()}{self.station_id}',
-            self.instrument_name.lower(),
+            datasetdirname,
+            f"{(self.platform_type or '').lower()}{self.station_id}",
+            (self.instrument_name or '').lower(),
             self.timestamp_date.strftime('%Y'),
             self.filename
         ]
@@ -991,7 +1001,8 @@ class DataRecord(base):
                     strftime_rfc3339(self.data_generation_date),
                 'data_generation_agency': self.data_generation_agency,
                 'data_generation_version': self.data_generation_version,
-                'data_generation_scientific_authority': self.data_generation_scientific_authority,  # noqa
+                'data_generation_scientific_authority':
+                    self.data_generation_scientific_authority,
 
                 'platform_type': self.platform_type,
                 'platform_id': self.station_id,
@@ -1963,7 +1974,7 @@ class ContributorNotification(base):
     __tablename__ = 'contributor_notification'
 
     id_field = 'contributor_notification_id'
-    id_dependencies = [
+    id_dependencies = [  # order matters
         'contributor_id',
         'reminder_datetime',
         'reminder_number'
@@ -1974,7 +1985,7 @@ class ContributorNotification(base):
     contributor_id = Column(
         String,
         ForeignKey('contributors.contributor_id'),
-        nullable=False,
+        nullable=False
     )
     reminder_number = Column(Integer, nullable=False, default=1)
     reminder_datetime = Column(
@@ -1995,26 +2006,31 @@ class ContributorNotification(base):
                 self.reminder_number = dict_['reminder_number']
             else:
                 self.reminder_number = int(dict_['reminder_number'])
-            if isinstance(dict_['reminder_datetime'], datetime.date):
+
+            if isinstance(dict_['reminder_datetime'], datetime.datetime):
                 self.reminder_datetime = dict_['reminder_datetime']
             else:
                 self.reminder_datetime = datetime.datetime.strptime(
-                    dict_['reminder_datetime'], '%Y-%m-%d').date()
+                    str(dict_['reminder_datetime']),
+                    '%Y-%m-%d %H:%M:%S.%f')
+
             self.generate_ids()
         except Exception as err:
-            LOGGER.error(f"Error initializing ContributorNotification: {err}")
+            msg = (
+                f"Error initializing ContributorNotification: {err}"
+            )
+            click.echo(msg)
+            LOGGER.error(msg)
             raise
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
+
         if all([hasattr(self, field) and getattr(self, field) is not None
                 for field in self.id_dependencies]):
             components = [getattr(self, field)
                           for field in self.id_dependencies]
-            self.contributor_notification_id = (
-                f"{self.contributor_id}:{components[1]}"
-                f":{components[2]}"
-            )
+            self.contributor_notification_id = ':'.join(map(str, components))
 
     def __repr__(self):
         return f'Contributor Notification ({self.reminder_number})'
@@ -2112,14 +2128,23 @@ def unpack_station_names(rows):
     """
 
     tracker = {}
-    decode_hex = codecs.getdecoder('hex_codec')
 
     for row in rows:
         name = row['name']
 
         if name.startswith('\\x'):
-            name = decode_hex(name[2:])[0].decode('utf-8')
-            row['name'] = name
+            try:
+                # Remove \x prefix and convert hex to bytes,
+                # then decode to UTF-8
+                hex_string = name[2:]
+                name = bytes.fromhex(hex_string).decode('utf-8')
+                row['name'] = name
+            except (UnicodeDecodeError, ValueError) as e:
+                # If decoding fails, keep the original name or log the error
+                msg = f"Warning: Failed to decode hex string {name}: {e}"
+                click.echo(msg)
+                LOGGER.warning(msg)
+
         if name not in tracker:
             tracker[name] = row
 
@@ -2158,13 +2183,13 @@ def model_name_to_model(model_name: str):
 @click.group('registry')
 def registry__():
     """Registry"""
-    pass
+    ...
 
 
 @click.group()
 def admin():
     """System administration"""
-    pass
+    ...
 
 
 @click.command('config')
@@ -2214,8 +2239,6 @@ def show_config(ctx, verbosity):
 def setup(ctx, models, verbosity):
     """create models"""
 
-    from woudc_data_registry import config
-
     engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DB_DEBUG)
 
     create_all_args = {'bind': engine, 'checkfirst': True}
@@ -2250,9 +2273,6 @@ def setup(ctx, models, verbosity):
 def setup_dobson_correction(ctx, datadir, verbosity):
     """ Add the station Dobson correction table and ES index to the
     database and ES, respectively, that does not have it. """
-    from woudc_data_registry import config
-    import os
-    from woudc_data_registry.search import MAPPINGS, SearchIndex
 
     click.echo("Setting up dobson correction table and index")
 
@@ -2316,7 +2336,7 @@ def setup_dobson_correction(ctx, datadir, verbosity):
     search_index = SearchIndex()
 
     index_name = search_index.generate_index_name(
-        MAPPINGS['station_dobson_corrections']['index']
+        MAPPINGS_ALL['station_dobson_corrections']['index']
     )
     settings = {
                 'mappings': {
@@ -2333,9 +2353,10 @@ def setup_dobson_correction(ctx, datadir, verbosity):
                     }
                 }
             }
-    if 'properties' in MAPPINGS['station_dobson_corrections']:
+    if 'properties' in MAPPINGS_ALL['station_dobson_corrections']:
+        dobson_corrections = MAPPINGS_ALL['station_dobson_corrections']
         settings['mappings']['properties']['properties'] = {
-            'properties': MAPPINGS['station_dobson_corrections']['properties']
+            'properties': dobson_corrections['properties']
         }
 
     try:
@@ -2369,8 +2390,6 @@ def setup_dobson_correction(ctx, datadir, verbosity):
 )
 def teardown(ctx, models, verbosity):
     """delete models"""
-
-    from woudc_data_registry import config
 
     engine = create_engine(config.WDR_DATABASE_URL, echo=config.WDR_DB_DEBUG)
 
@@ -2412,7 +2431,6 @@ def teardown(ctx, models, verbosity):
 )
 def init(ctx, datadir, init_search_index, verbosity):
     """initialize core system metadata"""
-    import os
 
     if datadir is None:
         raise click.ClickException('Missing required data directory')
@@ -2426,6 +2444,8 @@ def init(ctx, datadir, init_search_index, verbosity):
     instruments = os.path.join(datadir, 'instruments.csv')
     deployments = os.path.join(datadir, 'deployments.csv')
     notifications = os.path.join(datadir, 'notifications.csv')
+    contributor_notification = os.path.join(datadir,
+                                            'contributor_notification.csv')
     discovery_metadata = os.path.join(datadir, 'init', 'discovery-metadata')
     station_dobson_corrections = os.path.join(
         datadir, 'station_dobson_corrections.csv')
@@ -2442,6 +2462,7 @@ def init(ctx, datadir, init_search_index, verbosity):
     deployment_models = []
     contribution_models = []
     notification_models = []
+    contributor_notification_models = []
     discovery_metadata_models = []
     station_dobson_corrections_models = []
     # contributor_notifications_models = []
@@ -2474,13 +2495,12 @@ def init(ctx, datadir, init_search_index, verbosity):
             contributor = Contributor(row)
             contributor_models.append(contributor)
 
-    # click.echo('Loading contributor notifications metadata')
-    # with open(contributor_notifications) as csvfile:
-    #     reader = csv.DictReader(csvfile)
-    #     for row in reader:
-    #         print(row)
-    #         contributor_notifications = ContributorNotification(row)
-    #         contributor_notifications_models.append(contributor_notifications)
+    click.echo('Loading contributor notifications metadata')
+    with open(contributor_notification) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            contributor_notification = ContributorNotification(row)
+            contributor_notification_models.append(contributor_notification)
 
     click.echo('Loading station names metadata')
     with open(station_names) as csvfile:
@@ -2608,9 +2628,9 @@ def init(ctx, datadir, init_search_index, verbosity):
     click.echo('Storing station dobson corrections items in data registry')
     for model in station_dobson_corrections_models:
         registry_.save(model)
-    # click.echo('Storing contributor notifications items in data registry')
-    # for model in contributor_notifications_models:
-    #     registry_.save(model)
+    click.echo('Storing contributor notifications items in data registry')
+    for model in contributor_notification_models:
+        registry_.save(model)
 
     instrument_from_registry = registry_.query_full_index(Instrument)
 
@@ -2673,7 +2693,6 @@ def init(ctx, datadir, init_search_index, verbosity):
               help='Directory to store backup database tables as csv files.')
 def backup(ctx, datadir):
     """Backup data registry database tables to CSV files"""
-    import os
 
     if datadir is None:
         raise click.ClickException('Missing required data directory')
@@ -2689,7 +2708,8 @@ def backup(ctx, datadir):
         StationName,
         Instrument,
         Deployment,
-        Notification
+        Notification,
+        ContributorNotification
     ]
     for model in model_classes:
         records = registry_.query_full_index(model)
@@ -2706,7 +2726,7 @@ def backup(ctx, datadir):
             for row in records:
                 writer.writerow([getattr(row, h) for h in headers])
 
-        click.echo('Completed data backup of {model} into {csv_path}')
+        click.echo(f"Completed data backup of {model} into {csv_path}")
 
 
 @click.command('sync')
@@ -2771,7 +2791,7 @@ def sync(ctx, models, verbosity):
         if plural_caps == 'DataRecords':
             capacity = 10000
             for obj in registry_.session.query(clazz).yield_per(1):
-                LOGGER.debug(f'Querying chunk of {clazz}')
+                LOGGER.debug("Querying chunk of %s", clazz)
 
                 registry_contents.append(obj)
                 if len(registry_contents) > capacity:
@@ -2819,8 +2839,9 @@ def product_sync(ctx, models, verbosity):
             ):
                 products.append(model_class)
             else:
-                raise click.ClickException(f'{model} is not a valid',
-                                           'product model')
+                raise click.ClickException(
+                    f"{model} is not a valid product model"
+                )
 
         valid_model_names = ', '.join(product_model.__name__ for
                                       product_model in products)
@@ -2853,7 +2874,7 @@ def product_sync(ctx, models, verbosity):
         registry_contents = []
         # Sync product to elasticsearch
         for obj in registry_.session.query(product).yield_per(1):
-            LOGGER.debug(f'Querying chunk of {product}')
+            LOGGER.debug("Querying chunk of %s", product)
 
             registry_contents.append(obj)
 

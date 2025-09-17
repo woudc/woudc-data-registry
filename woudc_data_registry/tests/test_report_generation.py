@@ -103,10 +103,12 @@ def clear_sandbox():
 class SandboxTestSuite(unittest.TestCase):
     """Superclass for test classes that write temporary files to a sandbox"""
 
-    def setUpClass():
+    @classmethod
+    def setUpClass(cls):
         os.mkdir(SANDBOX_DIR)
 
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         os.rmdir(SANDBOX_DIR)
 
     def tearDown(self):
@@ -120,7 +122,10 @@ class OperatorReportTest(SandboxTestSuite):
         """Test that operator reports write a file in the working directory"""
 
         with report.OperatorReport(SANDBOX_DIR) as op_report:
-            operator_path = pathlib.Path(op_report.filepath())
+            report_filepath = op_report.filepath()
+            self.assertIsNotNone(report_filepath)
+            assert report_filepath is not None
+            operator_path = pathlib.Path(report_filepath)
             self.assertEqual(str(operator_path.parent), SANDBOX_DIR)
 
     def test_uses_error_definition(self):
@@ -132,11 +137,11 @@ class OperatorReportTest(SandboxTestSuite):
         with report.OperatorReport(SANDBOX_DIR) as op_report:
             op_report.read_error_definitions(all_errors)
 
-            self.assertIn(245, op_report._error_definitions)
+            self.assertTrue(op_report.has_error_definition(245))
             _, success = op_report.add_message(245, table="flight_summary")
             self.assertFalse(success)
 
-            self.assertIn(101, op_report._error_definitions)
+            self.assertTrue(op_report.has_error_definition(101))
             _, success = op_report.add_message(101)
             self.assertFalse(success)
 
@@ -144,7 +149,7 @@ class OperatorReportTest(SandboxTestSuite):
         """Test that a passing file is written in the operator report"""
 
         filename = '20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'
-        infile = resolve_test_data_path(f'data/general/{filename}')
+        infile = str(resolve_test_data_path(f'data/general/{filename}'))
         contents = util.read_file(infile)
 
         with report.OperatorReport(SANDBOX_DIR) as op_report:
@@ -153,7 +158,7 @@ class OperatorReportTest(SandboxTestSuite):
             ecsv.validate_metadata_tables()
             ecsv.validate_dataset_tables()
             data_record = models.DataRecord(ecsv)
-            data_record.filename = filename
+            data_record.filename = filename  # type: ignore[assignment]
 
             agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
@@ -164,7 +169,7 @@ class OperatorReportTest(SandboxTestSuite):
             op_report.write_passing_file(infile, ecsv, data_record)
 
         self.assertTrue(os.path.exists(output_path))
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             reader = csv.reader(output)
             next(reader)
 
@@ -181,7 +186,7 @@ class OperatorReportTest(SandboxTestSuite):
         """Test that file warnings are written in the operator report"""
 
         filename = 'ecsv-trailing-commas.csv'
-        infile = resolve_test_data_path(f'data/general/{filename}')
+        infile = str(resolve_test_data_path(f'data/general/{filename}'))
         contents = util.read_file(infile)
 
         with report.OperatorReport(SANDBOX_DIR) as op_report:
@@ -191,7 +196,7 @@ class OperatorReportTest(SandboxTestSuite):
             ecsv.validate_metadata_tables()
             ecsv.validate_dataset_tables()
             data_record = models.DataRecord(ecsv)
-            data_record.filename = filename
+            data_record.filename = filename  # type: ignore[assignment]
 
             agency = ecsv.extcsv['DATA_GENERATION']['Agency']
 
@@ -202,7 +207,7 @@ class OperatorReportTest(SandboxTestSuite):
             op_report.write_passing_file(infile, ecsv, data_record)
 
         self.assertTrue(os.path.exists(output_path))
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             reader = csv.reader(output)
             next(reader)
 
@@ -229,7 +234,7 @@ class OperatorReportTest(SandboxTestSuite):
         """Test that a failing file is written in the operator report"""
 
         filename = 'ecsv-missing-instrument-name.csv'
-        infile = resolve_test_data_path(f'data/general/{filename}')
+        infile = str(resolve_test_data_path(f'data/general/{filename}'))
         contents = util.read_file(infile)
 
         ecsv = None
@@ -253,8 +258,10 @@ class OperatorReportTest(SandboxTestSuite):
         output_path = os.path.join(SANDBOX_DIR,
                                    'operator-report.csv')
 
+        self.assertIsNotNone(ecsv)
+        assert ecsv is not None
         self.assertTrue(os.path.exists(output_path))
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             reader = csv.reader(output)
             next(reader)
 
@@ -291,7 +298,7 @@ class OperatorReportTest(SandboxTestSuite):
         when a mixture of the two is processed
         """
 
-        infile_root = resolve_test_data_path('data/general/pass_and_fail')
+        infile_root = str(resolve_test_data_path('data/general/pass_and_fail'))
 
         warnings = {}
         errors = {}
@@ -325,7 +332,7 @@ class OperatorReportTest(SandboxTestSuite):
 
                     ecsv.validate_dataset_tables()
                     data_record = models.DataRecord(ecsv)
-                    data_record.filename = infile
+                    data_record.filename = infile  # type: ignore[assignment]
 
                     expected_warnings[fullpath] = len(ecsv.warnings)
                     expected_errors[fullpath] = 0
@@ -342,7 +349,7 @@ class OperatorReportTest(SandboxTestSuite):
                                    'operator-report.csv')
 
         self.assertTrue(os.path.exists(output_path))
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             reader = csv.reader(output)
             next(reader)
 
@@ -374,14 +381,17 @@ class RunReportTest(SandboxTestSuite):
 
         run_report = report.RunReport(SANDBOX_DIR)
 
-        run_report_path = pathlib.Path(run_report.filepath())
+        filepath = run_report.filepath()
+        self.assertIsNotNone(filepath)
+        assert filepath is not None
+        run_report_path = pathlib.Path(filepath)
         self.assertEqual(str(run_report_path.parent), SANDBOX_DIR)
 
     def test_passing_run_report(self):
         """Test that a passing file is written to the run report"""
 
         filename = '20080101.Kipp_Zonen.UV-S-E-T.000560.PMOD-WRC.csv'
-        infile = resolve_test_data_path(f'data/general/{filename}')
+        infile = str(resolve_test_data_path(f'data/general/{filename}'))
         contents = util.read_file(infile)
 
         run_report = report.RunReport(SANDBOX_DIR)
@@ -391,7 +401,7 @@ class RunReportTest(SandboxTestSuite):
             ecsv.validate_metadata_tables()
             ecsv.validate_dataset_tables()
             data_record = models.DataRecord(ecsv)
-            data_record.filename = filename
+            data_record.filename = filename  # type: ignore[assignment]
 
             agency = ecsv.extcsv['DATA_GENERATION']['Agency']
             output_path = os.path.join(SANDBOX_DIR, 'run_report')
@@ -399,7 +409,7 @@ class RunReportTest(SandboxTestSuite):
             run_report.write_passing_file(infile, agency)
 
         self.assertTrue(os.path.exists(output_path))
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 2)
 
@@ -410,7 +420,7 @@ class RunReportTest(SandboxTestSuite):
         """Test that a failing file is written to the run report"""
 
         filename = 'ecsv-missing-instrument-name.csv'
-        infile = resolve_test_data_path(f'data/general/{filename}')
+        infile = str(resolve_test_data_path(f'data/general/{filename}'))
         contents = util.read_file(infile)
 
         ecsv = None
@@ -419,6 +429,7 @@ class RunReportTest(SandboxTestSuite):
 
         with report.OperatorReport() as error_bank:
             run_report = report.RunReport(SANDBOX_DIR)
+            output_path = os.path.join(SANDBOX_DIR, 'run_report')
 
             try:
                 ecsv = ExtendedCSV(contents, error_bank)
@@ -429,12 +440,10 @@ class RunReportTest(SandboxTestSuite):
                 raise AssertionError(f'Parsing of {infile} did not fail')
             except (MetadataValidationError,
                     NonStandardDataError):
-                output_path = os.path.join(SANDBOX_DIR, 'run_report')
-
                 run_report.write_failing_file(infile, agency)
 
         self.assertTrue(os.path.exists(output_path))
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 2)
 
@@ -445,7 +454,7 @@ class RunReportTest(SandboxTestSuite):
         """Test that an unparseable file is written to the run report"""
 
         filename = 'not-an-ecsv.dat'
-        infile = resolve_test_data_path(f'data/general/{filename}')
+        infile = str(resolve_test_data_path(f'data/general/{filename}'))
         contents = util.read_file(infile)
 
         agency = 'UNKNOWN'
@@ -463,7 +472,7 @@ class RunReportTest(SandboxTestSuite):
                 run_report.write_failing_file(infile, agency)
 
                 self.assertTrue(os.path.exists(output_path))
-                with open(output_path) as output:
+                with open(output_path, encoding='utf-8') as output:
                     lines = output.read().splitlines()
                     self.assertEqual(len(lines), 2)
 
@@ -476,7 +485,7 @@ class RunReportTest(SandboxTestSuite):
         when a mixture of the two is processed
         """
 
-        infile_root = resolve_test_data_path('data/general/pass_and_fail')
+        infile_root = str(resolve_test_data_path('data/general/pass_and_fail'))
 
         agency = 'MSC'
 
@@ -502,7 +511,7 @@ class RunReportTest(SandboxTestSuite):
                     ecsv.validate_metadata_tables()
                     ecsv.validate_dataset_tables()
                     data_record = models.DataRecord(ecsv)
-                    data_record.filename = infile
+                    data_record.filename = infile  # type: ignore[assignment]
 
                     expected_passes.add(fullpath)
                     run_report.write_passing_file(fullpath, agency)
@@ -517,7 +526,7 @@ class RunReportTest(SandboxTestSuite):
         output_path = os.path.join(SANDBOX_DIR, 'run_report')
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(lines[0], agency)
             self.assertEqual(len(lines),
@@ -534,7 +543,7 @@ class RunReportTest(SandboxTestSuite):
     def test_run_report_multiple_agencies(self):
         """Test that files in the run report are grouped by agency"""
 
-        infile_root = resolve_test_data_path('data/general/agencies')
+        infile_root = str(resolve_test_data_path('data/general/agencies'))
 
         expected_passes = {}
         expected_fails = {}
@@ -548,7 +557,7 @@ class RunReportTest(SandboxTestSuite):
         with report.OperatorReport() as error_bank:
             run_report = report.RunReport(SANDBOX_DIR)
 
-            for dirpath, dirnames, filenames in os.walk(infile_root):
+            for dirpath, _, filenames in os.walk(infile_root):
                 for infile in filenames:
                     fullpath = os.path.join(dirpath, infile)
                     # Agency inferred from directory name.
@@ -578,7 +587,7 @@ class RunReportTest(SandboxTestSuite):
 
                         ecsv.validate_dataset_tables()
                         data_record = models.DataRecord(ecsv)
-                        data_record.filename = infile
+                        data_record.filename = infile  # type: ignore[assignment] # noqa
 
                         expected_passes[agency].add(fullpath)
                         run_report.write_passing_file(fullpath, agency)
@@ -606,7 +615,7 @@ class RunReportTest(SandboxTestSuite):
         output_path = os.path.join(SANDBOX_DIR, 'run_report')
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             curr_agency = None
 
@@ -692,7 +701,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 5)
 
@@ -717,7 +726,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 8)
 
@@ -749,7 +758,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 10)
 
@@ -784,7 +793,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 12)
 
@@ -824,7 +833,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 29)
 
@@ -882,7 +891,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 29)
 
@@ -938,7 +947,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 8)
             self.assertEqual(lines[0], 'MSC (placeholder@mail.com)')
@@ -969,7 +978,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 11)
 
@@ -1004,7 +1013,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 17)
 
@@ -1046,7 +1055,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 8)
 
@@ -1078,7 +1087,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 19)
 
@@ -1129,7 +1138,7 @@ class EmailSummaryTest(SandboxTestSuite):
 
         self.assertTrue(os.path.exists(output_path))
 
-        with open(output_path) as output:
+        with open(output_path, encoding='utf-8') as output:
             lines = output.read().splitlines()
             self.assertEqual(len(lines), 17)
 

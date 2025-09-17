@@ -111,13 +111,15 @@ ENV/
 migration.env
 
 # generated data files
+data/countries.csv
 data/contributors.csv
+data/contributor_notification.csv
 data/datasets.csv
 data/deployments.csv
 data/instruments.csv
 data/notifications.csv
 data/projects.csv
-data/station-names.csv
+data/station_names.csv
 data/stations.csv
 data/dobsonCorrections/TEMIS_Teff/
 data/dobsonCorrections/WOUDC_stations_TEMIS_combined/

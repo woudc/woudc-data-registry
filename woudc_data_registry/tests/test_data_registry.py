@@ -324,6 +324,7 @@ class ParserTest(unittest.TestCase):
 
         with self.assertRaises(NonStandardDataError):
             ecsv = dummy_extcsv(contents)
+            # print('\nValidating not-an-ecsv.dat')
             ecsv.validate_metadata_tables()
 
         # Text file not in Extended CSV format, featuring non-ASCII characters
@@ -411,7 +412,9 @@ class ParserTest(unittest.TestCase):
 
         with self.assertRaises(NonStandardDataError):
             ecsv = dummy_extcsv(contents)
+            print("\nValidating ecsv-empty-timestamp2-table.csv")
             ecsv.validate_metadata_tables()
+            print('Done\n')
 
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-empty-timestamp2-fields.csv'))
@@ -438,6 +441,7 @@ class ParserTest(unittest.TestCase):
 
         with self.assertRaises(MetadataValidationError):
             ecsv = dummy_extcsv(contents)
+            print("\nValidating ecsv-excess-location-table.csv")
             ecsv.validate_metadata_tables()
 
     def test_line_spacing(self):
@@ -1443,6 +1447,7 @@ class UtilTest(unittest.TestCase):
         """test point GeoJSON geometry creation"""
 
         point = util.point2geojsongeometry(-75, 45)
+        self.assertIsNotNone(point)
         assert point is not None
         self.assertIsInstance(point, dict)
         self.assertEqual(point['type'], 'Point')
@@ -1452,6 +1457,7 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(point['coordinates'][1], 45)
 
         point = util.point2geojsongeometry(-75, 45, 333)
+        self.assertIsNotNone(point)
         assert point is not None
         self.assertEqual(len(point['coordinates']), 3)
         self.assertEqual(point['coordinates'][0], -75)
@@ -1459,12 +1465,14 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(point['coordinates'][2], 333)
 
         point = util.point2geojsongeometry(-75, 45, 0)
+        self.assertIsNotNone(point)
         assert point is not None
         self.assertEqual(len(point['coordinates']), 2)
         self.assertEqual(point['coordinates'][0], -75)
         self.assertEqual(point['coordinates'][1], 45)
 
         point = util.point2geojsongeometry(-75, 45, None)
+        self.assertIsNotNone(point)
         assert point is not None
         self.assertEqual(len(point['coordinates']), 2)
         self.assertEqual(point['coordinates'][0], -75)

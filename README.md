@@ -199,11 +199,13 @@ woudc-data-registry correction dobson-correction /path/to/dir --mode [test|ops] 
 ```bash
 # sync all data and metadata tables (except data product tables) to ElasticSearch
 woudc-data-registry admin search sync
-# optional: sync only to specific tables to ES in comma seperated format. e.g.
+# optional: sync only specific tables to ES in comma seperated format. e.g.
 woudc-data-registry admin search sync -m "DiscoveryMetadata,DataRecord"
 
 # sync the data product tables (uv_index_hourly, totalozone, and ozonesonde) to ElasticSearch
 woudc-data-registry admin search product-sync
+# optional: sync only specific product tables to ES in comma seperated format. e.g.
+woudc-data-registry admin search product-sync -m "TotalOzone,UVIndex"
 ```
 
 #### UV Index Generation
@@ -306,7 +308,7 @@ python3 -m http.server  # view on http://localhost:8000/
 # run tests like this:
 cd woudc_data_registry/tests
 python3 test_data_registry.py
-python3 test_delete_record.py
+python3 test_report_generation.py
 
 # or this:
 python3 setup.py test

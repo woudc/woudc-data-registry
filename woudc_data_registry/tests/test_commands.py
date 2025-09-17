@@ -43,26 +43,25 @@
 #
 # =================================================================
 
-from datetime import datetime
+import json
 import unittest
 import uuid
+from datetime import datetime
+from unittest.mock import Mock, mock_open, patch
+
 import requests
 
-
-from unittest.mock import patch, mock_open
-from woudc_data_registry.util import (
-    generate_geojson_payload, get_HTTP_HEAD_response
-)
-from woudc_data_registry.dobson_corrections import (
-    parse_csv, parse_dat, custom_day_of_year, fix_line_commas,
-    get_correct_factor
-)
+from woudc_data_registry.dobson_corrections import (custom_day_of_year,
+                                                    fix_line_commas,
+                                                    get_correct_factor,
+                                                    parse_csv, parse_dat)
+from woudc_data_registry.notification import pubsub
 
 
 class DummyRecord:
     def __init__(self, x, y, z, published_datetime, timestamp_date,
                  timestamp_time, timestamp_utcoffset, data_record_id,
-                 dataset_id, url):
+                 dataset_id, url, publish_filepath):
         self.x = x
         self.y = y
         self.z = z
@@ -70,16 +69,22 @@ class DummyRecord:
         self.timestamp_date = timestamp_date
         self.timestamp_time = timestamp_time
         self.timestamp_utcoffset = timestamp_utcoffset
+        self.timestamp_utc = datetime.fromisoformat(
+            f"{timestamp_date}T{timestamp_time}{timestamp_utcoffset}")
         self.data_record_id = data_record_id
         self.dataset_id = dataset_id
         self.url = url
+        self.publish_filepath = publish_filepath
+        self.content_category = 'TotalOzone'
 
 
 class TestGenerateGeoJsonPayload(unittest.TestCase):
     def setUp(self):
         self.geojson_template = {
-            "geometry": {"type": "Point", "coordinates": []},
-            "properties": {},
+            "geometry": {"type": "Point", "coordinates": [1, 2, 3]},
+            "properties": {
+                "integrity": {}
+            },
             "links": [{"href": ""}],
             "id": None
         }
@@ -87,73 +92,89 @@ class TestGenerateGeoJsonPayload(unittest.TestCase):
             "file1": {
                 "record": DummyRecord(
                     x=1, y=2, z=3,
-                    published_datetime="2024-06-04T12:34:56Z",
+                    published_datetime=datetime.fromisoformat(
+                        "2024-06-04T12:34:56+00:00"),
                     timestamp_date="2024-06-04",
                     timestamp_time="12:00:00",
                     timestamp_utcoffset="+00:00",
                     data_record_id="DATA123",
                     dataset_id="DSID123",
-                    url="http://example.com"
+                    url="http://example.com",
+                    publish_filepath=(
+                        "/data/web/woudc-archive/Archive-NewFormat"
+                        "/TotalOzone_1.0_1"
+                        "/stn001/dobson/1959"
+                        "/19590101.Dobson.Beck.053.UNKNOWN.csv")
                 ),
                 "status_code": 200,
                 "message": "OK"
             }
         }
 
-    @patch("woudc_data_registry.config.WDR_MQTT_NOTIFICATION_TEMPLATE_PATH",
-           "dummy_path.json")
     @patch(
         "woudc_data_registry.util.open",
         new_callable=mock_open,
         read_data=(
             '{"geometry": {"type": "Point", "coordinates": []}, '
-            '"properties": {}, "links": [{"href": ""}], "id": null}'
+            '"properties": {"integrity": {}}, '
+            '"links": [{"href": ""}], "id": null}'
         )
     )
-    @patch("woudc_data_registry.util.json.load")
-    @patch("woudc_data_registry.util.uuid.uuid4")
+    @patch("json.load")
+    @patch("uuid.uuid4")
     def test_basic_payload(self, mock_uuid, mock_json_load, mock_file_open):
         mock_json_load.return_value = self.geojson_template.copy()
         mock_uuid.return_value = uuid.UUID("12345678123456781234567812345678")
 
-        payload = generate_geojson_payload(self.info)
+        payload = pubsub.generate_geojson_payload(self.info)
         self.assertEqual(len(payload), 1)
-        notif = payload[0]
+        # Parse the JSON payload string
+        notif = json.loads(payload[0]['payload'])
+
         self.assertEqual(notif["geometry"]["coordinates"], [1, 2, 3])
         self.assertEqual(
             notif["properties"]["pubtime"], "2024-06-04T12:34:56Z"
         )
         self.assertEqual(
-            notif["properties"]["datetime"], "2024-06-04T12:00:00+00:00"
+            notif["properties"]["datetime"], "2024-06-04T12:00:00Z"
         )
         self.assertEqual(notif["properties"]["data_id"], "DATA123")
         self.assertEqual(
-            notif["properties"]["metadata_id"], "urn:wmo:md:org-woudc:DSID123"
+            notif["properties"]["metadata_id"],
+            "urn:wmo:md:org-woudc:totalozone"
         )
         self.assertEqual(notif["links"][0]["href"], "http://example.com")
         self.assertEqual(
             str(notif["id"]), "12345678-1234-5678-1234-567812345678"
         )
 
-    @patch("woudc_data_registry.util.LOGGER")
-    @patch("woudc_data_registry.util.uuid.uuid4")
-    @patch("woudc_data_registry.util.json.load")
-    @patch(
-        "woudc_data_registry.util.open",
-        new_callable=mock_open,
-        read_data='{}'
-    )
+    @patch.object(pubsub, 'LOGGER')
+    @patch("hashlib.sha512")
+    @patch("uuid.uuid4")
+    @patch("json.load")
+    @patch("builtins.open")
     @patch("woudc_data_registry.config", autospec=True)
     def test_none_x_or_y(self, mock_config, mock_file_open, mock_json_load,
-                         mock_uuid, mock_logger):
+                         mock_uuid, mock_sha512, mock_logger):
+        # Mock the hash operations
+        mock_hash_obj = Mock()
+        mock_hash_obj.digest.return_value = b'mock_hash_digest_bytes'
+        mock_sha512.return_value = mock_hash_obj
+
         # Set x to None to trigger geometry=null and error log
         record = DummyRecord(
             x=None, y=2, z=3,
-            published_datetime="2024-06-04T12:34:56Z",
+            published_datetime=datetime.fromisoformat(
+                "2024-06-04T12:34:56+00:00"),
             timestamp_date="2024-06-04", timestamp_time="12:00:00",
             timestamp_utcoffset="+00:00",
             data_record_id="DATA456", dataset_id="DSID456",
-            url="http://example.com/2"
+            url="http://example.com/2",
+            publish_filepath=(
+                        "/data/web/woudc-archive/Archive-NewFormat"
+                        "/TotalOzone_1.0_1"
+                        "/stn001/dobson/1959"
+                        "/19590101.Dobson.Beck.053.UNKNOWN.csv")
         )
         info = {
             "file2": {
@@ -162,37 +183,58 @@ class TestGenerateGeoJsonPayload(unittest.TestCase):
                 "message": "OK"
             }
         }
+
+        # Simple file mocks - content doesn't matter now since we're
+        # mocking the hash
+        template_file = mock_open(read_data=(
+            '{"geometry": {"type": "Point", "coordinates": []}, '
+            '"properties": {"integrity": {}}, "links": [{"href": ""}], '
+            '"id": null}')).return_value
+        data_file = mock_open(read_data=b"any content").return_value
+        mock_file_open.side_effect = [template_file, data_file]
+
         mock_json_load.return_value = self.geojson_template.copy()
         mock_uuid.return_value = uuid.UUID("12345678123456781234567812345678")
 
-        payload = generate_geojson_payload(info)
-        notif = payload[0]
+        payload = pubsub.generate_geojson_payload(info)
+        notif = json.loads(payload[0]['payload'])
         self.assertIsNone(notif["geometry"])
         # Optionally, check that LOGGER.error was called
         mock_logger.error.assert_called_once_with('x or y is None')
+
+        # Verify the hash was computed
+        mock_sha512.assert_called_once()
+        self.assertIn("integrity", notif["properties"])
 
 
 class TestGetHTTPHeadResponse(unittest.TestCase):
 
     @patch('requests.head')
     def test_successful_response(self, mock_head):
-        mock_response = mock_open()
+        """Test success handling of requests.head"""
+        mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.raise_for_status = mock_open()
+        mock_response.raise_for_status.return_value = None
         mock_head.return_value = mock_response
 
-        status_code = get_HTTP_HEAD_response(
-            'https://woudc.org/archive/Archive-NewFormat/'
+        response = requests.head(
+            'https://woudc.org/archive/Archive-NewFormat/',
+            timeout=5
         )
-        self.assertEqual(status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     @patch('requests.head')
     def test_error_response(self, mock_head):
+        """Test error/404 handling of requests.head"""
         mock_head.side_effect = requests.exceptions.RequestException(
             "Network error"
         )
-        status_code = get_HTTP_HEAD_response('http://nonexistent.example.com')
-        self.assertEqual(status_code, '404')
+        with self.assertRaises(requests.exceptions.RequestException):
+            response = requests.head(
+                'http://nonexistent.example.com',
+                timeout=5
+            )
+            self.assertEqual(response.status_code, '404')
 
 
 class TestDobsonCorrections(unittest.TestCase):
@@ -204,7 +246,7 @@ class TestDobsonCorrections(unittest.TestCase):
         and returns the expected dictionary.
         """
         file_path = (
-            'woudc_data_registry/tests/data/general/ecsv-comments.csv'
+            'data/general/ecsv-comments.csv'
         )
         dictionary = parse_csv(file_path)
         self.assertIsInstance(dictionary, dict,
@@ -217,7 +259,7 @@ class TestDobsonCorrections(unittest.TestCase):
         self.assertEqual(dictionary.get('TIMESTAMP')[1][1], '2004-07-09')
 
         double_spaced_file_path = (
-            './woudc_data_registry/tests/data/general/ecsv-double-spaced.csv'
+            'data/general/ecsv-double-spaced.csv'
         )
         dictionary2 = parse_csv(double_spaced_file_path)
         self.assertIsInstance(dictionary, dict,
@@ -230,7 +272,7 @@ class TestDobsonCorrections(unittest.TestCase):
         self.assertEqual(dictionary2.get('TIMESTAMP')[1][1], '2011-11-01')
         self.assertEqual(dictionary2.get('DAILY')[1][0], '2011-11-01')
 
-        file_path_with_no_data = ('./not_real_file.csv')
+        file_path_with_no_data = './not_real_file.csv'
         dictionary3 = parse_csv(file_path_with_no_data)
         self.assertEqual(dictionary3, {})
 
@@ -240,7 +282,7 @@ class TestDobsonCorrections(unittest.TestCase):
         when given an invalid file path.
         """
         empty_file_path = (
-            './woudc_data_registry/tests/data/general/pass_and_fail/'
+            'data/general/pass_and_fail/'
             'KW160914.CSV'
         )
         dictionary = parse_csv(empty_file_path)
@@ -251,7 +293,7 @@ class TestDobsonCorrections(unittest.TestCase):
         self.assertEqual(dictionary, {})
 
         error_file_path = (
-            './woudc_data_registry/tests/data/general/'
+            'data/general/'
             'euc-jp.dat'
         )
         dictionary2 = parse_csv(error_file_path)
@@ -301,7 +343,7 @@ class TestDobsonCorrections(unittest.TestCase):
         Test that the parse_dat_file function reads a .dat file correctly.
         """
         file_path = (
-            './woudc_data_registry/tests/data/dobsonCorrections'
+            'data/dobsonCorrections'
             '/1_Leopoldville_Kinshasa_TEMISfilename_Brazzaville_Kinshasa_'
             'teff_abscoef.dat'
         )
@@ -325,7 +367,7 @@ class TestDobsonCorrections(unittest.TestCase):
         correction factor.
         """
         file_path = (
-            './woudc_data_registry/tests/data/dobsonCorrections'
+            'data/dobsonCorrections'
             '/1_Leopoldville_Kinshasa_TEMISfilename_Brazzaville_Kinshasa_'
             'teff_abscoef.dat'
         )

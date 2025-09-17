@@ -291,7 +291,6 @@ MAPPINGS_ALL = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'dataset_snapshots': dataset_links,
             'waf': dataset_links,
             'wfs': dataset_links,
             'wms': dataset_links,

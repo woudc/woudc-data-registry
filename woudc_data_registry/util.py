@@ -169,30 +169,40 @@ def delete_file_from_record(file_path, table):
 
     result = registry.query_multiple_fields(table, condition)
     if not result:
-        LOGGER.error(f'File {filename} or out_filepath {file_path} not \
-                    found in {table} table')
+        LOGGER.error(
+            'File %s or out_filepath %s not '
+            'found in %s table',
+            filename, file_path, table)
         return
 
     try:
         # Remove the file from data_records
         registry.delete_by_multiple_fields(table, condition)
 
-        LOGGER.info(f"Deleted file from {table} table")
+        LOGGER.info("Deleted file (%s) from table: %s", file_path, table)
 
         # Remove the file from WAF
+        if config.WDR_FILE_TRASH is None:
+            raise ValueError(
+                'WDR_FILE_TRASH is not set. '
+                'Did you forget to load your env variables?'
+            )
         shutil.move(file_path, config.WDR_FILE_TRASH)
 
         # Check if the file now exists in the trash directory
         if filename in os.listdir(config.WDR_FILE_TRASH):
-            LOGGER.info(f"File {filename} successfully moved to trash.")
+            LOGGER.info("File %s successfully moved to trash.", filename)
         else:
-            LOGGER.error(f"Failed to move {filename} to trash. \
-                The file is not in {config.WDR_FILE_TRASH}.")
-            raise Exception
+            msg = (
+                "Failed to move {filename} to trash. "
+                "The file is not in {config.WDR_FILE_TRASH}."
+            )
+            LOGGER.error(msg)
+            raise FileNotFoundError(msg)
 
         registry.session.commit()
     except Exception as err:
-        LOGGER.error('Failed to delete file: {}'.format(err))
+        LOGGER.error('Failed to delete file: %s', err)
         registry.session.rollback()
     finally:
         registry.close_session()

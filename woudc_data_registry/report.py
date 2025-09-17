@@ -422,6 +422,10 @@ class OperatorReport(Report):
                 error_code = int(row[0])
                 self._error_definitions[error_code] = row[1:3]
 
+    def has_error_definition(self, error_code):
+        """Check if an error definition exists for the given code"""
+        return error_code in self._error_definitions
+
     def add_message(self, error_code, line=None, **kwargs):
         """
         Logs that an error of type <error_code> was found at line <line>
