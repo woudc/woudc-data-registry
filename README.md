@@ -134,8 +134,9 @@ woudc-data-registry instrument show ECC:2Z:4052:002:OzoneSonde
 # add a new instance of foo (contributor|country|station|instrument|deployment)
 woudc-data-registry <foo> add <options>
 # e.g.
-woudc-data-registry deployment add -s 001 -c MSC:WOUDC
-woudc-data-registry contributor add -id foo -n "Contributor name" -c Canada -w IV -u https://example.org -e you@example.org -f foouser -g -75,45
+woudc-data-registry contributor add -id foo -n "Contributor name" -c "CAN" -w IV -u https://example.org -e you@example.org -f foouser -g -75,45
+woudc-data-registry station add --identifier "foo" --name "Station name" --gaw_id "" --country "CAN" --wmo-region "IV" --start-date "YYYY-MM-DD" --geometry "lat,lon,elevation"
+woudc-data-registry deployment add -s "001" -c "MSC:WOUDC"
 
 # update an existing instance of foo with a given registry identifier
 woudc-data-registry <foo> update -id <identifier> <options>
