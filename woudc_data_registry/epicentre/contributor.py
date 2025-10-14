@@ -101,7 +101,8 @@ def show(ctx, identifier, verbosity):
 @cli_options.OPTION_VERBOSITY
 @click.option('-n', '--name', 'name', required=True, help='name')
 @click.option('-a', '--acronym', 'acronym', required=True, help='acronym')
-@click.option('-c', '--country', 'country', required=True, help='country')
+@click.option('-c', '--country', 'country_id', required=True,
+              help='country ID, ex: "CAN"')
 @click.option('-p', '--project', 'project', required=True, help='project')
 @click.option('-w', '--wmo-region', 'wmo_region', required=True,
               help='WMO region')
@@ -109,10 +110,12 @@ def show(ctx, identifier, verbosity):
 @click.option('-e', '--email', 'email', required=True, help='email')
 @click.option('-f', '--ftp-username', 'ftp_username', required=True,
               help='FTP username')
+@click.option('-sd', '--start-date', 'start_date', required=True,
+              help='YYYY-MM-DD')
 @click.option('-g', '--geometry', 'geometry', required=True,
               help='latitude,longitude')
-def add(ctx, name, acronym, country, project, wmo_region,
-        url, email, ftp_username, geometry, verbosity):
+def add(ctx, name, acronym, country_id, project, wmo_region,
+        url, email, ftp_username, start_date, geometry, verbosity):
     """Add a contributor"""
 
     geom_tokens = geometry.split(',')
@@ -120,14 +123,15 @@ def add(ctx, name, acronym, country, project, wmo_region,
     contributor_ = {
         'name': name,
         'acronym': acronym,
-        'country_id': country,
+        'country_id': country_id,
         'project_id': project,
         'wmo_region_id': wmo_region,
         'url': url,
         'email': email,
         'ftp_username': ftp_username,
-        'x': geom_tokens[1],
-        'y': geom_tokens[0]
+        'start_date': start_date,
+        'x': float(geom_tokens[1].strip()),
+        'y': float(geom_tokens[0].strip())
     }
 
     result = add_metadata(Contributor, contributor_,
@@ -148,9 +152,12 @@ def add(ctx, name, acronym, country, project, wmo_region,
 @click.option('-u', '--url', 'url', help='URL')
 @click.option('-e', '--email', 'email', help='email')
 @click.option('-f', '--ftp-username', 'ftp_username', help='FTP username')
+@click.option('-sd', '--start-date', 'start_date', help='YYYY-MM-DD')
+@click.option('-ed', '--end-date', 'end_date', help='YYYY-MM-DD')
 @click.option('-g', '--geometry', 'geometry', help='latitude,longitude')
 def update(ctx, identifier, name, acronym, country, project,
-           wmo_region, url, email, ftp_username, geometry, verbosity):
+           wmo_region, url, email, ftp_username, start_date, end_date,
+           geometry, verbosity):
     """Update contributor information"""
 
     contributor_ = {
@@ -173,10 +180,14 @@ def update(ctx, identifier, name, acronym, country, project,
         contributor_['email'] = email
     if ftp_username:
         contributor_['ftp_username'] = ftp_username
+    if start_date:
+        contributor_['start_date'] = start_date
+    if end_date:
+        contributor_['end_date'] = end_date
     if geometry:
         geom_tokens = geometry.split(',')
-        contributor_['x'] = geom_tokens[1]
-        contributor_['y'] = geom_tokens[0]
+        contributor_['x'] = float(geom_tokens[1].strip())
+        contributor_['y'] = float(geom_tokens[0].strip())
 
     if len(contributor_.keys()) == 1:
         click.echo('No updates specified')

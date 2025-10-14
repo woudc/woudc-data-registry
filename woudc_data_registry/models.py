@@ -222,6 +222,11 @@ class Contributor(base):
 
     @property
     def __geo_interface__(self):
+        if self.country is None:
+            raise ValueError(
+                f"Contributor {self.contributor_id} has no associated country"
+            )
+
         return {
             'id': self.contributor_id,
             'type': 'Feature',

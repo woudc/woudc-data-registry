@@ -103,10 +103,10 @@ def add_metadata(entity, dict_, save_to_registry=True, save_to_index=True):
     if 'country_id' in dict_:
         LOGGER.debug('Querying for matching country')
         results = REGISTRY.session.query(Country).filter(
-            Country.name_en == dict_['country_id'])
+            Country.country_id == dict_['country_id'])
 
         if results.count() == 0:
-            msg = f"Invalid country: {dict_['country']}"
+            msg = f"Invalid country ID: {dict_['country_id']}"
             LOGGER.error(msg)
             raise ValueError(msg)
 
@@ -115,7 +115,9 @@ def add_metadata(entity, dict_, save_to_registry=True, save_to_index=True):
     if 'contributor' in dict_:
         LOGGER.debug('Querying for matching contributor')
         results = REGISTRY.session.query(Contributor).filter(
-            Contributor.contributor_id == f"{dict_['contributor']}:{dict_['project']}") # noqa
+            Contributor.contributor_id ==
+            f"{dict_['contributor']}:{dict_['project']}"
+        )
 
         if results.count() == 0:
             msg = (
@@ -138,9 +140,18 @@ def add_metadata(entity, dict_, save_to_registry=True, save_to_index=True):
 
     c = entity(dict_)
     if save_to_registry:
-        REGISTRY.save(c)
+        REGISTRY.session.add(c)
+        REGISTRY.session.flush()  # Flush instead of commit
+        LOGGER.debug(f"Inserted row into table of {entity}")
+
+    # Allow __geo_interface__ of entity while session is still active
     if save_to_index:
         SEARCH_INDEX.index(entity, c.__geo_interface__)
+        LOGGER.debug(f"Inserted entry in ES index of {entity}")
+
+    if save_to_registry:
+        REGISTRY.session.commit()  # Commit after indexing
+        LOGGER.debug(f"Comitted add_metadata of {entity}")
 
     return c
 
