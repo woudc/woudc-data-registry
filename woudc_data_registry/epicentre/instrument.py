@@ -227,9 +227,9 @@ def update(ctx, identifier, station, dataset,
         if len(geom_tokens) == 2:
             geom_tokens.append(None)
 
-        instrument_['x'] = geom_tokens[1]
-        instrument_['y'] = geom_tokens[0]
-        instrument_['z'] = geom_tokens[2]
+        instrument_['x'] = float(geom_tokens[1])
+        instrument_['y'] = float(geom_tokens[0])
+        instrument_['z'] = float(geom_tokens[2])
 
     if len(instrument_.keys()) == 0:
         click.echo('No updates specified')

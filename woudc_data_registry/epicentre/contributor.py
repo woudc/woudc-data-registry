@@ -101,7 +101,7 @@ def show(ctx, identifier, verbosity):
 @cli_options.OPTION_VERBOSITY
 @click.option('-n', '--name', 'name', required=True, help='name')
 @click.option('-a', '--acronym', 'acronym', required=True, help='acronym')
-@click.option('-c', '--country', 'country_id', required=True,
+@click.option('-c', '--country-id', 'country_id', required=True,
               help='country ID, ex: "CAN"')
 @click.option('-p', '--project', 'project', required=True, help='project')
 @click.option('-w', '--wmo-region', 'wmo_region', required=True,
@@ -146,7 +146,7 @@ def add(ctx, name, acronym, country_id, project, wmo_region,
               help='acronym')
 @click.option('-n', '--name', 'name', help='name')
 @click.option('-a', '--acronym', 'acronym', help='acronym')
-@click.option('-c', '--country', 'country', help='country')
+@click.option('-c', '--country-id', 'country_id', help='country ID, ex: "CAN"')
 @click.option('-p', '--project', 'project', help='project')
 @click.option('-w', '--wmo-region', 'wmo_region', help='WMO region')
 @click.option('-u', '--url', 'url', help='URL')
@@ -155,7 +155,7 @@ def add(ctx, name, acronym, country_id, project, wmo_region,
 @click.option('-sd', '--start-date', 'start_date', help='YYYY-MM-DD')
 @click.option('-ed', '--end-date', 'end_date', help='YYYY-MM-DD')
 @click.option('-g', '--geometry', 'geometry', help='latitude,longitude')
-def update(ctx, identifier, name, acronym, country, project,
+def update(ctx, identifier, name, acronym, country_id, project,
            wmo_region, url, email, ftp_username, start_date, end_date,
            geometry, verbosity):
     """Update contributor information"""
@@ -168,8 +168,8 @@ def update(ctx, identifier, name, acronym, country, project,
         contributor_['name'] = name
     if acronym:
         contributor_['acronym'] = acronym
-    if country:
-        contributor_['country_id'] = country
+    if country_id:
+        contributor_['country_id'] = country_id
     if project:
         contributor_['project_id'] = project
     if wmo_region:

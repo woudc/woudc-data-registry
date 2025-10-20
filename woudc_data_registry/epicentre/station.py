@@ -125,7 +125,8 @@ def show(ctx, identifier, verbosity):
               help='station type')
 @click.option('-n', '--name', 'name', required=True, help='name')
 @click.option('-gi', '--gaw-id', 'gaw_id', required=True, help='GAW ID')
-@click.option('-c', '--country', 'country', required=True, help='country')
+@click.option('-c', '--country-id', 'country_id', required=True,
+              help='country ID, ex: "CAN"')
 @click.option('-w', '--wmo-region', 'wmo_region', required=True,
               help='WMO region')
 @click.option('-sd', '--start-date', 'start_date', required=True,
@@ -134,7 +135,7 @@ def show(ctx, identifier, verbosity):
               help='end date')
 @click.option('-g', '--geometry', 'geometry', required=True,
               help='latitude,longitude,elevation')
-def add(ctx, identifier, name, type_, gaw_id, country,
+def add(ctx, identifier, name, type_, gaw_id, country_id,
         wmo_region, start_date, end_date, geometry, verbosity):
     """Add a station"""
 
@@ -145,13 +146,13 @@ def add(ctx, identifier, name, type_, gaw_id, country,
         'station_name': name,
         'station_type': type_,
         'gaw_id': gaw_id,
-        'country_id': country,
+        'country_id': country_id,
         'wmo_region_id': wmo_region,
         'start_date': start_date,
         'end_date': end_date,
-        'x': geom_tokens[1],
-        'y': geom_tokens[0],
-        'z': geom_tokens[2]
+        'x': float(geom_tokens[1].strip()),
+        'y': float(geom_tokens[0].strip()),
+        'z': float(geom_tokens[2].strip())
     }
 
     add_metadata(Station, station_, save_to_registry, save_to_index)
@@ -166,13 +167,13 @@ def add(ctx, identifier, name, type_, gaw_id, country,
 @click.option('-t', '--type', 'type_', help='station type')
 @click.option('-n', '--name', 'name', help='name')
 @click.option('-gi', '--gaw-id', 'gaw_id', help='GAW ID')
-@click.option('-c', '--country', 'country', help='country')
+@click.option('-c', '--country-id', 'country_id', help='country ID, ex: "CAN"')
 @click.option('-w', '--wmo-region', 'wmo_region', help='WMO region')
 @click.option('-sd', '--start-date', 'start_date', help='start date')
 @click.option('-ed', '--end-date', 'end_date', help='end date')
 @click.option('-g', '--geometry', 'geometry',
               help='latitude,longitude,elevation')
-def update(ctx, identifier, name, type_, gaw_id, country,
+def update(ctx, identifier, name, type_, gaw_id, country_id,
            wmo_region, start_date, end_date, geometry, verbosity):
     """Update station information"""
 
@@ -187,8 +188,8 @@ def update(ctx, identifier, name, type_, gaw_id, country,
         station_['station_type'] = type_
     if gaw_id:
         station_['gaw_id'] = gaw_id
-    if country:
-        station_['country_id'] = country
+    if country_id:
+        station_['country_id'] = country_id
     if wmo_region:
         station_['wmo_region_id'] = wmo_region
     if start_date:
