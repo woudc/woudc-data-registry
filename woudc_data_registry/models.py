@@ -50,7 +50,6 @@ import logging
 import click
 import csv
 import json
-import codecs
 import copy
 
 from pygeometa.core import read_mcf
