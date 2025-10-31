@@ -282,7 +282,12 @@ def correct_file(csv_file, csv_content, code, mode):
     station_id = platform_content[1][
         platform_content[0].index('ID')] if platform_content else ''
 
-    LOGGER.info(f"Station Name: {station_id}")
+    # find correction status
+    # using registry:
+    registry = Registry()
+    correction_status = (registry.query_by_field(
+        StationDobsonCorrections, 'station_id', station_id.zfill(3))
+        ).correction_status
 
     try:
         dat_file_path = find_dat_file(station_id.lstrip('0'))
@@ -322,20 +327,16 @@ def correct_file(csv_file, csv_content, code, mode):
         # Get code from StationDobsonCorrections table and see if
         # correction is required.
         # Get the Dobson correction code from the database
-        registry = Registry()
         dobson_correction = registry.query_by_field(
             StationDobsonCorrections, 'station_id', station_id.zfill(3)
         )
         if dobson_correction is not {}:
-            AD_source = dobson_correction.AD_correcting_source
-            CD_source = dobson_correction.CD_correcting_source
+            # AD_source = dobson_correction.AD_correcting_source
+            # CD_source = dobson_correction.CD_correcting_source
             CD_correcting_factor = dobson_correction.CD_correcting_factor
-        correct_AD = (
-            AD_source == 'ECCC' and code in ['AD', None]
-        )
-        correct_CD = (
-            CD_source == 'ECCC' and code in ['CD', None]
-        )
+        correct_AD = (code in ['AD', None])
+        correct_CD = (code in ['CD', None] and correction_status.lower() in [
+            'yellow', 'green'])
         registry.close_session()
 
         # Go through each line in the DAILY table
@@ -357,12 +358,16 @@ def correct_file(csv_file, csv_content, code, mode):
                     float(i[column03_ind])
                     if i[column03_ind] not in ('', '-')
                     else ''
-                )
-                wlcode = (
-                    float(i[wlcode_ind])
-                    if i[wlcode_ind] not in ('', '-')
-                    else ''
-                )
+                )  # could be AD or CD instead of int
+                if isinstance(i[wlcode_ind], str) and i[wlcode_ind
+                                                        ] in ['AD', 'CD']:
+                    wlcode = i[wlcode_ind]
+                else:
+                    wlcode = (
+                        float(i[wlcode_ind])
+                        if i[wlcode_ind] not in ('', '-')
+                        else ''
+                    )
             except ValueError:
                 LOGGER.warning(f"Invalid value in line: {i}")
                 continue
@@ -373,14 +378,14 @@ def correct_file(csv_file, csv_content, code, mode):
             teff_climate = ''
 
             # Get the correcting coefficient and corrected the columnO3
-            if (wlcode in [0, 4] and correct_AD and
+            if (wlcode in [0, 4, 'AD'] and correct_AD and
                     (code is None or code == 'AD')):
                 Coeff, teff_climate = get_correct_factor(
                     dat_file, 'AD', day_of_year
                 )
                 correction_factor = 'AD'
-            elif (wlcode in [2, 6] and correct_CD and
-                  (code is None or code == 'CD')):
+            if (wlcode in [2, 6, 'CD'] and correct_CD and
+                    (code is None or code == 'CD')):
                 if CD_correcting_factor == 'CD':
                     Coeff, teff_climate = get_correct_factor(
                         dat_file, 'CD', day_of_year
