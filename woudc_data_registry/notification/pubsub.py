@@ -264,13 +264,13 @@ def generate_wis2_topic(metadata_id: str) -> str:
     if dataset in ozone_dataset:
         mqtt_path = (
             "origin/a/wis2/org-woudc/data/core/"
-            "atmospheric-composition/observations"
+            "atmospheric-composition/experimental/observations"
             f"/gases/ozone/{dataset}"
         )
     elif dataset in uv_dataset:
         mqtt_path = (
             "origin/a/wis2/org-woudc/data/core/"
-            "atmospheric-composition/observations/"
+            "atmospheric-composition/experimental/observations/"
             f"radiation-latent-heat/ultraviolet-radiation/{dataset}"
         )
     else:
