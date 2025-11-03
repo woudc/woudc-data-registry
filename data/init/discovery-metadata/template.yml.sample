@@ -5,6 +5,9 @@ mcf:
 # fixed except for identifier
 metadata:
     identifier: totalozone
+    additional_identifiers:
+        - identifier: 10.14287/10000004
+          scheme: https://doi.org
     language: en
     language_alternate: fr
     charset: utf8
@@ -30,7 +33,6 @@ identification:
         creation: 2025-04-30
         publication: 2025-04-30
     wmo_data_policy: core  # fixed
-    doi: 10.14287/10000004  # doi
     keywords:
         default:
             keywords:

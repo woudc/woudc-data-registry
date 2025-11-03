@@ -123,7 +123,10 @@ def generate_metadata(woudc_yaml):
                                 value2['description_en']
                             dataset_md['properties']['abstract_fr'] = \
                                 value2['description_fr']
-                            dataset_md["properties"]['doi'] = value2['doi']
+                            dataset_md["properties"]['externalIds'] = [{
+                                'value': value2['doi'],
+                                'scheme': 'https://doi.org'
+                            }]
                             dataset_md['properties']['keywords_en'] = \
                                 value2['keywords_en']
                             dataset_md['properties']['keywords_fr'] = \
