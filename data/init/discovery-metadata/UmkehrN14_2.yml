@@ -3,6 +3,9 @@ mcf:
 
 metadata:
     identifier: UmkehrN14_2.0
+    additional_identifiers:
+        - identifier: 10.14287/10000006
+          scheme: https://doi.org
     language: en
     language_alternate: fr
     charset: utf8
@@ -27,7 +30,6 @@ identification:
         creation: 2025-04-30
         publication: 2025-04-30
     wmo_data_policy: core
-    doi: 10.14287/10000006
     keywords:
         default:
             keywords:

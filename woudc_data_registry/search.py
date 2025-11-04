@@ -226,10 +226,6 @@ MAPPINGS_ALL = {
                 'fields': {'raw': typedefs['keyword']}
             },
             'dataset_snapshots': dataset_links,
-            'doi': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
             'keywords': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}

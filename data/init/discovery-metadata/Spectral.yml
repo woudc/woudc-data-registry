@@ -3,6 +3,9 @@ mcf:
 
 metadata:
     identifier: Spectral
+    additional_identifiers:
+        - identifier: 10.14287/10000011
+          scheme: https://doi.org
     language: en
     language_alternate: fr
     charset: utf8
@@ -28,7 +31,6 @@ identification:
         creation: 2025-04-30
         publication: 2025-04-30
     wmo_data_policy: core
-    doi: 10.14287/10000011
     keywords:
         default:
             keywords:
