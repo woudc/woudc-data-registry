@@ -1113,13 +1113,8 @@ class Process(object):
             self.extcsv.extcsv['DATA_GENERATION']['Version'] = version = '1.0'
             numeric_version = 1.0
         except ValueError:
-            try:
-                while version.count('.') > 1 and version.endswith('.0'):
-                    version = version[:-2]
-                numeric_version = float(version)
-            except ValueError:
-                if not self._add_to_report(316, valueline):
-                    success = False
+            if not self._add_to_report(316, valueline):
+                success = False
 
         if not success:
             return False
