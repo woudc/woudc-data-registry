@@ -521,13 +521,14 @@ def update_extents():
     return True
 
 
-def update_data_submission_ranges(registry, tables=None):
+def update_date_submission_ranges(tables=None):
     """
     Update date ranges for each station, instrument, contributor, and
     deployment of the data submission
 
     :returns: void
     """
+    registry = Registry()
 
     [
         Contributor, Deployment, Station, DataRecord, Instrument

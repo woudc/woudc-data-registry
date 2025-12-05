@@ -65,7 +65,7 @@ from woudc_data_registry.registry import Registry
 
 from woudc_data_registry.generate_metadata import (
     update_extents,
-    update_data_submission_ranges)
+    update_date_submission_ranges)
 from woudc_data_registry.models import Contributor, DataRecord
 from woudc_data_registry.report import OperatorReport, RunReport, EmailSummary
 from woudc_data_registry.search import SearchIndex
@@ -240,6 +240,7 @@ def ingest(ctx, source, reports_dir, lax, bypass, verbosity):
 
     orchestrate(source, reports_dir, metadata_only=lax, bypass=bypass)
     update_extents()
+    update_date_submission_ranges()
 
 
 @click.command()
@@ -389,12 +390,11 @@ def gather(ctx, path, verbosity):
 def update_date_ranges(cntx, models, verbosity):
     """ update the start and end dates of the contributors, instruments,
         stations, and deployments table from all data submissions"""
-    registry = Registry()
     if models is not None:  # update the specified tables
         tables = [model.strip() for model in models.split(',')]
-        update_data_submission_ranges(registry, tables)
+        update_date_submission_ranges(tables)
     else:
-        update_data_submission_ranges(registry)
+        update_date_submission_ranges()
 
 
 data.add_command(ingest)
