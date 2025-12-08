@@ -899,6 +899,18 @@ MAPPINGS_ALL = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'instrument_name': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'instrument_model': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
+            'instrument_serial': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'observation_date': {
                 'type': 'date',
                 'format': DATE_FORMAT,
