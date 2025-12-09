@@ -116,8 +116,7 @@ class Registry(object):
 
         :param domain: domain to be queried
         :param obj: Object instance of the table to query in
-        :param by: Field name to be queried
-        :param value: Dictionary with query value(s)
+        :param values: Dictionary with query value(s)
         :param case_insensitive: `bool` of whether to query strings
                                  case-insensitively
 
@@ -188,43 +187,55 @@ class Registry(object):
         return self.session.query(obj).filter(condition).first()
 
     def query_extents(
-        self, obj, date_domain, by=None, value=None, case_insensitive=False
+        self, obj, date_domain, values=None, case_insensitive=False
     ):
         """
         Query spatiotemporal extents of dataset
 
         :param obj: Object instance of the table to query in
-        :date_domain: Domain for dataset timestamp
-        :param by: Field name to be queried (ie, content_category)
-        :param value: Value of the field in any query results
+        :param date_domain: Domain for dataset timestamp
+        :param values: Dictionary with query field(s) and value(s)
+                    {field_name: field_value, ...}
         :param case_insensitive: `bool` of whether to query strings
-                                 case-insensitively
+                                case-insensitively
         :returns: Minimum and maximum datetime, longitude, and latitude
         """
-        if by is not None:
-            field = getattr(obj, by)
-            if case_insensitive:
-                LOGGER.debug(f'Querying for LOWER({field}) = LOWER({value})')
-                condition = func.lower(field) == value.lower()
-            else:
-                LOGGER.debug(f'Querying for {field} = {value}')
-                condition = field == value
+        conditions = []
 
-            results = self.session.query(
-                          func.min(date_domain),
-                          func.max(date_domain),
-                          func.min(obj.x),
-                          func.min(obj.y),
-                          func.max(obj.x),
-                          func.max(obj.y)).filter(condition).all()
-        else:
-            results = self.session.query(
-                          func.min(date_domain),
-                          func.max(date_domain),
-                          func.min(obj.x),
-                          func.min(obj.y),
-                          func.max(obj.x),
-                          func.max(obj.y)).all()
+        if values is not None:
+            target_fields = values.keys()
+            LOGGER.debug(f'Querying extents by fields {target_fields}')
+
+            for field_name, field_value in values.items():
+                table_field = getattr(obj, field_name)
+                if case_insensitive:
+                    condition = (
+                        func.lower(table_field) == field_value.lower()
+                    )
+                    LOGGER.debug(
+                        f'Querying for LOWER({field_name}) = '
+                        f'LOWER({field_value})'
+                    )
+                else:
+                    condition = table_field == field_value
+                    LOGGER.debug(
+                        f'Querying for {field_name} = {field_value}'
+                    )
+                conditions.append(condition)
+
+        query = self.session.query(
+            func.min(date_domain),
+            func.max(date_domain),
+            func.min(obj.x),
+            func.min(obj.y),
+            func.max(obj.x),
+            func.max(obj.y)
+        )
+
+        if conditions:
+            query = query.filter(*conditions)
+
+        results = query.all()
 
         return results
 

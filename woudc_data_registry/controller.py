@@ -63,7 +63,9 @@ from woudc_data_registry.processing import Process
 
 from woudc_data_registry.registry import Registry
 
-from woudc_data_registry.generate_metadata import update_extents
+from woudc_data_registry.generate_metadata import (
+    update_extents,
+    update_data_submission_ranges)
 from woudc_data_registry.models import Contributor, DataRecord
 from woudc_data_registry.report import OperatorReport, RunReport, EmailSummary
 from woudc_data_registry.search import SearchIndex
@@ -376,6 +378,25 @@ def gather(ctx, path, verbosity):
     LOGGER.info("Done Gathering files")
 
 
+@click.command()
+@cli_options.OPTION_VERBOSITY
+@click.pass_context
+@click.option('--models', '-m',
+              help=(
+                  'Model names to update. '
+                  'E.g. Contributor,Deployment,Station,Instrument'),
+              is_flag=False)
+def update_date_ranges(cntx, models, verbosity):
+    """ update the start and end dates of the contributors, instruments,
+        stations, and deployments table from all data submissions"""
+    registry = Registry()
+    if models is not None:  # update the specified tables
+        tables = [model.strip() for model in models.split(',')]
+        update_data_submission_ranges(registry, tables)
+    else:
+        update_data_submission_ranges(registry)
+
+
 data.add_command(ingest)
 data.add_command(verify)
 data.add_command(generate_emails, name='generate-emails')
@@ -383,3 +404,4 @@ data.add_command(send_feedback, name='send-feedback')
 data.add_command(delete_record, name='delete-record')
 data.add_command(gather)
 data.add_command(publish_notification, name='publish-notification')
+data.add_command(update_date_ranges, name='update-date-ranges')
