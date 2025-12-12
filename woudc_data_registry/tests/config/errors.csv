@@ -73,6 +73,8 @@ Error Code,Error Type,Message Template,Notes
 249,Warning,#TIMESTAMP table after #{table} is missing\, deriving based on requirements,Reserved for Umkehr data tables
 250,Warning,Excess field {field} does not belong in table {table}
 251,Warning,Duplicate observations found in #{table} for Date={date},Reserved for Umkehr data tables
+252,Error,Trailing commas found in #{table} header
+253,Warning,Number of columns in {table} content row does not match with the number of column headers
 301,Error,Failed to parse #{table}.Time {component}: contains invalid characters
 302,Error,Failed to parse #{table}.Date {component}: contains invalid characters
 303,Error,#{table}.Date {component} is not within allowable range [{lower}]-[{upper}],Reserved for year and month components
