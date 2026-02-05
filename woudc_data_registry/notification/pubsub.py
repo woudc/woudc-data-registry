@@ -50,6 +50,7 @@ import json
 import logging
 import ssl
 import uuid
+import click
 
 import paho.mqtt.client as paho_mqtt
 import paho.mqtt.publish as publish
@@ -118,7 +119,7 @@ def publish_notification(hours):
             LOGGER.warning(f"{url} not found on web.")
             no_message.append(ingest_filepath)
     LOGGER.debug(f'{len(responses)} records found.')
-    LOGGER.debug(f'No message: {no_message}')
+    LOGGER.debug(f'No responses for: {no_message}')
     notifications = generate_geojson_payload(responses)
     LOGGER.debug('geoJSON Generated.')
     publish_to_mqtt_broker(notifications)
@@ -234,7 +235,10 @@ def publish_to_mqtt_broker(info: list) -> bool:
         )
 
     except Exception as e:
-        LOGGER.error(f"MQTT error: {e}")
+        msg = f"MQTT error: {e}"
+        LOGGER.error(msg)
+        click.echo(msg)
+        raise
 
 
 def generate_wis2_topic(metadata_id: str) -> str:
