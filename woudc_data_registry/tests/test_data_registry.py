@@ -324,7 +324,6 @@ class ParserTest(unittest.TestCase):
 
         with self.assertRaises(NonStandardDataError):
             ecsv = dummy_extcsv(contents)
-            # print('\nValidating not-an-ecsv.dat')
             ecsv.validate_metadata_tables()
 
         # Text file not in Extended CSV format, featuring non-ASCII characters
@@ -412,9 +411,7 @@ class ParserTest(unittest.TestCase):
 
         with self.assertRaises(NonStandardDataError):
             ecsv = dummy_extcsv(contents)
-            print("\nValidating ecsv-empty-timestamp2-table.csv")
             ecsv.validate_metadata_tables()
-            print('Done\n')
 
         contents = util.read_file(resolve_test_data_path(
             'data/general/ecsv-empty-timestamp2-fields.csv'))
@@ -441,7 +438,6 @@ class ParserTest(unittest.TestCase):
 
         with self.assertRaises(MetadataValidationError):
             ecsv = dummy_extcsv(contents)
-            print("\nValidating ecsv-excess-location-table.csv")
             ecsv.validate_metadata_tables()
 
     def test_line_spacing(self):
