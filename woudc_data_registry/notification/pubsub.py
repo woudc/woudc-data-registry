@@ -200,6 +200,11 @@ def publish_to_mqtt_broker(info: list) -> bool:
 
     :returns: `bool` of whether the publish was successful
     """
+    # Skip if no messages
+    if not info:
+        LOGGER.info("No MQTT notifications to publish")
+        return True
+
     try:
         auth = {
             'username': config.WDR_MQTT_BROKER_USERNAME,
@@ -233,6 +238,7 @@ def publish_to_mqtt_broker(info: list) -> bool:
         LOGGER.info(
             f"{len(info)} MQTT notifications published successful"
         )
+        return True
 
     except Exception as e:
         msg = f"MQTT error: {e}"
