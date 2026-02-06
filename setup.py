@@ -125,9 +125,9 @@ setup(
         'instruments'
     ]),
     author='Meteorological Service of Canada',
-    author_email='tom.kralidis@canada.ca',
+    author_email='tom.kralidis@ec.gc.ca',
     maintainer='Meteorological Service of Canada',
-    maintainer_email='tom.kralidis@canada.ca',
+    maintainer_email='tom.kralidis@ec.gc.ca',
     url='https://github.com/woudc/woudc-data-registry',
     install_requires=read('requirements.txt').splitlines(),
     packages=find_packages(),
@@ -142,7 +142,7 @@ setup(
         'Environment :: Console',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: MIT',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Topic :: Scientific/Engineering :: GIS'
