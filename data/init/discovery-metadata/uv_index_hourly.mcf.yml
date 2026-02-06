@@ -69,9 +69,7 @@ identification:
     license:
         name: WMO Unified Data Policy
         url: https://library.wmo.int/idurl/4/58009
-    rights:
-        en: Copyright (c) 2010-2025 Her Majesty the Queen in Right of Canada
-        fr: Copyright (c) 2010-2025 Her Majesty the Queen in Right of Canada
+    rights: For scientific, educational and policy related use, access to these [GAW] data is unlimited and provided without charge. By their use you accept that an offer of co-authorship will be made through personal contact with the data providers or owners whenever substantial use is made of their data. In all cases, an acknowledgment must be made to the data providers or owners and to the data centre when these data are used within a publication.
     url: https://woudc.org/en/data/dataset-information/uv_index_hourly
     status: onGoing
     maintenancefrequency: continual
@@ -82,7 +80,7 @@ contact:
         url: https://woudc.org/en/contact
         individualname: Data centre manager
         positionname: Data centre manager
-        phone: '+01-416-802-5741'
+        phone: '+14168025741'
         fax: None
         address: 4905 Dufferin Street
         city: Toronto
@@ -94,14 +92,36 @@ contact:
         contactinstructions: email
 
 distribution:
-    api:
-        url: https://api.woudc.org/collections/uv_index_hourly
-        type: application/json
-        rel: service
+    dataset-information:
+        url: https://woudc.org/en/data/dataset-information/uv_index_hourly
+        type: text/html
+        rel: canonical
         name:
             en: *title_en
             fr: *title_fr
         description:
             en: *abstract_en
             fr: *abstract_fr
-        function: download
+
+    api:
+        url: https://api.woudc.org/collections/uv_index_hourly/items
+        type: application/geo+json
+        rel: items
+        name:
+            en: *title_en
+            fr: *title_fr
+        description:
+            en: *abstract_en
+            fr: *abstract_fr
+
+    mqtt:
+        url: mqtts://everyone:everyone@broker.woudc.org:8883
+        type: application/geo+json
+        rel: items
+        channel: origin/a/wis2/org-woudc/data/core/atmospheric-composition/experimental/observations/radiation-latent-heat/ultraviolet-radiation
+        name:
+            en: *title_en
+            fr: *title_fr
+        description:
+            en: *abstract_en
+            fr: *abstract_fr

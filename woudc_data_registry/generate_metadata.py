@@ -333,7 +333,7 @@ def update_extents():
             LOGGER.debug(
                 f"Categories to update discovery metadata: {categories}"
             )
-            # Loop through each dataset and update the geoJSON metadata
+            # Loop through each dataset and update the GeoJSON metadata
             for (discovery_metadata_id, md) in curr_discovery_metadata:
                 LOGGER.info(
                     f"Updating discovery metadata for {discovery_metadata_id}"

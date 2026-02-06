@@ -2,9 +2,9 @@ mcf:
     version: 1.0
 
 metadata:
-    identifier: Spectral
+    identifier: Multi-band
     additional_identifiers:
-        - identifier: 10.14287/10000011
+        - identifier: 10.14287/10000010
           scheme: https://doi.org
     language: en
     language_alternate: fr
@@ -12,7 +12,6 @@ metadata:
     hierarchylevel: dataset
     datestamp: 2025-04-05
 
-# fixed
 spatial:
     datatype: vector
     geomtype: point
@@ -21,11 +20,11 @@ identification:
     language: eng; CAN
     charset: utf8
     title:
-        en: &title_en Spectral
-        fr: &title_fr Spectral
+        en: &title_en Multiband
+        fr: &title_fr Multibande
     abstract:
-        en: &abstract_en Similar to broad-band, Spectral measurements involves UV radiation measured with several discrete, pass-band filters with nominal spectral resolution of 2-10nm at FWHM (Full width at half maximum)
-        fr: &abstract_fr Tout comme la bande large, les mesures spectrales portent entre autres sur le rayonnement UV mesuré au moyen de plusieurs filtres passe-bande discrets à une résolution spectrale nominale de 2 à 10 nm à LTMH (largeur totale à mi-hauteur).
+        en: &abstract_en Measurements include diffuse, spectral and total global radiation with several discrete, pass-band filters. Observations are made using various models of radiometers which compute direct irradiance with a nominal spectral resolution of 2-10nm at FWHM (Full width at half maximum).
+        fr: &abstract_fr Les mesures comprennent le rayonnement global diffus, spectral et total au moyen de plusieurs filtres passe-bande discrets. Les observations se font à l'aide de différents modèles de radiomètres qui calculent l'irradiation directe à une résolution spectrale nominale de 2 à 10 nm à la LTMH (largeur totale à mi-hauteur).
     edition: "1.0"
     dates:
         creation: 2025-04-30
@@ -65,8 +64,8 @@ identification:
         spatial:
             - bbox: [-180,-90,180,90]
               crs: 4326
-        temporal: # extent.time
-            - begin: 1988-11-18
+        temporal:
+            - begin: 1997-05-27
               end: 
               resolution: P1D
     fees: None
@@ -74,10 +73,7 @@ identification:
     license:
         name: WMO Unified Data Policy
         url: https://library.wmo.int/idurl/4/58009
-    rights: # fixed
-        en: Copyright (c) 2010-2025 Her Majesty the Queen in Right of Canada
-        fr: Copyright (c) 2010-2025 Her Majesty the Queen in Right of Canada
-    url: https://woudc.org/en/data/dataset-information/spectral
+    rights: For scientific, educational and policy related use, access to these [GAW] data is unlimited and provided without charge. By their use you accept that an offer of co-authorship will be made through personal contact with the data providers or owners whenever substantial use is made of their data. In all cases, an acknowledgment must be made to the data providers or owners and to the data centre when these data are used within a publication.
     status: onGoing
     maintenancefrequency: continual
 
@@ -87,7 +83,7 @@ contact:
         url: https://woudc.org/en/contact
         individualname: Data centre manager
         positionname: Data centre manager
-        phone: '+01-416-802-5741'
+        phone: '+14168025741'
         fax: None
         address: 4905 Dufferin Street
         city: Toronto
@@ -100,32 +96,33 @@ contact:
 
 distribution:
     waf_level_1.0_1:
-        url: https://woudc.org/archive/Archive-NewFormat/Spectral_1.0_1
-        type: text/html
-        rel: canonical
+        url: https://woudc.org/archive/Archive-NewFormat/Multi-band_1.0_1
+        type: text/csv
+        rel: items
         name: Web Accessible Folder (WAF)
         description:
-            en: Web accessible folder (WAF)
-            fr: Web accessible folder (WAF)
-        function: download
-    waf_level_2.0_1:
-        url: https://woudc.org/archive/Archive-NewFormat/Spectral_2.0_1
-        type: text/html
-        rel: canonical
-        name: Web Accessible Folder (WAF)
-        description:
-            en: Web accessible folder (WAF)
-            fr: Web accessible folder (WAF)
-        function: download
+            en: Web Accessible Folder (WAF)
+            fr: Web Accessible Folder (WAF)
 
-    api:
-        url: https://api.woudc.org/collections/data_records
-        type: application/json
-        rel: service
+    dataset-information:
+        url: https://woudc.org/en/data/dataset-information/multiband
+        type: text/html
+        rel: canonical
         name:
             en: *title_en
             fr: *title_fr
         description:
             en: *abstract_en
             fr: *abstract_fr
-        function: download
+
+    mqtt:
+        url: mqtts://everyone:everyone@broker.woudc.org:8883
+        type: application/geo+json
+        rel: items
+        channel: origin/a/wis2/org-woudc/data/core/atmospheric-composition/experimental/observations/radiation-latent-heat/ultraviolet-radiation
+        name:
+            en: *title_en
+            fr: *title_fr
+        description:
+            en: *abstract_en
+            fr: *abstract_fr

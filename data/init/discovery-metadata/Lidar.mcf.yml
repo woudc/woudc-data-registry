@@ -71,10 +71,7 @@ identification:
     license:
         name: WMO Unified Data Policy
         url: https://library.wmo.int/idurl/4/58009
-    rights:
-        en: Copyright (c) 2010-2025 Her Majesty the Queen in Right of Canada
-        fr: Copyright (c) 2010-2025 Her Majesty the Queen in Right of Canada
-    url: https://woudc.org/en/data/dataset-information/lidar
+    rights: For scientific, educational and policy related use, access to these [GAW] data is unlimited and provided without charge. By their use you accept that an offer of co-authorship will be made through personal contact with the data providers or owners whenever substantial use is made of their data. In all cases, an acknowledgment must be made to the data providers or owners and to the data centre when these data are used within a publication.
     status: onGoing
     maintenancefrequency: continual
 
@@ -84,7 +81,7 @@ contact:
         url: https://woudc.org/en/contact
         individualname: Data centre manager
         positionname: Data centre manager
-        phone: '+01-416-802-5741'
+        phone: '+14168025741'
         fax: None
         address: 4905 Dufferin Street
         city: Toronto
@@ -98,22 +95,32 @@ contact:
 distribution:
     waf_level_1.0_1:
         url: https://woudc.org/archive/Archive-NewFormat/Lidar_1.0_1
-        type: text/html
-        rel: canonical
+        type: text/csv
+        rel: items
         name: Web Accessible Folder (WAF)
         description:
-            en: Web accessible folder (WAF)
-            fr: Web accessible folder (WAF)
-        function: download
+            en: Web Accessible Folder (WAF)
+            fr: Web Accessible Folder (WAF)
 
-    api:
-        url: https://api.woudc.org/collections/data_records
-        type: application/json
-        rel: service
+    dataset-information:
+        url: https://woudc.org/en/data/dataset-information/lidar
+        type: text/html
+        rel: canonical
         name:
             en: *title_en
             fr: *title_fr
         description:
             en: *abstract_en
             fr: *abstract_fr
-        function: download
+
+    mqtt:
+        url: mqtts://everyone:everyone@broker.woudc.org:8883
+        type: application/geo+json
+        rel: items
+        channel: origin/a/wis2/org-woudc/data/core/atmospheric-composition/experimental/observations/gases/ozone
+        name:
+            en: *title_en
+            fr: *title_fr
+        description:
+            en: *abstract_en
+            fr: *abstract_fr

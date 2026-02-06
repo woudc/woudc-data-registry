@@ -121,7 +121,7 @@ def publish_notification(hours):
     LOGGER.debug(f'{len(responses)} records found.')
     LOGGER.debug(f'No responses for: {no_message}')
     notifications = generate_geojson_payload(responses)
-    LOGGER.debug('geoJSON Generated.')
+    LOGGER.debug('GeoJSON Generated.')
     publish_to_mqtt_broker(notifications)
 
 
@@ -269,13 +269,13 @@ def generate_wis2_topic(metadata_id: str) -> str:
         mqtt_path = (
             "origin/a/wis2/org-woudc/data/core/"
             "atmospheric-composition/experimental/observations"
-            f"/gases/ozone/{dataset}"
+            "/gases/ozone"
         )
     elif dataset in uv_dataset:
         mqtt_path = (
             "origin/a/wis2/org-woudc/data/core/"
             "atmospheric-composition/experimental/observations/"
-            f"radiation-latent-heat/ultraviolet-radiation/{dataset}"
+            "radiation-latent-heat/ultraviolet-radiation"
         )
     else:
         LOGGER.error(
