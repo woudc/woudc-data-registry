@@ -173,9 +173,15 @@ class OperatorReportTest(SandboxTestSuite):
             reader = csv.reader(output)
             next(reader)
 
+            # First report line
             report_line = next(reader)
             self.assertEqual(report_line[0], 'P')
-            self.assertEqual(report_line[2], '405')
+            self.assertEqual(report_line[2], '253')
+
+            # Second report line
+            report_line2 = next(reader)
+            self.assertEqual(report_line2[0], 'P')
+            self.assertEqual(report_line2[2], '405')
             self.assertIn(agency, report_line)
             self.assertIn(os.path.basename(infile), report_line)
 
