@@ -66,7 +66,8 @@ from woudc_data_registry.registry import Registry
 from woudc_data_registry.generate_metadata import (
     update_extents,
     update_date_submission_ranges)
-from woudc_data_registry.models import Contributor, DataRecord
+from woudc_data_registry.models import (Contributor, DataRecord,
+                                        model_name_to_model)
 from woudc_data_registry.report import OperatorReport, RunReport, EmailSummary
 from woudc_data_registry.search import SearchIndex
 
@@ -75,7 +76,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def orchestrate(source, working_dir, metadata_only=False,
-                verify_only=False, bypass=False):
+                verify_only=False, bypass=False, models=None):
     """
     Core orchestation workflow
 
@@ -149,6 +150,7 @@ def orchestrate(source, working_dir, metadata_only=False,
 
                 p = Process(registry, search_engine, op_report)
                 data_record = p.validate(extcsv, bypass=bypass,
+                                         models=models,
                                          metadata_only=metadata_only)
                 if data_record is None:
                     click.echo('Not ingesting')
@@ -233,12 +235,25 @@ def data():
               help='Path to main output directory for logs and reports')
 @click.option('--lax', '-l', 'lax', is_flag=True,
               help='Only validate core metadata tables')
-@click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
-              help='Bypass permission prompts while ingesting')
+@click.option('--yes', '-y', 'bypass', type=str, default=None,
+              help='Bypass permission prompts. Optionally provide'
+              'comma-separated list of models to bypass '
+              '(e.g., "Station,Deployment,Instrument,Contribution")')
 def ingest(ctx, source, reports_dir, lax, bypass, verbosity):
     """ingest a single data submission or directory of files"""
-
-    orchestrate(source, reports_dir, metadata_only=lax, bypass=bypass)
+    bypass_models = None
+    # check validity of bypass models
+    LOGGER.info(f'bypass flag: {bypass}')
+    if bypass is not None:
+        if bypass != '':
+            bypass_models = [model_name_to_model(
+                model.strip()) for model in bypass.split(',')]
+            LOGGER.info(f'Bypass models: {bypass_models}')
+        bypass_flag = True
+    else:
+        bypass_flag = False
+    orchestrate(source, reports_dir, metadata_only=lax, bypass=bypass_flag,
+                models=bypass_models)
     update_extents()
     update_date_submission_ranges()
 
@@ -250,13 +265,27 @@ def ingest(ctx, source, reports_dir, lax, bypass, verbosity):
                                           dir_okay=True, file_okay=True))
 @click.option('--lax', '-l', 'lax', is_flag=True,
               help='Only validate core metadata tables')
-@click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
-              help='Bypass permission prompts while ingesting')
+@click.option('--yes', '-y', 'bypass', type=str, default=None,
+              help='Bypass permission prompts. Optionally provide'
+              'comma-separated list of models to bypass '
+              '(e.g., "Station,Deployment,Instrument,Contribution")')
 def verify(ctx, source, lax, bypass, verbosity):
     """verify a single data submission or directory of files"""
 
-    orchestrate(source, None, metadata_only=lax,
-                verify_only=True, bypass=bypass)
+    bypass_models = None
+    # check validity of bypass models
+    LOGGER.info(f'Bypass flag: {bypass}')
+    if bypass:
+        if bypass != '':
+            bypass_models = [model_name_to_model(
+                model.strip()) for model in bypass.split(',')]
+            LOGGER.info(f'Bypass models: {bypass_models}')
+        bypass_flag = True
+    else:
+        bypass_flag = False
+
+    orchestrate(source, metadata_only=lax, bypass=bypass_flag,
+                verify_only=True, models=bypass_models)
 
 
 @click.command()

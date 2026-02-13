@@ -121,7 +121,7 @@ class Process(object):
         return not severe
 
     def validate(self, extcsv, metadata_only=False, verify_only=False,
-                 bypass=False):
+                 bypass=False, models=None):
         """
         Process incoming data record.
 
@@ -153,7 +153,8 @@ class Process(object):
         else:
             contributor_ok = self.check_contributor()
 
-        platform_ok = self.check_station(bypass=bypass, verify=verify_only)
+        platform_ok = self.check_station(bypass=(
+            Station in models if models else bypass), verify=verify_only)
 
         if not all([project_ok, contributor_ok, platform_ok]):
             LOGGER.warning('Skipping deployment check: depends on'
@@ -175,7 +176,8 @@ class Process(object):
                 if verify_only:
                     LOGGER.info('Verify mode. Skipping deployment addition.')
                     deployment_ok = True
-                elif self.add_deployment(bypass=bypass):
+                elif self.add_deployment(bypass=(
+                        Deployment in models if models else bypass)):
                     deployment_ok = True
 
                     self._add_to_report(407)
@@ -227,7 +229,8 @@ class Process(object):
                                     ' addition.')
                         instrument_ok = True
                     else:
-                        instrument_ok = self.add_instrument(bypass=bypass)
+                        instrument_ok = self.add_instrument(bypass=(
+                            Instrument in models if models else bypass))
 
                     if instrument_ok:
                         self._add_to_report(406)
@@ -254,7 +257,8 @@ class Process(object):
         elif contribution_ok:
             contribution_exists = self.check_contribution()
             if not contribution_exists:
-                contribution_ok = self.add_contribution(bypass=bypass)
+                contribution_ok = self.add_contribution(bypass=(
+                    Contribution in models if models else bypass))
 
             if contribution_ok and (not contribution_exists):
                 self._add_to_report(409)
