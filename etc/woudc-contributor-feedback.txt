@@ -5,6 +5,9 @@ Data submissions now require the content, data generation, platform, instrument 
 
 Where possible, your submitted files have been manually repaired to contain the correct metadata information and resubmitted on your behalf.  You do not need to resubmit the files, but please update your procedures to use the correct metadata for all future submissions.  (Detailed data submission requirements are here: https://guide.woudc.org/en/#chapter-3-standard-data-format).
 
+For future submissions, you can validate your data using the WOUDC validator tool: https://woudc.org/en/contributors/validation
+This tool will check your submission for any warnings or errors. You do not need to fix warnings, but you must fix errors in order for your data to pass. This will reduce the amount of files that we will need to manually repair or fail. 
+
 If your station, platform, agency or contact information have been updated then please reply to this message with the updated information.
 Thank you for your support of WOUDC.
 
