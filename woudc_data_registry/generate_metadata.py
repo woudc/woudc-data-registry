@@ -62,11 +62,8 @@ def generate_metadata(woudc_yaml):
     generate list of MCF ConfigParser objects from WOUDC YAML
     """
 
-    WOUDC_OWS = 'https://geo.woudc.org/ows'
     WOUDC_ARCHIVE = 'https://woudc.org/archive/'
-    WOUDC_DATA = 'https://woudc.org/en/data/data-search-and-download'
 
-    u1 = u2 = None
     dict_list = []
     geojson_list = []
     uri_pre = 'https://geo.woudc.org/def/data'
@@ -80,31 +77,6 @@ def generate_metadata(woudc_yaml):
         for key in data_category.items():
             for datasetcollection in data_category[key]['datasetcollections']:
                 for key1, value1 in datasetcollection.items():
-                    # Find umkehr and duplicate for levels 1.0 and 2.0
-                    for dataset in value1['datasets']:
-                        if 'UmkehrN14' in dataset:
-                            u1 = {'UmkehrN14_1.0':
-                                  dataset['UmkehrN14']['levels'][0][1.0]
-                                  }
-                            u2 = {'UmkehrN14_2.0':
-                                  dataset['UmkehrN14']['levels'][1][2.0]
-                                  }
-                            u1['UmkehrN14_1.0']['label_en'] = \
-                                '%s (%s)' % \
-                                (dataset['UmkehrN14']['label_en'],
-                                 dataset['UmkehrN14']['levels'][0]
-                                 [1.0]['label_en']
-                                 )
-                            u2['UmkehrN14_2.0']['label_fr'] = \
-                                '%s (%s)' % \
-                                (dataset['UmkehrN14']['label_en'],
-                                 dataset['UmkehrN14']['levels'][1]
-                                 [2.0]['label_fr']
-                                 )
-                            value1['datasets'].remove(dataset)
-                            value1['datasets'].append(u1)
-                            value1['datasets'].append(u2)
-
                     for dataset in value1['datasets']:
                         for key2, value2 in dataset.items():
                             # Metadata dictionary for current dataset
@@ -123,7 +95,7 @@ def generate_metadata(woudc_yaml):
                             uri = f'{uri_pre}/{key}/{key1}/{search_id}'
                             time_begin, time_end = \
                                 value1['extent']['time'].split('/')
-                            dataset_md["id"] = key2
+                            dataset_md["id"] = key2[:-4]
                             dataset_md['properties']['abstract_en'] = \
                                 value2['description_en']
                             dataset_md['properties']['abstract_fr'] = \
@@ -138,8 +110,6 @@ def generate_metadata(woudc_yaml):
                                 value2['keywords_fr']
                             dataset_md['time']['interval'] = [time_begin,
                                                               time_end]
-                            dataset_md['geometry']['spatial_extent'] = \
-                                [-180, -90, 180, 90]
                             dataset_md['properties']['title_en'] = \
                                 value2['label_en']
                             dataset_md['properties']['title_fr'] = \
@@ -147,52 +117,6 @@ def generate_metadata(woudc_yaml):
                             dataset_md['properties']['topic_category'] = \
                                 topiccategory
                             dataset_md['properties']['uri'] = uri
-
-                            # names = []
-                            if 'levels' in value2:
-                                levels = []
-                                for level in value2['levels']:
-                                    for key3, value3 in level.items():
-                                        curr_level = {
-                                            'label_en':
-                                                level[key3]['label_en'],
-                                            'networks': []
-                                        }
-                                        networks = []
-                                        for ntwk in value3['networks']:
-                                            curr_network = {}
-                                            for key4, value4 in ntwk.items():
-                                                curr_network['label_en'] = \
-                                                    value4['label_en']
-                                            networks.append(curr_network)
-                                            curr_level['networks'] = networks
-                                    levels.append(curr_level)
-                                dataset_md['properties']['levels'] = levels
-                            else:  # umkehr
-                                levels = []
-                                if key2 == 'UmkehrN14_1.0':
-                                    label_en = 'Level 1.0'
-                                    search_id = 'umkehrn14-1'
-                                    snapshot_id = 'umkehr1'
-                                else:
-                                    label_en = 'Level 2.0'
-                                    search_id = 'umkehrn14-2'
-                                    snapshot_id = 'umkehr2'
-                                curr_level = {
-                                            'label_en': label_en,
-                                            'networks': []
-                                        }
-                                networks = []
-                                for n in value2['networks']:
-                                    curr_network = {}
-                                    for key4, value4 in n.items():
-                                        if 'instruments' in value4:
-                                            curr_network['label_en'] = \
-                                                value4['label_en']
-                                        networks.append(curr_network)
-                                curr_level['networks'] = networks
-                                levels.append(curr_level)
-                                dataset_md['properties']['levels'] = levels
 
                             if value2['waf_dir'] != 'none':
                                 dataset_md['properties']['waf'] = {
@@ -218,41 +142,6 @@ def generate_metadata(woudc_yaml):
                                     'Static dataset archive file',
                                 'description_fr':
                                     "La donnée d'archive statique"
-                            }
-
-                            dataset_md['properties']['wms'] = {
-                                'url': f'{WOUDC_OWS}?service=WMS&version=1.3.0&request=GetCapabilities',  # noqa
-                                'linktype': 'OGC:WMS',
-                                'function': 'download',
-                                'label_en': key2,
-                                'label_fr': key2,
-                                'description_en': 'OGC Web Map Service (WMS)',
-                                'description_fr': 'OGC Web Map Service (WMS)'
-                            }
-
-                            dataset_md['properties']['wfs'] = {
-                                'url': f'{WOUDC_OWS}?service=WFS&version=1.1.0&request=GetCapabilities',  # noqa
-                                'linktype': 'OGC:WFS',
-                                'function': 'download',
-                                'label_en': key2,
-                                'label_fr': key2,
-                                'description_en':
-                                    'OGC Web Feature Service (WFS)',
-                                'description_fr':
-                                    'OGC Web Feature Service (WFS)'
-                             }
-
-                            dataset_md['properties']['search'] = {
-                                'url': f'{WOUDC_DATA}?dataset={key2}',
-                                'linktype': 'WWW:LINK',
-                                'function': 'search',
-                                'label_en': value2['label_en'],
-                                'label_fr': value2['label_fr'],
-                                'description_en':
-                                    'Data Search / Download User Interface',
-                                'description_fr':
-                                    u'Interface de recherche et '
-                                    'téléchargement de données'
                             }
 
                             geojson_list.append((key2, dataset_md))
@@ -344,9 +233,6 @@ def update_extents():
                 if dataset_short in categories:
                     query_values = {'content_category': dataset_short}
                     # Treat UmkehrN14 datasets as separate by level
-                    if dataset_short == 'UmkehrN14':
-                        content_level = discovery_metadata_id.split('_')[1]
-                        query_values['content_level'] = content_level
                     extents = registry.query_extents(
                         DataRecord,
                         DataRecord.timestamp_date,
@@ -368,72 +254,38 @@ def update_extents():
                     md_loads['updated'] = datetime.utcnow().strftime(
                         '%Y-%m-%dT%H:%M:%SZ'
                     )
-                    # Update levels and networks
-                    levels = registry.query_distinct_by_fields(
-                                DataRecord.content_level,
-                                DataRecord,
-                                query_values
+                    # Get distinct instruments for current level
+                    subquery = registry.query_distinct_by_fields(
+                                    DataRecord.instrument_id,
+                                    DataRecord,
+                                    query_values
                     )
-                    LOGGER.debug(f"levels: {levels}")
-                    md_loads['properties']['levels'] = []  # reset levels
-                    if 'levels' not in md_loads['properties']:
-                        # Add levels field if it does not already exist
-                        md_loads['properties']['levels'] = []
-                    for curr_level in levels:
-                        is_included = False
-                        for level in md_loads['properties']['levels']:
-                            if level['label_en'] == f'Level {curr_level}':
-                                is_included = True
-                        if not is_included:
-                            if dataset_short.startswith(('TotalOzone',
-                                                         'UmkehrN14')):
-                                label_en = 'Other'
-                            else:
-                                label_en = discovery_metadata_id
-                            # Add level item if it does not already exist
-                            md_loads['properties']['levels'].append({
-                                'label_en': f'Level {curr_level}',
-                                'networks': [{
-                                     'label_en': label_en
-                                 }]
-                            })
-                        # Get distinct instruments for current level
-                        subquery = registry.query_distinct_by_fields(
-                                       DataRecord.instrument_id,
-                                       DataRecord,
-                                       query_values
-                        )
-                        instruments = registry.query_distinct_in(
-                                       Instrument.name,
-                                       Instrument.instrument_id,
-                                       subquery
-                        )
-                        for level in md_loads['properties']['levels']:
-                            if level['label_en'] == f'Level {curr_level}':
-                                for ins in instruments:
-                                    # check if instrument concepts
-                                    #  is in metadata:
-                                    if len(md_loads["properties"]["themes"
-                                                                  ]) < 2:
-                                        ins_concept = {"concepts": []}
-                                        # link to API instruments collection
-                                        ins_concept["scheme"] = instrument_link
-                                        ins_concept["concepts"].append({
-                                            "id": ins.lower()})
-                                        md_loads["properties"][
-                                            "themes"].append(ins_concept)
-                                    else:
-                                        if {"id": ins.lower()} not in md_loads[
-                                            "properties"]["themes"][1][
-                                                "concepts"]:
-                                            ins_concept = md_loads[
-                                                "properties"]["themes"
-                                                              ][1]["concepts"]
-                                            ins_concept.append({
-                                                "id": ins.lower()})
-                                for n in level['networks']:
-                                    if 'instruments' in n.keys():
-                                        n.pop('instruments', n['instruments'])
+                    instruments = registry.query_distinct_in(
+                                    Instrument.name,
+                                    Instrument.instrument_id,
+                                    subquery
+                    )
+                    for ins in instruments:
+                        # check if instrument concepts
+                        #  is in metadata:
+                        if len(md_loads["properties"]["themes"]) < 2:
+                            ins_concept = {"concepts": []}
+                            # link to API instruments collection
+                            ins_concept["scheme"] = instrument_link
+                            ins_concept["concepts"].append({
+                                "id": ins.lower()})
+                            md_loads["properties"][
+                                "themes"].append(ins_concept)
+                        else:
+                            if {"id": ins.lower()} not in md_loads[
+                                "properties"]["themes"][1][
+                                    "concepts"]:
+                                ins_concept = md_loads[
+                                    "properties"]["themes"][1][
+                                    "concepts"]
+                                ins_concept.append({
+                                    "id": ins.lower()})
+
                     md_updated = json.dumps(md_loads)
                     # Update metadata in corresponding row
                     new_value = {'_metadata': md_updated}
@@ -442,9 +294,10 @@ def update_extents():
                       'discovery_metadata_id', discovery_metadata_id
                     )
                 else:
-                    LOGGER.warn(f"{dataset_short} does not belong in the "
-                                "dataset categories.\n"
-                                "No metadata update applied for this dataset.")
+                    LOGGER.warning(f"{dataset_short} does not belong in the "
+                                   "dataset categories.\n"
+                                   "No metadata update applied for "
+                                   "this dataset.")
 
         else:  # data products: 'ozonesonde', 'totalozone', 'uv_index_hourly'
             for (discovery_metadata_id, md) in curr_discovery_metadata:
@@ -462,10 +315,6 @@ def update_extents():
                 LOGGER.error(msg)
                 raise ValueError(msg)
             md_loads = json.loads(md.replace('\\"', '"'))
-            LOGGER.info(
-                f"Updating dataset_original: {dataset_original}\n"
-                f"inputs[input_table]['model']: {inputs[input_table]['model']}"
-            )
 
             # Update spatial/temporal extents
             extents = registry.query_extents(
@@ -486,27 +335,6 @@ def update_extents():
             md_loads['updated'] = datetime.utcnow().strftime(
                 '%Y-%m-%dT%H:%M:%SZ'
             )
-            # Update levels and networks
-            levels = inputs[input_table]['levels']
-            if 'levels' not in md_loads['properties']:
-                # Add levels field if it does not already exist
-                md_loads['properties']['levels'] = []
-
-            for curr_level in levels:
-                is_included = False
-                for level in md_loads['properties']['levels']:
-                    if level['label_en'] == f'Level {curr_level}':
-                        is_included = True
-                if not is_included:
-                    # Add level item if it does not already exist
-                    md_loads['properties']['levels'].append(
-                        {
-                          'label_en': f'Level {curr_level}',
-                          'networks': [{
-                              'label_en': inputs[input_table]['label_en']
-                          }]
-                        }
-                    )
 
             md_updated = json.dumps(md_loads)
             md_updated.replace('\\"', '"')

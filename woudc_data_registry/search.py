@@ -1336,6 +1336,11 @@ class SearchIndex(object):
         except NotFoundError:
             return None
 
+    def make_es_doc_id_lang(self, document):
+        # return {dataset}_{language}
+        return (f"{document['id'].split(':')[-1]}_"
+                f"{document['properties']['language']['code']}")
+
     def index(self, domain, target):
         """
         Index (or update if already present) one or more documents in
@@ -1363,23 +1368,31 @@ class SearchIndex(object):
                 'doc': target,
                 'doc_as_upsert': True
             }
+            doc_id = target['id']
+            if domain.__tablename__ == "discovery_metadata":
+                doc_id = self.make_es_doc_id_lang(target)
 
             LOGGER.debug(f'Indexing 1 document into {index_name}')
             self.connection.update(
                 index=index_name,
-                id=target['id'],
+                id=doc_id,
                 body=wrapper
             )
         else:
             # Index/update multiple documents using bulk API.
-            wrapper = ({
-                '_op_type': 'update',
-                '_index': index_name,
-                '_id': document['id'],
-                'doc': document,
-                'doc_as_upsert': True
-            } for document in target)
-
+            def wrapper_generator():
+                for document in target:
+                    doc_id = document['id']
+                    if domain.__tablename__ == "discovery_metadata":
+                        doc_id = self.make_es_doc_id_lang(document)
+                    yield {
+                        '_op_type': 'update',
+                        '_index': index_name,
+                        '_id': doc_id,
+                        'doc': document,
+                        'doc_as_upsert': True
+                    }
+            wrapper = wrapper_generator()
             LOGGER.debug(f'Indexing documents into {index_name}')
             try:
                 # Perform the bulk operation
