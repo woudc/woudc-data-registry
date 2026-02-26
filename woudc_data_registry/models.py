@@ -441,7 +441,10 @@ class DiscoveryMetadata(base):
     _metadata = Column(String, nullable=False)
 
     def __init__(self, dict_):
-        self.discovery_metadata_id = dict_['id']
+        dataset = dict_['id'].split(":")[-1]
+        self.discovery_metadata_id = (
+            f"{dataset}"
+            f"_{dict_['properties']['language']['code']}")
         self._metadata = json.dumps(dict_)
 
     @property
@@ -2554,22 +2557,23 @@ def init(ctx, datadir, init_search_index, verbosity):
             filepath = os.path.join(discovery_metadata, filename)
             yamldict = read_mcf(filepath)
             identifier = yamldict['metadata']['identifier']
-            yamldict['metadata']['identifier'] = (
-                f'{identifier}_en'
-            )
+            yamldict['metadata']['identifier'] = ("urn:wmo:md:org-woudc:"
+                                                  f"{identifier}")
             wmo_wcmp2_os = WMOWCMP2OutputSchema()
             jsondict = wmo_wcmp2_os.write(yamldict, stringify=False)
             jsondict['properties']['woudc:content_category'] = (
                 f'urn:wmo:md:org-woudc:{identifier}'
             )
+            atmospheric = {"title": "Atmospheric Composition",
+                           "description": "Atmospheric Composition",
+                           "url": "http://codes.wmo.int/wis/topic-hierarchy/earth-system-discipline/atmospheric-composition"  # noqa: E501
+                           }
+            jsondict['properties']['themes'][0][
+                'concepts'][0].update(atmospheric)
             discovery_metadata_ = DiscoveryMetadata(jsondict)
             discovery_metadata_models.append(discovery_metadata_)
 
             yamldict_fr = copy.deepcopy(yamldict)
-            base_identifier = yamldict['metadata']['identifier']
-            yamldict_fr['metadata']['identifier'] = (
-                base_identifier.replace('_en', '_fr')
-            )
             yamldict_fr['metadata']['language'] = 'fr'
             yamldict_fr['metadata']['language_alternate'] = 'en'
 
