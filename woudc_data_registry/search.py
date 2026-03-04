@@ -221,14 +221,41 @@ MAPPINGS_ALL = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'abstract': {
+            'title': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'dataset_snapshots': dataset_links,
-            'keywords': {
+            'description': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
+            },
+            'themes': {
+                'type': 'nested',
+                'properties': {
+                    'scheme': {'type': 'keyword'},
+                    'concepts': {
+                        'type': 'nested',
+                        'properties': {
+                            'id': {'type': 'keyword'},
+                            'title': {
+                                'type': 'text',
+                                'fields': {
+                                    'raw': {'type': 'keyword'}
+                                }
+                            },
+                            'description': {'type': 'text'},
+                            'url': {'type': 'keyword'}
+                        }
+                    }
+                }
+            },
+            'type': {'type': 'keyword'},
+            'externalIds': {
+                'type': 'nested',
+                'properties': {
+                    'scheme': {'type': 'keyword'},
+                    'value': {'type': 'keyword'}
+                }
             },
             'language': {
                 'type': 'object',
@@ -236,68 +263,49 @@ MAPPINGS_ALL = {
                     'code': {'type': 'keyword'}
                 }
             },
-            'woudc:content_category': {
+            'created': {
+                'type': 'date',
+                'format': 'date_time_no_millis'
+            },
+            'updated': {
+                'type': 'date',
+                'format': 'date_time_no_millis'
+            },
+            'rights': {'type': 'text'},
+            'keywords': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'levels': {
-                'type': 'nested',
-                'properties': {
-                    'label': {
-                        'type': 'text',
-                        'fields': {'raw': typedefs['keyword']}
-                    },
-                    'networks': {
-                        'type': 'nested',
-                        'properties': {
-                            'instruments': {
-                                'type': 'text',
-                                'fields': {'raw': typedefs['keyword']}
-                            },
-                            'label': {
-                                'type': 'text',
-                                'fields': {'raw': typedefs['keyword']}
-                            }
-                        }
-                    }
-                }
-            },
-            'search': dataset_links,
-            'spatial_extent': {
-                'type': 'long',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'temporal_begin': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'temporal_end': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'title': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'topic_category': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'uri': {
-                'type': 'text',
-                'fields': {'raw': typedefs['keyword']}
-            },
-            'waf': dataset_links,
-            'wfs': dataset_links,
-            'wms': dataset_links,
+            'version': {'type': 'keyword'},
+            'wmo:dataPolicy': {'type': 'keyword'}
+        },
+        # Custom mappings for pygeometa WCMP2 schema
+        'conformsTo': {'type': 'keyword'},
+        'type': {'type': 'keyword'},
+        'links': {
+            'type': 'nested',
+            'properties': {
+                'rel':    {'type': 'keyword'},
+                'href':   {'type': 'keyword'},
+                'type':   {'type': 'keyword'},
+                'title':  {
+                    'type': 'text',
+                    'fields': {'raw': typedefs['keyword']}
+                },
+                'channel': {'type': 'keyword'}
+            }
         },
         'time': {
             'properties': {
                 'interval': {
                     'type': 'keyword'
+                },
+                'resolution': {
+                    'type': 'keyword'
                 }
             }
-        }
+        },
+        'generated_by': {'type': 'keyword'}
     },
     'stations': {
         'index': 'station',
@@ -1217,8 +1225,13 @@ class SearchIndex(object):
                     'properties': definition['properties']
                 }
 
-            if 'time' in definition:
-                settings['mappings']['properties']['time'] = definition['time']
+            # For additional higher level mappings for discovery_metadata
+            if (definition['index'] == 'discovery_metadata'):
+                for fld in ('time', 'generated_by', 'links',
+                            'conformsTo', 'type'):
+                    if fld in definition:
+                        properties = settings['mappings']['properties']
+                        properties[fld] = definition[fld]
 
             try:
                 self.connection.indices.create(index=index_name, body=settings)

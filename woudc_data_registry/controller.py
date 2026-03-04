@@ -388,13 +388,14 @@ def gather(ctx, path, verbosity):
                   'E.g. Contributor,Deployment,Station,Instrument'),
               is_flag=False)
 def update_date_ranges(cntx, models, verbosity):
-    """ update the start and end dates of the contributors, instruments,
+    """ Update the start and end dates of the contributors, instruments,
         stations, and deployments table from all data submissions"""
     if models is not None:  # update the specified tables
         tables = [model.strip() for model in models.split(',')]
         update_date_submission_ranges(tables)
     else:
         update_date_submission_ranges()
+        update_extents()  # update discovery metadata date ranges as well
 
 
 data.add_command(ingest)

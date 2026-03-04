@@ -75,7 +75,7 @@ woudc-data-registry admin config --verbosity DEBUG
 # initialize model (database tables)
 woudc-data-registry admin registry setup
 # optional: initialize specific models only in comma seperated format. e.g.
-woudc-data-registry admin registry setup -m ""DiscoveryMetadata,DataRecord""
+woudc-data-registry admin registry setup -m "DiscoveryMetadata,DataRecord"
 
 # initialize search engine
 woudc-data-registry admin search setup

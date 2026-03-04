@@ -1939,8 +1939,8 @@ class StationDobsonCorrections(base):
         self.AD_correcting_source = dict_['AD_correcting_source']
         self.CD_correcting_source = dict_['CD_correcting_source']
         self.CD_correcting_factor = dict_['CD_correcting_factor']
-        self.correction_status = dict_['correction_status']
-        self.correction_comments = dict_['correction_comments']
+        # self.correction_status = dict_['correction_status']
+        # self.correction_comments = dict_['correction_comments']
 
         self.generate_ids()
 
@@ -1958,8 +1958,8 @@ class StationDobsonCorrections(base):
                 'CD_corrected': self.CD_corrected,
                 'AD_correcting_source': self.AD_correcting_source,
                 'CD_correcting_source': self.CD_correcting_source,
-                'CD_correcting_factor': self.CD_correcting_factor,
-                'correction_comments': self.correction_comments
+                'CD_correcting_factor': self.CD_correcting_factor
+                # 'correction_comments': self.correction_comments
             }
         }
 
@@ -2326,8 +2326,8 @@ def setup_dobson_correction(ctx, datadir, verbosity):
             temp['CD_corrected'] = True
             temp['AD_correcting_source'] = 'ECCC'
             temp['CD_correcting_source'] = row['Processing group']
-            temp['correction_status'] = row['Correction Status']
-            temp['correction_comments'] = row['special comments']
+            # temp['correction_status'] = row['Correction Status']
+            # temp['correction_comments'] = row['special comments']
             if row['CD-bias corrected'] == 'TRUE':
                 temp['CD_correcting_factor'] = 'AD'
             elif row['CD-bias corrected'] == 'FALSE':
@@ -2560,24 +2560,29 @@ def init(ctx, datadir, init_search_index, verbosity):
             yamldict['metadata']['identifier'] = ("urn:wmo:md:org-woudc:"
                                                   f"{identifier}")
             wmo_wcmp2_os = WMOWCMP2OutputSchema()
-            jsondict = wmo_wcmp2_os.write(yamldict, stringify=False)
-            jsondict['properties']['woudc:content_category'] = (
-                f'urn:wmo:md:org-woudc:{identifier}'
-            )
+            jsondict_en = wmo_wcmp2_os.write(yamldict, stringify=False)
+            # Add in atmospheric composition
             atmospheric = {"title": "Atmospheric Composition",
                            "description": "Atmospheric Composition",
                            "url": "http://codes.wmo.int/wis/topic-hierarchy/earth-system-discipline/atmospheric-composition"  # noqa: E501
                            }
-            jsondict['properties']['themes'][0][
+            jsondict_en['properties']['themes'][0][
                 'concepts'][0].update(atmospheric)
-            discovery_metadata_ = DiscoveryMetadata(jsondict)
-            discovery_metadata_models.append(discovery_metadata_)
+            # Add in properties.updated (to be updated by update_extents)
+            jsondict_en['properties']['updated'] = '2025-05-01T00:00:00Z'
+            discovery_metadata_en = DiscoveryMetadata(jsondict_en)
+            discovery_metadata_models.append(discovery_metadata_en)
 
             yamldict_fr = copy.deepcopy(yamldict)
             yamldict_fr['metadata']['language'] = 'fr'
             yamldict_fr['metadata']['language_alternate'] = 'en'
 
             jsondict_fr = wmo_wcmp2_os.write(yamldict_fr, stringify=False)
+            # Add in atmospheric composition
+            jsondict_fr['properties']['themes'][0][
+                'concepts'][0].update(atmospheric)
+            # Add in properties.updated (to be updated by update_extents)
+            jsondict_fr['properties']['updated'] = '2025-05-01T00:00:00Z'
             discovery_metadata_fr = DiscoveryMetadata(jsondict_fr)
             discovery_metadata_models.append(discovery_metadata_fr)
 
@@ -2592,8 +2597,8 @@ def init(ctx, datadir, init_search_index, verbosity):
                 temp['CD_corrected'] = True
                 temp['AD_correcting_source'] = 'ECCC'
                 temp['CD_correcting_source'] = row['Processing group']
-                temp['correction_status'] = row['Correction Status']
-                temp['correction_comments'] = row['special comments']
+                # temp['correction_status'] = row['Correction Status']
+                # temp['correction_comments'] = row['special comments']
                 if row['CD-bias corrected'] == 'TRUE':
                     temp['CD_correcting_factor'] = 'AD'
                 if row['CD-bias corrected'] == 'FALSE':
