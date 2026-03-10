@@ -95,23 +95,14 @@ contact:
 distribution:
     waf_level_2.0_1:
         url: https://woudc.org/archive/Archive-NewFormat/UmkehrN14_2.0_1
-        type: text/csv
-        rel: items
-        name: Web Accessible Folder (WAF)
-        description:
-            en: Web Accessible Folder (WAF)
-            fr: Web Accessible Folder (WAF)
-
-    dataset-information:
-        url: https://woudc.org/en/data/dataset-information/umkehrn14_2
         type: text/html
         rel: canonical
         name:
-            en: *title_en
-            fr: *title_fr
+            en: &waf2_en Web Accessible Folder (WAF) level 2.0
+            fr: &waf2_fr Dossier accessible sur le web (WAF) niveau 2.0
         description:
-            en: *abstract_en
-            fr: *abstract_fr
+            en: *waf2_en
+            fr: *waf2_fr
 
     mqtt:
         url: mqtts://everyone:everyone@broker.woudc.org:8883
@@ -119,8 +110,8 @@ distribution:
         rel: items
         channel: origin/a/wis2/org-woudc/data/core/atmospheric-composition/experimental/observations/gases/ozone
         name:
-            en: *title_en
-            fr: *title_fr
+            en: &mqtt_en Data notifications
+            fr: &mqtt_fr Notifcations de données
         description:
-            en: *abstract_en
-            fr: *abstract_fr
+            en: *mqtt_en
+            fr: *mqtt_fr

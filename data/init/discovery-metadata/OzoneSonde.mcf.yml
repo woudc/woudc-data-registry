@@ -37,10 +37,14 @@ identification:
                     - ozone
                     - ozonesonde
                     - level 1.0
+                    - form 1
+                    - form 2
                 fr:
                     - ozone
                     - sonde pour l'ozone
                     - niveau 1.0
+                    - forme 1
+                    - forme 2
         wmo:
             keywords:
                 - atmospheric-composition
@@ -54,7 +58,7 @@ identification:
         spatial:
             - bbox: [-180,-90,180,90]
               crs: 4326
-        temporal: # extent.time
+        temporal:
             - begin: 1924-08-18
               end: 
               resolution: P1D
@@ -87,37 +91,30 @@ contact:
 distribution:
     waf_level_1.0_1:
         url: https://woudc.org/archive/Archive-NewFormat/OzoneSonde_1.0_1/
-        type: text/csv
-        rel: items
-        name: Web Accessible Folder (WAF)
-        description:
-            en: Web Accessible Folder (WAF)
-            fr: Web Accessible Folder (WAF)
-
-    waf_level_1.0_2:
-        url: https://woudc.org/archive/Archive-NewFormat/OzoneSonde_1.0_2/
-        type: text/csv
-        rel: items
-        name: Web Accessible Folder (WAF)
-        description:
-            en: Web Accessible Folder (WAF)
-            fr: Web Accessible Folder (WAF)
-
-    dataset-information:
-        url: https://woudc.org/en/data/dataset-information/ozonesonde
         type: text/html
         rel: canonical
         name:
-            en: *title_en
-            fr: *title_fr
+            en: &waf1_en Web Accessible Folder (WAF) level 1.0 form 1
+            fr: &waf1_fr Dossier accessible sur le web (WAF) niveau 1.0 forme 1
         description:
-            en: *abstract_en
-            fr: *abstract_fr
+            en: *waf1_en
+            fr: *waf1_fr
+
+    waf_level_1.0_2:
+        url: https://woudc.org/archive/Archive-NewFormat/OzoneSonde_1.0_2/
+        type: text/html
+        rel: canonical
+        name:
+            en: &waf1_1_en Web Accessible Folder (WAF) level 1.0 form 2
+            fr: &waf1_1_fr Dossier accessible sur le web (WAF) niveau 1.0 forme 2
+        description:
+            en: *waf1_1_en
+            fr: *waf1_1_fr
 
     api:
-        url: https://api.woudc.org/collections/ozonesonde/items
-        type: application/geo+json
-        rel: items
+        url: https://api.woudc.org/collections/ozonesonde
+        type: application/json
+        rel: collection
         name:
             en: *title_en
             fr: *title_fr
@@ -131,8 +128,8 @@ distribution:
         rel: items
         channel: origin/a/wis2/org-woudc/data/core/atmospheric-composition/experimental/observations/gases/ozone
         name:
-            en: *title_en
-            fr: *title_fr
+            en: &mqtt_en Data notifications
+            fr: &mqtt_fr Notifcations de données
         description:
-            en: *abstract_en
-            fr: *abstract_fr
+            en: *mqtt_en
+            fr: *mqtt_fr

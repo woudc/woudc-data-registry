@@ -65,7 +65,7 @@ identification:
         spatial: # fixed
             - bbox: [-180,-90,180,90]
               crs: 4326
-        temporal: # extent.time
+        temporal:
             - begin: 1924-08-18
               end: 
               resolution: P1D
@@ -99,23 +99,14 @@ contact: # fixed
 distribution:
     waf: # From https://woudc.org/archive/Archive-NewFormat/
         url: https://woudc.org/archive/Archive-NewFormat/TotalOzone_1.0_1
-        type: text/csv
-        rel: items
-        name: Web Accessible Folder (WAF)
-        description:
-            en: Web Accessible Folder (WAF)
-            fr: Web Accessible Folder (WAF)
-
-    dataset-information:
-        url: https://woudc.org/en/data/dataset-information/totalozone
         type: text/html
         rel: canonical
         name:
-            en: *title_en
-            fr: *title_fr
+            en: &waf1_en Web Accessible Folder (WAF) level 1.0
+            fr: &waf1_fr Dossier accessible sur le web (WAF) niveau 1.0
         description:
-            en: *abstract_en
-            fr: *abstract_fr
+            en: *waf1_en
+            fr: *waf1_fr
 
     mqtt:
         url: mqtts://everyone:everyone@broker.woudc.org:8883
@@ -127,21 +118,21 @@ distribution:
         # elif uv
         #channel: origin/a/wis2/org-woudc/data/core/atmospheric-composition/experimental/observations/radiation-latent-heat/ultraviolet-radiation
         name:
+            en: &mqtt_en Data notifications
+            fr: &mqtt_fr Notifcations de données
+        description:
+            en: *mqtt_en
+            fr: *mqtt_fr
+
+    ## if dataset is totalozone, ozonesonde, or uv_index_hourly
+    ## add a link for the API collection items (replacing {collectionId}) accordingly
+    api:
+        url: https://api.woudc.org/collections/{collectionId}
+        type: application/json
+        rel: collection
+        name:
             en: *title_en
             fr: *title_fr
         description:
             en: *abstract_en
             fr: *abstract_fr
-
-    ## if dataset is totalozone, ozonesonde, or uv_index_hourly
-    ## add a link for the API collection items (replacing {collectionId}) accordingly
-    #api:
-    #    url: https://api.woudc.org/collections/{collectionId}
-    #    type: application/geo+json
-    #    rel: items
-    #    name:
-    #        en: *title_en
-    #        fr: *title_fr
-    #    description:
-    #        en: *abstract_en
-    #        fr: *abstract_fr

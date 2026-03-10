@@ -126,8 +126,10 @@ class Registry(object):
         conditions = []
         target_fields = values.keys()
 
-        LOGGER.debug(f'Querying distinct values \
-            by fields {target_fields} for {domain}')
+        LOGGER.debug(
+            'Querying distinct values '
+            f'by fields {target_fields} for {domain}'
+        )
 
         for field in target_fields:
             table_field = getattr(obj, field)
@@ -178,10 +180,12 @@ class Registry(object):
         field = getattr(obj, by)
 
         if case_insensitive:
-            LOGGER.debug(f'Querying for LOWER({field}) = LOWER({value})')
+            LOGGER.debug(
+                f'Querying by field for LOWER({field}) = LOWER({value})'
+            )
             condition = func.lower(field) == value.lower()
         else:
-            LOGGER.debug(f'Querying for {field} = {value}')
+            LOGGER.debug(f'Querying by field for {field} = {value}')
             condition = field == value
 
         return self.session.query(obj).filter(condition).first()
@@ -213,15 +217,17 @@ class Registry(object):
                         func.lower(table_field) == field_value.lower()
                     )
                     LOGGER.debug(
-                        f'Querying for LOWER({field_name}) = '
+                        f'Querying extents for LOWER({field_name}) = '
                         f'LOWER({field_value})'
                     )
                 else:
                     condition = table_field == field_value
                     LOGGER.debug(
-                        f'Querying for {field_name} = {field_value}'
+                        f'Querying extents for {field_name} = {field_value}'
                     )
                 conditions.append(condition)
+        else:
+            LOGGER.debug(f'Querying extents for all of {obj}')
 
         query = self.session.query(
             func.min(date_domain),
@@ -261,10 +267,10 @@ class Registry(object):
         field = getattr(obj, by)
 
         if case_insensitive:
-            LOGGER.debug(f'Querying for LOWER({field}) LIKE {pattern.lower()}')  # noqa
+            LOGGER.debug(f'Querying by pattern for LOWER({field}) LIKE {pattern.lower()}')  # noqa
             condition = func.lower(field).like(pattern.lower())
         else:
-            LOGGER.debug(f'Querying for {field} LIKE {pattern}')
+            LOGGER.debug(f'Querying by pattern for {field} LIKE {pattern}')
             condition = field.like(pattern)
 
         return self.session.query(obj).filter(condition).first()
@@ -339,10 +345,12 @@ class Registry(object):
         field = getattr(obj, by)
 
         if case_insensitive:
-            LOGGER.debug(f'Querying for LOWER({field}) = LOWER({value})')
+            LOGGER.debug(
+                f'Updating by field for LOWER({field}) = LOWER({value})'
+            )
             condition = func.lower(field) == value.lower()
         else:
-            LOGGER.debug(f'Querying for {field} = {value}')
+            LOGGER.debug(f'Updating by field for {field} = {value}')
             condition = field == value
 
         self.session.query(obj).filter(condition).update(new_value)

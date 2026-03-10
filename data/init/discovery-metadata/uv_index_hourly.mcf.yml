@@ -92,21 +92,10 @@ contact:
         contactinstructions: email
 
 distribution:
-    dataset-information:
-        url: https://woudc.org/en/data/dataset-information/uv_index_hourly
-        type: text/html
-        rel: canonical
-        name:
-            en: *title_en
-            fr: *title_fr
-        description:
-            en: *abstract_en
-            fr: *abstract_fr
-
     api:
-        url: https://api.woudc.org/collections/uv_index_hourly/items
-        type: application/geo+json
-        rel: items
+        url: https://api.woudc.org/collections/uv_index_hourly
+        type: application/json
+        rel: collection
         name:
             en: *title_en
             fr: *title_fr
@@ -120,8 +109,8 @@ distribution:
         rel: items
         channel: origin/a/wis2/org-woudc/data/core/atmospheric-composition/experimental/observations/radiation-latent-heat/ultraviolet-radiation
         name:
-            en: *title_en
-            fr: *title_fr
+            en: &mqtt_en Data notifications
+            fr: &mqtt_fr Notifcations de données
         description:
-            en: *abstract_en
-            fr: *abstract_fr
+            en: *mqtt_en
+            fr: *mqtt_fr

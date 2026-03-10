@@ -161,7 +161,8 @@ def generate_metadata(woudc_yaml):
 
 def update_extents():
     """
-    Update metadata for each row in DiscoveryMetadata table
+    Update metadata for each row in DiscoveryMetadata table including
+    the spatial extents, time interval, instrument names and update time
 
     :returns: void
     """
@@ -177,7 +178,7 @@ def update_extents():
       woudc_data_registry.models.Instrument
     ]
 
-    inputs = {
+    data_products = {
         'ozonesonde': {
             'content_category': 'OzoneSonde',
             'ins_id': OzoneSonde.instrument_id,
@@ -214,25 +215,33 @@ def update_extents():
                                     curr_dataset._metadata)]
     LOGGER.debug('Updating Discovery Metadata table...')
     tables = ['ozonesonde', 'totalozone', 'uv_index_hourly', 'data_records']
+    categories = registry.query_distinct(DataRecord.content_category)
 
     for input_table in tables:
         if input_table == 'data_records':  # update all other datasets
-            # Select data records content categories
-            categories = registry.query_distinct(DataRecord.content_category)
             LOGGER.debug(
                 f"Categories to update discovery metadata: {categories}"
             )
-            # Loop through each dataset and update the GeoJSON metadata
+            # Loop through each DM dataset and update the
+            # spatial extents, time interval, instruments and updated time
             for (discovery_metadata_id, md) in curr_discovery_metadata:
                 LOGGER.info(
                     f"Updating discovery metadata for {discovery_metadata_id}"
+                    f" from {input_table}"
+                )
+                updated_datetime = datetime.utcnow().strftime(
+                    '%Y-%m-%dT%H:%M:%SZ'
                 )
                 md_loads = json.loads(md.replace('\\"', '"'))
                 dataset_short = discovery_metadata_id.split('_')[0]
                 LOGGER.debug(f"dataset_short: {dataset_short}")
                 if dataset_short in categories:
                     query_values = {'content_category': dataset_short}
-                    # Treat UmkehrN14 datasets as separate by level
+                    # UmkehrN14 datasets need to separate by level
+                    if (dataset_short == 'UmkehrN14'):
+                        level = discovery_metadata_id.split('_')[1]
+                        LOGGER.debug(f"UmkehrN14 level: {level}")
+                        query_values['content_level'] = level
                     extents = registry.query_extents(
                         DataRecord,
                         DataRecord.timestamp_date,
@@ -251,9 +260,7 @@ def update_extents():
                     md_loads['time']['interval'] = [str(extents[0]),
                                                     str(extents[1])]
                     # Update 'updated' datetime
-                    md_loads['updated'] = datetime.utcnow().strftime(
-                        '%Y-%m-%dT%H:%M:%SZ'
-                    )
+                    md_loads['properties']['updated'] = updated_datetime
                     # Get distinct instruments for current level
                     subquery = registry.query_distinct_by_fields(
                                     DataRecord.instrument_id,
@@ -266,8 +273,7 @@ def update_extents():
                                     subquery
                     )
                     for ins in instruments:
-                        # check if instrument concepts
-                        #  is in metadata:
+                        # check if instrument concepts is in metadata:
                         if len(md_loads["properties"]["themes"]) < 2:
                             ins_concept = {"concepts": []}
                             # link to API instruments collection
@@ -287,38 +293,47 @@ def update_extents():
                                     "id": ins.lower()})
 
                     md_updated = json.dumps(md_loads)
-                    # Update metadata in corresponding row
                     new_value = {'_metadata': md_updated}
                     registry.update_by_field(
-                      new_value, DiscoveryMetadata,
-                      'discovery_metadata_id', discovery_metadata_id
+                        new_value, DiscoveryMetadata,
+                        'discovery_metadata_id', discovery_metadata_id
                     )
                 else:
                     LOGGER.warning(f"{dataset_short} does not belong in the "
-                                   "dataset categories.\n"
-                                   "No metadata update applied for "
+                                   "dataset categories. "
+                                   "No discovery metadata update applied for "
                                    "this dataset.")
 
         else:  # data products: 'ozonesonde', 'totalozone', 'uv_index_hourly'
             for (discovery_metadata_id, md) in curr_discovery_metadata:
-                dataset_original = '_'.join(
-                    discovery_metadata_id.split('_')[:-1]
-                )
-                if dataset_original == inputs[input_table]['content_category']:
+                dataset_original = discovery_metadata_id.rsplit('_', 1)[0]
+                if (
+                    dataset_original ==
+                    data_products[input_table]['content_category']
+                ):
+                    LOGGER.debug(
+                        "This discovery metadata dataset is a data product: "
+                        f"{dataset_original}"
+                    )
                     break
             else:
                 msg = (
                     "DiscoveryMetadata table does not contain this dataset: "
-                    f"{inputs[input_table]['content_category']}. "
+                    f"{data_products[input_table]['content_category']}. "
                     "Did you forget to initialize the database with data?"
                 )
                 LOGGER.error(msg)
                 raise ValueError(msg)
             md_loads = json.loads(md.replace('\\"', '"'))
 
+            LOGGER.info(
+                f"Updating discovery metadata for {discovery_metadata_id} "
+                f"from data product: {input_table}"
+            )
             # Update spatial/temporal extents
             extents = registry.query_extents(
-               inputs[input_table]['model'], inputs[input_table]['date_field']
+               data_products[input_table]['model'],
+               data_products[input_table]['date_field']
             )[0]
             md_loads['geometry'] = {
                 'type': 'Polygon',
@@ -332,13 +347,13 @@ def update_extents():
             }
             md_loads['time']['interval'] = [str(extents[0]), str(extents[1])]
             # Update 'updated' datetime
-            md_loads['updated'] = datetime.utcnow().strftime(
+            updated_datetime = datetime.utcnow().strftime(
                 '%Y-%m-%dT%H:%M:%SZ'
             )
+            md_loads['properties']['updated'] = updated_datetime
 
             md_updated = json.dumps(md_loads)
             md_updated.replace('\\"', '"')
-            # Update metadata in corresponding row
             new_value = {'_metadata': md_updated}
             registry.update_by_field(
                 new_value, DiscoveryMetadata,
