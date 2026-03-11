@@ -233,8 +233,9 @@ def data():
               help='Path to main output directory for logs and reports')
 @click.option('--lax', '-l', 'lax', is_flag=True,
               help='Only validate core metadata tables')
-@click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
-              help='Bypass permission prompts while ingesting')
+@click.option('--yes', '-y', 'bypass', type=str, is_flag=False, default=False,
+              help='list of models to bypass permission prompts for '
+              'while ingesting')
 def ingest(ctx, source, reports_dir, lax, bypass, verbosity):
     """ingest a single data submission or directory of files"""
 
@@ -250,8 +251,9 @@ def ingest(ctx, source, reports_dir, lax, bypass, verbosity):
                                           dir_okay=True, file_okay=True))
 @click.option('--lax', '-l', 'lax', is_flag=True,
               help='Only validate core metadata tables')
-@click.option('--yes', '-y', 'bypass', is_flag=True, default=False,
-              help='Bypass permission prompts while ingesting')
+@click.option('--yes', '-y', 'bypass', type=str, is_flag=False, default=False,
+              help='list of models to bypass permission prompts for '
+              'while ingesting')
 def verify(ctx, source, lax, bypass, verbosity):
     """verify a single data submission or directory of files"""
 
