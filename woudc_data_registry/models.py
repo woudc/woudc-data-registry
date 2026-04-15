@@ -2750,7 +2750,10 @@ def backup(ctx, datadir):
 @click.pass_context
 @cli_options.OPTION_VERBOSITY
 @click.option('--models', '-m', help='class to sync', is_flag=False)
-def sync(ctx, models, verbosity):
+@click.option('--clear-index', '-c', is_flag=True,
+              help='Delete all documents in search indices (unless models is'
+              'specified, then only clear indices in models) before syncing')
+def sync(ctx, models, clear_index, verbosity):
     """Sync search index with data registry"""
     # want to add an option to specify the class to sync
     model_classes = []
@@ -2805,6 +2808,12 @@ def sync(ctx, models, verbosity):
             continue
 
         click.echo(f'{plural_caps}...')
+
+        # check if we want to clear index first
+        if clear_index:
+            click.echo(f"Clearing search index for {plural_name}")
+            search_index.clear(plural_name)
+
         if plural_caps == 'DataRecords':
             capacity = 10000
             for obj in registry_.session.query(clazz).yield_per(1):
@@ -2839,7 +2848,11 @@ def sync(ctx, models, verbosity):
 @click.pass_context
 @cli_options.OPTION_VERBOSITY
 @click.option('--models', '-m', help='class to sync', is_flag=False)
-def product_sync(ctx, models, verbosity):
+@click.option('--clear-index', '-c', is_flag=True,
+              help='Delete all documents in product search indices (unless'
+              'models is specified, then only clear product indices in models)'
+              'before syncing')
+def product_sync(ctx, models, clear_index, verbosity):
     """Sync products to Elasticsearch"""
 
     products = []
@@ -2887,6 +2900,11 @@ def product_sync(ctx, models, verbosity):
             continue  # Skip to the next product in the loop
 
         click.echo(f'{plural_caps}...')
+
+        # check if we want to clear index first
+        if clear_index:
+            click.echo(f"Clearing search indexes for {plural_name}")
+            search_index.clear(plural_name)
 
         registry_contents = []
         # Sync product to elasticsearch
