@@ -1331,6 +1331,78 @@ class SearchIndex(object):
                     f"index '{index_name}': {err}"
                 )
 
+    def clear(self, model):
+        """
+        clear search indexes
+
+        :param model: table name of the index to clear
+        """
+
+        large_indices = ['data_records', 'uv_index_hourly',
+                         'totalozone', 'ozonesonde']
+
+        search_index_config = config.EXTRAS.get('search_index', {})
+
+        MAPPINGS_FILTERED = {}
+
+        if model is not None and model in MAPPINGS_ALL:
+            MAPPINGS_FILTERED = {model: MAPPINGS_ALL[model]}
+        else:  # clear all models
+            MAPPINGS_FILTERED = deepcopy(MAPPINGS_ALL)
+
+        # Skip indexes that have been manually disabled.
+        enabled_flag = f'{model}_enabled'
+        if not search_index_config.get(enabled_flag, True):
+            return None
+
+        index_name = self.generate_index_name(MAPPINGS_FILTERED[model][
+            'index'])
+
+        try:
+            LOGGER.info(f'deleting documents from index: {index_name}')
+            if model in large_indices:
+                # too big to clear index, teardown + setup
+                self.delete([model])
+                self.create([model])
+            else:
+                self.connection.delete_by_query(index=index_name,
+                                                body={"query": {
+                                                    "match_all": {}}},
+                                                slices="auto",
+                                                wait_for_completion=True)
+            # to display the number of docs deleted on ES
+            self.connection.indices.refresh(index=index_name)
+        except NotFoundError as err:
+            msg = (
+                f"Index '{index_name}' not found. Skipping document"
+                "deletion.\n"
+                f"{err}"
+            )
+            LOGGER.warning(msg)
+            click.echo(msg)
+
+        except TlsError as err:
+            LOGGER.error(
+                "TLS error occurred while trying to delete "
+                f"index '{index_name}': {err}"
+            )
+            raise SearchIndexError(
+                "TLS error while clearing documents "
+                f"index '{index_name}': {err}.\n"
+                "Check your SSL certificates or set "
+                "WDR_SEARCH_CERT_VERIFY=False if "
+                "connecting to an internal dev server."
+            )
+        except Exception as err:
+            LOGGER.error(
+                "Unexpected error occurred while clearing documents "
+                f"index '{index_name}': {err}"
+            )
+            raise SearchIndexError(
+                "Unexpected error while clearing documents "
+                f"index '{index_name}': {err}"
+            )
+
     def get_record_version(self, identifier):
         """
         get version of data record
