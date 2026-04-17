@@ -1,9 +1,9 @@
 Dear WOUDC Data Contributor,
 
 This message is from WOUDC (World Ozone and Ultraviolet Radiation Data Centre) to inform you of the status of your recent data submission.
-Data submissions now require the content, data generation, platform, instrument and location metadata to exactly match our metadata information for the data to be properly identified and processed into the database.  
+Data submissions now require the content, data generation, platform, instrument and location metadata to exactly match our metadata information for the data to be properly identified and processed into the database.
 
-Where possible, your submitted files have been manually repaired to contain the correct metadata information and resubmitted on your behalf.  You do not need to resubmit the files, but please update your procedures to use the correct metadata for all future submissions.  (Detailed data submission requirements are here: https://guide.woudc.org/en/#chapter-3-standard-data-format).
+$MANUALLY_REPAIRED
 
 For future submissions, you can validate your data using the WOUDC validator tool: https://woudc.org/en/contributors/validation
 We recommend that you fix all warnings and errors raised by the validation tool. This will reduce the amount of files that we will need to manually repair or fail.

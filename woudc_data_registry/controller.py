@@ -335,6 +335,17 @@ def send_feedback(ctx, failed_files, test, ops, verbosity):
         specific_message = message.replace(
             "$EMAIL_SUMMARY", "\n".join(contributor[1:]))
         specific_subject = subject.replace('contributor_acronym', acronym)
+        # check if contributors had manually repaired files
+        num_corrected = contributor[3].split(':')
+        if num_corrected[1].strip() != '0':  # file repaired
+            with open(config.WDR_FEEDBACK_MANUALLY_REPAIRED_TEMPLATE_PATH, 'r'
+                      ) as file2:
+                manually_repaired_msg = file2.read()
+            specific_message = specific_message.replace(
+                "$MANUALLY_REPAIRED", manually_repaired_msg)
+        else:  # no corrections
+            specific_message = specific_message.replace(
+                "\n$MANUALLY_REPAIRED\n", "")
 
         if test:
             to_email_addresses = config.WDR_EMAIL_TO.split(",")
