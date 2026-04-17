@@ -1,0 +1,1 @@
+Note: Your submitted files have been manually repaired by WOUDC to contain the correct metadata information and resubmitted on your behalf.  You do not need to resubmit the files, but please update your procedures to use the correct metadata for all future submissions.  (Detailed data submission requirements are here: https://guide.woudc.org/en/#chapter-3-standard-data-format).
