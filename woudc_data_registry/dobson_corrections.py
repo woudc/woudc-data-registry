@@ -285,9 +285,6 @@ def correct_file(csv_file, csv_content, code, mode):
     # find correction status
     # using registry:
     registry = Registry()
-    correction_status = (registry.query_by_field(
-        StationDobsonCorrections, 'station_id', station_id.zfill(3))
-        ).correction_status
 
     try:
         dat_file_path = find_dat_file(station_id.lstrip('0'))
@@ -334,9 +331,9 @@ def correct_file(csv_file, csv_content, code, mode):
             # AD_source = dobson_correction.AD_correcting_source
             # CD_source = dobson_correction.CD_correcting_source
             CD_correcting_factor = dobson_correction.CD_correcting_factor
+            apply_AD_on_null = dobson_correction.apply_AD_on_null
         correct_AD = (code in ['AD', None])
-        correct_CD = (code in ['CD', None] and correction_status.lower() in [
-            'yellow', 'green'])
+        correct_CD = (code in ['CD', None])
         registry.close_session()
 
         # Go through each line in the DAILY table
@@ -378,14 +375,12 @@ def correct_file(csv_file, csv_content, code, mode):
             teff_climate = ''
 
             # Get the correcting coefficient and corrected the columnO3
-            if (wlcode in [0, 4, 'AD'] and correct_AD and
-                    (code is None or code == 'AD')):
+            if (wlcode in [0, 4, 'AD'] and correct_AD):
                 Coeff, teff_climate = get_correct_factor(
                     dat_file, 'AD', day_of_year
                 )
                 correction_factor = 'AD'
-            if (wlcode in [2, 6, 'CD'] and correct_CD and
-                    (code is None or code == 'CD')):
+            if (wlcode in [2, 6, 'CD'] and correct_CD):
                 if CD_correcting_factor == 'CD':
                     Coeff, teff_climate = get_correct_factor(
                         dat_file, 'CD', day_of_year
@@ -396,6 +391,11 @@ def correct_file(csv_file, csv_content, code, mode):
                         dat_file, 'AD', day_of_year
                     )
                     correction_factor = 'AD'
+            if (wlcode in ['', None] and apply_AD_on_null):
+                Coeff, teff_climate = get_correct_factor(
+                    dat_file, 'AD', day_of_year
+                )
+                correction_factor = 'AD'
 
             if column03 == '' or Coeff == '':
                 LOGGER.warning(f"ColumnO3 is empty in line: {i}")

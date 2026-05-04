@@ -57,8 +57,7 @@ from pygeometa.schemas.wmo_wcmp2 import WMOWCMP2OutputSchema
 
 from sqlalchemy import (Boolean, Column, create_engine, Date, DateTime,
                         Float, Enum, ForeignKey, Integer, String, Time,
-                        UniqueConstraint, ForeignKeyConstraint, ARRAY, Text,
-                        inspect)
+                        UniqueConstraint, ForeignKeyConstraint, ARRAY, inspect)
 from sqlalchemy.exc import InternalError, OperationalError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -1924,8 +1923,8 @@ class StationDobsonCorrections(base):
     AD_correcting_source = Column(String(255), nullable=False)
     CD_correcting_source = Column(String(255), nullable=False)
     CD_correcting_factor = Column(String(255), nullable=False, default='cd')
-    correction_status = Column(String(255), nullable=False, default=False)
-    correction_comments = Column(Text, nullable=False)
+    # correction_comments = Column(Text, nullable=False)
+    apply_AD_on_null = Column(Boolean, nullable=False, default=False)
 
     # relationshipts
     station = relationship('Station', backref=__tablename__)
@@ -1939,7 +1938,7 @@ class StationDobsonCorrections(base):
         self.AD_correcting_source = dict_['AD_correcting_source']
         self.CD_correcting_source = dict_['CD_correcting_source']
         self.CD_correcting_factor = dict_['CD_correcting_factor']
-        # self.correction_status = dict_['correction_status']
+        self.apply_AD_on_null = dict_['apply_AD_on_null']
         # self.correction_comments = dict_['correction_comments']
 
         self.generate_ids()
@@ -2300,8 +2299,7 @@ def setup_dobson_correction(ctx, datadir, verbosity):
         else:
             click.echo("Skipping teardown of the "
                        "StationDobsonCorrections table")
-    station_dobson_corrections = os.path.join(
-        datadir, 'station_dobson_corrections.csv')
+    station_dobson_corrections = config.WDR_DOBSON_CORRECTION_STATIONS_LIST
 
     station_dobson_corrections_models = []
 
@@ -2326,14 +2324,23 @@ def setup_dobson_correction(ctx, datadir, verbosity):
             temp['CD_corrected'] = True
             temp['AD_correcting_source'] = 'ECCC'
             temp['CD_correcting_source'] = row['Processing group']
-            # temp['correction_status'] = row['Correction Status']
             # temp['correction_comments'] = row['special comments']
-            if row['CD-bias corrected'] == 'TRUE':
+            if row['apply_AD'] == '' or row['apply_AD'] is None:
+                temp['apply_AD_on_null'] = False
+            else:
+                temp['apply_AD_on_null'] = True
+            if row['CD-bias corrected'] == 'TRUE' and row[
+                    'Confirmed'] == 'TRUE':
                 temp['CD_correcting_factor'] = 'AD'
-            elif row['CD-bias corrected'] == 'FALSE':
+            elif row['CD-bias corrected'] == 'FALSE' and row[
+                    'Confirmed'] == 'TRUE':
                 temp['CD_correcting_factor'] = 'CD'
             else:
                 temp['CD_correcting_factor'] = ''
+            # special case for noaa stations
+            if row['force_CD'] == 'TRUE':
+                temp['CD_correcting_factor'] = 'AD'
+
             station_dobson_corrections = StationDobsonCorrections(temp)
             station_dobson_corrections_models.append(
                 station_dobson_corrections)
@@ -2457,8 +2464,7 @@ def init(ctx, datadir, init_search_index, verbosity):
     contributor_notification = os.path.join(datadir,
                                             'contributor_notification.csv')
     discovery_metadata = os.path.join(datadir, 'init', 'discovery-metadata')
-    station_dobson_corrections = os.path.join(
-        datadir, 'station_dobson_corrections.csv')
+    station_dobson_corrections = config.WDR_DOBSON_CORRECTION_STATIONS_LIST
 
     registry_ = registry.Registry()
 
@@ -2597,11 +2603,16 @@ def init(ctx, datadir, init_search_index, verbosity):
                 temp['CD_corrected'] = True
                 temp['AD_correcting_source'] = 'ECCC'
                 temp['CD_correcting_source'] = row['Processing group']
-                # temp['correction_status'] = row['Correction Status']
                 # temp['correction_comments'] = row['special comments']
-                if row['CD-bias corrected'] == 'TRUE':
+                if row['apply_AD'] == '' or row['apply_AD'] is None:
+                    temp['apply_AD_on_null'] = False
+                else:
+                    temp['apply_AD_on_null'] = True
+                if row['CD-bias corrected'] == 'TRUE' and row[
+                        'Confirmed'] == 'TRUE':
                     temp['CD_correcting_factor'] = 'AD'
-                if row['CD-bias corrected'] == 'FALSE':
+                elif row['CD-bias corrected'] == 'FALSE' and row[
+                        'Confirmed'] == 'TRUE':
                     temp['CD_correcting_factor'] = 'CD'
                 else:
                     temp['CD_correcting_factor'] = ''
