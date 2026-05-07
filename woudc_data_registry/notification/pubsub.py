@@ -97,26 +97,30 @@ def publish_notification(hours):
         )
 
         LOGGER.info(f'Found {url}')
-        http_response = requests.head(url)
-        http_response.raise_for_status()
-        LOGGER.info(
-            f"{http_response.status_code} status code recieved for {url}"
-        )
-        if http_response.ok:
-            query = registry.query_distinct_by_fields(
-                DataRecord.ingest_filepath, DataRecord, {
-                    "ingest_filepath": ingest_filepath})
-            if len(query) == 1:
-                message = 'new record'
-            elif len(query) > 1:
-                message = 'update record'
-            responses[ingest_filepath] = {
-                'record': record,
-                'status_code': http_response,
-                'message': message
-            }
-        else:
-            LOGGER.warning(f"{url} not found on web.")
+        try:
+            http_response = requests.head(url, verify=False)
+            LOGGER.info(f"HEAD request sent to {url}, status: {http_response}")
+            http_response.raise_for_status()
+            LOGGER.info(
+                f"{http_response.status_code} status code recieved for {url}"
+            )
+            if http_response.ok:
+                query = registry.query_distinct_by_fields(
+                    DataRecord.ingest_filepath, DataRecord, {
+                        "ingest_filepath": ingest_filepath})
+                if len(query) == 1:
+                    message = 'new record'
+                elif len(query) > 1:
+                    message = 'update record'
+                responses[ingest_filepath] = {
+                    'record': record,
+                    'status_code': http_response,
+                    'message': message
+                }
+
+        except requests.exceptions.RequestException as http_err:
+            print(f'HTTP error occurred: {http_err}')
+            LOGGER.warning(f"{url} not found on web. Skipping record.")
             no_message.append(ingest_filepath)
     LOGGER.debug(f'{len(responses)} records found.')
     LOGGER.debug(f'No responses for: {no_message}')
