@@ -75,6 +75,7 @@ Error Code,Error Type,Message Template,Notes
 251,Warning,Duplicate observations found in #{table} for Date={date},Reserved for Umkehr data tables
 252,Error,Trailing commas found in #{table} header
 253,Warning,Number of columns in {table} content row does not match with the number of column headers
+254,Error,Unclosed quotation marks found in CSV file,Reserved for cases where CSV parsing fails due to improper use of quotation marks
 301,Warning,Failed to parse #{table}.Time {component}: contains invalid characters
 302,Warning,Failed to parse #{table}.Date {component}: contains invalid characters
 303,Warning,#{table}.Date {component} is not within allowable range [{lower}]-[{upper}],Reserved for year and month components
