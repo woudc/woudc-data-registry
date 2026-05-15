@@ -298,6 +298,54 @@ class OperatorReportTest(SandboxTestSuite):
             with self.assertRaises(StopIteration):
                 next(reader)
 
+    def test_unclosed_quotation_operator_report(self):
+        """ Test that unclosed quotations are reported as errors in the
+        operator report """
+        filename = 'ecsv-unclosed-double-quotes.csv'
+        infile = str(resolve_test_data_path(f'data/general/{filename}'))
+        contents = util.read_file(infile)
+        agency = 'HSSRV'
+
+        with report.OperatorReport(SANDBOX_DIR) as op_report:
+            try:
+                ExtendedCSV(contents, op_report)
+                raise AssertionError(f'Parsing of {infile} did not fail')
+            except NonStandardDataError as err:
+                expected_errors = len(err.args)
+                output_path = os.path.join(SANDBOX_DIR, 'run1')
+
+                op_report.add_message(254)
+                op_report.write_failing_file(infile, agency)
+
+                output_path = os.path.join(SANDBOX_DIR,
+                                           'operator-report.csv')
+
+        self.assertTrue(os.path.exists(output_path))
+        with open(output_path, encoding='utf-8') as output:
+            reader = csv.reader(output)
+            next(reader)
+
+            errors = 0
+
+            for _ in range(expected_errors):
+                report_line = next(reader)
+                self.assertEqual(report_line[0], 'F')
+
+                if report_line[1] == 'Error':
+                    errors += 1
+
+            self.assertEqual(errors, expected_errors)
+
+            report_line = next(reader)
+            self.assertEqual(report_line[0], 'F')
+            self.assertEqual(report_line[1], 'Error')
+            self.assertEqual(report_line[2], '254')
+            self.assertIn(agency, report_line)
+            self.assertIn(os.path.basename(infile), report_line)
+
+            with self.assertRaises(StopIteration):
+                next(reader)
+
     def test_mixed_operator_report(self):
         """
         Test that passing and failing files are written to the operator report
