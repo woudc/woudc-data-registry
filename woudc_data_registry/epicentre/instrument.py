@@ -78,18 +78,13 @@ def build_instrument(ecsv):
     timestamp_date = ecsv.extcsv['TIMESTAMP']['Date']
 
     dataset_id = f"{dataset_name}_{dataset_level}"
-    instrument_id = ':'.join([name, model, serial,
-                              station, dataset_id, contributor])
 
     model = {
-        'identifier': instrument_id,
         'name': name,
         'model': model,
         'serial': serial,
         'station_id': station,
         'dataset_id': dataset_id,
-        'dataset_name': dataset_name,
-        'dataset_level': dataset_level,
         'dataset_form': dataset_form,
         'contributor': contributor,
         'project': project,
@@ -140,12 +135,13 @@ def show(ctx, identifier, verbosity):
 
 @click.command()
 @click.pass_context
+@cli_options.OPTION_VERBOSITY
 @click.option('-st', '--station', 'station', required=True,
               help='station ID')
 @click.option('-d', '--dataset', 'dataset', required=True,
               help='dataset ID: [dataset]_[dataset_level]')
 @click.option('-c', '--contributor', 'contributor', required=True,
-              help='contributor ID')
+              help='contributor ID: [acronym]:[project]')
 @click.option('-n', '--name', 'name', required=True, help='instrument name')
 @click.option('-m', '--model', 'model', required=True,
               help='instrument model')
@@ -161,11 +157,14 @@ def add(ctx, station, dataset, contributor, name, model, serial, geometry,
     if len(geom_tokens) == 2:
         geom_tokens.append(None)
 
+    project = contributor.split(':')[1]
+    contributor = contributor.split(':')[0]
+
     instrument_ = {
         'station_id': station,
         'dataset_id': dataset,
-        'contributor': contributor.split(':')[0],
-        'project': contributor.split(':')[1],
+        'contributor': contributor,
+        'project': project,
         'name': name,
         'model': model,
         'serial': serial,
@@ -187,7 +186,8 @@ def add(ctx, station, dataset, contributor, name, model, serial, geometry,
               help='identifier')
 @click.option('-st', '--station', 'station', help='station ID')
 @click.option('-d', '--dataset', 'dataset', help='dataset')
-@click.option('-c', '--contributor', 'contributor', help='contributor ID')
+@click.option('-c', '--contributor', 'contributor',
+              help='contributor ID: [acronym]:[project]')
 @click.option('-n', '--name', 'name', help='instrument name')
 @click.option('-m', '--model', 'model', help='instrument model')
 @click.option('-s', '--serial', 'serial', help='instrument serial number')

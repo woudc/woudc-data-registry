@@ -337,21 +337,15 @@ class Instrument(base):
         self.name = dict_['name']
         self.model = dict_['model']
         self.serial = dict_['serial']
-
-        original_columns = [
-            'dataset_name', 'dataset_level', 'contributor', 'project'
-        ]
-
-        if set(original_columns).issubset(dict_.keys()):
-            self.dataset_name = dict_.get('dataset_name', 'None')
-            self.dataset_level = str(float(dict_.get('dataset_level', 0)))
-            self.contributor = dict_.get('contributor')
-            self.project = dict_.get('project')
-
-            self.generate_ids()
+        self.dataset_id = dict_['dataset_id']
+        self.contributor = dict_['contributor']
+        self.project = dict_['project']
 
         backedup_columns = ['instrument_id', 'dataset_id', 'deployment_id']
 
+        self.generate_ids()
+
+        # override generated IDs if loading from a backup
         if set(backedup_columns).issubset(dict_.keys()):
             self.instrument_id = dict_['instrument_id']
             self.dataset_id = dict_['dataset_id']
@@ -414,7 +408,6 @@ class Instrument(base):
 
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
-        self.dataset_id = f"{self.dataset_name}_{self.dataset_level}"
 
         if hasattr(self, 'contributor') and hasattr(self, 'project'):
             self.deployment_id = (

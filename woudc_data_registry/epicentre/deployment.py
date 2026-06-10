@@ -117,8 +117,8 @@ def show(ctx, identifier, verbosity):
 @click.pass_context
 @cli_options.OPTION_VERBOSITY
 @click.option('-s', '--station', 'station', required=True, help='station')
-@click.option('-c', '--contributor', 'contributor', required=True,
-              help='contributor')
+@click.option('-c', '--contributor ID', 'contributor', required=True,
+              help='contributor ID: [acronym]:[project]')
 @click.option('-sd', '--start', 'start_date', required=False,
               default=date.today().strftime('%Y-%m-%d'),
               type=click.DateTime(['%Y-%m-%d']), help='deployment start date')
