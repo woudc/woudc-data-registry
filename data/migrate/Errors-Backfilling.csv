@@ -106,8 +106,8 @@ Error Code,Error Type,Message Template,Notes
 328,Warning,#LOCATION.Height in file does not match registry
 329,Warning,Null value found for #INSTRUMENT.Model
 330,Warning,Null value found for #INSTRUMENT.Number
-331,Error,#INSTRUMENT.Name not found in registry
-332,Error,#INSTRUMENT.Model not found in registry
+331,Error,#INSTRUMENT.Name ({name}) not found in registry. Please add instrument to registry using WDR command, reserved for cases where instrument name is not found in registry
+332,Error,#INSTRUMENT.Model ({model}) not found in registry. Please add instrument to registry using WDR command, reserved for cases where instrument model is not found in registry
 333,Error,Instrument failed to validate against registry
 334,Error,Deployment {ident} not found in registry
 335,Warning,Failed to parse #{table}.{field} due to errors: {reason}

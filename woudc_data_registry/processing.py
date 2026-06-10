@@ -851,7 +851,7 @@ class Process(object):
         if instrument:
             model = instrument.model
             self.extcsv.extcsv['INSTRUMENT']['Model'] = instrument.model
-        elif not self._add_to_report(332, valueline):
+        elif not self._add_to_report(332, valueline, model=model):
             success = False
 
         return success
