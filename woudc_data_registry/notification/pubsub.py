@@ -44,6 +44,7 @@
 # =================================================================
 
 import base64
+import copy
 import datetime
 import hashlib
 import json
@@ -72,61 +73,79 @@ def publish_notification(hours):
     :param hours: `int` of the number of hours to look back for new
         data records
 
-    :returns: `None`
+    :returns: `bool` of `True` if successful, `False` otherwise
     """
     today = datetime.datetime.now()
     date_ = today - datetime.timedelta(hours=hours)
     registry = Registry()
     ingested_records = registry.query_by_field_range(
         DataRecord, "published_datetime", date_, today)
-    LOGGER.info(f"{len(ingested_records)} records found earlier than {date_}")
+    LOGGER.info(
+        f"{len(ingested_records)} records found earlier than {date_}. "
+        "Starting HEAD check for the records on WAF..."
+    )
     url_template = f'{config.WDR_WAF_BASEURL}/Archive-NewFormat'
     responses = {}
     no_message = []
-    for record in ingested_records:
-        instrument = record.instrument_id.split(':')[0].lower()
-        year = record.timestamp_date.year
-        dataset = (
-            f'{record.content_category}_{record.content_level}_'
-            f'{record.content_form}'
-        )
-        ingest_filepath = record.ingest_filepath
-        url = (
-            f'{url_template}/{dataset}/stn{record.station_id}/'
-            f'{instrument}/{year}/{record.filename}'
-        )
 
-        LOGGER.info(f'Found {url}')
-        try:
-            http_response = requests.head(url, verify=False)
-            LOGGER.info(f"HEAD request sent to {url}, status: {http_response}")
-            http_response.raise_for_status()
-            LOGGER.info(
-                f"{http_response.status_code} status code recieved for {url}"
+    with requests.Session() as session:
+        session.verify = True
+        session.headers.update({
+            'X-Request-Purpose': 'woudc-mqtt-publication-check',
+            'User-Agent': 'woudc-data-registry/mqtt-publication-check'
+        })
+        for record in ingested_records:
+            instrument = record.instrument_id.split(':')[0].lower()
+            year = record.timestamp_date.year
+            dataset = (
+                f'{record.content_category}_{record.content_level}_'
+                f'{record.content_form}'
             )
-            if http_response.ok:
-                query = registry.query_distinct_by_fields(
-                    DataRecord.ingest_filepath, DataRecord, {
-                        "ingest_filepath": ingest_filepath})
-                if len(query) == 1:
-                    message = 'new record'
-                elif len(query) > 1:
-                    message = 'update record'
-                responses[ingest_filepath] = {
-                    'record': record,
-                    'status_code': http_response,
-                    'message': message
-                }
+            ingest_filepath = record.ingest_filepath
+            url = (
+                f'{url_template}/{dataset}/stn{record.station_id}/'
+                f'{instrument}/{year}/{record.filename}'
+            )
 
-        except requests.exceptions.RequestException as http_err:
-            print(f'HTTP error occurred: {http_err}')
-            LOGGER.warning(f"{url} not found on web. Skipping record.")
-            no_message.append(ingest_filepath)
-    LOGGER.debug(f'{len(responses)} records found.')
-    LOGGER.debug(f'No responses for: {no_message}')
+            LOGGER.debug(f'Checking if exists: {url}')
+            try:
+                http_response = session.head(url)
+                LOGGER.debug(
+                    f"HEAD request sent to {url}, "
+                    f"status: {http_response}")
+                http_response.raise_for_status()
+                LOGGER.debug(
+                    f"{http_response.status_code} status code recieved"
+                    f" for {url}"
+                )
+                if http_response.ok:
+                    query = registry.query_distinct_by_fields(
+                        DataRecord.ingest_filepath, DataRecord, {
+                            "ingest_filepath": ingest_filepath})
+                    if len(query) == 1:
+                        message = 'new record'
+                    elif len(query) > 1:
+                        message = 'update record'
+                    responses[ingest_filepath] = {
+                        'record': record,
+                        'status_code': http_response,
+                        'message': message
+                    }
+
+            except requests.exceptions.RequestException as http_err:
+                LOGGER.warning(
+                    f"{url} not found on web: {http_err}. Skipping record."
+                )
+                no_message.append(ingest_filepath)
+
+    LOGGER.info(f'{len(responses)} records valid on WAF.')
+    LOGGER.info(f'The following ingested files were skipped: {no_message}')
+    LOGGER.info(
+        'Generating GeoJSON notification payloads for the confirmed records...'
+    )
     notifications = generate_geojson_payload(responses)
-    LOGGER.debug('GeoJSON Generated.')
-    publish_to_mqtt_broker(notifications)
+    LOGGER.debug('GeoJSON generated.')
+    return publish_to_mqtt_broker(notifications)
 
 
 def generate_geojson_payload(info):
@@ -136,63 +155,79 @@ def generate_geojson_payload(info):
     :returns: `dict` of GeoJSON payload
     """
     notifications = []
+    with open(config.WDR_MQTT_NOTIFICATION_TEMPLATE_PATH) as file_:
+        template = json.load(file_)
     for key in info:
-        with open(config.WDR_MQTT_NOTIFICATION_TEMPLATE_PATH) as file_:
-            geojson = json.load(file_)
-        x = info[key]["record"].x
-        y = info[key]["record"].y
-        z = info[key]["record"].z
-        if None in (x, y):
-            LOGGER.error('x or y is None')
-            geojson["geometry"] = None
-        else:
-            geojson["geometry"]["coordinates"] = [x, y]
-            if z is not None:
-                geojson["geometry"]["coordinates"].append(z)
+        try:
+            geojson = copy.deepcopy(template)
+            x = info[key]["record"].x
+            y = info[key]["record"].y
+            z = info[key]["record"].z
+            if None in (x, y):
+                LOGGER.error('x or y is None')
+                geojson["geometry"] = None
+            else:
+                geojson["geometry"]["coordinates"] = [x, y]
+                if z is not None:
+                    geojson["geometry"]["coordinates"].append(z)
 
-        geojson["properties"]["pubtime"] = (
-            info[key]['record'].published_datetime.strftime(
-                '%Y-%m-%dT%H:%M:%SZ'
+            geojson["properties"]["pubtime"] = (
+                info[key]['record'].published_datetime.strftime(
+                    '%Y-%m-%dT%H:%M:%SZ'
+                )
             )
-        )
 
-        geojson["properties"]["datetime"] = (
-            info[key]['record'].timestamp_utc.strftime(
-                '%Y-%m-%dT%H:%M:%SZ'
+            geojson["properties"]["datetime"] = (
+                info[key]['record'].timestamp_utc.strftime(
+                    '%Y-%m-%dT%H:%M:%SZ'
+                )
             )
-        )
 
-        with open(info[key]['record'].publish_filepath, 'rb') as f:
-            file_data = f.read()
-            sha256_digest = hashlib.sha512(file_data).digest()
-            b64_md5_hash = base64.b64encode(
-                sha256_digest
-            ).decode()
-            geojson["properties"]["integrity"]["value"] = b64_md5_hash
+            publish_filepath = info[key]['record'].publish_filepath
 
-        geojson["properties"]["data_id"] = info[key]["record"].data_record_id
-        if info[key]["record"].content_category == 'UmkehrN14':
-            geojson["properties"]["metadata_id"] = (
-                (
+            with open(publish_filepath, 'rb') as f:
+                file_data = f.read()
+                sha256_digest = hashlib.sha512(file_data).digest()
+                b64_md5_hash = base64.b64encode(
+                    sha256_digest
+                ).decode()
+                geojson["properties"]["integrity"]["value"] = b64_md5_hash
+
+            geojson["properties"]["data_id"] = (
+                info[key]["record"].data_record_id
+            )
+            if info[key]["record"].content_category == 'UmkehrN14':
+                geojson["properties"]["metadata_id"] = (
                     f"urn:wmo:md:org-woudc:"
                     f"{info[key]['record'].dataset_id.lower()[:-2]}"
                 )
-            )
-        else:
-            geojson["properties"]["metadata_id"] = (
-                f"urn:wmo:md:org-woudc:"
-                f"{info[key]['record'].content_category.lower()}"
-            )
-        geojson["links"][0]["href"] = info[key]["record"].url
-        geojson["id"] = str(uuid.uuid4())
+            else:
+                geojson["properties"]["metadata_id"] = (
+                    f"urn:wmo:md:org-woudc:"
+                    f"{info[key]['record'].content_category.lower()}"
+                )
+            geojson["links"][0]["href"] = info[key]["record"].url
+            geojson["id"] = str(uuid.uuid4())
 
-        mqtt_dic = {
-            'topic': generate_wis2_topic(geojson["properties"]["metadata_id"]),
-            'payload': json.dumps(geojson),
-            'qos': 1,
-        }
+            mqtt_dic = {
+                'topic': generate_wis2_topic(
+                    geojson["properties"]["metadata_id"]
+                ),
+                'payload': json.dumps(geojson),
+                'qos': 1,
+            }
+            notifications.append(mqtt_dic)
 
-        notifications.append(mqtt_dic)
+        except FileNotFoundError as e:
+            LOGGER.warning(
+                f"Publish filepath not found for {key}: {e}. Skipping record."
+            )
+            continue
+        except Exception as e:
+            LOGGER.error(
+                f"Failed to generate mqtt GeoJSON payload for {key}: {e}"
+            )
+            continue  # Skip this record, don't abort the entire batch
     return notifications
 
 
@@ -245,10 +280,10 @@ def publish_to_mqtt_broker(info: list) -> bool:
         return True
 
     except Exception as e:
-        msg = f"MQTT error: {e}"
+        msg = f"MQTT publish error: {e}"
         LOGGER.error(msg)
         click.echo(msg)
-        raise
+        return False
 
 
 def generate_wis2_topic(metadata_id: str) -> str:
