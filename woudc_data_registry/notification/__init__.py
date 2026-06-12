@@ -67,7 +67,13 @@ def publish():
 @click.option('--hours', type=int, required=True)
 def publish_notification(ctx, hours, verbosity):
     """Publish a notification to WMO WIS2"""
-    publish_notification_(hours)
+    result = publish_notification_(hours)
+    if result is False:
+        LOGGER.error("publish_notification failed")
+        raise click.ClickException(
+            "publish_notification failed. "
+            "Check WDR logs for more details"
+        )
 
 
 publish.add_command(publish_notification)
