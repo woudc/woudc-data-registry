@@ -337,7 +337,16 @@ class Instrument(base):
         self.name = dict_['name']
         self.model = dict_['model']
         self.serial = dict_['serial']
-        self.dataset_id = dict_['dataset_id']
+
+        dataset_name = dict_['dataset_id'].split('_')[0]
+        dataset_level = str(float(dict_['dataset_id'].split('_')[-1]))
+        if dataset_name == dataset_level:  # no "_"
+            LOGGER.error(f'Dataset ID needs to be in the from '
+                         f'"datasetname_datasetlevel", but got '
+                         f'{dict_["dataset_id"]}')
+
+        self.dataset_id = f"{dataset_name}_{dataset_level}"
+
         self.contributor = dict_['contributor']
         self.project = dict_['project']
 

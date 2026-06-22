@@ -99,7 +99,8 @@ def execute(path, bypass):
                 try:
                     agency = extcsv.extcsv['DATA_GENERATION']['Agency'][0]
                     dataset_name = extcsv.extcsv['CONTENT']['Category'][0]
-                    dataset_level = extcsv.extcsv['CONTENT']['Level'][0]
+                    dataset_level = str(float(extcsv.extcsv['CONTENT'][
+                        'Level'][0]))
                     dataset_form = extcsv.extcsv['CONTENT']['Form'][0]
                     project_id = extcsv.extcsv['CONTENT']['Class'][0]
                     station_type = extcsv.extcsv['PLATFORM']['Type'][0]
