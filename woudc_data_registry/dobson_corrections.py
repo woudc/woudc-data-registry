@@ -281,6 +281,7 @@ def correct_file(csv_file, csv_content, code, mode):
     platform_content = csv_file.get('PLATFORM')
     station_id = platform_content[1][
         platform_content[0].index('ID')] if platform_content else ''
+    LOGGER.info(f"Station ID: {station_id}")
 
     # find correction status
     # using registry:
@@ -297,11 +298,12 @@ def correct_file(csv_file, csv_content, code, mode):
     if 'DAILY' in csv_file:
         LOGGER.info('DAILY is in csv_file')
         data = csv_file['DAILY']
-        # station_id = csv_file['PLATFORM'][1]
         # Getting the index of wlcode and columns so we can use them
         # to check the values of each line.
         wlcode_ind = [c.lower() for c in data[0]].index('wlcode')
         column03_ind = [c.lower() for c in data[0]].index('columno3')
+        # incase we need to check the obscode for the correction recipe
+        obscode_ind = [c.lower() for c in data[0]].index('obscode')
 
         # Get the first line to correct the files
         replacing_string = ','.join(data[0])
@@ -321,19 +323,12 @@ def correct_file(csv_file, csv_content, code, mode):
         csv_content = csv_content.replace(
                 replacing_string, replacement_string)
 
-        # Get code from StationDobsonCorrections table and see if
-        # correction is required.
+        # Get correction recipe for each wlcode from StationDobsonCorrections
+        # table and see if correction is required.
         # Get the Dobson correction code from the database
         dobson_correction = registry.query_by_field(
-            StationDobsonCorrections, 'station_id', station_id.zfill(3)
-        )
-        if dobson_correction is not {}:
-            # AD_source = dobson_correction.AD_correcting_source
-            # CD_source = dobson_correction.CD_correcting_source
-            CD_correcting_factor = dobson_correction.CD_correcting_factor
-            apply_AD_on_null = dobson_correction.apply_AD_on_null
-        correct_AD = (code in ['AD', None])
-        correct_CD = (code in ['CD', None])
+            StationDobsonCorrections, 'station_id', station_id.zfill(3),
+            return_all_rows=True)
         registry.close_session()
 
         # Go through each line in the DAILY table
@@ -355,9 +350,10 @@ def correct_file(csv_file, csv_content, code, mode):
                     float(i[column03_ind])
                     if i[column03_ind] not in ('', '-')
                     else ''
-                )  # could be AD or CD instead of int
-                if isinstance(i[wlcode_ind], str) and i[wlcode_ind
-                                                        ] in ['AD', 'CD']:
+                )
+                # could be string representation instead of int
+                # e.g: AD instead of 0, CD instead of 2, etc.
+                if isinstance(i[wlcode_ind], str):
                     wlcode = i[wlcode_ind]
                 else:
                     wlcode = (
@@ -375,27 +371,18 @@ def correct_file(csv_file, csv_content, code, mode):
             teff_climate = ''
 
             # Get the correcting coefficient and corrected the columnO3
-            if (wlcode in [0, 4, 'AD'] and correct_AD):
-                Coeff, teff_climate = get_correct_factor(
-                    dat_file, 'AD', day_of_year
-                )
-                correction_factor = 'AD'
-            if (wlcode in [2, 6, 'CD'] and correct_CD):
-                if CD_correcting_factor == 'CD':
-                    Coeff, teff_climate = get_correct_factor(
-                        dat_file, 'CD', day_of_year
-                    )
-                    correction_factor = 'CD'
-                elif CD_correcting_factor == 'AD':
-                    Coeff, teff_climate = get_correct_factor(
-                        dat_file, 'AD', day_of_year
-                    )
-                    correction_factor = 'AD'
-            if (wlcode in ['', None] and apply_AD_on_null):
-                Coeff, teff_climate = get_correct_factor(
-                    dat_file, 'AD', day_of_year
-                )
-                correction_factor = 'AD'
+            for case in dobson_correction:
+                if (
+                    (wlcode == case.wlcode or (wlcode == ''
+                                               and case.wlcode == 'NA'))
+                    and case.correction_recipe != 'DNC'
+                ):
+                    if case.obscode is None or case.obscode == i[obscode_ind]:
+                        correction_factor = case.correction_recipe
+                        Coeff, teff_climate = get_correct_factor(
+                                dat_file, correction_factor, day_of_year
+                            )
+                        break
 
             if column03 == '' or Coeff == '':
                 LOGGER.warning(f"ColumnO3 is empty in line: {i}")

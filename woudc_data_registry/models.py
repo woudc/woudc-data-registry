@@ -1904,34 +1904,26 @@ class StationDobsonCorrections(base):
     __tablename__ = 'station_dobson_corrections'
 
     id_field = "dobson_correction_id"
-    id_dependencies = ['station_id', 'AD_correcting_source',
-                       'CD_correcting_factor']
+    id_dependencies = ['station_id', 'wlcode', 'obscode', 'correction_recipe']
 
     # columns
     dobson_correction_id = Column(String, primary_key=True)
     station_id = Column(String(255), ForeignKey('stations.station_id'),
                         nullable=False)
-    AD_corrected = Column(Boolean, nullable=False, default=False)
-    CD_corrected = Column(Boolean, nullable=False, default=False)
-    AD_correcting_source = Column(String(255), nullable=False)
-    CD_correcting_source = Column(String(255), nullable=False)
-    CD_correcting_factor = Column(String(255), nullable=False, default='cd')
+    wlcode = Column(String(255), nullable=True)
+    obscode = Column(String(255), nullable=True)
+    correction_recipe = Column(String(255), nullable=True)
     # correction_comments = Column(Text, nullable=False)
-    apply_AD_on_null = Column(Boolean, nullable=False, default=False)
 
-    # relationshipts
+    # relationships
     station = relationship('Station', backref=__tablename__)
 
     def __init__(self, dict_):
         self.station_id = dict_['station']
-        self.AD_corrected = dict_[
-            'AD_corrected']
-        self.CD_corrected = dict_[
-            'CD_corrected']
-        self.AD_correcting_source = dict_['AD_correcting_source']
-        self.CD_correcting_source = dict_['CD_correcting_source']
-        self.CD_correcting_factor = dict_['CD_correcting_factor']
-        self.apply_AD_on_null = dict_['apply_AD_on_null']
+        self.wlcode = dict_['wlcode']
+        self.obscode = dict_.get('obscode', None)
+        self.correction_recipe = dict_['correction_recipe']
+
         # self.correction_comments = dict_['correction_comments']
 
         self.generate_ids()
@@ -1946,11 +1938,9 @@ class StationDobsonCorrections(base):
             'properties': {
                 'identifier': self.dobson_correction_id,
                 'station_id': self.station_id,
-                'AD_corrected': self.AD_corrected,
-                'CD_corrected': self.CD_corrected,
-                'AD_correcting_source': self.AD_correcting_source,
-                'CD_correcting_source': self.CD_correcting_source,
-                'CD_correcting_factor': self.CD_correcting_factor
+                'wlcode': self.wlcode,
+                'obscode': self.obscode,
+                'correction_recipe': self.correction_recipe,
                 # 'correction_comments': self.correction_comments
             }
         }
@@ -1961,13 +1951,16 @@ class StationDobsonCorrections(base):
     def generate_ids(self):
         """Builds and sets class ID field from other attributes"""
 
-        if all([hasattr(self, field) and getattr(self, field) is not None
-                for field in self.id_dependencies]):
+        # id: {station_id}:{wlcode}:{obscode}:{correction_recipe}
+
+        if all([hasattr(self, field) for field in self.id_dependencies]):
             components = [getattr(self, field)
                           for field in self.id_dependencies]
             self.dobson_correction_id = (
-                f"{self.station_id}:AD-{components[1]}:CD-{components[2]}"
+                f"{self.station_id}:{components[1]}:{components[2]}:{components[3]}"  # noqa
             )
+            LOGGER.info(f'generated dobson_correction_id:'
+                        f'{self.dobson_correction_id}')
 
 
 class ContributorNotification(base):
@@ -2310,33 +2303,10 @@ def setup_dobson_correction(ctx, datadir, verbosity):
     click.echo('Loading station dobson corrections items')
     with open(station_dobson_corrections, encoding='utf-8-sig') as csvfile:
         reader = csv.DictReader(csvfile)
-        for row in reader:
-            temp = {}
-            temp['station'] = row['station'][3:]
-            temp['AD_corrected'] = True
-            temp['CD_corrected'] = True
-            temp['AD_correcting_source'] = 'ECCC'
-            temp['CD_correcting_source'] = row['Processing group']
-            # temp['correction_comments'] = row['special comments']
-            if row['apply_AD'] == '' or row['apply_AD'] is None:
-                temp['apply_AD_on_null'] = False
-            else:
-                temp['apply_AD_on_null'] = True
-            if row['CD-bias corrected'] == 'TRUE' and row[
-                    'Confirmed'] == 'TRUE':
-                temp['CD_correcting_factor'] = 'AD'
-            elif row['CD-bias corrected'] == 'FALSE' and row[
-                    'Confirmed'] == 'TRUE':
-                temp['CD_correcting_factor'] = 'CD'
-            else:
-                temp['CD_correcting_factor'] = ''
-            # special case for noaa stations
-            if row['force_CD'] == 'TRUE':
-                temp['CD_correcting_factor'] = 'AD'
+        wlcodes = [0, 2, 4, 6]
 
-            station_dobson_corrections = StationDobsonCorrections(temp)
-            station_dobson_corrections_models.append(
-                station_dobson_corrections)
+        for row in reader:
+            station_dobson_corrections_models += create_dobson_correction_model(row, wlcodes)  # noqa
 
     click.echo('Storing station dobson corrections items in registry')
     for model in station_dobson_corrections_models:
@@ -2389,6 +2359,74 @@ def setup_dobson_correction(ctx, datadir, verbosity):
         click.echo(f'ERROR: {err}')
 
     click.echo("Done")
+
+
+def create_dobson_correction_model(row, wlcodes):
+    """given a row of data from the station_dobson_corrections.csv file, and
+       a list of wlcodes, create a list of StationDobsonCorrections models
+       and return it. """
+    station_dobson_corrections_models = []
+    special_cases = []
+    temp_rows = []
+    temp = {}
+    if row['special_corrections'] != '':
+        # handled special cases:
+        special_cases = row['special_corrections'].split(',')
+        # case: station_id:wlcode:obscode:correction_recipe
+        for case in special_cases:
+            if len(case.split(':')) != 4:
+                LOGGER.error(
+                    f"ERROR: special case '{case}' is not in the"
+                    f" correct format."
+                    f"Expected format: station_id:wlcode:"
+                    f"obscode:correction_recipe"
+                )
+                continue
+            else:
+                case_list = case.strip().split(':')
+                temp['station'] = case_list[0]
+                temp['wlcode'] = case_list[1]
+                if case_list[2] == 'None':
+                    temp['obscode'] = None
+                else:
+                    temp['obscode'] = case_list[2]
+                temp['correction_recipe'] = case_list[3]
+                temp_rows.append(temp.copy())
+                # reset to not carry over values to next case iteration
+                temp = {}
+
+    # temp['correction_comments'] = row['special comments']
+
+    for wl in wlcodes:
+        temp['station'] = row['station']
+        temp['wlcode'] = str(wl)
+        if wl in [2, 6] and temp['station'] not in ['107', '429']:
+            if row['CD-bias corrected'] == 'TRUE' and row[
+                    'Confirmed'] == 'TRUE':
+                # AD corrections for wlcode = 2,6
+                temp['correction_recipe'] = 'AD'
+            elif row['CD-bias corrected'] == 'FALSE' and row[
+                    'Confirmed'] == 'TRUE':
+                # CD corrections for wlcode = 2,6
+                temp['correction_recipe'] = 'CD'
+            else:
+                # DNC = do not correct
+                temp['correction_recipe'] = 'DNC'
+        elif wl in [0, 4]:
+            temp['correction_recipe'] = 'AD'
+        else:
+            temp['correction_recipe'] = 'DNC'
+
+        temp_rows.append(temp.copy())
+        # reset to not carry over values to next wlcode iteration
+        temp = {}
+
+    for temp in temp_rows:
+        station_dobson_corrections = StationDobsonCorrections(temp)
+        station_dobson_corrections_models.append(
+                station_dobson_corrections)
+
+    return station_dobson_corrections_models
 
 
 @click.command()
@@ -2589,29 +2627,10 @@ def init(ctx, datadir, init_search_index, verbosity):
         click.echo('Loading station dobson corrections items')
         with open(station_dobson_corrections) as csvfile:
             reader = csv.DictReader(csvfile)
+            wlcodes = [0, 2, 4, 6]
             for row in reader:
-                temp = {}
-                temp['station'] = row['station'][3:]
-                temp['AD_corrected'] = True
-                temp['CD_corrected'] = True
-                temp['AD_correcting_source'] = 'ECCC'
-                temp['CD_correcting_source'] = row['Processing group']
-                # temp['correction_comments'] = row['special comments']
-                if row['apply_AD'] == '' or row['apply_AD'] is None:
-                    temp['apply_AD_on_null'] = False
-                else:
-                    temp['apply_AD_on_null'] = True
-                if row['CD-bias corrected'] == 'TRUE' and row[
-                        'Confirmed'] == 'TRUE':
-                    temp['CD_correcting_factor'] = 'AD'
-                elif row['CD-bias corrected'] == 'FALSE' and row[
-                        'Confirmed'] == 'TRUE':
-                    temp['CD_correcting_factor'] = 'CD'
-                else:
-                    temp['CD_correcting_factor'] = ''
-                station_dobson_corrections = StationDobsonCorrections(temp)
-                station_dobson_corrections_models.append(
-                    station_dobson_corrections)
+                station_dobson_corrections_models += create_dobson_correction_model(row, wlcodes)  # noqa
+
     except FileNotFoundError:
         click.echo(f"[WARNING] File not found: {station_dobson_corrections}. "
                    "Skipping loading of station dobson corrections.")

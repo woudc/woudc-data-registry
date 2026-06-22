@@ -165,7 +165,8 @@ class Registry(object):
 
         return results
 
-    def query_by_field(self, obj, by, value, case_insensitive=False):
+    def query_by_field(self, obj, by, value, case_insensitive=False,
+                       return_all_rows=False):
         """
         query data by field
 
@@ -174,7 +175,9 @@ class Registry(object):
         :param value: Value of the field in any query results
         :param case_insensitive: `bool` of whether to query strings
                                  case-insensitively
-        :returns: Single element of query results
+        :param return_all_rows: `bool` of whether to return only
+                                 one result or all results
+        :returns: Single or multiple elements of query results
         """
 
         field = getattr(obj, by)
@@ -188,7 +191,10 @@ class Registry(object):
             LOGGER.debug(f'Querying by field for {field} = {value}')
             condition = field == value
 
-        return self.session.query(obj).filter(condition).first()
+        if return_all_rows:
+            return self.session.query(obj).filter(condition).all()
+        else:
+            return self.session.query(obj).filter(condition).first()
 
     def query_extents(
         self, obj, date_domain, values=None, case_insensitive=False
