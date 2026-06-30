@@ -69,7 +69,7 @@ def build_instrument(ecsv):
     serial = str(ecsv.extcsv['INSTRUMENT']['Number'])
     station = str(ecsv.extcsv['PLATFORM']['ID'])
     dataset_name = ecsv.extcsv['CONTENT']['Category']
-    dataset_level = str(ecsv.extcsv['CONTENT']['Level'])
+    dataset_level = str(float(ecsv.extcsv['CONTENT']['Level']))
     dataset_form = str(ecsv.extcsv['CONTENT']['Form'])
     contributor = str(ecsv.extcsv['DATA_GENERATION']['Agency'])
     project = str(ecsv.extcsv['CONTENT']['Class'])
@@ -157,8 +157,24 @@ def add(ctx, station, dataset, contributor, name, model, serial, geometry,
     if len(geom_tokens) == 2:
         geom_tokens.append(None)
 
-    project = contributor.split(':')[1]
+    project = contributor.split(':')[-1]
     contributor = contributor.split(':')[0]
+
+    if contributor == project:
+        click.echo('Missing project in contributor argument. '
+                   'Contributor argument should be in the form'
+                   ' [acronym]:[project]')
+        return
+
+    dataset_name = dataset.split('_')[0]
+    dataset_level = dataset.split('_')[-1]
+    if dataset_name == dataset_level:  # no level specified
+        click.echo('Missing dataset level in dataset argument. '
+                   'Dataset argument should be in the form'
+                   ' [dataset]_[dataset_level]')
+        return
+
+    dataset = f"{dataset_name}_{float(dataset_level)}"
 
     instrument_ = {
         'station_id': station,
