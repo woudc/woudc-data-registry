@@ -1111,26 +1111,17 @@ MAPPINGS_ALL = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'AD_corrected': {
-                'type': 'boolean'
-            },
-            'CD_correction': {
-                'type': 'boolean'
-            },
-            'AD_correcting_source': {
+            'wlcode': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'CD_correcting_source': {
+            'obscode': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
-            'CD_correcting_factor': {
+            'correction_recipe': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
-            },
-            'correction_comments': {
-                'type': 'text'
             }
         }
     }
