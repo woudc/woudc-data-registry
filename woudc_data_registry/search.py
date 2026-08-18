@@ -59,6 +59,7 @@ LOGGER = logging.getLogger(__name__)
 typedefs = {
     'keyword': {
         'type': 'keyword',
+        'normalizer': 'lowercase',
         'ignore_above': 256
     }
 }
