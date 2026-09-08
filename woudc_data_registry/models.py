@@ -700,6 +700,7 @@ class Deployment(base):
                 'station_id': self.station_id,
                 'station_type': self.station.station_type,
                 'station_name': self.station.station_name.name,
+                'gaw_id': self.station.gaw_id,
                 'country_name_en': self.station.country.name_en,
                 'country_name_fr': self.station.country.name_fr,
                 'contributor_acronym': self.contributor.acronym,
