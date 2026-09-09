@@ -87,9 +87,11 @@ woudc-data-registry admin init -d data/
 
 # backup core metadata
 woudc-data-registry admin backup -d data/
+```
 
-# cleanups
+#### Cleanup commands for ES index and database
 
+```bash
 # re-initialize model (database tables)
 woudc-data-registry admin registry teardown
 woudc-data-registry admin registry setup
@@ -101,7 +103,7 @@ woudc-data-registry admin search setup
 # optional: teardown specific tables in comma seperated format. e.g.
 woudc-data-registry admin registry teardown -m "DataRecord,OzoneSonde"
 
-# optional teardown specific indexes in comma seperated format. e.g.
+# optional: teardown specific indexes in comma seperated format. e.g.
 woudc-data-registry admin search teardown -i "data_records,stations"
 
 # If required reinitialized StationDobsonCorrections table and index
@@ -207,11 +209,17 @@ woudc-data-registry correction dobson-correction /path/to/dir --mode [test|ops] 
 woudc-data-registry admin search sync
 # optional: sync only specific tables to ES in comma seperated format. e.g.
 woudc-data-registry admin search sync -m "DiscoveryMetadata,DataRecord"
+# optional: clear ES of all records before syncing. e.g.
+woudc-data-registry admin search sync -c
+woudc-data-registry admin search sync -c -m "DiscoveryMetadata"
 
 # sync the data product tables (uv_index_hourly, totalozone, and ozonesonde) to ElasticSearch
 woudc-data-registry admin search product-sync
 # optional: sync only specific product tables to ES in comma seperated format. e.g.
 woudc-data-registry admin search product-sync -m "TotalOzone,UVIndex"
+# optional: clear ES of all records before syncing. e.g.
+woudc-data-registry admin search product-sync -c
+woudc-data-registry admin search product-sync -c -m "TotalOzone"
 ```
 
 #### UV Index Generation

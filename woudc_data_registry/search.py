@@ -432,6 +432,10 @@ MAPPINGS_ALL = {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
             },
+            'gaw_id': {
+                'type': 'text',
+                'fields': {'raw': typedefs['keyword']}
+            },
             'country_name_en': {
                 'type': 'text',
                 'fields': {'raw': typedefs['keyword']}
