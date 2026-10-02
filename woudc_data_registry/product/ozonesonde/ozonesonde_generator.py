@@ -52,7 +52,7 @@ import os
 
 from woudc_data_registry.models import OzoneSonde, Instrument
 from woudc_data_registry import registry
-from woudc_data_registry.util import read_file
+from woudc_data_registry.util import read_file, normalize_dataset_name
 from woudc_data_registry.epicentre.metadata import add_metadata
 from woudc_data_registry.processing import correct_instrument_value
 
@@ -99,7 +99,8 @@ def execute(path, bypass):
                 # get metadata fields
                 try:
                     agency = extcsv.extcsv['DATA_GENERATION']['Agency'][0]
-                    dataset_name = extcsv.extcsv['CONTENT']['Category'][0]
+                    dataset_name = normalize_dataset_name(
+                        extcsv.extcsv['CONTENT']['Category'][0])
                     dataset_level = str(float(extcsv.extcsv['CONTENT'][
                         'Level'][0]))
                     dataset_form = extcsv.extcsv['CONTENT']['Form'][0]

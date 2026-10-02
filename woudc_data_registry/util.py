@@ -59,6 +59,20 @@ LOGGER = logging.getLogger(__name__)
 
 RFC3339_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
+DATASET_NAMES = [
+    'Broad-band',
+    'Lidar',
+    'Multi-band',
+    'OzoneSonde',
+    'RocketSonde',
+    'Spectral',
+    'TotalOzone',
+    'TotalOzoneObs',
+    'UmkehrN14',
+]
+
+DATASET_LOOKUP = {n.lower(): n for n in DATASET_NAMES}
+
 
 def send_email(message, subject, from_email_address, to_email_addresses,
                host, port, cc_addresses=None, bcc_addresses=None, secure=False,
@@ -370,3 +384,19 @@ def get_date(date_, force_date=False):
             return datetime.strptime(date_, RFC3339_DATETIME_FORMAT)
         else:
             return datetime.strptime(date_, '%Y-%m-%d').date()
+
+
+def normalize_dataset_name(name):
+    """
+    helper function to normalize the case of a dataset name
+    against the list of known dataset names
+
+    :param name: dataset name (`str`)
+
+    :returns: `str` of canonical dataset name, or the stripped
+              input if the name is unknown
+    """
+
+    name = name.strip()
+
+    return DATASET_LOOKUP.get(name.lower(), name)
