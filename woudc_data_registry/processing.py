@@ -847,7 +847,7 @@ class Process(object):
 
         # Check data registry for matching instrument model
         instrument = self.registry.query_by_field(Instrument, 'model', model,
-                                                  case_insensitive=True)
+                                                  case_insensitive=False)
         if instrument:
             model = instrument.model
             self.extcsv.extcsv['INSTRUMENT']['Model'] = instrument.model
