@@ -35,7 +35,6 @@ source bin/activate
 # clone woudc-extcsv and install
 git clone https://github.com/woudc/woudc-extcsv.git
 cd woudc-extcsv
-pip install -r requirements.txt
 pip install .
 cd ..
 

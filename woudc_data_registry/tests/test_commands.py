@@ -43,6 +43,7 @@
 #
 # =================================================================
 
+import os
 import json
 import unittest
 import uuid
@@ -56,6 +57,8 @@ from woudc_data_registry.dobson_corrections import (custom_day_of_year,
                                                     get_correct_factor,
                                                     parse_csv, parse_dat)
 from woudc_data_registry.notification import pubsub
+
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 
 class DummyRecord:
@@ -111,14 +114,11 @@ class TestGenerateGeoJsonPayload(unittest.TestCase):
             }
         }
 
-    @patch(
-        "woudc_data_registry.util.open",
+    @patch.object(
+        pubsub, "open",
         new_callable=mock_open,
-        read_data=(
-            '{"geometry": {"type": "Point", "coordinates": []}, '
-            '"properties": {"integrity": {}}, '
-            '"links": [{"href": ""}], "id": null}'
-        )
+        read_data=b'test file data',
+        create=True
     )
     @patch("json.load")
     @patch("uuid.uuid4")
@@ -245,9 +245,7 @@ class TestDobsonCorrections(unittest.TestCase):
         Test that the parse_csv function correctly reads a CSV file
         and returns the expected dictionary.
         """
-        file_path = (
-            'data/general/ecsv-comments.csv'
-        )
+        file_path = os.path.join(DATA_DIR, 'general', 'ecsv-comments.csv')
         dictionary = parse_csv(file_path)
         self.assertIsInstance(dictionary, dict,
                               "Expected a dictionary from parse_csv.")
@@ -258,9 +256,8 @@ class TestDobsonCorrections(unittest.TestCase):
         self.assertEqual(dictionary.get('LOCATION')[1][1], '-66.57')
         self.assertEqual(dictionary.get('TIMESTAMP')[1][1], '2004-07-09')
 
-        double_spaced_file_path = (
-            'data/general/ecsv-double-spaced.csv'
-        )
+        double_spaced_file_path = os.path.join(DATA_DIR, 'general',
+                                               'ecsv-double-spaced.csv')
         dictionary2 = parse_csv(double_spaced_file_path)
         self.assertIsInstance(dictionary, dict,
                               "Expected a dictionary from parse_csv.")
@@ -281,10 +278,8 @@ class TestDobsonCorrections(unittest.TestCase):
         Test that the parse_csv function raises a ValueError
         when given an invalid file path.
         """
-        empty_file_path = (
-            'data/general/pass_and_fail/'
-            'KW160914.CSV'
-        )
+        empty_file_path = os.path.join(DATA_DIR, 'general', 'pass_and_fail',
+                                       'KW160914.CSV')
         dictionary = parse_csv(empty_file_path)
         self.assertIsInstance(dictionary, dict,
                               "Expected a dictionary from parse_csv.")
@@ -292,10 +287,7 @@ class TestDobsonCorrections(unittest.TestCase):
                          "Expected an empty dictionary for an invalid file.")
         self.assertEqual(dictionary, {})
 
-        error_file_path = (
-            'data/general/'
-            'euc-jp.dat'
-        )
+        error_file_path = os.path.join(DATA_DIR, 'general', 'euc-jp.dat')
         dictionary2 = parse_csv(error_file_path)
         self.assertIsInstance(dictionary2, dict,
                               "Expected a dictionary from parse_csv.")
@@ -342,10 +334,10 @@ class TestDobsonCorrections(unittest.TestCase):
         """
         Test that the parse_dat_file function reads a .dat file correctly.
         """
-        file_path = (
-            'data/dobsonCorrections'
-            '/1_Leopoldville_Kinshasa_TEMISfilename_Brazzaville_Kinshasa_'
-            'teff_abscoef.dat'
+        file_path = os.path.join(
+            DATA_DIR, 'dobsonCorrections',
+            '1_Leopoldville_Kinshasa_TEMISfilename_'
+            'Brazzaville_Kinshasa_teff_abscoef.dat'
         )
         dictionary = parse_dat(file_path)
         self.assertIsInstance(dictionary, dict,
@@ -366,10 +358,10 @@ class TestDobsonCorrections(unittest.TestCase):
         Test the get_correct_factor function to return the right
         correction factor.
         """
-        file_path = (
-            'data/dobsonCorrections'
-            '/1_Leopoldville_Kinshasa_TEMISfilename_Brazzaville_Kinshasa_'
-            'teff_abscoef.dat'
+        file_path = os.path.join(
+            DATA_DIR, 'dobsonCorrections',
+            '1_Leopoldville_Kinshasa_TEMISfilename_'
+            'Brazzaville_Kinshasa_teff_abscoef.dat'
         )
         dictionary = parse_dat(file_path)
         self.assertEqual(

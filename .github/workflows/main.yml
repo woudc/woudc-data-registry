@@ -18,11 +18,13 @@ jobs:
       PGPASSWORD: postgres
       WDR_SEARCH_TYPE: elasticsearch
       WDR_SEARCH_URL: http://localhost:9200/
+      WDR_SEARCH_INDEX_BASENAME: woudc_data_registry
       WDR_WAF_BASEURL: https://woudc.org/archive/
       WDR_WAF_BASEDIR: /tmp
       WDR_ERROR_CONFIG: woudc_data_registry/tests/config/errors.csv
       WDR_ALIAS_CONFIG: data/aliases.yml
       WDR_EXTRA_CONFIG: data/extra-options.yml
+      WDR_MQTT_NOTIFICATION_TEMPLATE_PATH: ${{ github.workspace }}/etc/data-record-notification.json
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       matrix:
@@ -51,8 +53,7 @@ jobs:
       run: |
         git clone https://github.com/woudc/woudc-extcsv.git
         cd woudc-extcsv
-        pip install -r requirements.txt
-        python3 setup.py install
+        pip install .
         cd ..
     - name: Install requirements 📦
       run: |
