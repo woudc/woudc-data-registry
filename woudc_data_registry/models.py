@@ -2770,7 +2770,10 @@ def backup(ctx, datadir):
         Instrument,
         Deployment,
         Notification,
-        ContributorNotification
+        ContributorNotification,
+        Contribution,
+        DiscoveryMetadata,
+        StationDobsonCorrections
     ]
     for model in model_classes:
         records = registry_.query_full_index(model)
