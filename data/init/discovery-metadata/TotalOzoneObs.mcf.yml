@@ -20,7 +20,7 @@ identification:
     language: eng; CAN
     charset: utf8
     title:
-        en: &title_en Total Ozone - hourly observations
+        en: &title_en Total ozone - hourly observations
         fr: &title_fr Ozone total - observations horaires
     abstract:
         en: &abstract_en A measurement of the total amount of atmospheric ozone in a given column from the surface to the edge of the atmosphere. Ground based instruments such as spectrophotometers and ozonemeters are used to measure results hourly.
@@ -89,7 +89,7 @@ contact:
         city: Toronto
         administrativearea: Ontario
         postalcode: M3H 5T4
-        country: Canada
+        country: CAN
         email: woudc@ec.gc.ca
         hoursofservice: 0700h - 1500h EST
         contactinstructions: email

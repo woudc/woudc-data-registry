@@ -335,7 +335,7 @@ class TestDobsonCorrections(unittest.TestCase):
         Test that the parse_dat_file function reads a .dat file correctly.
         """
         file_path = os.path.join(
-            DATA_DIR, 'dobsonCorrections',
+            DATA_DIR, 'dobson-corrections',
             '1_Leopoldville_Kinshasa_TEMISfilename_'
             'Brazzaville_Kinshasa_teff_abscoef.dat'
         )
@@ -359,7 +359,7 @@ class TestDobsonCorrections(unittest.TestCase):
         correction factor.
         """
         file_path = os.path.join(
-            DATA_DIR, 'dobsonCorrections',
+            DATA_DIR, 'dobson-corrections',
             '1_Leopoldville_Kinshasa_TEMISfilename_'
             'Brazzaville_Kinshasa_teff_abscoef.dat'
         )

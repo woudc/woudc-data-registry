@@ -23,7 +23,7 @@ identification:
     language: eng; CAN
     charset: utf8
     title:
-        en: Total Ozone - daily observations # label_en
+        en: Total ozone - daily observations # label_en
         fr: Ozone total - observations quotidiennes # label_fr
     abstract:
         en: A measurement of the total amount of atmospheric ozone in a given column from the surface to the edge of the atmosphere. Ground based instruments such as spectrophotometers and ozonemeters are used to measure results daily. # label_en
@@ -91,7 +91,7 @@ contact: # fixed
         city: Toronto
         administrativearea: Ontario
         postalcode: M3H 5T4
-        country: Canada
+        country: CAN
         email: woudc@ec.gc.ca
         hoursofservice: 0700h - 1500h EST
         contactinstructions: email

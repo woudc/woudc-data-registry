@@ -7,7 +7,7 @@ Consistent use of the Dobson cross section helps reduce biases between Dobson an
 ## Setup
 
 ```bash
-cd ./woudc-data-registry/data/dobsonCorrections
+cd ./woudc-data-registry/data/dobson-corrections
 
 python3 step1_get_Teff_allstations_TEMIS.py
 python3 step2_calc_abs_coef_TEMIS.py
