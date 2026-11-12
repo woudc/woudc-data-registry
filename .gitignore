@@ -123,6 +123,8 @@ data/station_names.csv
 data/stations.csv
 data/dobsonCorrections/TEMIS_Teff/
 data/dobsonCorrections/WOUDC_stations_TEMIS_combined/
+data/dobson-corrections/TEMIS_Teff/
+data/dobson-corrections/WOUDC_stations_TEMIS_combined/
 data/station_dobson_corrections_internal.csv
 data/**/*.dat
 
